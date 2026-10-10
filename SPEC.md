@@ -6,6 +6,8 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 2. **Manager / Lister (You):** Reviews items on a desktop dashboard, triggers multimodal vision AI to generate marketplace-ready listing copy, downloads product images in bulk, copies text to the clipboard for external marketplace posting, and tracks sales status and prices.
 3. **Multi-Language Support (i18n):** Complete bilingual support (Spanish & English). The interface automatically detects the user's browser language via `Accept-Language`, rendering the entire UI in Spanish (`es`) for Spanish-language browsers and cleanly falling back to English (`en`) for any other language.
 4. **Cloud Object Storage (Oracle Cloud Infrastructure):** Product images are saved directly to an Oracle Cloud Infrastructure (OCI) Object Storage bucket instead of the local server disk. Uploaded photos are postprocessed to WebP in memory and transferred to cloud storage, eliminating local disk consumption and ensuring stateless, scalable deployment.
+5. **Catalog Pagination & Multi-Field Search:** Server-side pagination capping catalog listings at 20 items per page with query-preserving navigation links, accompanied by multi-field search allowing discovery by title, description/field note, and creation or sale dates.
+6. **User Management & Admin Role Gating:** Dedicated user management in Django administration restricted exclusively to store Managers (`is_manager(user)`), allowing managers to add, modify, deactivate, and remove assistants with role badges, productivity counts, and automatic permission synchronization.
 
 ---
 
@@ -216,6 +218,23 @@ epic-tesla/
   - In-memory ZIP packaging (`product_download_zip_view`) streams image bytes from the storage backend directly into the download archive without reading from local disk.
   - AI listing generation (`ai_service.py`) accesses image content via Django's storage API (`img_obj.image.open('rb')`).
 
+### 6.6 Catalog Pagination & Multi-Field Search
+- **Server-Side Pagination:**
+  - Primary catalog overview (`dashboard_view`) capped at **20 items per page** (`PAGE_SIZE = 20`) via `django.core.paginator.Paginator`.
+  - Robust page resolution using `paginator.get_page(page_number)` to gracefully handle non-integer or out-of-range page requests.
+  - Elided page range display (`get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)`).
+  - Query string retention: Page navigation links preserve active search (`q`) and status filter (`status`) parameters.
+  - Responsive pagination component: Mobile shows clean prev/next; desktop displays elided numbered buttons and item counter.
+- **Multi-Field Search:**
+  - Text Search: Case-insensitive containment across `ai_title`, `raw_note`, and `ai_description`.
+  - Date Search: Automated date string parsing supporting standard formats:
+    - ISO: `YYYY-MM-DD`
+    - Slashed / Hyphenated: `DD/MM/YYYY`, `DD-MM-YYYY`, `MM/DD/YYYY`, `MM-DD-YYYY`
+    - Year-Month: `YYYY-MM`
+    - Year: `YYYY`
+    Matches `created_at__date` and `sold_at__date` when recognized as a valid date.
+  - Unified UX: Manager enters either text, a date, or both without needing separate search fields.
+
 ---
 
 ## 7. AI Service Contract (`ai_service.py`)
@@ -242,10 +261,19 @@ def generate_product_listing(product: Product, language: str = "en") -> dict[str
 
 ---
 
-## 8. Role-Based Permissions
-- Managed via standard Django `Group` or user flags:
-  - **Assistant Group (`assistants`):** Access to `/intake/`, `/dashboard/` (read-only catalog), own profile. Cannot trigger AI or edit prices.
-  - **Manager Group (`managers` or `is_staff`):** Full access to AI generation, pricing, status modification, photo ZIP downloads, and Django Admin.
+## 8. Role-Based Permissions & Administration User Management
+- **Role Architecture:**
+  - **Assistant Group (`assistants`):** Field intake staff. Access to `/intake/`, `/dashboard/` (read-only catalog view of all items), own profile. Cannot trigger AI listings, edit prices, mark sold, or access Django Admin.
+  - **Manager Group (`managers` or `is_superuser`):** Store leadership. Full access to AI generation, pricing, status modification, photo ZIP downloads, and Django Admin.
+- **Admin Panel Access Control (`ManagerAdminSite`):**
+  - Django Administration (`/admin/`) access is strictly gated by `ManagerAdminSite.has_permission(request)`.
+  - Only active users who satisfy `is_manager(user)` (`user.is_active and (user.is_superuser or user.groups.filter(name='managers').exists() or user.is_staff)`) are permitted.
+  - Assistants attempting to access `/admin/` are strictly blocked (`403 Forbidden` / access denied).
+- **Customized User Management (`CustomUserAdmin`):**
+  - Registered in Django Admin to manage assistants and managers.
+  - **List Display:** Username, Email, Role badge (`Superuser`, `Manager`, `Assistant`, `None`), Cataloged items count (`created_products.count()`), Active status, Date joined.
+  - **Automated Flag Synchronization:** Assigning a user to the `managers` group sets `is_staff=True`. Assigning a user solely to `assistants` ensures `is_staff=False`.
+  - **Actions:** Quick actions to assign Assistant role, assign Manager role, and safely deactivate users.
 
 ---
 
@@ -260,17 +288,26 @@ def generate_product_listing(product: Product, language: str = "en") -> dict[str
   - Enforce max 10 photos per product and max 10MB per file during validation.
   - Store OCI credentials and API keys in `.env` and load via `os.environ` / `python-dotenv`.
   - Use in-memory or mocked storage in automated unit tests so tests do not depend on active cloud network access.
+  - Cap catalog list views at 20 items per page with server-side pagination.
+  - Preserve active filter and search query parameters (`status`, `q`) across pagination page links.
+  - Sanitize and parameterize all search queries using Django ORM `Q` lookups to prevent injection.
+  - Restrict `/admin/` access strictly to managers (`is_manager(user)`).
+  - Synchronize `is_staff` flag automatically based on manager vs assistant role.
 - **Ask First:**
   - Choosing between OCI S3-compatible API keys vs Native OCI API Key (PEM) authentication.
   - Configuring bucket access permissions (public bucket vs presigned URLs).
   - Adding third-party translation cloud services (Google Cloud Translation API, DeepL).
   - Translating stored database records dynamically.
+  - Implementing infinite scrolling or client-side JavaScript pagination instead of server-side pagination.
+  - Changing authentication backend (e.g. SSO / OAuth).
 - **Never:**
   - Store permanent product images on local server disk (`MEDIA_ROOT`).
   - Commit OCI secrets, private keys, or passwords to version control.
   - Hardcode Spanish strings directly into templates or Python files without gettext markers.
   - Alter the user's preserved `raw_note` during translation or AI processing.
   - Require external GNU gettext OS binaries to build or run the project on Windows.
+  - Execute unbounded unpaginated queries on main catalog views.
+  - Allow non-manager assistants to access Django administration (`/admin/`).
 
 ---
 
@@ -282,6 +319,13 @@ def generate_product_listing(product: Product, language: str = "en") -> dict[str
 5. Gemini Multimodal Vision AI reads image bytes retrieved from OCI storage and generates listing copy successfully.
 6. All automated unit and integration tests pass cleanly with mocked/in-memory cloud storage.
 7. Multilingual support (Spanish & English) functions continuously with OCI-backed assets.
+8. When more than 20 products exist in the catalog, `/dashboard/` paginates the catalog into batches of 20 items with active pagination controls ("Previous", "Next", and numbered page links).
+9. Navigating between pages preserves active `status` and `q` search parameters (e.g. `?status=active&q=jacket&page=2`).
+10. Entering a date query (e.g. `2026-10-10`, `10/10/2026`, `2026-10`) returns items created or sold on that date.
+11. Entering a text query matches title (`ai_title`), generated description (`ai_description`), or raw field notes (`raw_note`).
+12. All pagination and search labels switch between Spanish and English cleanly according to the active language.
+13. Only verified managers can access `/admin/`; assistants attempting to access `/admin/` are strictly blocked.
+14. Managers can add, modify, deactivate, and delete assistants in `/admin/` with visual role badges and cataloging metrics.
 
 ---
 
@@ -295,16 +339,22 @@ def generate_product_listing(product: Product, language: str = "en") -> dict[str
 - **Image Limits:** Maximum 10 photos per product, 10MB maximum file size per upload.
 - **Storage Optimization:** Server-side postprocessing to convert all uploaded images to WebP format in memory.
 - **Cloud Asset Storage:** Oracle Cloud Infrastructure (OCI) Object Storage bucket replaces local disk storage.
+- **Catalog Page Size:** 20 items per page (`PAGE_SIZE = 20`) via Django `Paginator`.
+- **Search Scope:** Multi-field unified search supporting text (title, note, description) and date patterns (ISO, European/US slash, year-month).
+- **Admin Access Restriction:** Custom `ManagerAdminSite` restricting `/admin/` exclusively to `is_manager(user)`.
+- **User Management Customization:** `CustomUserAdmin` with role badges, cataloging counts, and automated group/staff synchronization.
 
 ---
 
 ## 12. Open Questions
-1. **OCI Authentication / Integration Interface:**
-   - **Option A (Recommended):** Use OCI S3-Compatible API via `django-storages[boto3]` with OCI Customer Secret Keys (`OCI_STORAGE_ACCESS_KEY`, `OCI_STORAGE_SECRET_KEY`, `OCI_STORAGE_ENDPOINT_URL`). This is standard in Django and allows zero-boilerplate file streaming, presigned URLs, and standard storage hooks.
-   - **Option B:** Use native Oracle OCI Python SDK (`oci`) with OCI API Key (User OCID, Tenancy OCID, Fingerprint, and `.pem` private key).
-   *Which authentication method fits your Oracle Cloud tenancy setup best?*
-2. **Bucket Visibility & Image URL Access:**
-   - **Option A (Recommended for speed):** Public bucket or public object read access, generating direct CDN/OCI object URLs (`https://objectstorage.<region>.oraclecloud.com/n/<namespace>/b/<bucket>/o/<path>`).
-   - **Option B:** Fully private bucket using dynamically generated Pre-Authenticated Requests (PAR) / presigned URLs with short expiration.
-   *Is your OCI bucket configured as public (read-only for objects) or strictly private?*
+1. **Assistant Deletion vs Deactivation:**
+   - Deactivating a user (`is_active = False`) blocks login immediately while preserving historical attribution on all products they cataloged (`created_by`).
+   - Hard deletion removes the user row and sets `created_by = NULL` on their products (via `on_delete=models.SET_NULL`).
+   - **Recommended Approach:** Provide both in admin, with a warning / bulk action emphasizing Deactivation as best practice.
+   *Do you agree with prioritizing deactivation as the primary offboarding method while retaining hard delete if needed?*
+2. **Admin Entry Point for Assistants:**
+   - If an assistant attempts to navigate directly to `/admin/`:
+   - **Option A (Recommended):** Return standard HTTP 403 Permission Denied with a localized message: "Manager privileges required to access administration."
+   - **Option B:** Redirect them directly to `/intake/` or `/dashboard/` with a warning message.
+   *Which behavior do you prefer when an assistant navigates to `/admin/`?*
 

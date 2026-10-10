@@ -56,6 +56,18 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - **Task 15:** Storage Integration Tests & Test Mocking
 - **Checkpoint 6 (OCI Complete):** Product images upload to OCI bucket, local disk remains untouched, and all 51+ tests pass.
 
+### Phase 7: Catalog Pagination & Multi-Field Search (Vertical Slice 4)
+- **Task 16:** Multi-Field Search Query & Date Parser Logic (Title, description, raw notes, created/sold dates)
+- **Task 17:** Dashboard Server-Side Pagination & Query-Preserving UI Navigation Bar (Max 20 items per page)
+- **Task 18:** i18n Translation & Comprehensive Unit/Integration Test Suite
+- **Checkpoint 7 (Pagination & Search Complete):** Dashboard cleanly paginates at 20 items per page, retains search and filter query parameters across pages, parses multiple date formats, supports Spanish/English, and all tests pass.
+
+### Phase 8: User Management & Django Admin Role Gating (Vertical Slice 5)
+- **Task 19:** Custom `ManagerAdminSite` restricting `/admin/` access strictly to managers (`is_manager(user)`) with HTTP 403 enforcement.
+- **Task 20:** Enhanced `CustomUserAdmin` with role badges, cataloging productivity counts, custom filters, and automatic `is_staff` synchronization on save and bulk actions.
+- **Task 21:** i18n Translations and Comprehensive Unit/Integration Test Suite for Admin User Management.
+- **Checkpoint 8 (User Management Complete):** Only managers can access `/admin/`; assistants are strictly blocked with 403; managers can add, modify, deactivate, and remove assistants; productivity counts display; Spanish and English translations pass; all tests pass.
+
 ---
 
 ## Risks and Mitigations
@@ -67,9 +79,16 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 | EXIF orientation bugs on mobile uploads | Low | Use `PIL.ImageOps.exif_transpose` during WebP conversion to normalize orientation. |
 | Missing GNU gettext tools on Windows | High | Provide Python-native `compile_locales` management command using `polib` to compile binary `.mo` files without external tools. |
 | Tests failing due to missing OCI cloud credentials | High | Keep default storage configurable with in-memory / local fallback in test runner so CI/local tests remain fast and offline. |
+| Unsafe search queries or parameter injection | Medium | Parameterize all text queries and date lookups using Django ORM `Q` filters; escape query strings in templates with `\|urlencode`. |
+| Loss of active filter/search when clicking pagination links | Medium | Pass active query string parameters (`status`, `q`) to template context and append to page URLs. |
+| Assistant gaining access to Django admin via direct URL | High | Subclass `admin.AdminSite` with custom `has_permission` returning 403 if not `is_manager(request.user)`. |
+| Dangling products if assistant user is hard deleted | Medium | `Product.created_by` uses `on_delete=models.SET_NULL`; provide safe deactivation (`is_active=False`) action to preserve historical attribution. |
 
 ---
 
 ## Open Questions / Notes
-- None. (Approved: OCI S3-compatible API with Customer Secret Keys; Public read-only bucket/object visibility).
+- Approved: Date search auto-detected via unified search input (Option A).
+- Approved: Pagination applies strictly to the catalog dashboard (`/dashboard/`).
+- Approved: Prioritize user deactivation over hard deletion in admin.
+- Approved: Explicit HTTP 403 Forbidden when assistant attempts to access `/admin/`.
 

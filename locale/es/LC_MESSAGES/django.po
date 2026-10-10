@@ -311,3 +311,78 @@ msgstr "¡Copiado!"
 
 msgid "Analyzing Photos with AI..."
 msgstr "Analizando fotos con IA..."
+
+msgid "Search title, note, or date (e.g. 2026-10-10)..."
+msgstr "Buscar título, nota o fecha (ej. 2026-10-10)..."
+
+msgid "Showing <span class=\"font-bold text-slate-800\">%(start)s</span> to <span class=\"font-bold text-slate-800\">%(end)s</span> of <span class=\"font-bold text-slate-800\">%(total)s</span> products"
+msgstr "Mostrando <span class=\"font-bold text-slate-800\">%(start)s</span> a <span class=\"font-bold text-slate-800\">%(end)s</span> de <span class=\"font-bold text-slate-800\">%(total)s</span> productos"
+
+msgid "Pagination"
+msgstr "Paginación"
+
+msgid "Previous"
+msgstr "Anterior"
+
+msgid "Next"
+msgstr "Siguiente"
+
+msgid "2ndHand Staging - Administration"
+msgstr "2ndHand Staging - Administración"
+
+msgid "2ndHand Staging Admin"
+msgstr "Administración de 2ndHand Staging"
+
+msgid "Store Administration & User Management"
+msgstr "Administración de Tienda y Gestión de Usuarios"
+
+msgid "Role"
+msgstr "Rol"
+
+msgid "Superuser"
+msgstr "Superusuario"
+
+msgid "Manager"
+msgstr "Gestor"
+
+msgid "Assistant"
+msgstr "Asistente"
+
+msgid "None"
+msgstr "Ninguno"
+
+msgid "Cataloged Items"
+msgstr "Artículos Catalogados"
+
+msgid "Assign Assistant role to selected users"
+msgstr "Asignar rol de Asistente a los usuarios seleccionados"
+
+msgid "Successfully assigned Assistant role to %(count)d user(s)."
+msgstr "Se asignó exitosamente el rol de Asistente a %(count)d usuario(s)."
+
+msgid "Assign Manager role to selected users"
+msgstr "Asignar rol de Gestor a los usuarios seleccionados"
+
+msgid "Successfully assigned Manager role to %(count)d user(s)."
+msgstr "Se asignó exitosamente el rol de Gestor a %(count)d usuario(s)."
+
+msgid "Deactivate selected users (Revoke access, preserve items)"
+msgstr "Desactivar usuarios seleccionados (Revocar acceso, preservar artículos)"
+
+msgid "Successfully deactivated %(count)d user(s). Access revoked while preserving product attributions."
+msgstr "Se desactivaron exitosamente %(count)d usuario(s). Acceso revocado preservando las atribuciones de productos."
+
+msgid "Activate selected users"
+msgstr "Activar usuarios seleccionados"
+
+msgid "Successfully activated %(count)d user(s)."
+msgstr "Se activaron exitosamente %(count)d usuario(s)."
+
+msgid "Preview"
+msgstr "Vista previa"
+
+msgid "Price (€)"
+msgstr "Precio (€)"
+
+msgid "Images"
+msgstr "Imágenes"

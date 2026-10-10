@@ -342,4 +342,153 @@
 - [x] Code passes `ruff check .`.
 - [x] Product images upload to OCI Object Storage bucket, leaving zero local disk files.
 
+---
+
+## Phase 7: Catalog Pagination & Multi-Field Search
+
+### Task 16: Multi-Field Search Query & Date Parser Logic
+**Description:** Implement robust multi-field search logic in `inventory/views.py` (or a dedicated `inventory/services/search_service.py` helper). The search must match across `ai_title`, `raw_note`, `ai_description`, and dynamically parse date inputs (ISO `YYYY-MM-DD`, slashed `DD/MM/YYYY`, `MM/DD/YYYY`, year-month `YYYY-MM`, and 4-digit year `YYYY`) to filter by `created_at__date` and `sold_at__date`.
+**Acceptance criteria:**
+- [x] Text search queries match `ai_title`, `raw_note`, and `ai_description`.
+- [x] Date queries in `YYYY-MM-DD`, `DD/MM/YYYY`, `MM/DD/YYYY`, and `YYYY-MM` formats correctly match `created_at__date` and `sold_at__date`.
+- [x] Non-date text queries do not raise parsing exceptions.
+- [x] Query composition preserves existing status filtering (`all`, `active`, `sold`).
+**Verification:**
+- [x] Unit tests pass: `python manage.py test tests.test_pagination_search`
+**Dependencies:** Checkpoint 6
+**Files likely touched:**
+- `inventory/views.py`
+- `tests/test_pagination_search.py`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 17: Dashboard Server-Side Pagination & Query-Preserving UI Navigation
+**Description:** Update `dashboard_view` in `inventory/views.py` to paginate catalog products at max 20 items per page (`PAGE_SIZE = 20`) using Django's `Paginator`. Update `inventory/templates/inventory/dashboard.html` to render products from `page_obj`, display a responsive pagination toolbar with Previous/Next buttons, item summary counter ("Showing X to Y of Z products"), and elided page numbering, ensuring that all navigation links preserve existing `q` and `status` query parameters.
+**Acceptance criteria:**
+- [x] Catalog listings cap at 20 products per page (`PAGE_SIZE = 20`).
+- [x] Out-of-bounds or non-integer page requests fallback gracefully (`paginator.get_page`).
+- [x] Template displays "Showing X to Y of Z products" summary count.
+- [x] Previous and Next buttons render with appropriate disabled/active states.
+- [x] Page links retain active search query and status filter in URL query strings.
+- [x] Sourcing assistant `/intake/` recent uploads remains unpaginated (5 items).
+**Verification:**
+- [x] Visual verification and DOM structure inspection in browser.
+- [x] Unit tests pass: `python manage.py test tests.test_pagination_search`
+**Dependencies:** Task 16
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/templates/inventory/dashboard.html`
+**Estimated scope:** Medium (2 files)
+
+---
+
+### Task 18: i18n Translation & Comprehensive Unit/Integration Test Suite
+**Description:** Update `locale/es/LC_MESSAGES/django.po` to provide natural Spanish translations for all new pagination and search labels (e.g. "Showing %(start)d to %(end)d of %(total)d products", "Previous", "Next", "Page %(current)d of %(total)d", search placeholder). Compile catalogs to `.mo` via `python manage.py compile_locales`. Implement full test suite in `tests/test_pagination_search.py` verifying pagination across multiple pages, boundary handling, date search, text search, combined filters, and Spanish rendering.
+**Acceptance criteria:**
+- [x] All new pagination strings marked with `{% trans %}` or `_()`.
+- [x] Spanish translations added to `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`.
+- [x] `tests/test_pagination_search.py` contains tests covering:
+  - Catalog with >20 items paginating properly (page 1, page 2).
+  - Out of range page numbers.
+  - Search by title, raw note, description.
+  - Search by date (ISO, European, Year-Month).
+  - Combined search + status filter + pagination parameter preservation.
+  - Spanish localized pagination UI rendering.
+- [x] Full test suite passes: `python manage.py test`.
+- [x] Linter passes: `ruff check .`.
+**Verification:**
+- [x] Command succeeds: `python manage.py compile_locales`
+- [x] Full test suite passes: `python manage.py test`
+- [x] Linter passes: `ruff check .`
+**Dependencies:** Task 17
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_pagination_search.py`
+**Estimated scope:** Medium (3 files)
+
+---
+
+## Checkpoint 7: Pagination & Search Verification
+- [x] All unit and integration tests pass (`python manage.py test`).
+- [x] Code passes `ruff check .`.
+- [x] Catalog dashboard renders at max 20 items per page with query-preserving pagination links.
+- [x] Multi-field search works for title, description, and date queries in English and Spanish.
+
+---
+
+## Phase 8: User Management & Django Admin Role Gating
+
+### Task 19: Custom ManagerAdminSite & Role Gating
+**Description:** Implement custom `ManagerAdminSite` subclassing `admin.AdminSite` in `inventory/admin.py` (or registering it in `config/urls.py`). Override `has_permission` to strictly enforce `is_manager(request.user)`. When an authenticated non-manager (such as an assistant) navigates to `/admin/`, return HTTP 403 Forbidden with a clear permission denied response. Customize admin branding headers (`site_header`, `site_title`, `index_title`).
+**Acceptance criteria:**
+- [x] Users in `managers` group or superusers can access `/admin/`.
+- [x] Users in `assistants` group attempting to access `/admin/` receive HTTP 403 Forbidden.
+- [x] Anonymous users accessing `/admin/` are directed to login.
+- [x] Custom admin titles and headers are localized.
+**Verification:**
+- [x] Unit tests pass: `python manage.py test tests.test_admin_user_management`
+**Dependencies:** Checkpoint 7
+**Files likely touched:**
+- `inventory/admin.py`
+- `config/urls.py`
+- `tests/test_admin_user_management.py`
+**Estimated scope:** Small (3 files)
+
+---
+
+### Task 20: Enhanced CustomUserAdmin with Role Badges & Productivity Counts
+**Description:** Customize `User` model administration in `inventory/admin.py` via `CustomUserAdmin` (inheriting from `django.contrib.auth.admin.UserAdmin`). Add `role_badge` column in `list_display`, `cataloged_items_count` column linking to items created by the user, custom role filter (`RoleListFilter`), automatic synchronization of `is_staff` when saving users (`save_model`), and quick admin actions to assign Assistant role, assign Manager role, and safely deactivate users (`is_active=False`).
+**Acceptance criteria:**
+- [x] User list displays role badges (`Superuser`, `Manager`, `Assistant`).
+- [x] User list displays cataloged items count with optimized annotation query (no N+1).
+- [x] Saving a user automatically sets `is_staff=True` if in `managers` and `is_staff=False` if only in `assistants`.
+- [x] Admin actions `make_assistant`, `make_manager`, and `deactivate_users` execute properly.
+- [x] Navigation bar admin link in `base.html` conditionally appears for managers (`can_manage` / `is_manager`).
+**Verification:**
+- [x] Unit tests pass: `python manage.py test tests.test_admin_user_management`
+**Dependencies:** Task 19
+**Files likely touched:**
+- `inventory/admin.py`
+- `inventory/templates/inventory/base.html`
+- `tests/test_admin_user_management.py`
+**Estimated scope:** Medium (3 files)
+
+---
+
+### Task 21: i18n Translations & Comprehensive Admin Test Suite
+**Description:** Update `locale/es/LC_MESSAGES/django.po` to translate all custom admin role badges, column headers, action descriptions, and filter titles. Compile with `python manage.py compile_locales`. Implement full test suite in `tests/test_admin_user_management.py` verifying admin access gating (manager access, assistant 403, anonymous redirect), user creation, role assignment, deactivation, and catalog count display.
+**Acceptance criteria:**
+- [x] All new admin strings marked with `_()` and translated into Spanish in `django.po`.
+- [x] `compile_locales` succeeds without error.
+- [x] `tests/test_admin_user_management.py` covers:
+  - Manager can log into admin.
+  - Assistant gets 403 Forbidden on admin.
+  - Role badges and cataloged counts rendered.
+  - Actions `make_assistant`, `make_manager`, `deactivate_users` function properly.
+  - Role synchronization on save.
+- [x] Full test suite passes: `python manage.py test`.
+- [x] Linter passes: `ruff check .`.
+**Verification:**
+- [x] Command succeeds: `python manage.py compile_locales`
+- [x] Full test suite passes: `python manage.py test`
+- [x] Linter passes: `ruff check .`
+**Dependencies:** Task 20
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_admin_user_management.py`
+**Estimated scope:** Medium (3 files)
+
+---
+
+## Checkpoint 8: User Management Verification
+- [x] All unit and integration tests pass (`python manage.py test`).
+- [x] Code passes `ruff check .`.
+- [x] `/admin/` access is strictly gated to managers; assistants receive 403.
+- [x] Custom user admin displays role badges, catalog counts, and handles role/deactivation actions.
+
+
+
 
