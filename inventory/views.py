@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q
 from django.http import HttpResponse
@@ -23,6 +24,9 @@ from .services.image_service import (
     validate_image_file,
     validate_images_count,
 )
+from .services.search_service import build_search_query
+
+PAGE_SIZE = 20
 
 
 class CustomLoginView(LoginView):
@@ -118,7 +122,7 @@ def product_intake_view(request):
 @login_required
 def dashboard_view(request):
     """
-    Catalog overview dashboard with filters and search.
+    Catalog overview dashboard with filters, multi-field search, and server-side pagination.
     """
     status_filter = request.GET.get("status", "all").strip().lower()
     search_query = request.GET.get("q", "").strip()
@@ -131,11 +135,7 @@ def dashboard_view(request):
         products = products.filter(is_sold=True)
 
     if search_query:
-        products = products.filter(
-            Q(ai_title__icontains=search_query)
-            | Q(raw_note__icontains=search_query)
-            | Q(ai_description__icontains=search_query)
-        )
+        products = products.filter(build_search_query(search_query))
 
     counts = Product.objects.aggregate(
         total_count=Count("id"),
@@ -143,8 +143,29 @@ def dashboard_view(request):
         sold_count=Count("id", filter=Q(is_sold=True)),
     )
 
+    paginator = Paginator(products, PAGE_SIZE)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # Elided page range for cleaner pagination bar when many pages exist
+    elided_page_range = (
+        paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
+        if paginator.num_pages > 1
+        else []
+    )
+
+    # Clean query string for pagination links preserving status & search filter
+    extra_params = request.GET.copy()
+    if "page" in extra_params:
+        del extra_params["page"]
+    query_string = extra_params.urlencode()
+
     context = {
-        "products": products,
+        "page_obj": page_obj,
+        "products": page_obj,
+        "paginator": paginator,
+        "elided_page_range": elided_page_range,
+        "query_string": query_string,
         "status_filter": status_filter,
         "search_query": search_query,
         "total_count": counts["total_count"] or 0,
