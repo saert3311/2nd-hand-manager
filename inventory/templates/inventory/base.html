@@ -1,0 +1,140 @@
+{% load i18n %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:'en' }}" class="h-full bg-slate-50 text-slate-900">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>{% block title %}2ndHand Staging{% endblock %}</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Mobile tap target and scroll optimizations */
+    body {
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="flex flex-col min-h-full">
+
+  <!-- Main Navigation Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        
+        <!-- Logo / App Name -->
+        <div class="flex items-center gap-3">
+          <a href="{% url 'inventory:root' %}" class="flex items-center gap-2 group">
+            <div class="w-9 h-9 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:bg-emerald-700 transition">
+              📦
+            </div>
+            <div>
+              <span class="font-extrabold text-slate-900 text-lg tracking-tight">2ndHand</span>
+              <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full ml-1">Staging</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- Navigation Links & Language Switcher -->
+        <div class="flex items-center gap-2 sm:gap-4">
+
+          <!-- Language Selector -->
+          <form action="{% url 'set_language' %}" method="post" class="inline-flex items-center">
+            {% csrf_token %}
+            <input name="next" type="hidden" value="{{ request.get_full_path }}">
+            {% get_current_language as CURRENT_LANG %}
+            <div class="flex items-center bg-slate-100 rounded-lg p-0.5 text-xs font-bold border border-slate-200">
+              <button type="submit" name="language" value="en"
+                      class="px-2 py-1 rounded-md transition {% if CURRENT_LANG == 'en' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-900{% endif %}"
+                      title="English">
+                🇬🇧 EN
+              </button>
+              <button type="submit" name="language" value="es"
+                      class="px-2 py-1 rounded-md transition {% if CURRENT_LANG == 'es' %}bg-white text-emerald-800 shadow-sm{% else %}text-slate-500 hover:text-slate-900{% endif %}"
+                      title="Español">
+                🇪🇸 ES
+              </button>
+            </div>
+          </form>
+
+          {% if user.is_authenticated %}
+          <nav class="flex items-center gap-2 sm:gap-3">
+            <a href="{% url 'inventory:intake' %}" class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition border border-emerald-200">
+              <span>📷</span>
+              <span class="hidden sm:inline">{% trans "New Intake" %}</span>
+              <span class="sm:hidden">{% trans "Intake" %}</span>
+            </a>
+            <a href="{% url 'inventory:dashboard' %}" class="px-3 py-1.5 text-sm font-medium text-slate-700 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition">
+              {% trans "Dashboard" %}
+            </a>
+            {% if user.is_staff %}
+            <a href="{% url 'admin:index' %}" class="hidden md:inline px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-lg transition">
+              {% trans "Admin" %}
+            </a>
+            {% endif %}
+
+            <!-- User Menu & Logout -->
+            <div class="flex items-center gap-2 border-l border-slate-200 pl-3 ml-1">
+              <span class="text-xs font-medium text-slate-600 hidden sm:inline">
+                {{ user.username }}
+              </span>
+              <form action="{% url 'inventory:logout' %}" method="post" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="text-xs text-slate-500 hover:text-rose-600 px-2 py-1 rounded transition hover:bg-rose-50" title="{% trans 'Sign Out' %}">
+                  {% trans "Sign Out" %}
+                </button>
+              </form>
+            </div>
+          </nav>
+          {% endif %}
+
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Flash Messages Notifications -->
+  {% if messages %}
+  <div class="max-w-4xl mx-auto px-4 mt-4 w-full">
+    {% for message in messages %}
+    <div class="p-3.5 mb-2 rounded-lg text-sm font-medium flex items-center justify-between shadow-sm
+      {% if message.tags == 'error' %} bg-rose-50 text-rose-800 border border-rose-200
+      {% elif message.tags == 'success' %} bg-emerald-50 text-emerald-800 border border-emerald-200
+      {% elif message.tags == 'warning' %} bg-amber-50 text-amber-800 border border-amber-200
+      {% else %} bg-sky-50 text-sky-800 border border-sky-200 {% endif %}">
+      <span>{{ message }}</span>
+      <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-700 ml-3 text-lg leading-none">&times;</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Main Content Body -->
+  <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Minimal Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+    {% trans "2ndHand Product Intake & Staging Hub • Powered by Django & Gemini Vision" %}
+  </footer>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

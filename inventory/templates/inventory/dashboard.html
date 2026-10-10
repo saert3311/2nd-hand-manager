@@ -1,0 +1,134 @@
+{% extends "inventory/base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Dashboard - 2ndHand Staging" %}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Top Action Bar -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-black text-slate-900 tracking-tight">{% trans "Inventory Catalog" %}</h1>
+      <p class="text-xs sm:text-sm text-slate-500 mt-0.5">{% trans "Track, stage, and prepare marketplace listings." %}</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="{% url 'inventory:intake' %}"
+         class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-sm transition">
+        <span>📸</span> {% trans "New Intake" %}
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters & Search Bar -->
+  <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between">
+    
+    <!-- Status Tabs -->
+    <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-full md:w-auto text-xs font-semibold">
+      <a href="?status=all{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+         class="flex-1 md:flex-initial text-center px-3 py-1.5 rounded-lg transition {% if status_filter == 'all' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-600 hover:text-slate-900{% endif %}">
+        {% trans "All" %} ({{ total_count }})
+      </a>
+      <a href="?status=active{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+         class="flex-1 md:flex-initial text-center px-3 py-1.5 rounded-lg transition {% if status_filter == 'active' %}bg-white text-emerald-700 shadow-sm{% else %}text-slate-600 hover:text-slate-900{% endif %}">
+        {% trans "Active" %} ({{ active_count }})
+      </a>
+      <a href="?status=sold{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+         class="flex-1 md:flex-initial text-center px-3 py-1.5 rounded-lg transition {% if status_filter == 'sold' %}bg-white text-slate-700 shadow-sm{% else %}text-slate-600 hover:text-slate-900{% endif %}">
+        {% trans "Sold" %} ({{ sold_count }})
+      </a>
+    </div>
+
+    <!-- Search Form -->
+    <form method="get" class="w-full md:w-72 relative">
+      {% if status_filter != 'all' %}
+      <input type="hidden" name="status" value="{{ status_filter }}">
+      {% endif %}
+      <input type="text" name="q" value="{{ search_query }}"
+             placeholder="{% trans 'Search title, note, flaws...' %}"
+             class="w-full pl-9 pr-4 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
+      <span class="absolute left-3 top-2.5 text-slate-400 text-xs">🔍</span>
+      {% if search_query %}
+      <a href="?status={{ status_filter }}" class="absolute right-3 top-2 text-slate-400 hover:text-slate-600 text-xs font-bold">&times;</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Product Catalog Grid -->
+  {% if products %}
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+    {% for product in products %}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col group hover:shadow-md hover:border-slate-300 transition duration-150">
+      
+      <!-- Primary Photo Box -->
+      <a href="{% url 'inventory:product_detail' product.pk %}" class="relative aspect-square bg-slate-100 overflow-hidden block">
+        {% if product.primary_image %}
+        <img src="{{ product.primary_image.image.url }}" alt="{{ product.display_title }}"
+             class="w-full h-full object-cover group-hover:scale-105 transition duration-200">
+        {% else %}
+        <div class="w-full h-full flex flex-col items-center justify-center text-slate-300">
+          <span class="text-4xl">📷</span>
+          <span class="text-xs mt-1">{% trans "No Photos" %}</span>
+        </div>
+        {% endif %}
+
+        <!-- Badges on Photo -->
+        <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm {% if product.is_sold %}bg-slate-900/80 text-white{% else %}bg-emerald-600/90 text-white{% endif %}">
+            {% if product.is_sold %}{% trans "Sold" %}{% else %}{% trans "Active" %}{% endif %}
+          </span>
+        </div>
+
+        <div class="absolute bottom-2.5 right-2.5 bg-black/60 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full backdrop-blur-xs flex items-center gap-1">
+          <span>📷</span> {{ product.images.count }}
+        </div>
+      </a>
+
+      <!-- Content -->
+      <div class="p-4 flex flex-col flex-grow justify-between space-y-3">
+        <div>
+          <a href="{% url 'inventory:product_detail' product.pk %}" class="block font-bold text-slate-900 text-sm group-hover:text-emerald-700 line-clamp-1 transition">
+            {{ product.display_title }}
+          </a>
+          
+          {% if product.raw_note %}
+          <p class="text-xs text-slate-500 line-clamp-2 mt-1">
+            {{ product.raw_note }}
+          </p>
+          {% endif %}
+        </div>
+
+        <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+          <div>
+            {% if product.sale_price is not None %}
+            <span class="font-extrabold text-slate-900 text-sm">€{{ product.sale_price|floatformat:2 }}</span>
+            {% else %}
+            <span class="text-slate-400 italic">{% trans "No price set" %}</span>
+            {% endif %}
+          </div>
+          <span class="text-slate-400 text-[11px]">{{ product.created_at|date:"M d" }}</span>
+        </div>
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3">
+    <div class="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center text-3xl">📦</div>
+    <h3 class="text-base font-bold text-slate-800">{% trans "No products found" %}</h3>
+    <p class="text-xs text-slate-500 max-w-sm mx-auto">
+      {% if search_query %}
+      {% blocktrans with query=search_query %}No products matched your search "{{ query }}". Try clearing the filter.{% endblocktrans %}
+      {% else %}
+      {% trans "There are no products in this view yet. Start by taking pictures of inventory." %}
+      {% endif %}
+    </p>
+    <a href="{% url 'inventory:intake' %}" class="inline-block mt-2 px-4 py-2 bg-emerald-600 text-white font-semibold text-xs rounded-xl shadow-sm hover:bg-emerald-700 transition">
+      {% trans "Catalog First Item" %}
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
