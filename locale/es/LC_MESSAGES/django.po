@@ -1,0 +1,313 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: 2ndHand Staging 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 20:00+0200\n"
+"PO-Revision-Date: 2026-10-09 20:00+0200\n"
+"Last-Translator: Jose\n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "English"
+msgstr "Inglés"
+
+msgid "Spanish"
+msgstr "Español"
+
+msgid "New Intake"
+msgstr "Nueva Entrada"
+
+msgid "Intake"
+msgstr "Entrada"
+
+msgid "Dashboard"
+msgstr "Panel de Control"
+
+msgid "Admin"
+msgstr "Administración"
+
+msgid "Sign Out"
+msgstr "Cerrar Sesión"
+
+msgid "2ndHand Product Intake & Staging Hub • Powered by Django & Gemini Vision"
+msgstr "Centro de Entrada y Preparación de Productos de Segunda Mano • Desarrollado con Django y Gemini Vision"
+
+msgid "Sign In - 2ndHand Staging"
+msgstr "Iniciar Sesión - 2ndHand Staging"
+
+msgid "Sign in to your account"
+msgstr "Inicia sesión en tu cuenta"
+
+msgid "Access product intake and the staging dashboard"
+msgstr "Accede a la entrada de productos y al panel de preparación"
+
+msgid "Your username and password didn't match. Please try again."
+msgstr "Tu usuario y contraseña no coinciden. Por favor intenta de nuevo."
+
+msgid "Username"
+msgstr "Usuario"
+
+msgid "Password"
+msgstr "Contraseña"
+
+msgid "e.g. assistant or manager"
+msgstr "ej. asistente o gestor"
+
+msgid "Sign In"
+msgstr "Iniciar Sesión"
+
+msgid "Product"
+msgstr "Producto"
+
+msgid "Products"
+msgstr "Productos"
+
+msgid "Product Image"
+msgstr "Imagen de Producto"
+
+msgid "Product Images"
+msgstr "Imágenes de Producto"
+
+msgid "Image"
+msgstr "Imagen"
+
+msgid "New"
+msgstr "Nuevo"
+
+msgid "Original raw field note taken during intake"
+msgstr "Nota de campo original tomada durante la entrada"
+
+msgid "AI-generated marketplace title"
+msgstr "Título de marketplace generado por IA"
+
+msgid "AI-generated marketplace listing description"
+msgstr "Descripción de marketplace generada por IA"
+
+msgid "Sale price in Euros (€)"
+msgstr "Precio de venta en Euros (€)"
+
+msgid "Whether the product has been sold"
+msgstr "Indica si el producto ha sido vendido"
+
+msgid "Timestamp when marked as sold"
+msgstr "Fecha y hora cuando se marcó como vendido"
+
+msgid "Manager privileges required to access this action."
+msgstr "Se requieren permisos de gestor para acceder a esta acción."
+
+msgid "Please attach at least one photo of the product."
+msgstr "Por favor adjunta al menos una foto del producto."
+
+msgid "Product #%(id)s cataloged successfully with %(count)d photo%(plural)s!"
+msgstr "¡Producto #%(id)s catalogado con éxito con %(count)d foto%(plural)s!"
+
+msgid "Error saving product: %(error)s"
+msgstr "Error al guardar el producto: %(error)s"
+
+msgid "Manager privileges required to edit product details."
+msgstr "Se requieren permisos de gestor para editar los detalles del producto."
+
+msgid "Product listing updated successfully."
+msgstr "Listado de producto actualizado con éxito."
+
+msgid "This product has no photos to download."
+msgstr "Este producto no tiene fotos para descargar."
+
+msgid "AI listing successfully generated from photos and notes!"
+msgstr "¡Listado generado con éxito por la IA a partir de las fotos y notas!"
+
+msgid "Unexpected error during AI generation: %(error)s"
+msgstr "Error inesperado durante la generación con IA: %(error)s"
+
+msgid "Image '%(filename)s' exceeds the 10MB limit (%(size).1fMB)."
+msgstr "La imagen '%(filename)s' excede el límite de 10MB (%(size).1fMB)."
+
+msgid "File '%(filename)s' is not a valid or readable image."
+msgstr "El archivo '%(filename)s' no es una imagen válida o legible."
+
+msgid "You can upload a maximum of %(max)d images per product. Received %(count)d."
+msgstr "Puedes subir un máximo de %(max)d imágenes por producto. Recibidas %(count)d."
+
+msgid "Raw Field Notes"
+msgstr "Notas de Campo Originales"
+
+msgid "Brief description / field notes (e.g., 'Vintage 90s Nike windbreaker, blue/white, small tear on left sleeve')"
+msgstr "Descripción breve / notas de campo (ej. 'Chaqueta cortavientos vintage Nike 90s, azul/blanco, pequeño desgarro en manga izquierda')"
+
+msgid "Listing Title"
+msgstr "Título del Producto"
+
+msgid "Listing Description / Copy"
+msgstr "Descripción / Texto del Producto"
+
+msgid "Sale Price (€)"
+msgstr "Precio de Venta (€)"
+
+msgid "Mark Product as Sold"
+msgstr "Marcar Producto como Vendido"
+
+msgid "Quick Intake - 2ndHand Staging"
+msgstr "Entrada Rápida - 2ndHand Staging"
+
+msgid "New Product Intake"
+msgstr "Nueva Entrada de Producto"
+
+msgid "Snap photos & jot notes on the go. Auto-optimizes to WebP."
+msgstr "Toma fotos y anota notas sobre la marcha. Auto-optimizado a WebP."
+
+msgid "View Catalog"
+msgstr "Ver Catálogo"
+
+msgid "Photos (Required)"
+msgstr "Fotos (Obligatorio)"
+
+msgid "selected"
+msgstr "seleccionadas"
+
+msgid "Tap to take photos or upload"
+msgstr "Toca para tomar fotos o subir archivos"
+
+msgid "Select up to %(max)s images (max 10MB each)"
+msgstr "Selecciona hasta %(max)s imágenes (máx. 10MB cada una)"
+
+msgid "Selected Photos Preview:"
+msgstr "Vista previa de fotos seleccionadas:"
+
+msgid "Field Notes / Short Description"
+msgstr "Notas de Campo / Descripción Breve"
+
+msgid "Brand, model, size, obvious flaws or condition notes. AI will expand this later."
+msgstr "Marca, modelo, talla, defectos evidentes o estado. La IA ampliará esto más tarde."
+
+msgid "Save & Catalog Next Item"
+msgstr "Guardar y Catalogar Siguiente Artículo"
+
+msgid "Your Recent Uploads"
+msgstr "Tus Subidas Recientes"
+
+msgid "No img"
+msgstr "Sin foto"
+
+msgid "photos"
+msgstr "fotos"
+
+msgid "Sold"
+msgstr "Vendido"
+
+msgid "Active"
+msgstr "Activo"
+
+msgid "Please select a maximum of 10 photos."
+msgstr "Por favor selecciona un máximo de 10 fotos."
+
+msgid "Dashboard - 2ndHand Staging"
+msgstr "Panel de Control - 2ndHand Staging"
+
+msgid "Inventory Catalog"
+msgstr "Catálogo de Inventario"
+
+msgid "Track, stage, and prepare marketplace listings."
+msgstr "Rastrea, prepara y alista publicaciones para marketplaces."
+
+msgid "All"
+msgstr "Todos"
+
+msgid "Search title, note, flaws..."
+msgstr "Buscar título, nota, defectos..."
+
+msgid "No Photos"
+msgstr "Sin Fotos"
+
+msgid "No price set"
+msgstr "Sin precio fijado"
+
+msgid "No products found"
+msgstr "No se encontraron productos"
+
+msgid "No products matched your search \"%(query)s\". Try clearing the filter."
+msgstr "Ningún producto coincide con la búsqueda \"%(query)s\". Prueba limpiar el filtro."
+
+msgid "There are no products in this view yet. Start by taking pictures of inventory."
+msgstr "Aún no hay productos en esta vista. Empieza tomando fotos del inventario."
+
+msgid "Catalog First Item"
+msgstr "Catalogar Primer Artículo"
+
+msgid "Staging"
+msgstr "Preparación"
+
+msgid "Back to Dashboard"
+msgstr "Volver al Panel"
+
+msgid "Download All Photos (.ZIP)"
+msgstr "Descargar Todas las Fotos (.ZIP)"
+
+msgid "Photos"
+msgstr "Fotos"
+
+msgid "Saved as WebP"
+msgstr "Guardadas como WebP"
+
+msgid "No photos attached."
+msgstr "No hay fotos adjuntas."
+
+msgid "Preserved Intake Notes"
+msgstr "Notas de Entrada Preservadas"
+
+msgid "Read-Only"
+msgstr "Solo Lectura"
+
+msgid "No field notes provided during intake."
+msgstr "No se proporcionaron notas de campo durante la entrada."
+
+msgid "Cataloged by"
+msgstr "Catalogado por"
+
+msgid "Gemini Multimodal Vision"
+msgstr "Gemini Visión Multimodal"
+
+msgid "Analyzes attached photos & raw notes to draft an SEO marketplace title and description."
+msgstr "Analiza las fotos adjuntas y notas de campo para redactar un título SEO y descripción para marketplace."
+
+msgid "Generate AI Listing"
+msgstr "Generar Publicación con IA"
+
+msgid "Manager Only"
+msgstr "Solo Gestores"
+
+msgid "Marketplace Listing Copy"
+msgstr "Texto de la Publicación para Marketplace"
+
+msgid "Status: Sold"
+msgstr "Estado: Vendido"
+
+msgid "Status: Available for Sale"
+msgstr "Estado: Disponible para Venta"
+
+msgid "Copy Title"
+msgstr "Copiar Título"
+
+msgid "Copy Description"
+msgstr "Copiar Descripción"
+
+msgid "Sold Status"
+msgstr "Estado de Venta"
+
+msgid "Sold on"
+msgstr "Vendido el"
+
+msgid "Save Listing Changes"
+msgstr "Guardar Cambios de Publicación"
+
+msgid "Nothing to copy!"
+msgstr "¡Nada que copiar!"
+
+msgid "Copied!"
+msgstr "¡Copiado!"
+
+msgid "Analyzing Photos with AI..."
+msgstr "Analizando fotos con IA..."
