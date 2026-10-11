@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from .models import Product, ProductImage
+from .models import AIPromptConfiguration, Product, ProductImage
 from .permissions import ROLE_ASSISTANT, ROLE_MANAGER, is_assistant, is_manager
 
 User = get_user_model()
@@ -268,6 +268,77 @@ class ProductImageAdmin(admin.ModelAdmin):
     list_display = ("id", "product", "order", "image", "created_at")
     list_filter = ("created_at",)
     search_fields = ("product__ai_title", "product__raw_note")
+
+    def has_module_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_change_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_add_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_delete_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+
+@admin.register(AIPromptConfiguration, site=admin_site)
+class AIPromptConfigurationAdmin(admin.ModelAdmin):
+    list_display = (
+        "language",
+        "model_name",
+        "temperature",
+        "is_active_badge",
+        "updated_at",
+    )
+    list_filter = ("is_active", "language")
+    search_fields = ("model_name", "system_instruction")
+    readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        (
+            _("Model Parameters"),
+            {
+                "fields": ("language", "model_name", "temperature"),
+                "description": _(
+                    "Specify the Gemini model identifier (e.g. gemini-2.5-flash, gemini-2.5-pro) "
+                    "and sampling temperature (0.0 = deterministic, 1.0 = creative)."
+                ),
+            },
+        ),
+        (
+            _("Copywriting & Prompt Instructions"),
+            {
+                "fields": ("system_instruction",),
+                "description": _(
+                    "Define marketplace instructions, selling tone, and format guidelines. "
+                    "Note: The system automatically appends assistant field notes and enforces "
+                    "the structured title/description output schema."
+                ),
+            },
+        ),
+        (
+            _("Status & Timestamps"),
+            {
+                "fields": ("is_active", "created_at", "updated_at"),
+            },
+        ),
+    )
+
+    def is_active_badge(self, obj):
+        if obj.is_active:
+            return format_html(
+                '<span style="background-color: #d1fae5; color: #065f46; font-weight: 600; padding: 2px 8px; border-radius: 9999px;">{}</span>',
+                _("Active"),
+            )
+        return format_html(
+            '<span style="background-color: #f3f4f6; color: #4b5563; padding: 2px 8px; border-radius: 9999px;">{}</span>',
+            _("Inactive"),
+        )
+
+    is_active_badge.short_description = _("Status")
 
     def has_module_permission(self, request):
         return bool(request.user and request.user.is_active and is_manager(request.user))
