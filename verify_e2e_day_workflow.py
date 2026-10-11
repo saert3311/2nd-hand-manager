@@ -73,8 +73,9 @@ def run_full_browser_verification():
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
         import django
         django.setup()
-        from inventory.models import MarketplaceSite
+        from inventory.models import MarketplaceSite, ProductListingLink
         MarketplaceSite.objects.filter(name="Vestiaire Collective").delete()
+        ProductListingLink.objects.filter(site__slug="vinted").delete()
 
         sample_photos = generate_sample_images()
         print("Prepared sample photos:", sample_photos)
@@ -245,8 +246,8 @@ def run_full_browser_verification():
 
             # 4.3 Text Search
             print("[4.3] Testing search for newly cataloged item 'Schott'...")
-            page.fill('input[name="q"]', "Schott")
-            page.press('input[name="q"]', "Enter")
+            page.fill('input[type="text"][name="q"]', "Schott")
+            page.press('input[type="text"][name="q"]', "Enter")
             page.wait_for_load_state("networkidle")
             page.screenshot(path=str(SCREENSHOTS_DIR / "11_dashboard_search_schott.png"))
             print("Captured screenshot: 11_dashboard_search_schott.png")
@@ -254,8 +255,8 @@ def run_full_browser_verification():
 
             # 4.4 Date Search
             print("[4.4] Testing flexible date search ('2026-10')...")
-            page.fill('input[name="q"]', "2026-10")
-            page.press('input[name="q"]', "Enter")
+            page.fill('input[type="text"][name="q"]', "2026-10")
+            page.press('input[type="text"][name="q"]', "Enter")
             page.wait_for_load_state("networkidle")
             page.screenshot(path=str(SCREENSHOTS_DIR / "12_dashboard_date_search.png"))
             print("Captured screenshot: 12_dashboard_date_search.png")
@@ -335,6 +336,33 @@ def run_full_browser_verification():
             assert "schott-biker-leather-jacket-updated-2026" in page.content()
             print("Verified Wallapop link updated successfully!")
 
+            # 5.5b Test Dashboard Marketplace Platform Selector
+            print("[5.5b] Testing Dashboard Marketplace Platform Filter with both Wallapop & Vinted...")
+            page.goto(f"{BASE_URL}/dashboard/")
+            page.wait_for_load_state("networkidle")
+            platform_select = page.locator('select[name="platform"]')
+            assert platform_select.is_visible(), "Expected platform filter select to be visible"
+            options_text = platform_select.inner_text()
+            assert "Wallapop" in options_text
+            assert "Vinted" in options_text
+            assert "Milanuncios" not in options_text, "Milanuncios has 0 products and must NOT appear in selector"
+            assert "eBay" not in options_text, "eBay has 0 products and must NOT appear in selector"
+            print("Verified only platforms with published products (Wallapop, Vinted) appear in selector!")
+
+            # Filter by Wallapop
+            page.locator('select[name="platform"]').select_option("wallapop")
+            page.locator('#platformFilterForm').evaluate("f => f.submit()")
+            page.wait_for_url(lambda url: "platform=wallapop" in url)
+            page.wait_for_load_state("networkidle")
+            assert "platform=wallapop" in page.url
+            page.screenshot(path=str(SCREENSHOTS_DIR / "21_dashboard_platform_filter_wallapop.png"))
+            print("Captured screenshot: 21_dashboard_platform_filter_wallapop.png")
+            assert "Schott" in page.content()
+
+            # Return to detail page to test removal
+            page.goto(detail_url)
+            page.wait_for_load_state("networkidle")
+
             # 5.6 Remove Vinted Link
             print("[5.6] Removing Vinted link...")
             page.on("dialog", lambda dialog: dialog.accept())
@@ -345,6 +373,15 @@ def run_full_browser_verification():
             page.screenshot(path=str(SCREENSHOTS_DIR / "18_vinted_link_removed.png"))
             print("Captured screenshot: 18_vinted_link_removed.png")
             print("Verified Vinted link removed cleanly!")
+
+            # 5.6b Verify Vinted dynamically disappeared from selector
+            page.goto(f"{BASE_URL}/dashboard/")
+            page.wait_for_load_state("networkidle")
+            options_after = page.locator('select[name="platform"]').inner_text()
+            assert "Vinted" not in options_after, "Vinted has 0 published products and should no longer appear in selector"
+            print("Verified Vinted dynamically disappeared from selector after link deletion!")
+            page.goto(detail_url)
+            page.wait_for_load_state("networkidle")
 
             # ==============================================================
             # PHASE 6: ROLE BOUNDARY - ASSISTANT READ-ONLY VIEW

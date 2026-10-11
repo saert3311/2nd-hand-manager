@@ -263,3 +263,177 @@ class ProductDetailLinksViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(ProductListingLink.objects.filter(product=self.product, site=self.wallapop).exists())
         self.assertContains(response, "Manager privileges required to manage listing links.")
+
+
+class DashboardMarketplacePlatformFilterTests(TestCase):
+    def setUp(self):
+        self.manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
+        self.manager = User.objects.create_user(username="mgr_user", password="pw")
+        self.manager.groups.add(self.manager_group)
+        self.client.login(username="mgr_user", password="pw")
+
+        self.wallapop = MarketplaceSite.objects.get(slug="wallapop")
+        self.vinted = MarketplaceSite.objects.get(slug="vinted")
+        self.milanuncios = MarketplaceSite.objects.get(slug="milanuncios")
+        self.ebay = MarketplaceSite.objects.get(slug="ebay")
+
+        # Create products
+        self.p1 = Product.objects.create(
+            raw_note="Leather Jacket",
+            ai_title="Vintage Leather Biker Jacket",
+            is_sold=False,
+            created_by=self.manager,
+        )
+        self.p2 = Product.objects.create(
+            raw_note="Denim Shirt",
+            ai_title="Western Denim Shirt",
+            is_sold=True,
+            created_by=self.manager,
+        )
+        self.p3 = Product.objects.create(
+            raw_note="Wool Coat",
+            ai_title="Winter Wool Coat",
+            is_sold=False,
+            created_by=self.manager,
+        )
+
+        # Links setup:
+        # p1 is on Wallapop
+        ProductListingLink.objects.create(
+            product=self.p1,
+            site=self.wallapop,
+            url="https://es.wallapop.com/item/jacket-1",
+            is_active=True,
+        )
+        # p2 is on Wallapop AND Vinted
+        ProductListingLink.objects.create(
+            product=self.p2,
+            site=self.wallapop,
+            url="https://es.wallapop.com/item/shirt-2",
+            is_active=True,
+        )
+        ProductListingLink.objects.create(
+            product=self.p2,
+            site=self.vinted,
+            url="https://www.vinted.es/items/shirt-2",
+            is_active=True,
+        )
+        # p3 has NO links
+        # milanuncios and ebay have NO links
+
+    def test_available_platforms_only_includes_sites_with_published_products(self):
+        """Selector must only include platforms that have at least 1 active product link."""
+        response = self.client.get(reverse("inventory:dashboard"))
+        self.assertEqual(response.status_code, 200)
+
+        available_platforms = list(response.context["available_platforms"])
+        slugs = [p.slug for p in available_platforms]
+        self.assertIn("wallapop", slugs)
+        self.assertIn("vinted", slugs)
+        self.assertNotIn("milanuncios", slugs)
+        self.assertNotIn("ebay", slugs)
+
+        # Verify annotated counts: Wallapop has 2 products, Vinted has 1 product
+        counts_by_slug = {p.slug: p.published_count for p in available_platforms}
+        self.assertEqual(counts_by_slug["wallapop"], 2)
+        self.assertEqual(counts_by_slug["vinted"], 1)
+
+    def test_platform_selector_omitted_when_no_published_links(self):
+        """When no products have links, available_platforms is empty and selector is omitted."""
+        ProductListingLink.objects.all().delete()
+        response = self.client.get(reverse("inventory:dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["available_platforms"]), 0)
+        self.assertNotContains(response, 'id="platformFilterForm"')
+
+    def test_filter_by_platform_wallapop(self):
+        """Filtering by ?platform=wallapop returns only products published on Wallapop."""
+        response = self.client.get(reverse("inventory:dashboard"), {"platform": "wallapop"})
+        self.assertEqual(response.status_code, 200)
+        products = list(response.context["products"])
+        self.assertEqual(len(products), 2)
+        self.assertIn(self.p1, products)
+        self.assertIn(self.p2, products)
+        self.assertNotIn(self.p3, products)
+
+    def test_filter_by_platform_vinted(self):
+        """Filtering by ?platform=vinted returns only products published on Vinted."""
+        response = self.client.get(reverse("inventory:dashboard"), {"platform": "vinted"})
+        self.assertEqual(response.status_code, 200)
+        products = list(response.context["products"])
+        self.assertEqual(len(products), 1)
+        self.assertIn(self.p2, products)
+        self.assertNotIn(self.p1, products)
+        self.assertNotIn(self.p3, products)
+
+    def test_scoped_status_counters_for_selected_platform(self):
+        """Status counters reflect the active platform scope when a platform is selected."""
+        # For Wallapop: 2 total (p1 active, p2 sold)
+        response_wallapop = self.client.get(reverse("inventory:dashboard"), {"platform": "wallapop"})
+        self.assertEqual(response_wallapop.context["total_count"], 2)
+        self.assertEqual(response_wallapop.context["active_count"], 1)
+        self.assertEqual(response_wallapop.context["sold_count"], 1)
+
+        # For Vinted: 1 total (p2 sold, 0 active)
+        response_vinted = self.client.get(reverse("inventory:dashboard"), {"platform": "vinted"})
+        self.assertEqual(response_vinted.context["total_count"], 1)
+        self.assertEqual(response_vinted.context["active_count"], 0)
+        self.assertEqual(response_vinted.context["sold_count"], 1)
+
+        # For All Platforms: 3 total (p1 & p3 active, p2 sold)
+        response_all = self.client.get(reverse("inventory:dashboard"))
+        self.assertEqual(response_all.context["total_count"], 3)
+        self.assertEqual(response_all.context["active_count"], 2)
+        self.assertEqual(response_all.context["sold_count"], 1)
+
+    def test_multi_filter_combination_status_and_platform(self):
+        """Combining ?platform=wallapop&status=sold filters accurately."""
+        response = self.client.get(reverse("inventory:dashboard"), {"platform": "wallapop", "status": "sold"})
+        self.assertEqual(response.status_code, 200)
+        products = list(response.context["products"])
+        self.assertEqual(len(products), 1)
+        self.assertEqual(products[0], self.p2)
+
+        response_active = self.client.get(reverse("inventory:dashboard"), {"platform": "wallapop", "status": "active"})
+        self.assertEqual(response_active.status_code, 200)
+        products_active = list(response_active.context["products"])
+        self.assertEqual(len(products_active), 1)
+        self.assertEqual(products_active[0], self.p1)
+
+    def test_multi_filter_combination_search_and_platform(self):
+        """Combining search and platform filter works seamlessly."""
+        response = self.client.get(reverse("inventory:dashboard"), {"platform": "wallapop", "q": "Leather"})
+        self.assertEqual(response.status_code, 200)
+        products = list(response.context["products"])
+        self.assertEqual(len(products), 1)
+        self.assertEqual(products[0], self.p1)
+
+    def test_invalid_platform_slug_returns_empty_gracefully(self):
+        """Invalid platform slug returns empty product catalog with HTTP 200 without error."""
+        response = self.client.get(reverse("inventory:dashboard"), {"platform": "nonexistent"})
+        self.assertEqual(response.status_code, 200)
+        products = list(response.context["products"])
+        self.assertEqual(len(products), 0)
+        self.assertEqual(response.context["total_count"], 0)
+
+    def test_pagination_preserves_platform_query_string(self):
+        """Pagination query_string retains the platform parameter."""
+        response = self.client.get(reverse("inventory:dashboard"), {"platform": "wallapop", "status": "active"})
+        self.assertEqual(response.status_code, 200)
+        query_string = response.context["query_string"]
+        self.assertIn("platform=wallapop", query_string)
+        self.assertIn("status=active", query_string)
+
+    def test_inactive_listing_link_excluded_from_counts(self):
+        """Links with is_active=False do not count towards published count."""
+        # Deactivate link for p1 on Wallapop
+        link = ProductListingLink.objects.get(product=self.p1, site=self.wallapop)
+        link.is_active = False
+        link.save()
+
+        response = self.client.get(reverse("inventory:dashboard"))
+        available_platforms = list(response.context["available_platforms"])
+        counts_by_slug = {p.slug: p.published_count for p in available_platforms}
+        # Wallapop should now have count 1 (only p2)
+        self.assertEqual(counts_by_slug["wallapop"], 1)
+
