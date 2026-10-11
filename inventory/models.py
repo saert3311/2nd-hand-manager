@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 
@@ -174,3 +175,93 @@ class AIPromptConfiguration(models.Model):
                 is_active=True
             ).exclude(pk=self.pk).update(is_active=False)
         super().save(*args, **kwargs)
+
+
+class MarketplaceSite(models.Model):
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name=_("Site Name"),
+        help_text=_("Marketplace platform name (e.g. Wallapop, Vinted, eBay, Milanuncios)"),
+    )
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        blank=True,
+        verbose_name=_("Slug"),
+        help_text=_("Unique identifier slug for styling and programmatic reference"),
+    )
+    base_url = models.URLField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name=_("Base URL"),
+        help_text=_("Base homepage URL of the marketplace (e.g. https://es.wallapop.com)"),
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        verbose_name=_("Is Active"),
+        help_text=_("Whether this platform is actively offered when adding listing links"),
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("Display Order"),
+        help_text=_("Sorting order for displaying platforms in dropdowns and lists"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
+
+    class Meta:
+        ordering = ["order", "name"]
+        verbose_name = _("Marketplace Site")
+        verbose_name_plural = _("Marketplace Sites")
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug and self.name:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+
+class ProductListingLink(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="listing_links",
+        verbose_name=_("Product"),
+    )
+    site = models.ForeignKey(
+        MarketplaceSite,
+        on_delete=models.CASCADE,
+        related_name="product_links",
+        verbose_name=_("Marketplace Site"),
+    )
+    url = models.URLField(
+        max_length=1000,
+        verbose_name=_("Listing URL"),
+        help_text=_("Direct link to the active ad on the marketplace platform"),
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name=_("Is Active Listing"),
+        help_text=_("Whether this listing is currently live"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
+
+    class Meta:
+        ordering = ["site__order", "site__name"]
+        verbose_name = _("Product Listing Link")
+        verbose_name_plural = _("Product Listing Links")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["product", "site"],
+                name="unique_product_site_link",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.site.name} - {self.product.display_title}"
