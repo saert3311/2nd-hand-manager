@@ -489,6 +489,95 @@
 - [x] `/admin/` access is strictly gated to managers; assistants receive 403.
 - [x] Custom user admin displays role badges, catalog counts, and handles role/deactivation actions.
 
+---
+
+## Phase 9: Dynamic AI Model & Prompt Configuration (Vertical Slice 6)
+
+### Task 22: AIPromptConfiguration Domain Model, Migrations & Initial Seed
+**Description:** Define the `AIPromptConfiguration` model in `inventory/models.py` with fields `language`, `model_name` (CharField default `"gemini-2.5-flash"`), `temperature` (FloatField default 0.3 with validators `0.0`–`1.0`), `system_instruction` (TextField), `is_active` (BooleanField default True), and audit timestamps. Implement custom `save()` logic enforcing Option A: saving an active config (`is_active=True`) automatically sets any other configuration for the same language to `is_active=False`. Generate schema migration and create data migration to seed the active defaults for Spanish and English.
+**Acceptance criteria:**
+- [x] `AIPromptConfiguration` model defined with all fields, validators, and localized verbose names.
+- [x] Model `save()` method automatically deactivates other active configurations for the same language when `is_active=True`.
+- [x] Schema migration generated and applied cleanly.
+- [x] Data migration seeds active default records for `es` and `en` with current production prompts and model `gemini-2.5-flash`.
+**Verification:**
+- [x] Command succeeds: `python manage.py makemigrations --check --dry-run`
+- [x] Command succeeds: `python manage.py migrate`
+**Dependencies:** Checkpoint 8
+**Files likely touched:**
+- `inventory/models.py`
+- `inventory/migrations/`
+- `tests/test_models.py`
+**Estimated scope:** Medium (3-4 files)
+
+---
+
+### Task 23: Django Admin Registration & Form Validation (AIPromptConfigurationAdmin)
+**Description:** Register `AIPromptConfiguration` in `inventory/admin.py` under `ManagerAdminSite`. Provide structured fieldsets (`Model Parameters`, `Copywriting & Prompt Instructions`, `Status`), `list_display` (`language`, `model_name`, `temperature`, `is_active`, `updated_at`), list filters (`is_active`, `language`), search fields (`model_name`, `system_instruction`), and helpful admin guidance on how prompt instructions are safely embedded within the system output schema envelope.
+**Acceptance criteria:**
+- [x] `AIPromptConfigurationAdmin` registered on `admin.site` (which is `ManagerAdminSite`).
+- [x] List view shows language, model name, temperature, active status, and updated timestamp.
+- [x] Accessible strictly to managers; assistants denied via existing site permission gating.
+- [x] Validation prevents temperature out of `[0.0, 1.0]`.
+**Verification:**
+- [x] Command succeeds: `python manage.py check`
+- [x] Unit tests pass: `python manage.py test tests.test_admin_user_management`
+**Dependencies:** Task 22
+**Files likely touched:**
+- `inventory/admin.py`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 24: AI Service Integration with Dynamic Lookup & Resilient Fallback
+**Description:** Refactor `generate_product_listing(product, model_name=None, language="en")` in `inventory/services/ai_service.py` to dynamically fetch the active `AIPromptConfiguration` for the resolved language. If found, use configured `model_name` (unless explicitly overridden in kwargs), `temperature`, and `system_instruction`. If not found or if a database query error occurs, transparently fall back to hardcoded defaults without crashing. Merge user copywriting instructions into the immutable system envelope that injects `product.raw_note` and guarantees `ProductListingSchema` JSON output.
+**Acceptance criteria:**
+- [x] `generate_product_listing` dynamically queries `AIPromptConfiguration.objects.filter(language=..., is_active=True).first()`.
+- [x] Passes dynamic model name to `client.models.generate_content(model=...)` and temperature to `types.GenerateContentConfig(temperature=...)`.
+- [x] If no active DB record exists, seamlessly uses hardcoded defaults without raising exceptions.
+- [x] Technical schema envelope and field note preservation remain completely intact.
+**Verification:**
+- [x] Unit tests pass: `python manage.py test tests.test_ai_service`
+**Dependencies:** Task 22, Task 23
+**Files likely touched:**
+- `inventory/services/ai_service.py`
+**Estimated scope:** Small (1-2 files)
+
+---
+
+### Task 25: i18n Translations & Comprehensive AI Configuration Test Suite
+**Description:** Extract and translate all new user-facing and admin strings into Spanish in `locale/es/LC_MESSAGES/django.po` and compile catalogs with `python manage.py compile_locales`. Implement comprehensive automated tests in `tests/test_ai_service.py` and `tests/test_models.py` covering: dynamic model override, dynamic temperature forwarding, active config switching/demotion, empty/missing DB fallback, and admin access control. Ensure all repository checks pass.
+**Acceptance criteria:**
+- [x] All new model fields and admin labels translated in `django.po` and compiled to `django.mo`.
+- [x] Unit tests verify:
+  - Database config override for model, temperature, and instructions.
+  - Automatic deactivation of existing configuration when a new one is set to active (Option A).
+  - Resilient fallback to defaults when DB has no active configuration or raises an exception.
+  - Temperature forwarded to GenAI config.
+- [x] Full test suite passes: `python manage.py test`.
+- [x] Linter passes: `ruff check .`.
+**Verification:**
+- [x] Command succeeds: `python manage.py compile_locales`
+- [x] Full test suite passes: `python manage.py test`
+- [x] Linter passes: `ruff check .`
+**Dependencies:** Task 24
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_ai_service.py`
+- `tests/test_models.py`
+**Estimated scope:** Medium (3-4 files)
+
+---
+
+## Checkpoint 9: Dynamic AI Configuration Complete
+- [x] All unit and integration tests pass (`python manage.py test`).
+- [x] Code passes `ruff check .`.
+- [x] Managers can configure Gemini model name, temperature, and prompt copy in `/admin/`.
+- [x] Active config changes immediately reflect in listing generation.
+- [x] Fallback ensures 100% resilience when database configuration is absent.
+
+
 
 
 

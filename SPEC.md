@@ -8,6 +8,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 4. **Cloud Object Storage (Oracle Cloud Infrastructure):** Product images are saved directly to an Oracle Cloud Infrastructure (OCI) Object Storage bucket instead of the local server disk. Uploaded photos are postprocessed to WebP in memory and transferred to cloud storage, eliminating local disk consumption and ensuring stateless, scalable deployment.
 5. **Catalog Pagination & Multi-Field Search:** Server-side pagination capping catalog listings at 20 items per page with query-preserving navigation links, accompanied by multi-field search allowing discovery by title, description/field note, and creation or sale dates.
 6. **User Management & Admin Role Gating:** Dedicated user management in Django administration restricted exclusively to store Managers (`is_manager(user)`), allowing managers to add, modify, deactivate, and remove assistants with role badges, productivity counts, and automatic permission synchronization.
+7. **Dynamic AI Model & Prompt Configuration:** Database-backed configuration managed in Django administration (`AIPromptConfiguration`), enabling store managers to tune Gemini model names (free-form), temperature, and localized copywriting prompt instructions without modifying codebase files or triggering server restarts, backed by automatic fallback to hardcoded defaults.
 
 ---
 
@@ -127,6 +128,7 @@ epic-tesla/
     ├── intent/
     │   └── secondhand-inventory-app.md
     ├── prds/
+    │   ├── PRD-dynamic-ai-configuration.md
     │   ├── PRD-multilanguage-support.md
     │   └── PRD-oracle-object-storage.md
     └── SPEC.md
@@ -158,6 +160,18 @@ epic-tesla/
 | `image` | ImageField | upload_to='products/%Y/%m/' | Uploaded image file (auto-converted to WebP) |
 | `order` | PositiveIntegerField | default=0 | Display order (primary image is order 0) |
 | `created_at` | DateTimeField | auto_now_add=True | Upload timestamp |
+
+### 5.3 `AIPromptConfiguration`
+| Field | Type | Attributes | Description |
+|---|---|---|---|
+| `id` | AutoField | Primary Key | Unique configuration identifier |
+| `language` | CharField | max_length=10, choices=[('es', 'Español'), ('en', 'English')] | Target language code |
+| `model_name` | CharField | max_length=64, default="gemini-2.5-flash" | Gemini model identifier (free-form text, e.g. gemini-2.5-flash, gemini-2.5-pro) |
+| `temperature` | FloatField | default=0.3, validators=[0.0-1.0] | LLM generation sampling temperature |
+| `system_instruction` | TextField | blank=False | Editable copywriting guidelines and marketplace formatting rules |
+| `is_active` | BooleanField | default=True | Active profile toggle for this language (enforces max 1 active per language) |
+| `created_at` | DateTimeField | auto_now_add=True | Configuration creation timestamp |
+| `updated_at` | DateTimeField | auto_now=True | Last modification timestamp |
 
 ---
 
@@ -239,17 +253,24 @@ epic-tesla/
 
 ## 7. AI Service Contract (`ai_service.py`)
 ```python
-def generate_product_listing(product: Product, language: str = "en") -> dict[str, str]:
+def generate_product_listing(
+    product: Product,
+    model_name: str | None = None,
+    language: str = "en",
+) -> dict[str, str]:
     """
     Inputs:
       - product.raw_note: string
       - product.images: QuerySet of ProductImage
+      - model_name: optional override; if None, resolves from active AIPromptConfiguration
       - language: str ("es" or "en") - dynamically resolved from active request locale
     Process:
+      - Queries active AIPromptConfiguration for the target language.
+      - If found: uses configured model_name, temperature, and custom copywriting instructions.
+      - If absent or DB error: falls back seamlessly to hardcoded defaults (gemini-2.5-flash, temp 0.3).
       - Loads image bytes and raw notes.
-      - Prompts Gemini Vision with an instruction matched to the target language:
-        - If language == "es": Generates Spanish listing title & sales description.
-        - If language == "en": Generates English listing title & sales description.
+      - Envelopes prompt with fixed technical schema instructions guaranteeing ProductListingSchema output.
+      - Executes Gemini Multimodal Vision API call.
       - Returns schema-validated JSON:
         {
           "title": "Concise SEO-friendly marketplace title in target language",
@@ -274,6 +295,10 @@ def generate_product_listing(product: Product, language: str = "en") -> dict[str
   - **List Display:** Username, Email, Role badge (`Superuser`, `Manager`, `Assistant`, `None`), Cataloged items count (`created_products.count()`), Active status, Date joined.
   - **Automated Flag Synchronization:** Assigning a user to the `managers` group sets `is_staff=True`. Assigning a user solely to `assistants` ensures `is_staff=False`.
   - **Actions:** Quick actions to assign Assistant role, assign Manager role, and safely deactivate users.
+- **AI Prompt Configuration Admin (`AIPromptConfigurationAdmin`):**
+  - Registered in `ManagerAdminSite` restricted to managers.
+  - Enables managers to view and edit `model_name` (free-form), `temperature`, `system_instruction`, and `is_active` for each language (`es`, `en`).
+  - Validation ensures valid temperatures (0.0 to 1.0) and maintains only one active configuration per language.
 
 ---
 
@@ -293,6 +318,8 @@ def generate_product_listing(product: Product, language: str = "en") -> dict[str
   - Sanitize and parameterize all search queries using Django ORM `Q` lookups to prevent injection.
   - Restrict `/admin/` access strictly to managers (`is_manager(user)`).
   - Synchronize `is_staff` flag automatically based on manager vs assistant role.
+  - Retrieve AI model, temperature, and prompt from active `AIPromptConfiguration` with transparent fallback to hardcoded constants if unavailable.
+  - Enforce that user-edited prompt instructions cannot bypass Pydantic `ProductListingSchema` validation.
 - **Ask First:**
   - Choosing between OCI S3-compatible API keys vs Native OCI API Key (PEM) authentication.
   - Configuring bucket access permissions (public bucket vs presigned URLs).
@@ -300,6 +327,7 @@ def generate_product_listing(product: Product, language: str = "en") -> dict[str
   - Translating stored database records dynamically.
   - Implementing infinite scrolling or client-side JavaScript pagination instead of server-side pagination.
   - Changing authentication backend (e.g. SSO / OAuth).
+  - Adding external LLM providers (e.g. OpenAI, Anthropic) beyond Google Gemini.
 - **Never:**
   - Store permanent product images on local server disk (`MEDIA_ROOT`).
   - Commit OCI secrets, private keys, or passwords to version control.
@@ -308,6 +336,8 @@ def generate_product_listing(product: Product, language: str = "en") -> dict[str
   - Require external GNU gettext OS binaries to build or run the project on Windows.
   - Execute unbounded unpaginated queries on main catalog views.
   - Allow non-manager assistants to access Django administration (`/admin/`).
+  - Allow non-manager assistants to access or edit `AIPromptConfiguration`.
+  - Crash AI listing generation when a database prompt configuration is missing, deactivated, or malformed (always fall back to safe defaults).
 
 ---
 
@@ -326,6 +356,10 @@ def generate_product_listing(product: Product, language: str = "en") -> dict[str
 12. All pagination and search labels switch between Spanish and English cleanly according to the active language.
 13. Only verified managers can access `/admin/`; assistants attempting to access `/admin/` are strictly blocked.
 14. Managers can add, modify, deactivate, and delete assistants in `/admin/` with visual role badges and cataloging metrics.
+15. Managers can edit Gemini model names, temperature, and copywriting instructions via `AIPromptConfiguration` in `/admin/`.
+16. Changes made to active prompt configurations immediately apply to subsequent AI listing generations.
+17. Deactivating or deleting configurations causes `generate_product_listing` to gracefully fall back to built-in defaults without crashing.
+18. Database migrations pre-populate active default configurations for Spanish and English.
 
 ---
 
@@ -343,6 +377,9 @@ def generate_product_listing(product: Product, language: str = "en") -> dict[str
 - **Search Scope:** Multi-field unified search supporting text (title, note, description) and date patterns (ISO, European/US slash, year-month).
 - **Admin Access Restriction:** Custom `ManagerAdminSite` restricting `/admin/` exclusively to `is_manager(user)`.
 - **User Management Customization:** `CustomUserAdmin` with role badges, cataloging counts, and automated group/staff synchronization.
+- **AI Parameter Configuration:** Database-backed `AIPromptConfiguration` model editable in Django admin.
+- **Model Name Flexibility:** Free-form text input (defaulting to `gemini-2.5-flash`) to enable zero-code adoption of new Gemini releases.
+- **Prompt Safety Boundary:** Separation of editable copywriting tone from immutable JSON output schema envelopes to prevent parsing failures.
 
 ---
 
@@ -357,4 +394,9 @@ def generate_product_listing(product: Product, language: str = "en") -> dict[str
    - **Option A (Recommended):** Return standard HTTP 403 Permission Denied with a localized message: "Manager privileges required to access administration."
    - **Option B:** Redirect them directly to `/intake/` or `/dashboard/` with a warning message.
    *Which behavior do you prefer when an assistant navigates to `/admin/`?*
+3. **Active Configuration Uniqueness Enforcement:**
+   - When a manager saves an `AIPromptConfiguration` as active (`is_active=True`):
+   - **Option A (Automatic Deactivation of Previous - Recommended):** Saving an active configuration automatically sets any other configuration for that same language to `is_active=False`.
+   - **Option B (Strict Validation Error):** If an active configuration already exists for that language, the admin form rejects the save with a validation error asking the manager to manually deactivate the other one first.
+   *Which behavior do you prefer for managing active configurations?*
 

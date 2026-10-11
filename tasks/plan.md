@@ -68,6 +68,13 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - **Task 21:** i18n Translations and Comprehensive Unit/Integration Test Suite for Admin User Management.
 - **Checkpoint 8 (User Management Complete):** Only managers can access `/admin/`; assistants are strictly blocked with 403; managers can add, modify, deactivate, and remove assistants; productivity counts display; Spanish and English translations pass; all tests pass.
 
+### Phase 9: Dynamic AI Model & Prompt Configuration (Vertical Slice 6)
+- **Task 22:** `AIPromptConfiguration` Domain Model, Migrations & Initial Data Seed.
+- **Task 23:** Django Admin Registration & Form Validation (`AIPromptConfigurationAdmin`).
+- **Task 24:** AI Service Integration (`ai_service.py`) with Dynamic Lookup & Resilient Fallback.
+- **Task 25:** i18n Translations and Comprehensive Test Suite for Dynamic AI Configuration.
+- **Checkpoint 9 (Dynamic AI Complete):** Managers can tune model names (free-form), temperature, and prompt copywriting instructions in Django Admin; changes apply immediately to listing generation; deactivation automatically cascades; service falls back gracefully when DB records are absent; all tests pass.
+
 ---
 
 ## Risks and Mitigations
@@ -83,6 +90,8 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 | Loss of active filter/search when clicking pagination links | Medium | Pass active query string parameters (`status`, `q`) to template context and append to page URLs. |
 | Assistant gaining access to Django admin via direct URL | High | Subclass `admin.AdminSite` with custom `has_permission` returning 403 if not `is_manager(request.user)`. |
 | Dangling products if assistant user is hard deleted | Medium | `Product.created_by` uses `on_delete=models.SET_NULL`; provide safe deactivation (`is_active=False`) action to preserve historical attribution. |
+| Non-technical managers breaking prompt schema or deleting variables | High | Isolate user copywriting instructions from immutable JSON schema envelope; enforce automatic fallback on any DB error. |
+| Multiple active configurations created for the same language | Medium | Automatic demotion on `save()`: activating a configuration automatically sets any other configuration for that language to `is_active=False`. |
 
 ---
 
@@ -91,4 +100,6 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - Approved: Pagination applies strictly to the catalog dashboard (`/dashboard/`).
 - Approved: Prioritize user deactivation over hard deletion in admin.
 - Approved: Explicit HTTP 403 Forbidden when assistant attempts to access `/admin/`.
+- Approved: Free-form text input for Gemini model names with helpful admin suggestions.
+- Approved: Option A for active configuration uniqueness (automatic deactivation of previous active config on save).
 
