@@ -452,3 +452,127 @@ msgstr "Define las instrucciones del marketplace, el tono de venta y las pautas 
 
 msgid "Status & Timestamps"
 msgstr "Estado y Marcas de Tiempo"
+
+msgid "Site Name"
+msgstr "Nombre de la Plataforma"
+
+msgid "Marketplace platform name (e.g. Wallapop, Vinted, eBay, Milanuncios)"
+msgstr "Nombre de la plataforma de marketplace (ej. Wallapop, Vinted, eBay, Milanuncios)"
+
+msgid "Slug"
+msgstr "Slug"
+
+msgid "Unique identifier slug for styling and programmatic reference"
+msgstr "Identificador slug único para estilos y referencia programática"
+
+msgid "Base URL"
+msgstr "URL Base"
+
+msgid "Base homepage URL of the marketplace (e.g. https://es.wallapop.com)"
+msgstr "URL principal de la plataforma (ej. https://es.wallapop.com)"
+
+msgid "Whether this platform is actively offered when adding listing links"
+msgstr "Indica si esta plataforma se ofrece activamente al añadir enlaces de publicaciones"
+
+msgid "Display Order"
+msgstr "Orden de Visualización"
+
+msgid "Sorting order for displaying platforms in dropdowns and lists"
+msgstr "Orden de clasificación para mostrar plataformas en listas y formularios"
+
+msgid "Marketplace Site"
+msgstr "Plataforma de Marketplace"
+
+msgid "Marketplace Sites"
+msgstr "Plataformas de Marketplace"
+
+msgid "Product Listing Link"
+msgstr "Enlace de Publicación de Producto"
+
+msgid "Product Listing Links"
+msgstr "Enlaces de Publicación de Productos"
+
+msgid "Listing URL"
+msgstr "URL de la Publicación"
+
+msgid "Direct link to the active ad on the marketplace platform"
+msgstr "Enlace directo al anuncio activo en la plataforma de marketplace"
+
+msgid "Is Active Listing"
+msgstr "Anuncio Activo"
+
+msgid "Whether this listing is currently live"
+msgstr "Indica si este anuncio está activo actualmente"
+
+msgid "Linked Products"
+msgstr "Productos Vinculados"
+
+msgid "Manager privileges required to manage listing links."
+msgstr "Se requieren privilegios de gestor para administrar enlaces de publicación."
+
+msgid "Marketplace link removed successfully."
+msgstr "Enlace de marketplace eliminado correctamente."
+
+msgid "Marketplace site identifier is required."
+msgstr "Se requiere el identificador de la plataforma de marketplace."
+
+msgid "Marketplace link cleared."
+msgstr "Enlace de marketplace borrado."
+
+msgid "Please provide a valid URL starting with http:// or https://."
+msgstr "Por favor proporciona una URL válida que empiece por http:// o https://."
+
+msgid "Link for %(site)s saved successfully."
+msgstr "Enlace para %(site)s guardado correctamente."
+
+msgid "Marketplace Listing Links"
+msgstr "Enlaces de Publicación en Marketplaces"
+
+msgid "Keep track of active listings across external resale platforms."
+msgstr "Haz seguimiento de los anuncios activos en plataformas externas de reventa."
+
+msgid "active links"
+msgstr "enlaces activos"
+
+msgid "published"
+msgstr "publicados"
+
+msgid "Visit platform home"
+msgstr "Visitar página principal de la plataforma"
+
+msgid "Listed"
+msgstr "Publicado"
+
+msgid "Not Listed"
+msgstr "No Publicado"
+
+msgid "Open Listing"
+msgstr "Abrir Anuncio"
+
+msgid "Copy URL"
+msgstr "Copiar URL"
+
+msgid "Are you sure you want to remove this link?"
+msgstr "¿Estás seguro de que deseas eliminar este enlace?"
+
+msgid "Remove"
+msgstr "Eliminar"
+
+msgid "Update listing URL"
+msgstr "Actualizar URL del anuncio"
+
+msgid "Paste listing URL (e.g. https://...)"
+msgstr "Pega la URL del anuncio (ej. https://...)"
+
+msgid "Save Link"
+msgstr "Guardar Enlace"
+
+msgid "No active marketplace platforms found. Manage platforms in Django Admin under Marketplace Sites."
+msgstr "No se encontraron plataformas activas de marketplace. Gestiona las plataformas en la Administración de Django en Plataformas de Marketplace."
+
+msgid "Archived / Deactivated Marketplace Links"
+msgstr "Enlaces de Marketplaces Archivados / Desactivados"
+
+msgid "Delete"
+msgstr "Eliminar"
+
