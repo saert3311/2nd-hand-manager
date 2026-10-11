@@ -386,3 +386,69 @@ msgstr "Precio (€)"
 
 msgid "Images"
 msgstr "Imágenes"
+
+msgid "Spanish"
+msgstr "Español"
+
+msgid "English"
+msgstr "Inglés"
+
+msgid "Language"
+msgstr "Idioma"
+
+msgid "Target listing language"
+msgstr "Idioma de destino de la publicación"
+
+msgid "Model Name"
+msgstr "Nombre del Modelo"
+
+msgid "Gemini model identifier (e.g. gemini-2.5-flash, gemini-2.5-pro)"
+msgstr "Identificador del modelo Gemini (ej. gemini-2.5-flash, gemini-2.5-pro)"
+
+msgid "Temperature"
+msgstr "Temperatura"
+
+msgid "Sampling temperature between 0.0 and 1.0"
+msgstr "Temperatura de muestreo entre 0.0 y 1.0"
+
+msgid "System Instruction"
+msgstr "Instrucción del Sistema"
+
+msgid "Custom listing instructions, marketplace guidelines (Wallapop, Vinted, eBay), and tone of voice."
+msgstr "Instrucciones personalizadas de publicación, pautas para marketplaces (Wallapop, Vinted, eBay) y tono de voz."
+
+msgid "Is Active"
+msgstr "Está Activo"
+
+msgid "Whether this configuration is actively used for listing generation."
+msgstr "Indica si esta configuración se utiliza activamente para la generación de publicaciones."
+
+msgid "AI Prompt Configuration"
+msgstr "Configuración de Prompts de IA"
+
+msgid "AI Prompt Configurations"
+msgstr "Configuraciones de Prompts de IA"
+
+msgid "Active"
+msgstr "Activo"
+
+msgid "Inactive"
+msgstr "Inactivo"
+
+msgid "Temperature must be between 0.0 and 1.0."
+msgstr "La temperatura debe estar entre 0.0 y 1.0."
+
+msgid "Model Parameters"
+msgstr "Parámetros del Modelo"
+
+msgid "Specify the Gemini model identifier (e.g. gemini-2.5-flash, gemini-2.5-pro) and sampling temperature (0.0 = deterministic, 1.0 = creative)."
+msgstr "Especifica el identificador del modelo Gemini (ej. gemini-2.5-flash, gemini-2.5-pro) y la temperatura de muestreo (0.0 = determinista, 1.0 = creativo)."
+
+msgid "Copywriting & Prompt Instructions"
+msgstr "Redacción e Instrucciones del Prompt"
+
+msgid "Define marketplace instructions, selling tone, and format guidelines. Note: The system automatically appends assistant field notes and enforces the structured title/description output schema."
+msgstr "Define las instrucciones del marketplace, el tono de venta y las pautas de formato. Nota: El sistema añade automáticamente las notas de campo del asistente y aplica el esquema estructurado de título/descripción."
+
+msgid "Status & Timestamps"
+msgstr "Estado y Marcas de Tiempo"

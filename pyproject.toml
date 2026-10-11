@@ -10,3 +10,5 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "**/migrations/*" = ["ALL"]
+"seed_products.py" = ["E402", "F401", "I001"]
+"verify_*.py" = ["E402", "F401", "I001"]
