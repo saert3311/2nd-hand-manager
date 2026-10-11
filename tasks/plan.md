@@ -75,6 +75,13 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - **Task 25:** i18n Translations and Comprehensive Test Suite for Dynamic AI Configuration.
 - **Checkpoint 9 (Dynamic AI Complete):** Managers can tune model names (free-form), temperature, and prompt copywriting instructions in Django Admin; changes apply immediately to listing generation; deactivation automatically cascades; service falls back gracefully when DB records are absent; all tests pass.
 
+### Phase 10: Marketplace Sites & External Listing Links Tracking (Vertical Slice 7)
+- **Task 26:** Marketplace Platforms & Listing Links Domain Models, Migrations & Initial Seed (`MarketplaceSite`, `ProductListingLink`).
+- **Task 27:** Django Admin Integration (`MarketplaceSiteAdmin` & `ProductListingLinkInline`).
+- **Task 28:** Product Detail Page Listing Links Management (Form handling, template UI, external links, copy buttons).
+- **Task 29:** i18n Translations & Comprehensive Test Suite for Marketplace Tracking (`tests/test_marketplace_sites.py`).
+- **Checkpoint 10 (Marketplace Tracking Complete):** Managers can configure resale sites in admin, seed data populates default platforms (Wallapop, Vinted, Milanuncios, eBay), product detail page displays links with direct navigation and one-click copy, link creation/update/deletion works seamlessly with manager gating, translations pass, and all automated tests pass.
+
 ---
 
 ## Risks and Mitigations
@@ -92,6 +99,9 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 | Dangling products if assistant user is hard deleted | Medium | `Product.created_by` uses `on_delete=models.SET_NULL`; provide safe deactivation (`is_active=False`) action to preserve historical attribution. |
 | Non-technical managers breaking prompt schema or deleting variables | High | Isolate user copywriting instructions from immutable JSON schema envelope; enforce automatic fallback on any DB error. |
 | Multiple active configurations created for the same language | Medium | Automatic demotion on `save()`: activating a configuration automatically sets any other configuration for that language to `is_active=False`. |
+| Malformed or unsafe external URLs input for marketplace links | Medium | Validate all URLs with Django `URLValidator` requiring `http` or `https` schemes; render external links with `rel="noopener noreferrer"`. |
+| N+1 queries when loading marketplace links for products | Low | Prefetch related links and sites (`prefetch_related("listing_links__site")`) on product detail view. |
+| Duplicate links created for the same platform on a product | Low | Enforce database-level `UniqueConstraint(fields=['product', 'site'])` and handle `IntegrityError` in form validation. |
 
 ---
 
@@ -102,4 +112,8 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - Approved: Explicit HTTP 403 Forbidden when assistant attempts to access `/admin/`.
 - Approved: Free-form text input for Gemini model names with helpful admin suggestions.
 - Approved: Option A for active configuration uniqueness (automatic deactivation of previous active config on save).
+- Approved: Manager-only editing for listing links on product detail page; assistants have read-only visibility (Option A).
+- Approved: Strict 1 link per platform per product via database `UniqueConstraint` (Option A).
+- Approved: Deletion behavior: clearing link or clicking remove deletes the `ProductListingLink` record (Option A).
+
 

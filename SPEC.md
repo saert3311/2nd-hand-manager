@@ -9,6 +9,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 5. **Catalog Pagination & Multi-Field Search:** Server-side pagination capping catalog listings at 20 items per page with query-preserving navigation links, accompanied by multi-field search allowing discovery by title, description/field note, and creation or sale dates.
 6. **User Management & Admin Role Gating:** Dedicated user management in Django administration restricted exclusively to store Managers (`is_manager(user)`), allowing managers to add, modify, deactivate, and remove assistants with role badges, productivity counts, and automatic permission synchronization.
 7. **Dynamic AI Model & Prompt Configuration:** Database-backed configuration managed in Django administration (`AIPromptConfiguration`), enabling store managers to tune Gemini model names (free-form), temperature, and localized copywriting prompt instructions without modifying codebase files or triggering server restarts, backed by automatic fallback to hardcoded defaults.
+8. **Marketplace Sites & External Listing Links Tracking:** Database-backed marketplace platforms table (`MarketplaceSite`) managed via Django Admin, enabling managers to define and reorder resale sites (Wallapop, Vinted, eBay, Milanuncios, etc.). Products link dynamically to these platforms (`ProductListingLink`), allowing managers to record, view, open, and copy direct listing URLs directly from the product detail staging page (`/products/<pk>/`) and Django admin.
 
 ---
 
@@ -123,16 +124,59 @@ epic-tesla/
 │   ├── test_image_service.py
 │   ├── test_ai_service.py
 │   ├── test_i18n.py              # Language negotiation and translation tests
-│   └── test_storage.py           # OCI Object Storage integration & upload tests
+│   ├── test_storage.py           # OCI Object Storage integration & upload tests
+│   └── test_marketplace_sites.py # Marketplace platforms and product listing links tests
 └── docs/
     ├── intent/
     │   └── secondhand-inventory-app.md
     ├── prds/
     │   ├── PRD-dynamic-ai-configuration.md
     │   ├── PRD-multilanguage-support.md
-    │   └── PRD-oracle-object-storage.md
+    │   ├── PRD-oracle-object-storage.md
+    │   ├── PRD-pagination-and-search.md
+    │   ├── PRD-user-management-django-admin.md
+    │   └── PRD-product-marketplace-sites-tracking.md
     └── SPEC.md
 ```
+
+---
+
+## 4.1 Code Style
+- **Conventions:** Follow PEP 8 and Django conventions. Ruff is configured as the linter (`pyproject.toml`).
+- **Typing:** Use Python 3.13+ type hints on service methods and helper utilities (e.g. `product: Product, language: str = "en" -> dict[str, str]`).
+- **Localization:** Every user-facing string must be wrapped with `gettext_lazy as _` in models/forms and `gettext as _` in views. Templates must use `{% trans "..." %}`.
+- **Example Snippet:**
+```python
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+
+class MarketplaceSite(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name=_("Site Name"))
+    slug = models.SlugField(max_length=100, unique=True, blank=True, verbose_name=_("Slug"))
+    base_url = models.URLField(max_length=255, blank=True, default="", verbose_name=_("Base URL"))
+    is_active = models.BooleanField(default=True, db_index=True, verbose_name=_("Is Active"))
+    order = models.PositiveIntegerField(default=0, verbose_name=_("Display Order"))
+
+    class Meta:
+        ordering = ["order", "name"]
+        verbose_name = _("Marketplace Site")
+        verbose_name_plural = _("Marketplace Sites")
+
+    def __str__(self) -> str:
+        return self.name
+```
+
+---
+
+## 4.2 Testing Strategy
+- **Framework:** Django standard `django.test.TestCase` run via `.venv\Scripts\python.exe manage.py test`.
+- **Location:** Project `tests/` directory with targeted modules (e.g. `tests/test_marketplace_sites.py`).
+- **Coverage:**
+  - Unit tests for models (validation, unique constraints, ordering, string representation).
+  - Admin integration tests (permissions gating with `ManagerAdminSite`, inline rendering, actions).
+  - View tests for product detail page (link rendering, form submission, CSRF, URL validation, unauthorized role checks).
+  - Internationalization tests for Spanish catalog translation of new models, forms, and admin labels.
+  - Zero mock-leaks: Mock external network calls (e.g. OCI, Gemini) so the test suite runs fully offline in seconds.
 
 ---
 
@@ -173,6 +217,31 @@ epic-tesla/
 | `created_at` | DateTimeField | auto_now_add=True | Configuration creation timestamp |
 | `updated_at` | DateTimeField | auto_now=True | Last modification timestamp |
 
+### 5.4 `MarketplaceSite`
+| Field | Type | Attributes | Description |
+|---|---|---|---|
+| `id` | AutoField | Primary Key | Unique site identifier |
+| `name` | CharField | max_length=100, unique=True | Marketplace name (e.g., Wallapop, Vinted, eBay, Milanuncios) |
+| `slug` | SlugField | max_length=100, unique=True, blank=True | URL slug and programmatic identifier |
+| `base_url` | URLField | max_length=255, blank=True, default="" | Base URL / portal home (e.g., https://es.wallapop.com) |
+| `is_active` | BooleanField | default=True, db_index=True | Whether platform is active and displayed in listing link forms |
+| `order` | PositiveIntegerField | default=0 | Display ordering in UI lists and forms |
+| `created_at` | DateTimeField | auto_now_add=True | Platform creation timestamp |
+| `updated_at` | DateTimeField | auto_now=True | Platform update timestamp |
+
+### 5.5 `ProductListingLink`
+| Field | Type | Attributes | Description |
+|---|---|---|---|
+| `id` | AutoField | Primary Key | Unique link identifier |
+| `product` | ForeignKey(Product) | related_name='listing_links', on_delete=CASCADE | Parent staged product |
+| `site` | ForeignKey(MarketplaceSite) | related_name='product_links', on_delete=CASCADE | Marketplace site platform |
+| `url` | URLField | max_length=1000 | Direct external URL to the live listing ad |
+| `is_active` | BooleanField | default=True | Whether the ad is currently active / published |
+| `created_at` | DateTimeField | auto_now_add=True | Link creation timestamp |
+| `updated_at` | DateTimeField | auto_now=True | Link modification timestamp |
+
+Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_site_link')`
+
 ---
 
 ## 6. Key Features & Workflows
@@ -207,6 +276,7 @@ epic-tesla/
   - **AI Generation Engine:** "Generate AI Listing" button calling Gemini Multimodal Vision with attached images and `raw_note`. Returns structured JSON (`title`, `description`).
   - **One-Click Copy:** Fast copy buttons for Title and Description to paste directly into marketplace listing windows.
   - **Sales Management:** Form to update `sale_price` (in `€`) and toggle `is_sold`.
+  - **Marketplace Links Card:** Dedicated visual section listing all active marketplace platforms (Wallapop, Vinted, eBay, Milanuncios, etc.). For each platform, display live ad link (clickable in new tab), one-click copy URL button, and input/controls to add, edit, or delete external listing links.
 
 ### 6.4 Internationalization & Localization (i18n / l10n)
 - **Automatic Language Negotiation & Manual Switcher:**
@@ -248,6 +318,18 @@ epic-tesla/
     - Year: `YYYY`
     Matches `created_at__date` and `sold_at__date` when recognized as a valid date.
   - Unified UX: Manager enters either text, a date, or both without needing separate search fields.
+
+### 6.7 Marketplace Sites & External Listing Tracking
+- **Configurable Platforms (`MarketplaceSite`):**
+  - Store managers can create, edit, sort, and deactivate marketplace sites via Django Administration (`/admin/`).
+  - Fields include `name`, `slug`, `base_url`, `is_active`, and `order`.
+  - Default sites seeded automatically: Wallapop, Vinted, Milanuncios, eBay.
+  - Flexibility: Adding new platforms (e.g. Vestiaire Collective, Todocoleccion, Etsy) requires zero code modifications or schema migrations.
+- **Product Listing Links (`ProductListingLink`):**
+  - Connects a `Product` to a `MarketplaceSite` with the live ad `url`.
+  - Enforces uniqueness per `(product, site)` tuple so each product has at most one live listing URL per platform.
+  - Displayed on `/products/<pk>/` with platform badges, one-click copy buttons, and direct external navigation with `target="_blank" rel="noopener noreferrer"`.
+  - Inline editing and link deletion directly on the product detail page and in Django admin.
 
 ---
 
@@ -299,6 +381,14 @@ def generate_product_listing(
   - Registered in `ManagerAdminSite` restricted to managers.
   - Enables managers to view and edit `model_name` (free-form), `temperature`, `system_instruction`, and `is_active` for each language (`es`, `en`).
   - Validation ensures valid temperatures (0.0 to 1.0) and maintains only one active configuration per language.
+- **Marketplace Platforms Admin (`MarketplaceSiteAdmin`):**
+  - Registered in `ManagerAdminSite` restricted to managers (`is_manager(user)`).
+  - Enables managers to view, add, modify, reorder (`order`), and toggle `is_active` for supported marketplace sites.
+  - List display includes platform name, slug, base URL, active status, order, and count of linked products.
+  - Prepopulated `slug` field generated from `name`.
+- **Product Listing Links Admin Inline (`ProductListingLinkInline`):**
+  - Configured as a `TabularInline` within `ProductAdmin`.
+  - Enables managers to view, add, and adjust marketplace links directly when editing a product in `/admin/`.
 
 ---
 
@@ -320,6 +410,10 @@ def generate_product_listing(
   - Synchronize `is_staff` flag automatically based on manager vs assistant role.
   - Retrieve AI model, temperature, and prompt from active `AIPromptConfiguration` with transparent fallback to hardcoded constants if unavailable.
   - Enforce that user-edited prompt instructions cannot bypass Pydantic `ProductListingSchema` validation.
+  - Validate all marketplace listing URLs with Django's `URLValidator` enforcing standard HTTP/HTTPS schemes.
+  - Enforce uniqueness of listing links per product and marketplace site (`UniqueConstraint(fields=['product', 'site'])`).
+  - Restrict marketplace platform configuration in `/admin/` strictly to managers.
+  - Cascade delete listing links when a parent product is deleted.
 - **Ask First:**
   - Choosing between OCI S3-compatible API keys vs Native OCI API Key (PEM) authentication.
   - Configuring bucket access permissions (public bucket vs presigned URLs).
@@ -328,6 +422,9 @@ def generate_product_listing(
   - Implementing infinite scrolling or client-side JavaScript pagination instead of server-side pagination.
   - Changing authentication backend (e.g. SSO / OAuth).
   - Adding external LLM providers (e.g. OpenAI, Anthropic) beyond Google Gemini.
+  - Allowing non-manager assistants to add or modify listing URLs on the product page.
+  - Allowing multiple distinct links for the exact same marketplace platform on a single product.
+  - Automated marketplace scraping or API syncing with external platforms.
 - **Never:**
   - Store permanent product images on local server disk (`MEDIA_ROOT`).
   - Commit OCI secrets, private keys, or passwords to version control.
@@ -338,6 +435,9 @@ def generate_product_listing(
   - Allow non-manager assistants to access Django administration (`/admin/`).
   - Allow non-manager assistants to access or edit `AIPromptConfiguration`.
   - Crash AI listing generation when a database prompt configuration is missing, deactivated, or malformed (always fall back to safe defaults).
+  - Allow non-manager assistants to create, modify, or delete `MarketplaceSite` records in Django Admin.
+  - Store unsafe URL protocols (e.g. `javascript:`, `data:`) in marketplace links.
+  - Hardcode marketplace platforms in application code without a database-backed `MarketplaceSite` model.
 
 ---
 
@@ -360,6 +460,14 @@ def generate_product_listing(
 16. Changes made to active prompt configurations immediately apply to subsequent AI listing generations.
 17. Deactivating or deleting configurations causes `generate_product_listing` to gracefully fall back to built-in defaults without crashing.
 18. Database migrations pre-populate active default configurations for Spanish and English.
+19. Managers can add, edit, reorder, and deactivate `MarketplaceSite` records in `/admin/`.
+20. Migrations pre-populate active default platforms: Wallapop, Vinted, Milanuncios, and eBay.
+21. The product detail page (`/products/<pk>/`) displays all active marketplace platforms in a dedicated links card.
+22. Saved marketplace links render with direct external link navigation (`target="_blank" rel="noopener noreferrer"`) and one-click copy buttons.
+23. Managers can add, edit, or delete marketplace links directly on the product detail page and in Django admin (`ProductListingLinkInline`).
+24. Database constraint prevents duplicate links for the same platform on a single product.
+25. Deactivating a site in Django Admin immediately removes it from new link inputs while preserving existing links.
+26. All new model fields, admin forms, and product page link elements display cleanly in Spanish (`es`) and English (`en`).
 
 ---
 
@@ -380,6 +488,9 @@ def generate_product_listing(
 - **AI Parameter Configuration:** Database-backed `AIPromptConfiguration` model editable in Django admin.
 - **Model Name Flexibility:** Free-form text input (defaulting to `gemini-2.5-flash`) to enable zero-code adoption of new Gemini releases.
 - **Prompt Safety Boundary:** Separation of editable copywriting tone from immutable JSON output schema envelopes to prevent parsing failures.
+- **Marketplace Platforms Architecture:** Decoupled `MarketplaceSite` model managed in Django Admin instead of hardcoded choice fields to allow adding new marketplaces on the fly.
+- **Listing Link Cardinality:** One link per marketplace platform per product via database `UniqueConstraint(fields=['product', 'site'])`.
+- **URL Security:** Validation using Django `URLValidator` enforcing standard `http`/`https` protocols.
 
 ---
 
@@ -399,4 +510,20 @@ def generate_product_listing(
    - **Option A (Automatic Deactivation of Previous - Recommended):** Saving an active configuration automatically sets any other configuration for that same language to `is_active=False`.
    - **Option B (Strict Validation Error):** If an active configuration already exists for that language, the admin form rejects the save with a validation error asking the manager to manually deactivate the other one first.
    *Which behavior do you prefer for managing active configurations?*
+4. **Product Page Link Modification Roles:**
+   - On the product detail page (`/products/<pk>/`), should Field Sourcing Assistants (User A) be allowed to input and edit marketplace listing links, or should link editing be reserved strictly for Store Managers (User B)?
+   - **Option A (Recommended):** Manager-only editing. Assistants have read-only visibility (clickable external links and copy buttons), matching the pricing and staging permission model.
+   - **Option B:** Both Assistants and Managers can add and update listing links on `/products/<pk>/`.
+   *Which role access model do you prefer for modifying listing links on the product page?*
+5. **Multiple Listings Per Platform:**
+   - Can a product ever have more than one listing link on the same marketplace platform (e.g. two separate Wallapop ads for different bundles or test listings)?
+   - **Option A (Recommended):** Strict 1 link per platform per product (`UniqueConstraint`). Keeps the UI clean and simple.
+   - **Option B:** Allow multiple links per platform per product (no uniqueness constraint on `(product, site)`).
+   *Do you want to restrict to one link per platform per product, or allow multiple links per site?*
+6. **Marketplace Link Deletion Behavior:**
+   - When a manager wants to clear a link for a marketplace on the product detail page:
+   - **Option A (Recommended):** Provide a direct "Remove" button or saving an empty input deletes the `ProductListingLink` record.
+   - **Option B:** Provide an "Active/Inactive" toggle for each link so the URL is retained historically even if delisted.
+   *How would you like removal or delisting to be handled on the product detail page?*
+
 

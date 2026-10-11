@@ -577,6 +577,89 @@
 - [x] Active config changes immediately reflect in listing generation.
 - [x] Fallback ensures 100% resilience when database configuration is absent.
 
+---
+
+## Phase 10: Marketplace Sites & External Listing Links Tracking (Vertical Slice 7)
+
+### Task 26: Marketplace Platforms & Listing Links Domain Models, Migrations & Initial Seed
+**Description:** Implement `MarketplaceSite` (`name`, `slug`, `base_url`, `is_active`, `order`, timestamps) and `ProductListingLink` (`product`, `site`, `url`, `is_active`, timestamps) models in `inventory/models.py`. Configure unique constraint `(product, site)` on `ProductListingLink`, URL validation, ordering, and verbose names with `gettext_lazy`. Generate schema migration and create data migration seeding default platforms (Wallapop, Vinted, Milanuncios, eBay).
+**Acceptance criteria:**
+- [x] `MarketplaceSite` and `ProductListingLink` models created with required fields, constraints, and string representations.
+- [x] Schema migration created and applied cleanly.
+- [x] Data migration seeds active platforms: Wallapop (`https://es.wallapop.com`), Vinted (`https://www.vinted.es`), Milanuncios (`https://www.milanuncios.com`), and eBay (`https://www.ebay.es`).
+**Verification:**
+- [x] Command succeeds: `python manage.py makemigrations --check --dry-run`
+- [x] Command succeeds: `python manage.py migrate`
+**Dependencies:** Checkpoint 9
+**Files likely touched:**
+- `inventory/models.py`
+- `inventory/migrations/`
+**Estimated scope:** Medium (3-4 files)
+
+---
+
+### Task 27: Django Admin Integration (MarketplaceSiteAdmin & ProductListingLinkInline)
+**Description:** Register `MarketplaceSite` in `inventory/admin.py` under `ManagerAdminSite`. Provide list display (`name`, `slug`, `base_url`, `is_active`, `order`, `links_count`), list editable (`is_active`, `order`), search fields (`name`, `slug`, `base_url`), and prepopulated slug from name. Register `ProductListingLinkInline` as a `TabularInline` in `ProductAdmin` to inspect and edit listing URLs directly on the product admin change page. Ensure assistant users are strictly denied access via site-level permission gating.
+**Acceptance criteria:**
+- [x] `MarketplaceSiteAdmin` registered under `admin_site` with list display, search, and ordering.
+- [x] `ProductListingLinkInline` displayed within `ProductAdmin`.
+- [x] Non-manager assistants cannot access `/admin/` or manipulate sites/links.
+**Verification:**
+- [x] Command succeeds: `python manage.py check`
+**Dependencies:** Task 26
+**Files likely touched:**
+- `inventory/admin.py`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 28: Product Detail Page Listing Links Management (Form Handling & Template UI)
+**Description:** Implement listing links management on the product detail staging page (`/products/<pk>/`). In `inventory/views.py`, prefetch product links and active sites, and handle link additions, updates, or removals (restricted to managers). Update `inventory/templates/inventory/product_detail.html` with a dedicated "Marketplace Links" card displaying active platforms, live link navigation (`target="_blank" rel="noopener noreferrer"`), one-click copy URL button, and manager-only edit/delete controls (with read-only view for assistants).
+**Acceptance criteria:**
+- [x] Product detail page displays an integrated card listing all active marketplace platforms.
+- [x] Managers can add, update, and remove URLs for any active platform directly on the page.
+- [x] Saved links provide direct clickable external links and one-click copy buttons.
+- [x] Assistants have read-only visibility (can click links and copy URLs, but cannot edit or delete).
+**Verification:**
+- [x] Manual test: Staging page loads with active platforms, link is saved, copied, and opened in new tab.
+**Dependencies:** Task 26, Task 27
+**Files likely touched:**
+- `inventory/forms.py`
+- `inventory/views.py`
+- `inventory/templates/inventory/product_detail.html`
+**Estimated scope:** Medium (3 files)
+
+---
+
+### Task 29: i18n Translations & Comprehensive Test Suite for Marketplace Tracking
+**Description:** Translate all new model fields, admin strings, and product detail UI elements into Spanish in `locale/es/LC_MESSAGES/django.po` and compile catalogs with `compile_locales`. Implement comprehensive tests in `tests/test_marketplace_sites.py` covering: model validation, unique constraint on `(product, site)`, seed migration data, admin permission gating, product detail view CRUD and role enforcement, and translation catalog integrity. Ensure full repository test suite and linter pass.
+**Acceptance criteria:**
+- [x] All new strings translated in `locale/es/` and compiled to binary `.mo`.
+- [x] Comprehensive unit & integration tests written in `tests/test_marketplace_sites.py` covering models, admin, views, permissions, and validation.
+- [x] Full test suite passes: `python manage.py test`.
+- [x] Linter passes: `ruff check .`.
+**Verification:**
+- [x] Command succeeds: `python manage.py compile_locales`
+- [x] Full test suite passes: `python manage.py test`
+- [x] Linter passes: `ruff check .`
+**Dependencies:** Task 28
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_marketplace_sites.py`
+**Estimated scope:** Medium (3-4 files)
+
+---
+
+## Checkpoint 10: Marketplace Sites Tracking Complete
+- [x] All unit and integration tests pass (`python manage.py test`).
+- [x] Code passes `ruff check .`.
+- [x] Managers can add and manage marketplace platforms in Django admin.
+- [x] Product detail page displays marketplace listing links with external navigation and one-click copy.
+- [x] Managers can edit/delete links, while assistants have read-only access.
+- [x] All features localized in Spanish and English.
+
+
 
 
 
