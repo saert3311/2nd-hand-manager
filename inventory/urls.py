@@ -8,6 +8,7 @@ from .views import (
     product_detail_view,
     product_download_zip_view,
     product_intake_view,
+    product_manage_link_view,
     root_redirect_view,
 )
 
@@ -22,5 +23,6 @@ urlpatterns = [
     path("products/<int:pk>/", product_detail_view, name="product_detail"),
     path("products/<int:pk>/download-zip/", product_download_zip_view, name="download_zip"),
     path("products/<int:pk>/generate-ai/", generate_ai_view, name="generate_ai"),
+    path("products/<int:pk>/links/", product_manage_link_view, name="manage_link"),
 ]
 

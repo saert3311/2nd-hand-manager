@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
+from django.core.validators import URLValidator
 from django.db import transaction
 from django.db.models import Count, Q
 from django.http import HttpResponse
@@ -16,7 +17,7 @@ from django.utils.translation import get_language
 from django.utils.translation import gettext as _
 
 from .forms import ProductIntakeForm, ProductUpdateForm
-from .models import Product, ProductImage
+from .models import MarketplaceSite, Product, ProductImage, ProductListingLink
 from .permissions import is_assistant, is_manager, manager_required
 from .services.image_service import (
     MAX_IMAGES_PER_PRODUCT,
@@ -182,7 +183,10 @@ def product_detail_view(request, pk):
     Product staging detail view: inspect photos, copy listing copy,
     download ZIP, and edit pricing / sold status.
     """
-    product = get_object_or_404(Product.objects.prefetch_related("images"), pk=pk)
+    product = get_object_or_404(
+        Product.objects.prefetch_related("images", "listing_links__site"),
+        pk=pk,
+    )
     can_manage = is_manager(request.user)
 
     if request.method == "POST":
@@ -204,12 +208,84 @@ def product_detail_view(request, pk):
     else:
         form = ProductUpdateForm(instance=product)
 
+    active_sites = MarketplaceSite.objects.filter(is_active=True).order_by("order", "name")
+    links_by_site = {link.site_id: link for link in product.listing_links.all()}
+    site_links_data = [
+        {"site": s, "link": links_by_site.get(s.id)}
+        for s in active_sites
+    ]
+    active_site_ids = {s.id for s in active_sites}
+    extra_inactive_links = [
+        link for link in product.listing_links.all()
+        if link.site_id not in active_site_ids
+    ]
+
     context = {
         "product": product,
         "form": form,
         "can_manage": can_manage,
+        "site_links_data": site_links_data,
+        "extra_inactive_links": extra_inactive_links,
     }
     return render(request, "inventory/product_detail.html", context)
+
+
+@login_required
+def product_manage_link_view(request, pk):
+    """
+    Handles adding, updating, and removing marketplace links for a product.
+    Restricted to managers.
+    """
+    if not is_manager(request.user):
+        messages.error(request, _("Manager privileges required to manage listing links."))
+        return redirect("inventory:product_detail", pk=pk)
+
+    if request.method != "POST":
+        return redirect("inventory:product_detail", pk=pk)
+
+    product = get_object_or_404(Product, pk=pk)
+    action = request.POST.get("action", "save")
+    site_id = request.POST.get("site_id")
+
+    if action == "delete":
+        link_id = request.POST.get("link_id")
+        if link_id:
+            ProductListingLink.objects.filter(pk=link_id, product=product).delete()
+            messages.success(request, _("Marketplace link removed successfully."))
+        elif site_id:
+            ProductListingLink.objects.filter(site_id=site_id, product=product).delete()
+            messages.success(request, _("Marketplace link removed successfully."))
+        return redirect("inventory:product_detail", pk=pk)
+
+    if not site_id:
+        messages.error(request, _("Marketplace site identifier is required."))
+        return redirect("inventory:product_detail", pk=pk)
+
+    site = get_object_or_404(MarketplaceSite, pk=site_id)
+    raw_url = request.POST.get("url", "").strip()
+
+    if not raw_url:
+        ProductListingLink.objects.filter(product=product, site=site).delete()
+        messages.success(request, _("Marketplace link cleared."))
+        return redirect("inventory:product_detail", pk=pk)
+
+    validator = URLValidator(schemes=["http", "https"])
+    try:
+        validator(raw_url)
+    except ValidationError:
+        messages.error(request, _("Please provide a valid URL starting with http:// or https://."))
+        return redirect("inventory:product_detail", pk=pk)
+
+    ProductListingLink.objects.update_or_create(
+        product=product,
+        site=site,
+        defaults={"url": raw_url, "is_active": True},
+    )
+    messages.success(
+        request,
+        _("Link for %(site)s saved successfully.") % {"site": site.name},
+    )
+    return redirect("inventory:product_detail", pk=pk)
 
 
 @login_required

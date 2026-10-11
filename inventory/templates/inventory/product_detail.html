@@ -192,6 +192,134 @@
         </form>
       </div>
 
+      <!-- Marketplace Links Card -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🔗</span>
+            <div>
+              <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                {% trans "Marketplace Listing Links" %}
+              </h2>
+              <p class="text-[11px] text-slate-500 mt-0.5">
+                {% trans "Keep track of active listings across external resale platforms." %}
+              </p>
+            </div>
+          </div>
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
+            {{ product.listing_links.count }} {% trans "published" %}
+          </span>
+        </div>
+
+        {% if site_links_data %}
+        <div class="space-y-4">
+          {% for row in site_links_data %}
+          <div data-site-slug="{{ row.site.slug }}" class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-xs text-slate-800">{{ row.site.name }}</span>
+                {% if row.site.base_url %}
+                <a href="{{ row.site.base_url }}" target="_blank" rel="noopener noreferrer"
+                   class="text-[11px] text-slate-400 hover:text-slate-600 transition" title="{% trans 'Visit platform home' %}">
+                  ({{ row.site.base_url|truncatechars:30 }})
+                </a>
+                {% endif %}
+              </div>
+              <div>
+                {% if row.link %}
+                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  {% trans "Listed" %}
+                </span>
+                {% else %}
+                <span class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-200/70 text-slate-600">
+                  {% trans "Not Listed" %}
+                </span>
+                {% endif %}
+              </div>
+            </div>
+
+            {% if row.link %}
+            <!-- Existing Link View & Action -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white p-2.5 rounded-lg border border-slate-200">
+              <a href="{{ row.link.url }}" target="_blank" rel="noopener noreferrer"
+                 class="text-xs font-medium text-emerald-700 hover:text-emerald-900 break-all flex items-center gap-1.5 group">
+                <span class="group-hover:translate-x-0.5 transition-transform">↗</span>
+                <span>{{ row.link.url }}</span>
+              </a>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" onclick="copyLinkUrl('{{ row.link.url|escapejs }}', this)"
+                        class="text-xs px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center gap-1">
+                  <span>📋</span> {% trans "Copy URL" %}
+                </button>
+                {% if can_manage %}
+                <form method="post" action="{% url 'inventory:manage_link' product.pk %}" class="inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="site_id" value="{{ row.site.id }}">
+                  <button type="submit" onclick="return confirm('{% trans 'Are you sure you want to remove this link?' %}');"
+                          class="text-xs px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-md font-medium transition flex items-center gap-1">
+                    <span>✕</span> {% trans "Remove" %}
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+
+            {% if can_manage %}
+            <!-- Input to Add or Update Link -->
+            <form method="post" action="{% url 'inventory:manage_link' product.pk %}" class="flex items-center gap-2">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="save">
+              <input type="hidden" name="site_id" value="{{ row.site.id }}">
+              <input type="url" name="url" value="{{ row.link.url|default:'' }}"
+                     placeholder="{% if row.link %}{% trans 'Update listing URL' %}{% else %}{% trans 'Paste listing URL (e.g. https://...)' %}{% endif %}"
+                     class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono">
+              <button type="submit"
+                      class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg transition whitespace-nowrap">
+                {% if row.link %}{% trans "Update" %}{% else %}{% trans "Save Link" %}{% endif %}
+              </button>
+            </form>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-slate-500">
+          {% trans "No active marketplace platforms found. Manage platforms in Django Admin under Marketplace Sites." %}
+        </div>
+        {% endif %}
+
+        {% if extra_inactive_links %}
+        <!-- Inactive/Archived Platforms with Existing Links -->
+        <div class="pt-3 border-t border-slate-100 space-y-2">
+          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            {% trans "Archived / Deactivated Marketplace Links" %}
+          </h3>
+          {% for link in extra_inactive_links %}
+          <div class="p-2.5 rounded-lg border border-amber-200 bg-amber-50/50 flex items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-slate-700">{{ link.site.name }}</span>
+              <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="text-emerald-700 hover:underline">
+                {{ link.url|truncatechars:40 }}
+              </a>
+            </div>
+            {% if can_manage %}
+            <form method="post" action="{% url 'inventory:manage_link' product.pk %}" class="inline">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="link_id" value="{{ link.id }}">
+              <button type="submit" class="text-rose-600 hover:text-rose-800 font-bold">{% trans "Delete" %}</button>
+            </form>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+      </div>
+
     </div>
 
   </div>
@@ -236,6 +364,21 @@
     });
   }
 
+  function copyLinkUrl(url, btn) {
+    if (!url) return;
+    navigator.clipboard.writeText(url).then(() => {
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span>✅</span> {% trans "Copied!" %}';
+      btn.classList.add('bg-emerald-200', 'text-emerald-900');
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.remove('bg-emerald-200', 'text-emerald-900');
+      }, 1500);
+    }).catch(err => {
+      console.error('Failed to copy', err);
+    });
+  }
+
   const aiForm = document.getElementById('aiForm');
   if (aiForm) {
     aiForm.addEventListener('submit', () => {
@@ -249,3 +392,4 @@
   }
 </script>
 {% endblock %}
+
