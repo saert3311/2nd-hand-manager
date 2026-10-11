@@ -11,7 +11,13 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from .models import AIPromptConfiguration, Product, ProductImage
+from .models import (
+    AIPromptConfiguration,
+    MarketplaceSite,
+    Product,
+    ProductImage,
+    ProductListingLink,
+)
 from .permissions import ROLE_ASSISTANT, ROLE_MANAGER, is_assistant, is_manager
 
 User = get_user_model()
@@ -219,6 +225,13 @@ class ProductImageInline(admin.TabularInline):
     image_preview.short_description = _("Preview")
 
 
+class ProductListingLinkInline(admin.TabularInline):
+    model = ProductListingLink
+    extra = 1
+    fields = ("site", "url", "is_active", "created_at", "updated_at")
+    readonly_fields = ("created_at", "updated_at")
+
+
 @admin.register(Product, site=admin_site)
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
@@ -232,7 +245,7 @@ class ProductAdmin(admin.ModelAdmin):
     )
     list_filter = ("is_sold", "created_at")
     search_fields = ("ai_title", "raw_note", "ai_description")
-    inlines = [ProductImageInline]
+    inlines = [ProductImageInline, ProductListingLinkInline]
     readonly_fields = ("created_at", "updated_at", "sold_at")
 
     def has_module_permission(self, request):
@@ -354,3 +367,65 @@ class AIPromptConfigurationAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return bool(request.user and request.user.is_active and is_manager(request.user))
+
+
+@admin.register(MarketplaceSite, site=admin_site)
+class MarketplaceSiteAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "slug",
+        "base_url",
+        "is_active",
+        "order",
+        "links_count",
+        "updated_at",
+    )
+    list_editable = ("is_active", "order")
+    list_filter = ("is_active",)
+    search_fields = ("name", "slug", "base_url")
+    prepopulated_fields = {"slug": ("name",)}
+    readonly_fields = ("created_at", "updated_at")
+
+    def links_count(self, obj):
+        return obj.product_links.count()
+
+    links_count.short_description = _("Linked Products")
+
+    def has_module_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_change_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_add_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_delete_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+
+@admin.register(ProductListingLink, site=admin_site)
+class ProductListingLinkAdmin(admin.ModelAdmin):
+    list_display = ("id", "product", "site", "url", "is_active", "created_at")
+    list_filter = ("site", "is_active", "created_at")
+    search_fields = ("product__ai_title", "product__raw_note", "url")
+    readonly_fields = ("created_at", "updated_at")
+
+    def has_module_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_change_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_add_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_delete_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
