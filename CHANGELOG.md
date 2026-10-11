@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Dashboard Marketplace Platform Filter**:
+  - Dynamic platform selector on the inventory dashboard (`/dashboard/`) displaying only resale platforms that currently have at least one active product link (`product_links__is_active=True`), annotated with their published product count (e.g. `Wallapop (12)`, `Vinted (8)`). Platforms with 0 published items are strictly omitted.
+  - Seamless auto-submission on selection (`onchange="this.form.submit()"`) with full filter state preservation across status tabs (`status=active`, `status=sold`, `status=all`), unified search queries (`q`), and pagination (`page`).
+  - Dynamic status counters scoping: when a platform filter is active, dashboard counters ("All", "Active", "Sold") dynamically update to reflect the counts of products published on that specific platform.
+  - Visual platform badges on product catalog cards displaying live published channels.
+  - Complete Spanish localization for all selector labels and accessibility strings.
+  - 10 new unit and integration tests added to `tests/test_marketplace_sites.py` covering dynamic aggregation, platform filtering, status scoping, search combinations, invalid slugs, and pagination (129 total passing tests).
 - **Marketplace Sites & Product Listing Links Tracking (`MarketplaceSite`, `ProductListingLink`)**:
   - Configurable `MarketplaceSite` model managed in Django administration (`ManagerAdminSite`), enabling store managers to add, reorder (`order`), and toggle active status for resale platforms (Wallapop, Vinted, Milanuncios, eBay, Vestiaire Collective, Etsy, etc.).
   - Automatic database seed migration populating default active platforms: Wallapop, Vinted, Milanuncios, and eBay.

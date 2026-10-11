@@ -576,3 +576,12 @@ msgstr "Enlaces de Marketplaces Archivados / Desactivados"
 msgid "Delete"
 msgstr "Eliminar"
 
+msgid "All Platforms"
+msgstr "Todas las plataformas"
+
+msgid "Filter by marketplace platform"
+msgstr "Filtrar por plataforma de marketplace"
+
+msgid "Clear search"
+msgstr "Limpiar búsqueda"
+
