@@ -123,12 +123,34 @@ def product_intake_view(request):
 @login_required
 def dashboard_view(request):
     """
-    Catalog overview dashboard with filters, multi-field search, and server-side pagination.
+    Catalog overview dashboard with status filters, platform filtering,
+    multi-field search, and server-side pagination.
     """
     status_filter = request.GET.get("status", "all").strip().lower()
     search_query = request.GET.get("q", "").strip()
+    platform_filter = request.GET.get("platform", "").strip().lower()
 
-    products = Product.objects.prefetch_related("images").all()
+    # Query only marketplace sites that have at least one active published product
+    available_platforms = (
+        MarketplaceSite.objects.filter(product_links__is_active=True)
+        .annotate(
+            published_count=Count(
+                "product_links__product",
+                filter=Q(product_links__is_active=True),
+                distinct=True,
+            )
+        )
+        .filter(published_count__gt=0)
+        .order_by("order", "name")
+    )
+
+    products = Product.objects.prefetch_related("images", "listing_links__site").all()
+
+    if platform_filter:
+        products = products.filter(
+            listing_links__site__slug=platform_filter,
+            listing_links__is_active=True,
+        ).distinct()
 
     if status_filter == "active":
         products = products.filter(is_sold=False)
@@ -138,10 +160,18 @@ def dashboard_view(request):
     if search_query:
         products = products.filter(build_search_query(search_query))
 
-    counts = Product.objects.aggregate(
-        total_count=Count("id"),
-        active_count=Count("id", filter=Q(is_sold=False)),
-        sold_count=Count("id", filter=Q(is_sold=True)),
+    # Calculate status counts (scoped to selected platform if active)
+    counts_qs = Product.objects.all()
+    if platform_filter:
+        counts_qs = counts_qs.filter(
+            listing_links__site__slug=platform_filter,
+            listing_links__is_active=True,
+        ).distinct()
+
+    counts = counts_qs.aggregate(
+        total_count=Count("id", distinct=True),
+        active_count=Count("id", filter=Q(is_sold=False), distinct=True),
+        sold_count=Count("id", filter=Q(is_sold=True), distinct=True),
     )
 
     paginator = Paginator(products, PAGE_SIZE)
@@ -155,7 +185,7 @@ def dashboard_view(request):
         else []
     )
 
-    # Clean query string for pagination links preserving status & search filter
+    # Clean query string for pagination links preserving status, platform & search filter
     extra_params = request.GET.copy()
     if "page" in extra_params:
         del extra_params["page"]
@@ -169,6 +199,8 @@ def dashboard_view(request):
         "query_string": query_string,
         "status_filter": status_filter,
         "search_query": search_query,
+        "platform_filter": platform_filter,
+        "available_platforms": available_platforms,
         "total_count": counts["total_count"] or 0,
         "active_count": counts["active_count"] or 0,
         "sold_count": counts["sold_count"] or 0,
