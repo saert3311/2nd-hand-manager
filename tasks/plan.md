@@ -82,6 +82,12 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - **Task 29:** i18n Translations & Comprehensive Test Suite for Marketplace Tracking (`tests/test_marketplace_sites.py`).
 - **Checkpoint 10 (Marketplace Tracking Complete):** Managers can configure resale sites in admin, seed data populates default platforms (Wallapop, Vinted, Milanuncios, eBay), product detail page displays links with direct navigation and one-click copy, link creation/update/deletion works seamlessly with manager gating, translations pass, and all automated tests pass.
 
+### Phase 11: Dashboard Marketplace Platform Filter (Vertical Slice 6)
+- **Task 30:** Backend Filtering & Dynamic Platform Aggregation in `dashboard_view` (Filter by platform slug, annotate active published product count, scope status counters to selected platform).
+- **Task 31:** Dashboard Template UI for Platform Selector & Multi-Filter Composition (Tailwind dropdown, auto-submit on change, state preservation across status tabs, search bar, and pagination).
+- **Task 32:** i18n Translations & Comprehensive Automated Test Suite for Platform Filter (Update Spanish catalogs, unit & integration tests covering dynamic platform query, filtering, counter scoping, and multi-filter retention).
+- **Checkpoint 11 (Platform Filter Complete):** Platform selector displays only platforms with active published products, filters catalog instantly on change, retains status/search/page query state, scopes status counters accurately, and passes all automated tests.
+
 ---
 
 ## Risks and Mitigations
@@ -93,7 +99,7 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 | EXIF orientation bugs on mobile uploads | Low | Use `PIL.ImageOps.exif_transpose` during WebP conversion to normalize orientation. |
 | Missing GNU gettext tools on Windows | High | Provide Python-native `compile_locales` management command using `polib` to compile binary `.mo` files without external tools. |
 | Tests failing due to missing OCI cloud credentials | High | Keep default storage configurable with in-memory / local fallback in test runner so CI/local tests remain fast and offline. |
-| Unsafe search queries or parameter injection | Medium | Parameterize all text queries and date lookups using Django ORM `Q` filters; escape query strings in templates with `\|urlencode`. |
+| Unsafe search queries or parameter injection | Medium | Parameterize all text queries and date lookups using Django ORM `Q` filters; escape query strings in templates with `|urlencode`. |
 | Loss of active filter/search when clicking pagination links | Medium | Pass active query string parameters (`status`, `q`) to template context and append to page URLs. |
 | Assistant gaining access to Django admin via direct URL | High | Subclass `admin.AdminSite` with custom `has_permission` returning 403 if not `is_manager(request.user)`. |
 | Dangling products if assistant user is hard deleted | Medium | `Product.created_by` uses `on_delete=models.SET_NULL`; provide safe deactivation (`is_active=False`) action to preserve historical attribution. |
@@ -102,6 +108,8 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 | Malformed or unsafe external URLs input for marketplace links | Medium | Validate all URLs with Django `URLValidator` requiring `http` or `https` schemes; render external links with `rel="noopener noreferrer"`. |
 | N+1 queries when loading marketplace links for products | Low | Prefetch related links and sites (`prefetch_related("listing_links__site")`) on product detail view. |
 | Duplicate links created for the same platform on a product | Low | Enforce database-level `UniqueConstraint(fields=['product', 'site'])` and handle `IntegrityError` in form validation. |
+| Empty or invalid platform slug causing empty results or crashes | Low | Gracefully validate platform slug against database; use `.distinct()` on product querysets when filtering across joins. |
+| Platforms without published products cluttering the dropdown | Low | Filter `available_platforms` to only include `MarketplaceSite` rows where `product_links__is_active=True` count > 0. |
 
 ---
 
@@ -115,5 +123,9 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - Approved: Manager-only editing for listing links on product detail page; assistants have read-only visibility (Option A).
 - Approved: Strict 1 link per platform per product via database `UniqueConstraint` (Option A).
 - Approved: Deletion behavior: clearing link or clicking remove deletes the `ProductListingLink` record (Option A).
+- Approved: Platform-filtered status counters scoping: status counters ("All", "Active", "Sold") dynamically update to reflect products on that specific platform (Option A).
+- Approved: Dropdown option representation: platform name with item count (`Wallapop (12)`) (Option A).
+- Approved: Platform filter submission: instant auto-submit (`onchange="this.form.submit()"`) (Option A).
+
 
 

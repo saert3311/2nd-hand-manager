@@ -659,6 +659,75 @@
 - [x] Managers can edit/delete links, while assistants have read-only access.
 - [x] All features localized in Spanish and English.
 
+---
+
+## Phase 11: Dashboard Marketplace Platform Filter (Vertical Slice 6)
+
+### Task 30: Backend Filtering & Dynamic Platform Aggregation in `dashboard_view`
+**Description:** Update `dashboard_view` in `inventory/views.py` to aggregate platforms that currently have active published links (`product_links__is_active=True`), extract the `platform` query parameter (`?platform=<slug>`), filter the product catalog using `listing_links__site__slug`, scope status counters (`total_count`, `active_count`, `sold_count`) to the selected platform, and ensure pagination preserves the `platform` parameter in `query_string`.
+**Acceptance criteria:**
+- [x] `available_platforms` queryset only includes `MarketplaceSite` records where `product_links__is_active=True` count > 0, annotated with `published_count`.
+- [x] `platform_filter` parses `request.GET.get('platform')` and filters `products` by `listing_links__site__slug` with `.distinct()`.
+- [x] Status counters (`total_count`, `active_count`, `sold_count`) dynamically update to count products matching the active platform filter.
+- [x] Invalid or empty platform parameter cleanly defaults to all products without raising exceptions.
+**Verification:**
+- [x] Unit tests pass: `python manage.py test tests.test_marketplace_sites`
+**Dependencies:** Checkpoint 10
+**Files likely touched:**
+- `inventory/views.py`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 31: Dashboard Template UI for Platform Selector & Multi-Filter Composition
+**Description:** Add a responsive platform selector dropdown to the dashboard filter toolbar in `inventory/templates/inventory/dashboard.html`. The selector lists "All Platforms" / "Todas las plataformas" and each available platform with its count (`Name (count)`), auto-submits on change (`onchange="this.form.submit()"`), preserves active `status` and `q` search parameters, and ensures status tabs and search clear buttons preserve the selected platform.
+**Acceptance criteria:**
+- [x] Styled platform dropdown `<select>` rendered in the dashboard toolbar with Tailwind styling.
+- [x] Options show platform name and published count (`Wallapop (12)`).
+- [x] Selecting a platform auto-submits the form and refreshes the catalog.
+- [x] Status tabs ("All", "Active", "Sold") preserve `&platform=<slug>` when clicked.
+- [x] Search form preserves `<input type="hidden" name="platform" value="{{ platform_filter }}">`.
+- [x] Pagination controls preserve `platform` across page changes.
+**Verification:**
+- [x] Manual check: Dashboard displays dropdown with counts, switching platform updates list and preserves status/search/pagination.
+**Dependencies:** Task 30
+**Files likely touched:**
+- `inventory/templates/inventory/dashboard.html`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 32: i18n Translations & Comprehensive Automated Test Suite for Platform Filter
+**Description:** Translate all new user-facing strings into Spanish in `locale/es/LC_MESSAGES/django.po` and compile catalogs. Implement comprehensive unit and integration tests in `tests/test_marketplace_sites.py` verifying: dynamic platform queryset (only platforms with published products), catalog filtering by platform, multi-filter composition with status and search, status counter scoping to platform, invalid platform slug handling, and pagination parameter retention. Document changes in `CHANGELOG.md`.
+**Acceptance criteria:**
+- [x] All new strings translated in `locale/es/` and compiled to `.mo`.
+- [x] Comprehensive tests written covering platform query annotation, filter by platform, status tab scoping, search combinations, and pagination.
+- [x] Full repository test suite passes: `python manage.py test`.
+- [x] Linter passes: `ruff check .`.
+- [x] `CHANGELOG.md` updated under `[Unreleased]`.
+**Verification:**
+- [x] Command succeeds: `python manage.py compile_locales`
+- [x] Full test suite passes: `python manage.py test`
+- [x] Linter passes: `ruff check .`
+**Dependencies:** Task 31
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_marketplace_sites.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (3-4 files)
+
+---
+
+## Checkpoint 11: Platform Filter Complete
+- [x] Platform selector displays only platforms with active published links and their product count.
+- [x] Catalog filters accurately by selected platform with instant auto-submit.
+- [x] Status counters ("All", "Active", "Sold") dynamically update to reflect the scoped platform.
+- [x] Filter state is retained across status tabs, search queries, and pagination.
+- [x] Selecting "All Platforms" returns to the full catalog.
+- [x] Full test suite and linter pass cleanly.
+
+
 
 
 

@@ -331,6 +331,23 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
   - Displayed on `/products/<pk>/` with platform badges, one-click copy buttons, and direct external navigation with `target="_blank" rel="noopener noreferrer"`.
   - Inline editing and link deletion directly on the product detail page and in Django admin.
 
+### 6.8 Dashboard Marketplace Platform Filtering
+- **Dynamic Platform Selector:**
+  - Integrated into the `/dashboard/` filter toolbar adjacent to the status tabs and search bar.
+  - Displays a dropdown selector containing "All Platforms" / "Todas las plataformas" (default) plus all platforms that currently have at least one product with an active published listing link (`product_links__is_active=True`).
+  - Platforms with 0 published items are strictly omitted to eliminate empty query dead-ends.
+  - Option labels display platform name and count of published products (e.g., `Wallapop (12)`).
+- **Multi-Filter State Preservation:**
+  - Filtering parameter: `?platform=<slug>` (e.g. `?platform=wallapop`).
+  - Fully combinable with `status` (`all`, `active`, `sold`), search query (`q`), and pagination (`page`).
+  - Switching status tabs preserves the active platform filter.
+  - Submitting or clearing search queries preserves the active platform filter.
+  - Pagination links (`query_string`) preserve the active platform filter.
+- **Query Performance & Deduplication:**
+  - Filter applied using `products.filter(listing_links__site__slug=platform_filter, listing_links__is_active=True).distinct()`.
+  - Platforms with published counts fetched with a single optimized aggregate query:
+    `MarketplaceSite.objects.filter(product_links__is_active=True).annotate(published_count=Count('product_links__product', filter=Q(product_links__is_active=True), distinct=True)).filter(published_count__gt=0).order_by('order', 'name')`.
+
 ---
 
 ## 7. AI Service Contract (`ai_service.py`)
@@ -468,6 +485,11 @@ def generate_product_listing(
 24. Database constraint prevents duplicate links for the same platform on a single product.
 25. Deactivating a site in Django Admin immediately removes it from new link inputs while preserving existing links.
 26. All new model fields, admin forms, and product page link elements display cleanly in Spanish (`es`) and English (`en`).
+27. The dashboard displays a platform selector dropdown alongside status tabs and search bar.
+28. Only marketplace platforms with at least 1 published product link are included in the selector.
+29. Selecting a platform filters the product catalog to only items published on that platform (`listing_links__site__slug=platform, listing_links__is_active=True`).
+30. Filter state is fully retained across status tabs ("Active", "Sold", "All"), keyword/date searches, and page navigation (Page 1, Page 2).
+31. Selecting "All Platforms" returns to the unfiltered inventory catalog.
 
 ---
 
@@ -491,6 +513,11 @@ def generate_product_listing(
 - **Marketplace Platforms Architecture:** Decoupled `MarketplaceSite` model managed in Django Admin instead of hardcoded choice fields to allow adding new marketplaces on the fly.
 - **Listing Link Cardinality:** One link per marketplace platform per product via database `UniqueConstraint(fields=['product', 'site'])`.
 - **URL Security:** Validation using Django `URLValidator` enforcing standard `http`/`https` protocols.
+- **Dashboard Platform Selector Dynamic Population:** Only marketplace platforms with at least one active product link (`product_links__is_active=True`) appear in the dashboard selector to eliminate empty queries.
+- **Multi-Filter State Preservation:** The `platform` query parameter composes symmetrically with `status`, `q`, and `page` parameters.
+- **Platform Status Counters Scoping:** When a platform filter is active, status counters ("All", "Active", "Sold") dynamically update to reflect counts of products published on that specific platform.
+- **Platform Dropdown Formatting:** Options display platform name and active published count, e.g. `Wallapop (12)`.
+- **Platform Filter Submission:** Changing the dropdown immediately triggers form auto-submission (`onchange="this.form.submit()"`).
 
 ---
 
@@ -525,5 +552,20 @@ def generate_product_listing(
    - **Option A (Recommended):** Provide a direct "Remove" button or saving an empty input deletes the `ProductListingLink` record.
    - **Option B:** Provide an "Active/Inactive" toggle for each link so the URL is retained historically even if delisted.
    *How would you like removal or delisting to be handled on the product detail page?*
+7. **Platform-Filtered Status Counters vs Overall Counters:**
+   - When filtering by platform (e.g. `?platform=wallapop`):
+   - **Option A (Recommended): Scoped to Selected Platform:** Status counters ("All (X)", "Active (Y)", "Sold (Z)") update to count products published on that specific platform.
+   - **Option B: Global Catalog Counters:** Status counters always reflect total inventory counts regardless of the platform filter.
+   *Which behavior do you prefer for status counters when a platform filter is active?*
+8. **Dropdown Option Representation:**
+   - In the platform selector dropdown:
+   - **Option A (Recommended): Platform Name with Item Count:** e.g., `Todas las plataformas`, `Wallapop (12)`, `Vinted (8)`, `eBay (2)`.
+   - **Option B: Platform Name Only:** e.g., `Todas las plataformas`, `Wallapop`, `Vinted`, `eBay`.
+   *Which format do you prefer for the dropdown options?*
+9. **Selector Form Submission Mechanism:**
+   - When changing the platform selection in the dropdown:
+   - **Option A (Recommended): Instant Auto-Submit (`onchange="this.form.submit()"`):** Selecting a platform immediately refreshes the filtered catalog without needing an extra click.
+   - **Option B: Explicit "Filter" Button:** User selects the platform and must click a "Filter" button.
+   *Which interaction do you prefer for triggering the filter?*
 
 
