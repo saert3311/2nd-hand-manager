@@ -109,3 +109,68 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return f"{_('Image')} #{self.pk or _('New')} - {_('Product')} #{self.product_id}"
+
+
+class AIPromptConfiguration(models.Model):
+    LANGUAGE_CHOICES = [
+        ("es", _("Spanish")),
+        ("en", _("English")),
+    ]
+
+    language = models.CharField(
+        max_length=10,
+        choices=LANGUAGE_CHOICES,
+        default="es",
+        db_index=True,
+        verbose_name=_("Language"),
+        help_text=_("Target listing language")
+    )
+    model_name = models.CharField(
+        max_length=64,
+        default="gemini-2.5-flash",
+        verbose_name=_("Model Name"),
+        help_text=_("Gemini model identifier (e.g. gemini-2.5-flash, gemini-2.5-pro)")
+    )
+    temperature = models.FloatField(
+        default=0.3,
+        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+        verbose_name=_("Temperature"),
+        help_text=_("Sampling temperature between 0.0 and 1.0")
+    )
+    system_instruction = models.TextField(
+        verbose_name=_("System Instruction"),
+        help_text=_("Custom listing instructions, marketplace guidelines (Wallapop, Vinted, eBay), and tone of voice.")
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        verbose_name=_("Is Active"),
+        help_text=_("Whether this configuration is actively used for listing generation.")
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
+
+    class Meta:
+        ordering = ["language", "-is_active", "-updated_at"]
+        verbose_name = _("AI Prompt Configuration")
+        verbose_name_plural = _("AI Prompt Configurations")
+
+    def __str__(self):
+        status = _("Active") if self.is_active else _("Inactive")
+        return f"{self.get_language_display()} - {self.model_name} ({status})"
+
+    def clean(self):
+        super().clean()
+        if self.temperature is not None and not (0.0 <= self.temperature <= 1.0):
+            from django.core.exceptions import ValidationError
+            raise ValidationError({"temperature": _("Temperature must be between 0.0 and 1.0.")})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        if self.is_active:
+            # Option A: Automatic demotion of previous active configurations for the same language
+            AIPromptConfiguration.objects.filter(
+                language=self.language,
+                is_active=True
+            ).exclude(pk=self.pk).update(is_active=False)
+        super().save(*args, **kwargs)
