@@ -71,11 +71,12 @@ def run_full_browser_verification():
 
     try:
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+        os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
         import django
         django.setup()
         from inventory.models import MarketplaceSite, ProductListingLink
         MarketplaceSite.objects.filter(name="Vestiaire Collective").delete()
-        ProductListingLink.objects.filter(site__slug="vinted").delete()
+        ProductListingLink.objects.all().delete()
 
         sample_photos = generate_sample_images()
         print("Prepared sample photos:", sample_photos)
@@ -94,6 +95,13 @@ def run_full_browser_verification():
                 extra_http_headers={"Accept-Language": "es-ES,es;q=0.9"},
             )
             page = context.new_page()
+
+            console_messages = []
+            page.on("console", lambda msg: console_messages.append(f"[{msg.type}] {msg.text}"))
+
+            network_failures = []
+            page.on("requestfailed", lambda req: network_failures.append(f"FAILED: {req.method} {req.url} - {req.failure}") if BASE_URL in req.url else None)
+            page.on("response", lambda resp: network_failures.append(f"HTTP {resp.status}: {resp.url}") if resp.status >= 400 and BASE_URL in resp.url and "/admin/" not in resp.url and "favicon" not in resp.url else None)
 
             # ==============================================================
             # PHASE 1: NORMAL WORKFLOW ON A NORMAL DAY (ASSISTANT INTAKE)
@@ -454,12 +462,272 @@ def run_full_browser_verification():
             assert "Vendido" in page.content() or "Sold" in page.content()
             print("Verified product marked as Sold with 420.00 EUR!")
 
+            # ==============================================================
+            # PHASE 8: MULTI-PRODUCT MARKETPLACE LINKS & COMBINED FILTERS
+            # ==============================================================
+            print("\n--- PHASE 8: Multi-Product Marketplace Links & Combined Filters ---")
+
+            from inventory.models import Product
+
+            # Product 1 is Schott jacket (detail_url, marked Sold)
+            # Re-add Vinted link to Product 1 via UI
+            print("[8.1] Re-adding Vinted link to Product 1 (Schott - Sold)...")
+            page.goto(detail_url)
+            page.wait_for_load_state("networkidle")
+            vinted_card_p1 = page.locator('div[data-site-slug="vinted"]')
+            vinted_card_p1.locator('input[name="url"]').fill("https://www.vinted.es/items/schott-biker-sold-p1")
+            vinted_card_p1.locator('button[type="submit"]:has-text("Guardar Enlace"), button[type="submit"]:has-text("Save Link")').click()
+            page.wait_for_load_state("networkidle")
+            assert "schott-biker-sold-p1" in page.content()
+            print("Product 1 now has Wallapop (Sold) and Vinted (Sold).")
+
+            # Select 4 distinct other products from inventory
+            p1_id = int(detail_url.rstrip("/").split("/")[-1])
+            other_products = list(Product.objects.exclude(id=p1_id).order_by("id")[:4])
+            p2 = other_products[0]
+            p3 = other_products[1]
+            p4 = other_products[2]
+            p5 = other_products[3]
+
+            # Ensure initial statuses for p2, p3, p4, p5
+            p2.is_sold = False
+            p2.save()
+            p3.is_sold = False
+            p3.save()
+            p4.is_sold = False
+            p4.save()
+            p5.is_sold = False
+            p5.save()
+
+            # Product 2 (Active): Add Wallapop and Milanuncios links
+            print(f"[8.2] Adding Wallapop & Milanuncios links to Product 2 (ID {p2.id} - Active)...")
+            page.goto(f"{BASE_URL}/products/{p2.id}/")
+            page.wait_for_load_state("networkidle")
+            card_p2_wallapop = page.locator('div[data-site-slug="wallapop"]')
+            card_p2_wallapop.locator('input[name="url"]').fill(f"https://es.wallapop.com/item/prod-{p2.id}-wallapop")
+            card_p2_wallapop.locator('button[type="submit"]:has-text("Guardar Enlace"), button[type="submit"]:has-text("Save Link")').click()
+            page.wait_for_load_state("networkidle")
+
+            card_p2_milanuncios = page.locator('div[data-site-slug="milanuncios"]')
+            card_p2_milanuncios.locator('input[name="url"]').fill(f"https://www.milanuncios.com/moda/prod-{p2.id}-milanuncios.htm")
+            card_p2_milanuncios.locator('button[type="submit"]:has-text("Guardar Enlace"), button[type="submit"]:has-text("Save Link")').click()
+            page.wait_for_load_state("networkidle")
+            print("Product 2 configured with Wallapop and Milanuncios (Active).")
+
+            # Product 3 (Active): Add Vinted and eBay links
+            print(f"[8.3] Adding Vinted & eBay links to Product 3 (ID {p3.id} - Active)...")
+            page.goto(f"{BASE_URL}/products/{p3.id}/")
+            page.wait_for_load_state("networkidle")
+            card_p3_vinted = page.locator('div[data-site-slug="vinted"]')
+            card_p3_vinted.locator('input[name="url"]').fill(f"https://www.vinted.es/items/prod-{p3.id}-vinted")
+            card_p3_vinted.locator('button[type="submit"]:has-text("Guardar Enlace"), button[type="submit"]:has-text("Save Link")').click()
+            page.wait_for_load_state("networkidle")
+
+            card_p3_ebay = page.locator('div[data-site-slug="ebay"]')
+            card_p3_ebay.locator('input[name="url"]').fill(f"https://www.ebay.es/itm/prod-{p3.id}-ebay")
+            card_p3_ebay.locator('button[type="submit"]:has-text("Guardar Enlace"), button[type="submit"]:has-text("Save Link")').click()
+            page.wait_for_load_state("networkidle")
+            print("Product 3 configured with Vinted and eBay (Active).")
+
+            # Product 4 (Sold): Add eBay link and mark as Sold via form
+            print(f"[8.4] Adding eBay link and marking Product 4 (ID {p4.id}) as Sold...")
+            page.goto(f"{BASE_URL}/products/{p4.id}/")
+            page.wait_for_load_state("networkidle")
+            card_p4_ebay = page.locator('div[data-site-slug="ebay"]')
+            card_p4_ebay.locator('input[name="url"]').fill(f"https://www.ebay.es/itm/prod-{p4.id}-ebay-sold")
+            card_p4_ebay.locator('button[type="submit"]:has-text("Guardar Enlace"), button[type="submit"]:has-text("Save Link")').click()
+            page.wait_for_load_state("networkidle")
+
+            page.fill('input[name="sale_price"]', "150.00")
+            sold_box_p4 = page.locator('input[name="is_sold"]')
+            if not sold_box_p4.is_checked():
+                sold_box_p4.check()
+            page.locator('form:has(input[name="sale_price"]) button[type="submit"]').click()
+            page.wait_for_load_state("networkidle")
+            assert "Vendido" in page.content() or "Sold" in page.content()
+            print("Product 4 configured with eBay and marked Sold.")
+
+            # Product 5 (Active): Add Milanuncios link
+            print(f"[8.5] Adding Milanuncios link to Product 5 (ID {p5.id} - Active)...")
+            page.goto(f"{BASE_URL}/products/{p5.id}/")
+            page.wait_for_load_state("networkidle")
+            card_p5_milanuncios = page.locator('div[data-site-slug="milanuncios"]')
+            card_p5_milanuncios.locator('input[name="url"]').fill(f"https://www.milanuncios.com/moda/prod-{p5.id}-milanuncios")
+            card_p5_milanuncios.locator('button[type="submit"]:has-text("Guardar Enlace"), button[type="submit"]:has-text("Save Link")').click()
+            page.wait_for_load_state("networkidle")
+            print("Product 5 configured with Milanuncios (Active).")
+
+            # ==============================================================
+            # TEST COMBINED CONDITIONS ON DASHBOARD
+            # ==============================================================
+            print("\n--- Testing Combined Filter Conditions on Dashboard ---")
+
+            # 8.6 Inspect Platform Dropdown
+            print("[8.6] Verifying platform filter dropdown options...")
+            page.goto(f"{BASE_URL}/dashboard/")
+            page.wait_for_load_state("networkidle")
+            platform_select = page.locator('select[name="platform"]')
+            assert platform_select.is_visible()
+            opts_text = platform_select.inner_text()
+            print(f"Dropdown options text: {opts_text}")
+            assert "Wallapop (2)" in opts_text
+            assert "Vinted (2)" in opts_text
+            assert "Milanuncios (2)" in opts_text
+            assert "eBay (2)" in opts_text
+            assert "Vestiaire Collective" not in opts_text
+            page.screenshot(path=str(SCREENSHOTS_DIR / "22_dashboard_filter_selector_populated.png"))
+            print("Captured screenshot: 22_dashboard_filter_selector_populated.png")
+
+            # 8.7 Condition: platform=wallapop + status=all
+            print("[8.7] Testing combined condition: platform=wallapop, status=all...")
+            platform_select.select_option("wallapop")
+            page.locator('#platformFilterForm').evaluate("f => f.submit()")
+            page.wait_for_url(lambda u: "platform=wallapop" in u)
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path=str(SCREENSHOTS_DIR / "23_dashboard_combined_wallapop_all.png"))
+            print("Captured screenshot: 23_dashboard_combined_wallapop_all.png")
+
+            # Check counters
+            tabs_text = page.locator('a[href*="status="], a[href*="status=active"], a[href*="status=sold"]').all_inner_texts()
+            full_tabs_text = " ".join(tabs_text)
+            print(f"Status counters on wallapop=all: {full_tabs_text}")
+            assert "(2)" in full_tabs_text  # Total
+            assert "(1)" in full_tabs_text  # Active & Sold
+
+            # Check displayed cards count: exactly 2
+            cards_count = page.locator(".grid > div, .grid > a").count()
+            print(f"Cards visible for wallapop all: {cards_count}")
+            assert cards_count == 2
+
+            # 8.8 Condition: platform=wallapop + status=active
+            print("[8.8] Testing combined condition: platform=wallapop, status=active...")
+            active_tab = page.locator('a[href*="status=active"]').first
+            active_tab.click()
+            page.wait_for_url(lambda u: "status=active" in u and "platform=wallapop" in u)
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path=str(SCREENSHOTS_DIR / "24_dashboard_combined_wallapop_active.png"))
+            print("Captured screenshot: 24_dashboard_combined_wallapop_active.png")
+
+            cards_active = page.locator(".grid > div, .grid > a").count()
+            print(f"Cards visible for wallapop active: {cards_active}")
+            assert cards_active == 1
+            # Product 1 (Schott - Sold) should not appear
+            assert "Schott" not in page.locator(".grid").inner_text()
+
+            # 8.9 Condition: platform=wallapop + status=sold
+            print("[8.9] Testing combined condition: platform=wallapop, status=sold...")
+            sold_tab = page.locator('a[href*="status=sold"]').first
+            sold_tab.click()
+            page.wait_for_url(lambda u: "status=sold" in u and "platform=wallapop" in u)
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path=str(SCREENSHOTS_DIR / "25_dashboard_combined_wallapop_sold.png"))
+            print("Captured screenshot: 25_dashboard_combined_wallapop_sold.png")
+
+            cards_sold = page.locator(".grid > div, .grid > a").count()
+            print(f"Cards visible for wallapop sold: {cards_sold}")
+            assert cards_sold == 1
+            # Product 1 (Schott) SHOULD appear
+            assert "Schott" in page.locator(".grid").inner_text()
+
+            # 8.10 Condition: platform=milanuncios + status=sold (Empty state check)
+            print("[8.10] Testing combined condition: platform=milanuncios, status=sold (expecting 0)...")
+            page.locator('select[name="platform"]').select_option("milanuncios")
+            page.locator('#platformFilterForm').evaluate("f => f.submit()")
+            page.wait_for_url(lambda u: "platform=milanuncios" in u and "status=sold" in u)
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path=str(SCREENSHOTS_DIR / "26_dashboard_combined_milanuncios_sold_empty.png"))
+            print("Captured screenshot: 26_dashboard_combined_milanuncios_sold_empty.png")
+
+            cards_mil_sold = page.locator(".grid > div, .grid > a").count()
+            print(f"Cards visible for milanuncios sold: {cards_mil_sold}")
+            assert cards_mil_sold == 0
+            page_text = page.content()
+            assert "No se encontraron productos" in page_text or "No products found" in page_text
+
+            # 8.11 Condition: platform=milanuncios + status=active
+            print("[8.11] Testing combined condition: platform=milanuncios, status=active...")
+            page.locator('a[href*="status=active"]').first.click()
+            page.wait_for_url(lambda u: "status=active" in u and "platform=milanuncios" in u)
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path=str(SCREENSHOTS_DIR / "27_dashboard_combined_milanuncios_active.png"))
+            print("Captured screenshot: 27_dashboard_combined_milanuncios_active.png")
+
+            cards_mil_active = page.locator(".grid > div, .grid > a").count()
+            print(f"Cards visible for milanuncios active: {cards_mil_active}")
+            assert cards_mil_active == 2
+
+            # 8.12 Condition: platform=vinted + search q=Schott
+            print("[8.12] Testing combined condition: platform=vinted, search q=Schott...")
+            page.goto(f"{BASE_URL}/dashboard/?platform=vinted")
+            page.wait_for_load_state("networkidle")
+
+            search_input = page.locator('input[type="text"][name="q"]')
+            search_input.fill("Schott")
+            search_input.press("Enter")
+            page.wait_for_url(lambda u: "platform=vinted" in u and "q=Schott" in u)
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path=str(SCREENSHOTS_DIR / "28_dashboard_combined_vinted_search_schott.png"))
+            print("Captured screenshot: 28_dashboard_combined_vinted_search_schott.png")
+
+            # Check that input retained 'Schott' and dropdown retained 'vinted'
+            assert page.locator('input[type="text"][name="q"]').input_value() == "Schott"
+            assert page.locator('select[name="platform"]').input_value() == "vinted"
+            assert "Schott" in page.locator(".grid").inner_text()
+
+            # 8.13 Condition: platform=ebay + status=sold
+            print("[8.13] Testing combined condition: platform=ebay, status=sold...")
+            page.goto(f"{BASE_URL}/dashboard/?platform=ebay&status=sold")
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path=str(SCREENSHOTS_DIR / "29_dashboard_combined_ebay_sold.png"))
+            print("Captured screenshot: 29_dashboard_combined_ebay_sold.png")
+
+            cards_ebay_sold = page.locator(".grid > div, .grid > a").count()
+            print(f"Cards visible for ebay sold: {cards_ebay_sold}")
+            assert cards_ebay_sold == 1
+
+            # 8.14 Reset platform filter to 'All platforms'
+            print("[8.14] Resetting platform filter to All Platforms...")
+            page.goto(f"{BASE_URL}/dashboard/?platform=ebay")
+            page.wait_for_load_state("networkidle")
+            page.locator('select[name="platform"]').select_option("")
+            page.locator('#platformFilterForm').evaluate("f => f.submit()")
+            page.wait_for_url(lambda u: "platform=" not in u or "platform=&" in u or u.endswith("platform="))
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path=str(SCREENSHOTS_DIR / "30_dashboard_filter_reset_all_platforms.png"))
+            print("Captured screenshot: 30_dashboard_filter_reset_all_platforms.png")
+
+            cards_reset = page.locator(".grid > div, .grid > a").count()
+            print(f"Cards visible after resetting filter: {cards_reset}")
+            assert cards_reset >= 20
+
+            # 8.15 DevTools Console & Network Audit
+            print("\n[8.15] Auditing DevTools console logs and network traffic...")
+            print(f"Captured console messages: {len(console_messages)}")
+            critical_console_errors = [
+                c for c in console_messages
+                if "error" in c.lower()
+                and "favicon" not in c.lower()
+                and "status of 404" not in c.lower()
+                and "status of 403" not in c.lower()
+            ]
+            print(f"Console errors: {critical_console_errors}")
+            assert len(critical_console_errors) == 0, f"Found unexpected console errors: {critical_console_errors}"
+
+            print(f"Network failures: {network_failures}")
+            assert len(network_failures) == 0, f"Found network failures: {network_failures}"
+            print("DevTools console & network audit passed with 0 errors!")
+
             browser.close()
             print("\n==================================================================")
             print("REAL BROWSER E2E VERIFICATION COMPLETED WITH 100% SUCCESS!")
             print("==================================================================")
 
     finally:
+        for sample_p in ["sample_leather_jacket_front.jpg", "sample_leather_jacket_detail.jpg"]:
+            try:
+                Path(sample_p).unlink(missing_ok=True)
+            except Exception:
+                pass
         if server_proc:
             print("Terminating background dev server process...")
             server_proc.terminate()
