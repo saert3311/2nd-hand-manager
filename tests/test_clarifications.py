@@ -227,3 +227,96 @@ class NotificationContextProcessorAndAlertTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertNotContains(resp, "alert-pending-clarifications-banner")
 
+
+class ProductDetailClarificationViewTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.manager = User.objects.create_user(username="manager", password="password123", is_staff=True)
+        self.assistant = User.objects.create_user(username="assistant", password="password123")
+        self.product = Product.objects.create(raw_note="Oversized trench coat", created_by=self.assistant)
+
+    def test_manager_can_add_clarification_and_shifts_status_to_awaiting_info(self):
+        self.client.login(username="manager", password="password123")
+        url = reverse("inventory:add_clarification", kwargs={"pk": self.product.pk})
+        resp = self.client.post(url, {
+            "category": ClarificationCategory.MEASUREMENTS,
+            "question": "What is the sleeve length?",
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertRedirects(resp, reverse("inventory:product_detail", kwargs={"pk": self.product.pk}))
+
+        self.assertEqual(self.product.clarifications.count(), 1)
+        clarif = self.product.clarifications.first()
+        self.assertEqual(clarif.question, "What is the sleeve length?")
+        self.assertEqual(clarif.category, ClarificationCategory.MEASUREMENTS)
+        self.assertEqual(clarif.asked_by, self.manager)
+        self.assertEqual(clarif.status, ClarificationStatus.PENDING)
+
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.status, ProductStatus.AWAITING_INFO)
+
+    def test_assistant_cannot_add_clarification(self):
+        self.client.login(username="assistant", password="password123")
+        url = reverse("inventory:add_clarification", kwargs={"pk": self.product.pk})
+        resp = self.client.post(url, {
+            "category": ClarificationCategory.MEASUREMENTS,
+            "question": "Assistant should not ask",
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(self.product.clarifications.count(), 0)
+
+    def test_assistant_can_answer_clarification_and_auto_transitions_to_ready(self):
+        clarif = ProductClarification.objects.create(
+            product=self.product,
+            category=ClarificationCategory.MATERIAL_AUTHENTICITY,
+            question="Is there an internal composition tag?",
+            asked_by=self.manager,
+        )
+        self.product.status = ProductStatus.AWAITING_INFO
+        self.product.save()
+
+        self.client.login(username="assistant", password="password123")
+        url = reverse("inventory:answer_clarification", kwargs={"pk": self.product.pk, "clarification_pk": clarif.pk})
+        resp = self.client.post(url, {
+            "answer": "Yes, 100% Cotton, Made in England.",
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertRedirects(resp, reverse("inventory:product_detail", kwargs={"pk": self.product.pk}))
+
+        clarif.refresh_from_db()
+        self.assertEqual(clarif.status, ClarificationStatus.RESOLVED)
+        self.assertEqual(clarif.answer, "Yes, 100% Cotton, Made in England.")
+        self.assertEqual(clarif.answered_by, self.assistant)
+        self.assertIsNotNone(clarif.answered_at)
+
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.status, ProductStatus.READY)
+
+    def test_staging_ui_renders_status_badge_and_caution_gate(self):
+        self.product.status = ProductStatus.AWAITING_INFO
+        self.product.save()
+
+        self.client.login(username="manager", password="password123")
+        resp = self.client.get(reverse("inventory:product_detail", kwargs={"pk": self.product.pk}))
+        self.assertEqual(resp.status_code, 200)
+
+        # Status badge rendered
+        self.assertContains(resp, "product-status-badge")
+        # Publishing gate caution rendered
+        self.assertContains(resp, "publishing-gate-caution")
+
+    def test_staging_ui_renders_ai_regeneration_callout_when_resolved_exist(self):
+        clarif = ProductClarification.objects.create(
+            product=self.product,
+            category=ClarificationCategory.MEASUREMENTS,
+            question="Armpit width?",
+            asked_by=self.manager,
+        )
+        clarif.resolve(answer="58 cm pit to pit", answered_by=self.assistant)
+
+        self.client.login(username="manager", password="password123")
+        resp = self.client.get(reverse("inventory:product_detail", kwargs={"pk": self.product.pk}))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "ai-regeneration-callout")
+
+

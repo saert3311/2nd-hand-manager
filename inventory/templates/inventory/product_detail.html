@@ -14,6 +14,19 @@
       </a>
       <span>&bull;</span>
       <span class="text-slate-800">{% trans "Product" %} #{{ product.id }}</span>
+      <span>&bull;</span>
+      <span id="product-status-badge" class="product-status-badge text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider
+        {% if product.status == 'awaiting_info' %}bg-amber-100 text-amber-800 border border-amber-300
+        {% elif product.status == 'ready' %}bg-emerald-100 text-emerald-800 border border-emerald-300
+        {% elif product.status == 'blocked' %}bg-rose-100 text-rose-800 border border-rose-300
+        {% elif product.status == 'sold' %}bg-purple-100 text-purple-800 border border-purple-300
+        {% else %}bg-slate-100 text-slate-700 border border-slate-300{% endif %}">
+        {% if product.status == 'awaiting_info' %}❓ {% trans "Awaiting Info" %}
+        {% elif product.status == 'ready' %}✅ {% trans "Ready" %}
+        {% elif product.status == 'blocked' %}⛔ {% trans "Blocked" %}
+        {% elif product.status == 'sold' %}🏷️ {% trans "Sold" %}
+        {% else %}📝 {% trans "Draft" %}{% endif %}
+      </span>
     </div>
 
     <div class="flex items-center gap-2">
@@ -81,10 +94,165 @@
         </div>
       </div>
 
+      <!-- Product Clarifications Card -->
+      <div id="clarifications-section" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-base">❓</span>
+            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              {% trans "Product Clarifications" %}
+            </h3>
+          </div>
+          <div class="flex items-center gap-1.5 text-[11px] font-bold">
+            {% if pending_clarifications.exists %}
+            <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+              {{ pending_clarifications.count }} {% trans "pending" %}
+            </span>
+            {% endif %}
+            {% if resolved_clarifications.exists %}
+            <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+              {{ resolved_clarifications.count }} {% trans "resolved" %}
+            </span>
+            {% endif %}
+            {% if not pending_clarifications.exists and not resolved_clarifications.exists %}
+            <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+              {% trans "None" %}
+            </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Pending Clarifications List -->
+        {% if pending_clarifications.exists %}
+        <div class="space-y-3">
+          <h4 class="text-[11px] font-bold text-amber-900 uppercase tracking-wider">
+            {% trans "Pending Doubts (Needs Answer)" %}
+          </h4>
+          {% for clarif in pending_clarifications %}
+          <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 space-y-2.5">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md bg-amber-200 text-amber-900">
+                  {{ clarif.get_category_display }}
+                </span>
+                <span class="text-[11px] text-slate-500">
+                  {{ clarif.asked_by.username }} &bull; {{ clarif.created_at|date:"M d, H:i" }}
+                </span>
+              </div>
+              {% if can_manage %}
+              <form method="post" action="{% url 'inventory:delete_clarification' product.pk clarif.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" onclick="return confirm('{% trans 'Dismiss this clarification question?' %}');"
+                        class="text-[11px] text-slate-400 hover:text-rose-600 transition" title="{% trans 'Dismiss question' %}">
+                  ✕
+                </button>
+              </form>
+              {% endif %}
+            </div>
+
+            <p class="text-xs font-semibold text-slate-900 leading-snug">
+              {{ clarif.question }}
+            </p>
+
+            <!-- Inline Answer Form -->
+            <form method="post" action="{% url 'inventory:answer_clarification' product.pk clarif.pk %}" class="space-y-2 pt-1">
+              {% csrf_token %}
+              <div class="flex gap-2">
+                <input type="text" name="answer" required
+                       placeholder="{% trans 'Enter answer (e.g. 52 cm chest, composition tag...)' %}"
+                       class="flex-1 px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+                <button type="submit"
+                        class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition whitespace-nowrap shadow-sm">
+                  {% trans "Answer" %}
+                </button>
+              </div>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Resolved Clarifications List -->
+        {% if resolved_clarifications.exists %}
+        <div class="space-y-2.5 pt-2 border-t border-slate-100">
+          <h4 class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+            {% trans "Resolved Clarifications" %}
+          </h4>
+          {% for clarif in resolved_clarifications %}
+          <div class="bg-emerald-50/50 border border-emerald-200 rounded-xl p-3 space-y-1.5 text-xs">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="px-2 py-0.5 font-bold uppercase tracking-wider rounded-md bg-emerald-100 text-emerald-800 text-[10px]">
+                {{ clarif.get_category_display }}
+              </span>
+              <span class="text-slate-400">
+                {{ clarif.answered_by.username|default:"Assistant" }} &bull; {{ clarif.answered_at|date:"M d, H:i" }}
+              </span>
+            </div>
+            <p class="text-slate-700 font-medium">
+              <span class="font-bold text-slate-900">Q:</span> {{ clarif.question }}
+            </p>
+            <p class="text-emerald-950 font-semibold bg-white p-2 rounded-lg border border-emerald-100">
+              <span class="text-emerald-700">✓</span> {{ clarif.answer }}
+            </p>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Ask New Clarification Question (Managers Only) -->
+        {% if can_manage %}
+        <div class="pt-3 border-t border-slate-100 space-y-2">
+          <h4 class="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+            <span>➕</span> {% trans "Ask Assistant for Missing Details" %}
+          </h4>
+          <form method="post" action="{% url 'inventory:add_clarification' product.pk %}" class="space-y-2.5">
+            {% csrf_token %}
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                {% trans "Category" %}
+              </label>
+              <select name="category" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-emerald-500">
+                {% for cat_val, cat_label in categories %}
+                <option value="{{ cat_val }}">{{ cat_label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                {% trans "Question" %}
+              </label>
+              <textarea name="question" rows="2" required
+                        placeholder="{% trans 'What is missing? E.g., Please check armpit-to-armpit measurement or internal wash label.' %}"
+                        class="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"></textarea>
+            </div>
+            <div class="flex justify-end">
+              <button type="submit"
+                      class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition shadow-sm">
+                {% trans "Send Question" %}
+              </button>
+            </div>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+
     </div>
 
     <!-- Right Column: Staging, AI Generator & Sales Form (7 cols) -->
     <div class="lg:col-span-7 space-y-6">
+
+      {% if has_unapplied_clarifications %}
+      <!-- AI Regeneration Callout -->
+      <div class="ai-regeneration-callout bg-amber-50 border border-amber-300 text-amber-900 rounded-2xl p-4 flex items-start gap-3 shadow-sm">
+        <span class="text-xl shrink-0">💡</span>
+        <div class="space-y-1">
+          <h4 class="font-bold text-xs uppercase tracking-wider text-amber-950">{% trans "New clarification responses available!" %}</h4>
+          <p class="text-xs text-amber-800">
+            {% trans "Answers from assistant have been provided. Re-generate the listing copy to include these details in the AI description." %}
+          </p>
+        </div>
+      </div>
+      {% endif %}
 
       <!-- AI Action Banner -->
       <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-5 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -151,8 +319,8 @@
             {{ form.ai_description }}
           </div>
 
-          <!-- Pricing & Sold Status Controls -->
-          <div class="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+          <!-- Pricing & Status Controls -->
+          <div class="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
             <div>
               <label for="id_sale_price" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 {% trans "Sale Price (€)" %}
@@ -163,6 +331,13 @@
                        value="{{ form.sale_price.value|default:'' }}"
                        class="w-full pl-8 pr-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
               </div>
+            </div>
+
+            <div>
+              <label for="id_status" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                {% trans "Lifecycle Status" %}
+              </label>
+              {{ form.status }}
             </div>
 
             <div>
@@ -210,6 +385,21 @@
             {{ product.listing_links.count }} {% trans "published" %}
           </span>
         </div>
+
+        {% if product.status == 'awaiting_info' or product.status == 'blocked' %}
+        <!-- Publishing Gate Caution -->
+        <div class="publishing-gate-caution bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-3.5 flex items-start gap-2.5 text-xs">
+          <span class="text-base shrink-0">⚠️</span>
+          <div>
+            <span class="font-bold">
+              {% if product.status == 'awaiting_info' %}{% trans "Caution: Product has pending clarifications" %}{% else %}{% trans "Caution: Product is blocked" %}{% endif %}
+            </span>
+            <p class="text-amber-800 mt-0.5">
+              {% trans "Resolve pending doubts or unblock before publishing listings to external marketplaces to avoid inaccurate product claims." %}
+            </p>
+          </div>
+        </div>
+        {% endif %}
 
         {% if site_links_data %}
         <div class="space-y-4">

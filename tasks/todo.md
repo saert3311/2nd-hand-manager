@@ -776,14 +776,14 @@
 ### Task 35: Product Detail Staging Q&A UI & Clarification Interaction Flow
 **Description:** Enhance the product staging page (`/products/<pk>/`) to display a color-coded lifecycle status badge and a dedicated Clarification Q&A card. Managers can select category chips (*Medidas*, *Etiqueta*, *Defectos*, *Material*, *General*), enter questions, and submit, automatically transitioning product status to `AWAITING_INFO`. Assistants can view pending questions, submit answers via a mobile-friendly form, marking the clarification resolved. When all open questions for a product are answered, status automatically transitions to `READY`, and a visual callout prompts the manager: *"✨ Nuevos datos disponibles — Regenerar descripción con IA"*. Add a publishing gate warning on the marketplace links card if status is `AWAITING_INFO` or `BLOCKED`.
 **Acceptance criteria:**
-- [ ] Product status badge rendered in header with color-coded states (`draft`, `awaiting_info`, `ready`, `sold`, `blocked`).
-- [ ] Managers can submit new clarification questions with category chips, shifting product status to `AWAITING_INFO`.
-- [ ] Assistants can submit answers to pending questions on `/products/<pk>/`, marking them `resolved`.
-- [ ] Answering the final pending question on a product automatically transitions its status to `READY`.
-- [ ] Staging page displays a prominent banner when resolved answers are ready for AI regeneration.
-- [ ] Marketplace links card displays a caution alert when product is in `AWAITING_INFO` or `BLOCKED` status.
+- [x] Product status badge rendered in header with color-coded states (`draft`, `awaiting_info`, `ready`, `sold`, `blocked`).
+- [x] Managers can submit new clarification questions with category chips, shifting product status to `AWAITING_INFO`.
+- [x] Assistants can submit answers to pending questions on `/products/<pk>/`, marking them `resolved`.
+- [x] Answering the final pending question on a product automatically transitions its status to `READY`.
+- [x] Staging page displays a prominent banner when resolved answers are ready for AI regeneration.
+- [x] Marketplace links card displays a caution alert when product is in `AWAITING_INFO` or `BLOCKED` status.
 **Verification:**
-- [ ] Unit & integration tests pass: `python manage.py test tests.test_clarifications`
+- [x] Unit & integration tests pass: `python manage.py test tests.test_clarifications`
 **Dependencies:** Task 34
 **Files likely touched:**
 - `inventory/views.py`

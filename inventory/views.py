@@ -16,8 +16,22 @@ from django.utils import timezone
 from django.utils.translation import get_language
 from django.utils.translation import gettext as _
 
-from .forms import ProductIntakeForm, ProductUpdateForm
-from .models import MarketplaceSite, Product, ProductImage, ProductListingLink
+from .forms import (
+    ProductClarificationAnswerForm,
+    ProductClarificationForm,
+    ProductIntakeForm,
+    ProductUpdateForm,
+)
+from .models import (
+    ClarificationCategory,
+    ClarificationStatus,
+    MarketplaceSite,
+    Product,
+    ProductClarification,
+    ProductImage,
+    ProductListingLink,
+    ProductStatus,
+)
 from .permissions import is_assistant, is_manager, manager_required
 from .services.image_service import (
     MAX_IMAGES_PER_PRODUCT,
@@ -216,7 +230,12 @@ def product_detail_view(request, pk):
     download ZIP, and edit pricing / sold status.
     """
     product = get_object_or_404(
-        Product.objects.prefetch_related("images", "listing_links__site"),
+        Product.objects.prefetch_related(
+            "images",
+            "listing_links__site",
+            "clarifications__asked_by",
+            "clarifications__answered_by",
+        ),
         pk=pk,
     )
     can_manage = is_manager(request.user)
@@ -252,14 +271,117 @@ def product_detail_view(request, pk):
         if link.site_id not in active_site_ids
     ]
 
+    pending_clarifications = product.clarifications.filter(status=ClarificationStatus.PENDING)
+    resolved_clarifications = product.clarifications.filter(status=ClarificationStatus.RESOLVED)
+    has_unapplied_clarifications = resolved_clarifications.exists()
+
     context = {
         "product": product,
         "form": form,
         "can_manage": can_manage,
         "site_links_data": site_links_data,
         "extra_inactive_links": extra_inactive_links,
+        "pending_clarifications": pending_clarifications,
+        "resolved_clarifications": resolved_clarifications,
+        "has_unapplied_clarifications": has_unapplied_clarifications,
+        "clarification_form": ProductClarificationForm(),
+        "answer_form": ProductClarificationAnswerForm(),
+        "categories": ClarificationCategory.choices,
     }
     return render(request, "inventory/product_detail.html", context)
+
+
+@login_required
+def product_add_clarification_view(request, pk):
+    """
+    Allows managers to post a structured clarification question attached to a product.
+    Immediately updates product status to AWAITING_INFO.
+    """
+    if not is_manager(request.user):
+        messages.error(request, _("Manager privileges required to ask clarifications."))
+        return redirect("inventory:product_detail", pk=pk)
+
+    if request.method != "POST":
+        return redirect("inventory:product_detail", pk=pk)
+
+    product = get_object_or_404(Product, pk=pk)
+    form = ProductClarificationForm(request.POST)
+    if form.is_valid():
+        clarification = form.save(commit=False)
+        clarification.product = product
+        clarification.asked_by = request.user
+        clarification.status = ClarificationStatus.PENDING
+        clarification.save()
+
+        # Transition product status to Awaiting Info
+        if product.status != ProductStatus.AWAITING_INFO and product.status != ProductStatus.SOLD:
+            product.status = ProductStatus.AWAITING_INFO
+            product.save(update_fields=["status"])
+
+        messages.success(request, _("Clarification question sent to assistant."))
+    else:
+        messages.error(request, _("Please provide a valid question and category."))
+
+    return redirect("inventory:product_detail", pk=pk)
+
+
+@login_required
+def product_answer_clarification_view(request, pk, clarification_pk):
+    """
+    Allows assistants (or managers) to provide an answer to a pending clarification question.
+    When all pending questions on the product are resolved, auto-transitions status to READY.
+    """
+    if request.method != "POST":
+        return redirect("inventory:product_detail", pk=pk)
+
+    product = get_object_or_404(Product, pk=pk)
+    clarification = get_object_or_404(ProductClarification, pk=clarification_pk, product=product)
+
+    form = ProductClarificationAnswerForm(request.POST)
+    if form.is_valid():
+        answer_text = form.cleaned_data["answer"].strip()
+        clarification.resolve(answer=answer_text, answered_by=request.user)
+
+        # Check if any pending questions remain
+        remaining_pending = product.clarifications.filter(status=ClarificationStatus.PENDING).count()
+        if remaining_pending == 0:
+            if product.status != ProductStatus.SOLD:
+                product.status = ProductStatus.READY
+                product.save(update_fields=["status"])
+            messages.success(request, _("All doubts resolved! Product marked as ready to publish."))
+        else:
+            messages.success(request, _("Answer saved. %d doubts still pending.") % remaining_pending)
+    else:
+        messages.error(request, _("Please provide an answer."))
+
+    return redirect("inventory:product_detail", pk=pk)
+
+
+@login_required
+def product_delete_clarification_view(request, pk, clarification_pk):
+    """
+    Allows managers to delete/dismiss a clarification question.
+    """
+    if not is_manager(request.user):
+        messages.error(request, _("Manager privileges required to delete clarifications."))
+        return redirect("inventory:product_detail", pk=pk)
+
+    if request.method != "POST":
+        return redirect("inventory:product_detail", pk=pk)
+
+    product = get_object_or_404(Product, pk=pk)
+    clarification = get_object_or_404(ProductClarification, pk=clarification_pk, product=product)
+    clarification.delete()
+
+    # If no pending questions left and was awaiting info, revert to ready
+    remaining_pending = product.clarifications.filter(status=ClarificationStatus.PENDING).count()
+    if remaining_pending == 0 and product.status == ProductStatus.AWAITING_INFO:
+        product.status = ProductStatus.READY
+        product.save(update_fields=["status"])
+
+    messages.success(request, _("Clarification removed."))
+    return redirect("inventory:product_detail", pk=pk)
+
 
 
 @login_required
