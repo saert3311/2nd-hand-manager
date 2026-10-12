@@ -732,21 +732,21 @@
 ## Phase 12: Product Clarifications & Lifecycle States (Vertical Slice 8)
 
 ### Task 33: Domain Models & Migration for Lifecycle States & Clarifications
-**Description:** Implement `ProductStatus` TextChoices (`DRAFT`, `AWAITING_INFO`, `READY`, `SOLD`, `BLOCKED`) and add `status` field to `Product` model. Maintain 100% backward compatibility by keeping `is_sold` property and database column synchronized on save. Create `ProductClarification` model with fields `product`, `category` (Choices: `MEASUREMENTS`, `TAG_COMPOSITION`, `FLAWS_CONDITION`, `MATERIAL_AUTHENTICITY`, `GENERAL`), `question`, `asked_by`, `answer`, `answered_by`, `status` (`PENDING`, `RESOLVED`), and timestamps. Register in Django admin with `ProductClarificationInline` and `ProductClarificationAdmin`. Create and apply migration `0008` populating status for existing products.
+**Description:** Implement `ProductStatus` TextChoices (`DRAFT`, `AWAITING_INFO`, `READY`, `SOLD`, `BLOCKED`) and add `status` field to `Product` model. Maintain 100% backward compatibility by keeping `is_sold` property and database column synchronized on save. Create `ProductClarification` model with fields `product`, `category` (Choices: `MEASUREMENTS`, `TAG_COMPOSITION`, `FLAWS_CONDITION`, `MATERIAL_AUTHENTICITY`, `GENERAL`), `question`, `asked_by`, `answer`, `answered_by`, `status` (`PENDING`, `RESOLVED`), and timestamps. Register in Django admin with `ProductClarificationInline` and `ProductClarificationAdmin`. Create and apply migration `0007` populating status for existing products.
 **Acceptance criteria:**
-- [ ] `Product.status` field created with choices `draft`, `awaiting_info`, `ready`, `sold`, `blocked` (default: `draft`, db_index=True).
-- [ ] `is_sold` column kept in sync: setting `is_sold=True` sets `status=ProductStatus.SOLD`; setting `status=ProductStatus.SOLD` sets `is_sold=True`.
-- [ ] `ProductClarification` model created with foreign keys to `Product` and `User`, category choices, and `status` (`pending`, `resolved`).
-- [ ] Django admin registered for `ProductClarification` and as an inline in `ProductAdmin`.
-- [ ] Migration applied cleanly to SQLite database.
+- [x] `Product.status` field created with choices `draft`, `awaiting_info`, `ready`, `sold`, `blocked` (default: `draft`, db_index=True).
+- [x] `is_sold` column kept in sync: setting `is_sold=True` sets `status=ProductStatus.SOLD`; setting `status=ProductStatus.SOLD` sets `is_sold=True`.
+- [x] `ProductClarification` model created with foreign keys to `Product` and `User`, category choices, and `status` (`pending`, `resolved`).
+- [x] Django admin registered for `ProductClarification` and as an inline in `ProductAdmin`.
+- [x] Migration applied cleanly to SQLite database.
 **Verification:**
-- [ ] Command succeeds: `python manage.py makemigrations --check --dry-run`
-- [ ] Unit tests pass: `python manage.py test tests.test_clarifications`
+- [x] Command succeeds: `python manage.py makemigrations --check --dry-run`
+- [x] Unit tests pass: `python manage.py test tests.test_clarifications`
 **Dependencies:** Checkpoint 11
 **Files likely touched:**
 - `inventory/models.py`
 - `inventory/admin.py`
-- `inventory/migrations/0008_product_status_and_clarification.py`
+- `inventory/migrations/0007_product_status_and_clarification.py`
 - `tests/test_clarifications.py`
 **Estimated scope:** Medium (3-4 files)
 

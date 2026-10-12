@@ -8,6 +8,27 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 
+class ProductStatus(models.TextChoices):
+    DRAFT = "draft", _("Draft")
+    AWAITING_INFO = "awaiting_info", _("Awaiting Info")
+    READY = "ready", _("Ready to Publish")
+    SOLD = "sold", _("Sold")
+    BLOCKED = "blocked", _("Blocked")
+
+
+class ClarificationCategory(models.TextChoices):
+    MEASUREMENTS = "measurements", _("Measurements / Sizing")
+    TAG_COMPOSITION = "tag_composition", _("Tag / Brand / Composition")
+    FLAWS_CONDITION = "flaws_condition", _("Flaws / Condition / Stains")
+    MATERIAL_AUTHENTICITY = "material_authenticity", _("Material / Authenticity")
+    GENERAL = "general", _("General Question")
+
+
+class ClarificationStatus(models.TextChoices):
+    PENDING = "pending", _("Pending")
+    RESOLVED = "resolved", _("Resolved")
+
+
 class Product(models.Model):
     raw_note = models.TextField(
         blank=True,
@@ -35,6 +56,14 @@ class Product(models.Model):
             MaxValueValidator(Decimal("9999999.99")),
         ],
         help_text=_("Sale price in Euros (€)")
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=ProductStatus.choices,
+        default=ProductStatus.DRAFT,
+        db_index=True,
+        verbose_name=_("Status"),
+        help_text=_("Current lifecycle status of the product"),
     )
     is_sold = models.BooleanField(
         default=False,
@@ -78,19 +107,60 @@ class Product(models.Model):
     def primary_image(self):
         return self.images.order_by("order", "id").first()
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._initial_status = self.status
+        self._initial_is_sold = self.is_sold
+
+    def save(self, *args, **kwargs):
+        initial_status = getattr(self, "_initial_status", None)
+        initial_is_sold = getattr(self, "_initial_is_sold", None)
+
+        if self._state.adding:
+            if self.is_sold and self.status == ProductStatus.DRAFT:
+                self.status = ProductStatus.SOLD
+            else:
+                self.is_sold = (self.status == ProductStatus.SOLD)
+        else:
+            status_changed = self.status != initial_status
+            is_sold_changed = self.is_sold != initial_is_sold
+
+            if status_changed:
+                self.is_sold = (self.status == ProductStatus.SOLD)
+            elif is_sold_changed:
+                if self.is_sold:
+                    self.status = ProductStatus.SOLD
+                else:
+                    self.status = ProductStatus.READY
+            else:
+                self.is_sold = (self.status == ProductStatus.SOLD)
+
+        if "update_fields" in kwargs and kwargs["update_fields"] is not None:
+            fields = set(kwargs["update_fields"])
+            fields.add("is_sold")
+            fields.add("status")
+            kwargs["update_fields"] = list(fields)
+
+        super().save(*args, **kwargs)
+        self._initial_status = self.status
+        self._initial_is_sold = self.is_sold
+
     def mark_as_sold(self, price=None, commit=True):
         self.is_sold = True
+        self.status = ProductStatus.SOLD
         self.sold_at = timezone.now()
         if price is not None:
             self.sale_price = price
         if commit:
-            self.save(update_fields=["is_sold", "sold_at", "sale_price", "updated_at"])
+            self.save(update_fields=["is_sold", "status", "sold_at", "sale_price", "updated_at"])
 
     def mark_as_unsold(self, commit=True):
         self.is_sold = False
+        self.status = ProductStatus.READY
         self.sold_at = None
         if commit:
-            self.save(update_fields=["is_sold", "sold_at", "updated_at"])
+            self.save(update_fields=["is_sold", "status", "sold_at", "updated_at"])
+
 
 
 class ProductImage(models.Model):
@@ -265,3 +335,71 @@ class ProductListingLink(models.Model):
 
     def __str__(self):
         return f"{self.site.name} - {self.product.display_title}"
+
+
+class ProductClarification(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="clarifications",
+        verbose_name=_("Product"),
+    )
+    category = models.CharField(
+        max_length=30,
+        choices=ClarificationCategory.choices,
+        default=ClarificationCategory.GENERAL,
+        verbose_name=_("Category"),
+        help_text=_("Area of clarification"),
+    )
+    question = models.TextField(
+        verbose_name=_("Question"),
+        help_text=_("Question from manager regarding missing product details"),
+    )
+    asked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="asked_clarifications",
+        verbose_name=_("Asked By"),
+    )
+    answer = models.TextField(
+        blank=True,
+        default="",
+        verbose_name=_("Answer"),
+        help_text=_("Response from assistant"),
+    )
+    answered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="answered_clarifications",
+        verbose_name=_("Answered By"),
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=ClarificationStatus.choices,
+        default=ClarificationStatus.PENDING,
+        db_index=True,
+        verbose_name=_("Status"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    answered_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Answered At"))
+
+    class Meta:
+        ordering = ["status", "-created_at"]
+        verbose_name = _("Product Clarification")
+        verbose_name_plural = _("Product Clarifications")
+
+    def __str__(self):
+        return f"{self.get_category_display()} - {self.product.display_title}"
+
+    def resolve(self, answer: str, answered_by=None, commit=True):
+        self.answer = answer
+        self.answered_by = answered_by
+        self.status = ClarificationStatus.RESOLVED
+        self.answered_at = timezone.now()
+        if commit:
+            self.save(update_fields=["answer", "answered_by", "status", "answered_at"])
+

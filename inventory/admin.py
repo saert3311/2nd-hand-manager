@@ -15,6 +15,7 @@ from .models import (
     AIPromptConfiguration,
     MarketplaceSite,
     Product,
+    ProductClarification,
     ProductImage,
     ProductListingLink,
 )
@@ -46,6 +47,7 @@ class ManagerAdminSite(admin.AdminSite):
 # Global admin_site instance
 admin_site = ManagerAdminSite(name="admin")
 admin.site = admin_site
+manager_admin_site = admin_site
 
 
 class RoleListFilter(admin.SimpleListFilter):
@@ -232,20 +234,28 @@ class ProductListingLinkInline(admin.TabularInline):
     readonly_fields = ("created_at", "updated_at")
 
 
+class ProductClarificationInline(admin.TabularInline):
+    model = ProductClarification
+    extra = 0
+    fields = ("category", "question", "asked_by", "answer", "answered_by", "status", "created_at", "answered_at")
+    readonly_fields = ("created_at", "answered_at")
+
+
 @admin.register(Product, site=admin_site)
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "display_title",
+        "status",
         "sale_price_display",
         "is_sold",
         "images_count",
         "created_by",
         "created_at",
     )
-    list_filter = ("is_sold", "created_at")
+    list_filter = ("status", "is_sold", "created_at")
     search_fields = ("ai_title", "raw_note", "ai_description")
-    inlines = [ProductImageInline, ProductListingLinkInline]
+    inlines = [ProductImageInline, ProductListingLinkInline, ProductClarificationInline]
     readonly_fields = ("created_at", "updated_at", "sold_at")
 
     def has_module_permission(self, request):
@@ -428,4 +438,28 @@ class ProductListingLinkAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return bool(request.user and request.user.is_active and is_manager(request.user))
+
+
+@admin.register(ProductClarification, site=admin_site)
+class ProductClarificationAdmin(admin.ModelAdmin):
+    list_display = ("id", "product", "category", "status", "asked_by", "answered_by", "created_at")
+    list_filter = ("category", "status", "created_at")
+    search_fields = ("product__ai_title", "product__raw_note", "question", "answer")
+    readonly_fields = ("created_at", "answered_at")
+
+    def has_module_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_change_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_add_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_delete_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
 

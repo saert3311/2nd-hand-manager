@@ -1,0 +1,137 @@
+from decimal import Decimal
+
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+
+from inventory.admin import ProductAdmin, ProductClarificationAdmin, ProductClarificationInline, manager_admin_site
+from inventory.models import (
+    ClarificationCategory,
+    ClarificationStatus,
+    Product,
+    ProductClarification,
+    ProductStatus,
+)
+
+User = get_user_model()
+
+
+class ProductLifecycleAndClarificationModelTests(TestCase):
+    def setUp(self):
+        self.manager = User.objects.create_user(username="manager", password="password123", is_staff=True)
+        self.assistant = User.objects.create_user(username="assistant", password="password123")
+
+    def test_product_default_status_is_draft(self):
+        product = Product.objects.create(raw_note="Vintage denim jacket", created_by=self.assistant)
+        self.assertEqual(product.status, ProductStatus.DRAFT)
+        self.assertFalse(product.is_sold)
+
+    def test_product_status_choices(self):
+        valid_statuses = [
+            ProductStatus.DRAFT,
+            ProductStatus.AWAITING_INFO,
+            ProductStatus.READY,
+            ProductStatus.SOLD,
+            ProductStatus.BLOCKED,
+        ]
+        product = Product.objects.create(raw_note="Item")
+        for st in valid_statuses:
+            product.status = st
+            product.save()
+            product.refresh_from_db()
+            self.assertEqual(product.status, st)
+
+    def test_product_is_sold_synchronization(self):
+        product = Product.objects.create(raw_note="Item")
+        self.assertEqual(product.status, ProductStatus.DRAFT)
+        self.assertFalse(product.is_sold)
+
+        # 1. Setting status = SOLD syncs is_sold to True
+        product.status = ProductStatus.SOLD
+        product.save()
+        product.refresh_from_db()
+        self.assertTrue(product.is_sold)
+
+        # 2. Setting is_sold = False syncs status to READY (or DRAFT if no AI title)
+        product.is_sold = False
+        product.save()
+        product.refresh_from_db()
+        self.assertNotEqual(product.status, ProductStatus.SOLD)
+        self.assertFalse(product.is_sold)
+
+        # 3. mark_as_sold method updates status to SOLD
+        product.mark_as_sold(price=Decimal("120.00"))
+        product.refresh_from_db()
+        self.assertEqual(product.status, ProductStatus.SOLD)
+        self.assertTrue(product.is_sold)
+        self.assertEqual(product.sale_price, Decimal("120.00"))
+
+        # 4. mark_as_unsold method updates status to READY
+        product.mark_as_unsold()
+        product.refresh_from_db()
+        self.assertEqual(product.status, ProductStatus.READY)
+        self.assertFalse(product.is_sold)
+
+    def test_product_clarification_creation_and_defaults(self):
+        product = Product.objects.create(raw_note="Leather boots")
+        clarification = ProductClarification.objects.create(
+            product=product,
+            category=ClarificationCategory.MEASUREMENTS,
+            question="What is the insole length in cm?",
+            asked_by=self.manager,
+        )
+        self.assertEqual(clarification.status, ClarificationStatus.PENDING)
+        self.assertEqual(clarification.category, ClarificationCategory.MEASUREMENTS)
+        self.assertEqual(clarification.question, "What is the insole length in cm?")
+        self.assertEqual(clarification.asked_by, self.manager)
+        self.assertEqual(clarification.answer, "")
+        self.assertIsNone(clarification.answered_by)
+        self.assertIsNone(clarification.answered_at)
+        self.assertIsNotNone(clarification.created_at)
+
+    def test_product_clarification_resolution(self):
+        product = Product.objects.create(raw_note="Leather boots")
+        clarification = ProductClarification.objects.create(
+            product=product,
+            category=ClarificationCategory.MATERIAL_AUTHENTICITY,
+            question="Is it genuine cowhide?",
+            asked_by=self.manager,
+        )
+        clarification.resolve(answer="Yes, 100% genuine full-grain leather.", answered_by=self.assistant)
+        clarification.refresh_from_db()
+
+        self.assertEqual(clarification.status, ClarificationStatus.RESOLVED)
+        self.assertEqual(clarification.answer, "Yes, 100% genuine full-grain leather.")
+        self.assertEqual(clarification.answered_by, self.assistant)
+        self.assertIsNotNone(clarification.answered_at)
+
+    def test_product_clarification_str_representation(self):
+        product = Product.objects.create(raw_note="Harley Tee", ai_title="Harley Davidson Tee")
+        clarification = ProductClarification.objects.create(
+            product=product,
+            category=ClarificationCategory.TAG_COMPOSITION,
+            question="What does the care tag say?",
+            asked_by=self.manager,
+        )
+        self.assertIn("Harley Davidson Tee", str(clarification))
+        self.assertIn(clarification.get_category_display(), str(clarification))
+
+    def test_cascade_deletion(self):
+        product = Product.objects.create(raw_note="To delete")
+        ProductClarification.objects.create(
+            product=product,
+            category=ClarificationCategory.GENERAL,
+            question="Any box included?",
+            asked_by=self.manager,
+        )
+        self.assertEqual(ProductClarification.objects.filter(product=product).count(), 1)
+        product.delete()
+        self.assertEqual(ProductClarification.objects.filter(product_id=product.id).count(), 0)
+
+    def test_admin_registration(self):
+        # Inlines in ProductAdmin
+        inline_classes = [inline.__class__ if not isinstance(inline, type) else inline for inline in ProductAdmin.inlines]
+        self.assertIn(ProductClarificationInline, inline_classes)
+
+        # Registered in manager_admin_site
+        self.assertIn(ProductClarification, manager_admin_site._registry)
+        self.assertIsInstance(manager_admin_site._registry[ProductClarification], ProductClarificationAdmin)
