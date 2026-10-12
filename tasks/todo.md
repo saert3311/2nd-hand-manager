@@ -755,13 +755,13 @@
 ### Task 34: Global Notification Context Processor, Top Nav Badge & Mobile Intake Banner
 **Description:** Create `inventory/context_processors.py` with `notifications(request)` returning `pending_clarifications_count`. Register it in `config/settings.py` template options. Update `inventory/templates/inventory/base.html` to display a high-visibility badge `❓ Dudas (X)` adjacent to navigation links for authenticated users when pending questions exist, linking to `/dashboard/?status=awaiting_info`. Add a dismissible alert banner to `inventory/templates/inventory/intake.html` informing assistants when items await their feedback.
 **Acceptance criteria:**
-- [ ] Context processor `inventory.context_processors.notifications` returns `{"pending_clarifications_count": X}` for authenticated users.
-- [ ] Registered in `config/settings.py` `TEMPLATES['OPTIONS']['context_processors']`.
-- [ ] Top navigation renders `❓ Dudas (X)` when `pending_clarifications_count > 0`, linking to `{% url 'inventory:dashboard' %}?status=awaiting_info`.
-- [ ] Mobile intake screen (`/intake/`) renders an alert banner alerting assistants to pending questions.
+- [x] Context processor `inventory.context_processors.notifications` returns `{"pending_clarifications_count": X}` for authenticated users.
+- [x] Registered in `config/settings.py` `TEMPLATES['OPTIONS']['context_processors']`.
+- [x] Top navigation renders `❓ Dudas (X)` when `pending_clarifications_count > 0`, linking to `{% url 'inventory:dashboard' %}?status=awaiting_info`.
+- [x] Mobile intake screen (`/intake/`) renders an alert banner alerting assistants to pending questions.
 **Verification:**
-- [ ] Unit tests pass: `python manage.py test tests.test_clarifications`
-- [ ] Manual check: Badge appears when a pending clarification is created and disappears when resolved.
+- [x] Unit tests pass: `python manage.py test tests.test_clarifications`
+- [x] Manual check: Badge appears when a pending clarification is created and disappears when resolved.
 **Dependencies:** Task 33
 **Files likely touched:**
 - `inventory/context_processors.py`

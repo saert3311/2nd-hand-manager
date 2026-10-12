@@ -19,6 +19,33 @@
     </a>
   </div>
 
+  {% if pending_clarifications_count > 0 %}
+  <!-- Alert Banner: Pending Clarifications -->
+  <div class="alert-pending-clarifications-banner p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between gap-3 shadow-sm">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center text-lg font-bold shadow-sm shrink-0">
+        ❓
+      </div>
+      <div>
+        <h3 class="text-xs sm:text-sm font-bold text-amber-900">
+          {% blocktrans count count=pending_clarifications_count %}
+            You have {{ count }} product clarification awaiting your answer.
+          {% plural %}
+            You have {{ count }} product clarifications awaiting your answer.
+          {% endblocktrans %}
+        </h3>
+        <p class="text-[11px] sm:text-xs text-amber-700 mt-0.5">
+          {% trans "The manager needs more details before publishing." %}
+        </p>
+      </div>
+    </div>
+    <a href="{% url 'inventory:dashboard' %}?status=awaiting_info"
+       class="whitespace-nowrap px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
+      {% trans "Review" %} &rarr;
+    </a>
+  </div>
+  {% endif %}
+
   <!-- Intake Form Card -->
   <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
     <form method="post" enctype="multipart/form-data" class="p-5 sm:p-6 space-y-5" id="intakeForm">

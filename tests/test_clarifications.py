@@ -1,7 +1,8 @@
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import Client, TestCase
+from django.urls import reverse
 
 from inventory.admin import ProductAdmin, ProductClarificationAdmin, ProductClarificationInline, manager_admin_site
 from inventory.models import (
@@ -135,3 +136,94 @@ class ProductLifecycleAndClarificationModelTests(TestCase):
         # Registered in manager_admin_site
         self.assertIn(ProductClarification, manager_admin_site._registry)
         self.assertIsInstance(manager_admin_site._registry[ProductClarification], ProductClarificationAdmin)
+
+
+class NotificationContextProcessorAndAlertTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.manager = User.objects.create_user(username="manager", password="password123", is_staff=True)
+        self.assistant = User.objects.create_user(username="assistant", password="password123")
+        self.product = Product.objects.create(raw_note="Vintage wool coat")
+
+    def test_context_processor_returns_count(self):
+        from django.contrib.auth.models import AnonymousUser
+        from django.test import RequestFactory
+
+        from inventory.context_processors import notifications
+
+        factory = RequestFactory()
+
+        # Anonymous user gets 0
+        req_anon = factory.get("/")
+        req_anon.user = AnonymousUser()
+        self.assertEqual(notifications(req_anon), {"pending_clarifications_count": 0})
+
+        # Authenticated user with no clarifications gets 0
+        req_auth = factory.get("/")
+        req_auth.user = self.assistant
+        self.assertEqual(notifications(req_auth), {"pending_clarifications_count": 0})
+
+        # Create 2 pending clarifications and 1 resolved
+        ProductClarification.objects.create(
+            product=self.product,
+            category=ClarificationCategory.MEASUREMENTS,
+            question="What is chest width?",
+            asked_by=self.manager,
+        )
+        ProductClarification.objects.create(
+            product=self.product,
+            category=ClarificationCategory.MATERIAL_AUTHENTICITY,
+            question="Is it pure virgin wool?",
+            asked_by=self.manager,
+        )
+        resolved = ProductClarification.objects.create(
+            product=self.product,
+            category=ClarificationCategory.TAG_COMPOSITION,
+            question="Made in which country?",
+            asked_by=self.manager,
+        )
+        resolved.resolve(answer="Made in Scotland", answered_by=self.assistant)
+
+        self.assertEqual(notifications(req_auth), {"pending_clarifications_count": 2})
+
+    def test_navbar_renders_badge_when_pending_exist(self):
+        self.client.login(username="assistant", password="password123")
+        ProductClarification.objects.create(
+            product=self.product,
+            category=ClarificationCategory.MEASUREMENTS,
+            question="What is chest width?",
+            asked_by=self.manager,
+        )
+
+        resp = self.client.get(reverse("inventory:dashboard"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "status=awaiting_info")
+        self.assertContains(resp, "badge-pending-clarifications")
+        self.assertContains(resp, "1")
+
+    def test_navbar_badge_omitted_when_zero_pending(self):
+        self.client.login(username="assistant", password="password123")
+        resp = self.client.get(reverse("inventory:dashboard"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, "badge-pending-clarifications")
+
+    def test_intake_page_renders_alert_banner_when_pending_exist(self):
+        self.client.login(username="assistant", password="password123")
+        ProductClarification.objects.create(
+            product=self.product,
+            category=ClarificationCategory.MEASUREMENTS,
+            question="What is chest width?",
+            asked_by=self.manager,
+        )
+
+        resp = self.client.get(reverse("inventory:intake"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "alert-pending-clarifications-banner")
+        self.assertContains(resp, "status=awaiting_info")
+
+    def test_intake_page_banner_omitted_when_zero_pending(self):
+        self.client.login(username="assistant", password="password123")
+        resp = self.client.get(reverse("inventory:intake"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, "alert-pending-clarifications-banner")
+
