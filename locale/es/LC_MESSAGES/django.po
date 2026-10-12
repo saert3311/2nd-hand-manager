@@ -585,3 +585,165 @@ msgstr "Filtrar por plataforma de marketplace"
 msgid "Clear search"
 msgstr "Limpiar búsqueda"
 
+msgid "Status"
+msgstr "Estado"
+
+msgid "Draft"
+msgstr "Borrador"
+
+msgid "Awaiting Info"
+msgstr "Dudas Pendientes"
+
+msgid "Ready to Publish"
+msgstr "Listo para Publicar"
+
+msgid "Ready"
+msgstr "Listo"
+
+msgid "Sold"
+msgstr "Vendido"
+
+msgid "Blocked"
+msgstr "Bloqueado"
+
+msgid "Category"
+msgstr "Categoría"
+
+msgid "Measurements / Dimensions"
+msgstr "Medidas / Dimensiones"
+
+msgid "Label / Wash Tag"
+msgstr "Etiqueta / Instrucciones de lavado"
+
+msgid "Flaws / Wear Details"
+msgstr "Defectos / Desgaste"
+
+msgid "Material / Authenticity"
+msgstr "Material / Autenticidad"
+
+msgid "General / Other"
+msgstr "General / Otro"
+
+msgid "Pending"
+msgstr "Pendiente"
+
+msgid "Resolved"
+msgstr "Resuelto"
+
+msgid "Dismissed"
+msgstr "Descartado"
+
+msgid "Product Clarification"
+msgstr "Aclaración de Producto"
+
+msgid "Product Clarifications"
+msgstr "Aclaraciones de Producto"
+
+msgid "Select a category"
+msgstr "Selecciona una categoría"
+
+msgid "Specify what needs clarification..."
+msgstr "Especifica qué necesita aclaración..."
+
+msgid "Question"
+msgstr "Pregunta"
+
+msgid "Your answer..."
+msgstr "Tu respuesta..."
+
+msgid "Answer"
+msgstr "Respuesta"
+
+msgid "Clarification question sent to assistant."
+msgstr "Pregunta de aclaración enviada al asistente."
+
+msgid "Please provide a valid question and category."
+msgstr "Por favor proporciona una pregunta y categoría válidas."
+
+msgid "All doubts resolved! Product marked as ready to publish."
+msgstr "¡Todas las dudas resueltas! Producto marcado como listo para publicar."
+
+msgid "Answer saved. %d doubts still pending."
+msgstr "Respuesta guardada. %d dudas aún pendientes."
+
+msgid "Please provide an answer."
+msgstr "Por favor proporciona una respuesta."
+
+msgid "Manager privileges required to delete clarifications."
+msgstr "Se requieren privilegios de gestor para eliminar aclaraciones."
+
+msgid "Clarification removed."
+msgstr "Aclaración eliminada."
+
+msgid "Lifecycle Status"
+msgstr "Estado del Ciclo de Vida"
+
+msgid "Doubts"
+msgstr "Dudas"
+
+msgid "Pending Doubts"
+msgstr "Dudas Pendientes"
+
+msgid "pending"
+msgstr "pendientes"
+
+msgid "resolved"
+msgstr "resueltas"
+
+msgid "None"
+msgstr "Ninguna"
+
+msgid "Pending Doubts (Needs Answer)"
+msgstr "Dudas Pendientes (Requiere Respuesta)"
+
+msgid "Dismiss this clarification question?"
+msgstr "¿Descartar esta pregunta de aclaración?"
+
+msgid "Dismiss question"
+msgstr "Descartar pregunta"
+
+msgid "Enter answer (e.g. 52 cm chest, composition tag...)"
+msgstr "Introduce la respuesta (ej. 52 cm de pecho, etiqueta de composición...)"
+
+msgid "Resolved Clarifications"
+msgstr "Aclaraciones Resueltas"
+
+msgid "Ask Assistant for Missing Details"
+msgstr "Preguntar al Asistente por Detalles Faltantes"
+
+msgid "What is missing? E.g., Please check armpit-to-armpit measurement or internal wash label."
+msgstr "¿Qué falta? Ej. Por favor revisa la medida de axila a axila o la etiqueta interior de lavado."
+
+msgid "Send Question"
+msgstr "Enviar Pregunta"
+
+msgid "New clarification responses available!"
+msgstr "¡Nuevas respuestas de aclaración disponibles!"
+
+msgid "Answers from assistant have been provided. Re-generate the listing copy to include these details in the AI description."
+msgstr "El asistente ha respondido a las dudas. Regenera el anuncio para incluir estos detalles en la descripción de IA."
+
+msgid "Caution: Product has pending clarifications"
+msgstr "Precaución: El producto tiene dudas pendientes"
+
+msgid "Caution: Product is blocked"
+msgstr "Precaución: El producto está bloqueado"
+
+msgid "Resolve pending doubts or unblock before publishing listings to external marketplaces to avoid inaccurate product claims."
+msgstr "Resuelve las dudas pendientes o desbloquea antes de publicar en marketplaces externos para evitar descripciones inexactas."
+
+msgid "Pending clarifications from manager"
+msgstr "Aclaraciones pendientes del gestor"
+
+msgid "You have %(count)s product clarification awaiting your answer."
+msgid_plural "You have %(count)s product clarifications awaiting your answer."
+msgstr[0] "Tienes %(count)s aclaración de producto esperando tu respuesta."
+msgstr[1] "Tienes %(count)s aclaraciones de producto esperando tu respuesta."
+
+msgid "The manager needs more details before publishing."
+msgstr "El gestor necesita más detalles antes de publicar."
+
+msgid "Review"
+msgstr "Revisar"
+
+

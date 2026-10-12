@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Product Clarification Feedback Loop & Granular Lifecycle States (`ProductStatus`, `ProductClarification`)**:
+  - Transitioned product domain model from binary `is_sold` to a structured lifecycle state machine: `DRAFT`, `AWAITING_INFO`, `READY`, `SOLD`, and `BLOCKED` with bidirectional synchronization and 100% backward compatibility for legacy `is_sold` queries and tests.
+  - Added `ProductClarification` model supporting categorized questions (*Medidas*, *Etiqueta*, *Defectos*, *Material*, *General*) asked by store managers and answered by sourcing assistants.
+  - Global `notifications` context processor surfacing pending clarification counters via a high-visibility animated navbar badge (`❓ Dudas (X)`) and an intake banner alert alerting mobile assistants to open doubts.
+  - Dedicated staging Q&A card on `/products/<pk>/` with category selectors, manager question creation/dismissal, and assistant mobile answer submissions.
+  - Auto-state transition: answering all pending questions on a product automatically shifts its lifecycle status to `READY` and displays a visual callout (`ai-regeneration-callout`) prompting the manager to re-run Gemini Vision.
+  - Marketplace publishing caution gate (`publishing-gate-caution`) warning managers if a product has unresolved doubts or is blocked before publishing external links.
+  - AI Prompt Enrichment: `generate_product_listing` dynamically formats and appends resolved clarification Q&As into the Gemini Multimodal Vision prompt for higher accuracy listings.
+  - Catalog Dashboard Filtering: Added `status=awaiting_info` and `status=blocked` filter tabs with dynamic status counter badges scoped to active search and marketplace platform filters.
+  - Full Spanish translation catalog and 22 new unit & integration tests in `tests/test_clarifications.py`.
 - **Dashboard Marketplace Platform Filter**:
   - Dynamic platform selector on the inventory dashboard (`/dashboard/`) displaying only resale platforms that currently have at least one active product link (`product_links__is_active=True`), annotated with their published product count (e.g. `Wallapop (12)`, `Vinted (8)`). Platforms with 0 published items are strictly omitted.
   - Seamless auto-submission on selection (`onchange="this.form.submit()"`) with full filter state preservation across status tabs (`status=active`, `status=sold`, `status=all`), unified search queries (`q`), and pagination (`page`).

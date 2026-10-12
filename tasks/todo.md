@@ -816,14 +816,14 @@
 ### Task 37: i18n Translations, Documentation & Regression Testing
 **Description:** Localize all new user-facing strings (statuses, categories, form labels, buttons, banners, badges) in Spanish (`locale/es/LC_MESSAGES/django.po`) and compile using `manage.py compile_locales`. Update `CHANGELOG.md` under `[Unreleased]`. Run full test suite and `ruff check .` to verify 0 regressions.
 **Acceptance criteria:**
-- [ ] All new strings translated in `locale/es/` and compiled to `.mo`.
-- [ ] Full test suite passes: `python manage.py test`.
-- [ ] Linter passes with 0 warnings: `ruff check .`.
-- [ ] `CHANGELOG.md` updated with feature description under `[Unreleased]`.
+- [x] All new strings translated in `locale/es/` and compiled to `.mo`.
+- [x] Full test suite passes: `python manage.py test`.
+- [x] Linter passes with 0 warnings: `ruff check .`.
+- [x] `CHANGELOG.md` updated with feature description under `[Unreleased]`.
 **Verification:**
-- [ ] Command succeeds: `python manage.py compile_locales`
-- [ ] Full test suite passes: `python manage.py test`
-- [ ] Linter passes: `ruff check .`
+- [x] Command succeeds: `python manage.py compile_locales`
+- [x] Full test suite passes: `python manage.py test`
+- [x] Linter passes: `ruff check .`
 **Dependencies:** Task 36
 **Files likely touched:**
 - `locale/es/LC_MESSAGES/django.po`
@@ -834,15 +834,15 @@
 ---
 
 ## Checkpoint 12: Product Clarifications & Lifecycle States Complete
-- [ ] Product lifecycle state machine active (`draft`, `awaiting_info`, `ready`, `sold`, `blocked`).
-- [ ] Managers can submit categorized questions, changing product status to `awaiting_info`.
-- [ ] Top nav badge `❓ Dudas (X)` and mobile intake alert notify assistants of pending questions.
-- [ ] Assistants can answer questions from mobile on product page, auto-transitioning status to `ready`.
-- [ ] Manager is alerted to regenerate AI listing when new answers are available.
-- [ ] Gemini Vision prompt includes resolved clarifications in generated copy.
-- [ ] Dashboard filters products by `status=awaiting_info` and scopes counters.
-- [ ] Spanish and English translations active.
-- [ ] Full test suite and linter pass with 0 errors.
+- [x] Product lifecycle state machine active (`draft`, `awaiting_info`, `ready`, `sold`, `blocked`).
+- [x] Managers can submit categorized questions, changing product status to `awaiting_info`.
+- [x] Top nav badge `❓ Dudas (X)` and mobile intake alert notify assistants of pending questions.
+- [x] Assistants can answer questions from mobile on product page, auto-transitioning status to `ready`.
+- [x] Manager is alerted to regenerate AI listing when new answers are available.
+- [x] Gemini Vision prompt includes resolved clarifications in generated copy.
+- [x] Dashboard filters products by `status=awaiting_info` and scopes counters.
+- [x] Spanish and English translations active.
+- [x] Full test suite and linter pass with 0 errors.
 
 
 
