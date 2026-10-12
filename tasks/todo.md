@@ -727,6 +727,124 @@
 - [x] Selecting "All Platforms" returns to the full catalog.
 - [x] Full test suite and linter pass cleanly.
 
+---
+
+## Phase 12: Product Clarifications & Lifecycle States (Vertical Slice 8)
+
+### Task 33: Domain Models & Migration for Lifecycle States & Clarifications
+**Description:** Implement `ProductStatus` TextChoices (`DRAFT`, `AWAITING_INFO`, `READY`, `SOLD`, `BLOCKED`) and add `status` field to `Product` model. Maintain 100% backward compatibility by keeping `is_sold` property and database column synchronized on save. Create `ProductClarification` model with fields `product`, `category` (Choices: `MEASUREMENTS`, `TAG_COMPOSITION`, `FLAWS_CONDITION`, `MATERIAL_AUTHENTICITY`, `GENERAL`), `question`, `asked_by`, `answer`, `answered_by`, `status` (`PENDING`, `RESOLVED`), and timestamps. Register in Django admin with `ProductClarificationInline` and `ProductClarificationAdmin`. Create and apply migration `0008` populating status for existing products.
+**Acceptance criteria:**
+- [ ] `Product.status` field created with choices `draft`, `awaiting_info`, `ready`, `sold`, `blocked` (default: `draft`, db_index=True).
+- [ ] `is_sold` column kept in sync: setting `is_sold=True` sets `status=ProductStatus.SOLD`; setting `status=ProductStatus.SOLD` sets `is_sold=True`.
+- [ ] `ProductClarification` model created with foreign keys to `Product` and `User`, category choices, and `status` (`pending`, `resolved`).
+- [ ] Django admin registered for `ProductClarification` and as an inline in `ProductAdmin`.
+- [ ] Migration applied cleanly to SQLite database.
+**Verification:**
+- [ ] Command succeeds: `python manage.py makemigrations --check --dry-run`
+- [ ] Unit tests pass: `python manage.py test tests.test_clarifications`
+**Dependencies:** Checkpoint 11
+**Files likely touched:**
+- `inventory/models.py`
+- `inventory/admin.py`
+- `inventory/migrations/0008_product_status_and_clarification.py`
+- `tests/test_clarifications.py`
+**Estimated scope:** Medium (3-4 files)
+
+---
+
+### Task 34: Global Notification Context Processor, Top Nav Badge & Mobile Intake Banner
+**Description:** Create `inventory/context_processors.py` with `notifications(request)` returning `pending_clarifications_count`. Register it in `config/settings.py` template options. Update `inventory/templates/inventory/base.html` to display a high-visibility badge `❓ Dudas (X)` adjacent to navigation links for authenticated users when pending questions exist, linking to `/dashboard/?status=awaiting_info`. Add a dismissible alert banner to `inventory/templates/inventory/intake.html` informing assistants when items await their feedback.
+**Acceptance criteria:**
+- [ ] Context processor `inventory.context_processors.notifications` returns `{"pending_clarifications_count": X}` for authenticated users.
+- [ ] Registered in `config/settings.py` `TEMPLATES['OPTIONS']['context_processors']`.
+- [ ] Top navigation renders `❓ Dudas (X)` when `pending_clarifications_count > 0`, linking to `{% url 'inventory:dashboard' %}?status=awaiting_info`.
+- [ ] Mobile intake screen (`/intake/`) renders an alert banner alerting assistants to pending questions.
+**Verification:**
+- [ ] Unit tests pass: `python manage.py test tests.test_clarifications`
+- [ ] Manual check: Badge appears when a pending clarification is created and disappears when resolved.
+**Dependencies:** Task 33
+**Files likely touched:**
+- `inventory/context_processors.py`
+- `config/settings.py`
+- `inventory/templates/inventory/base.html`
+- `inventory/templates/inventory/intake.html`
+- `tests/test_clarifications.py`
+**Estimated scope:** Medium (4-5 files)
+
+---
+
+### Task 35: Product Detail Staging Q&A UI & Clarification Interaction Flow
+**Description:** Enhance the product staging page (`/products/<pk>/`) to display a color-coded lifecycle status badge and a dedicated Clarification Q&A card. Managers can select category chips (*Medidas*, *Etiqueta*, *Defectos*, *Material*, *General*), enter questions, and submit, automatically transitioning product status to `AWAITING_INFO`. Assistants can view pending questions, submit answers via a mobile-friendly form, marking the clarification resolved. When all open questions for a product are answered, status automatically transitions to `READY`, and a visual callout prompts the manager: *"✨ Nuevos datos disponibles — Regenerar descripción con IA"*. Add a publishing gate warning on the marketplace links card if status is `AWAITING_INFO` or `BLOCKED`.
+**Acceptance criteria:**
+- [ ] Product status badge rendered in header with color-coded states (`draft`, `awaiting_info`, `ready`, `sold`, `blocked`).
+- [ ] Managers can submit new clarification questions with category chips, shifting product status to `AWAITING_INFO`.
+- [ ] Assistants can submit answers to pending questions on `/products/<pk>/`, marking them `resolved`.
+- [ ] Answering the final pending question on a product automatically transitions its status to `READY`.
+- [ ] Staging page displays a prominent banner when resolved answers are ready for AI regeneration.
+- [ ] Marketplace links card displays a caution alert when product is in `AWAITING_INFO` or `BLOCKED` status.
+**Verification:**
+- [ ] Unit & integration tests pass: `python manage.py test tests.test_clarifications`
+**Dependencies:** Task 34
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/forms.py`
+- `inventory/templates/inventory/product_detail.html`
+- `tests/test_clarifications.py`
+**Estimated scope:** Medium (3-4 files)
+
+---
+
+### Task 36: Dashboard Status Filtering, Dynamic Status Counters & AI Prompt Integration
+**Description:** Update `dashboard_view` in `inventory/views.py` to support filtering by `status=awaiting_info` and `status=blocked` alongside `all`, `active`, and `sold`. Scope status counters (`total_count`, `active_count`, `awaiting_info_count`, `sold_count`, `blocked_count`) dynamically to the active platform filter and search query. Update `inventory/templates/inventory/dashboard.html` status tab bar with badges. Update `generate_product_listing` in `inventory/services/ai_service.py` to format resolved clarifications into the Gemini prompt payload alongside `raw_note`.
+**Acceptance criteria:**
+- [ ] Dashboard filters catalog by `status=awaiting_info` and `status=blocked`.
+- [ ] Status tab bar includes "Dudas pendientes" with scoped badge counter.
+- [ ] Status counters remain scoped to active platform filter (`?platform=<slug>`) and search query (`?q=<term>`).
+- [ ] `generate_product_listing` appends resolved clarification Q&As into the prompt context for Gemini Multimodal Vision.
+**Verification:**
+- [ ] Unit & integration tests pass: `python manage.py test tests.test_clarifications`
+**Dependencies:** Task 35
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/templates/inventory/dashboard.html`
+- `inventory/services/ai_service.py`
+- `tests/test_clarifications.py`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 37: i18n Translations, Documentation & Regression Testing
+**Description:** Localize all new user-facing strings (statuses, categories, form labels, buttons, banners, badges) in Spanish (`locale/es/LC_MESSAGES/django.po`) and compile using `manage.py compile_locales`. Update `CHANGELOG.md` under `[Unreleased]`. Run full test suite and `ruff check .` to verify 0 regressions.
+**Acceptance criteria:**
+- [ ] All new strings translated in `locale/es/` and compiled to `.mo`.
+- [ ] Full test suite passes: `python manage.py test`.
+- [ ] Linter passes with 0 warnings: `ruff check .`.
+- [ ] `CHANGELOG.md` updated with feature description under `[Unreleased]`.
+**Verification:**
+- [ ] Command succeeds: `python manage.py compile_locales`
+- [ ] Full test suite passes: `python manage.py test`
+- [ ] Linter passes: `ruff check .`
+**Dependencies:** Task 36
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `CHANGELOG.md`
+**Estimated scope:** Small (3 files)
+
+---
+
+## Checkpoint 12: Product Clarifications & Lifecycle States Complete
+- [ ] Product lifecycle state machine active (`draft`, `awaiting_info`, `ready`, `sold`, `blocked`).
+- [ ] Managers can submit categorized questions, changing product status to `awaiting_info`.
+- [ ] Top nav badge `❓ Dudas (X)` and mobile intake alert notify assistants of pending questions.
+- [ ] Assistants can answer questions from mobile on product page, auto-transitioning status to `ready`.
+- [ ] Manager is alerted to regenerate AI listing when new answers are available.
+- [ ] Gemini Vision prompt includes resolved clarifications in generated copy.
+- [ ] Dashboard filters products by `status=awaiting_info` and scopes counters.
+- [ ] Spanish and English translations active.
+- [ ] Full test suite and linter pass with 0 errors.
+
+
 
 
 

@@ -10,6 +10,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 6. **User Management & Admin Role Gating:** Dedicated user management in Django administration restricted exclusively to store Managers (`is_manager(user)`), allowing managers to add, modify, deactivate, and remove assistants with role badges, productivity counts, and automatic permission synchronization.
 7. **Dynamic AI Model & Prompt Configuration:** Database-backed configuration managed in Django administration (`AIPromptConfiguration`), enabling store managers to tune Gemini model names (free-form), temperature, and localized copywriting prompt instructions without modifying codebase files or triggering server restarts, backed by automatic fallback to hardcoded defaults.
 8. **Marketplace Sites & External Listing Links Tracking:** Database-backed marketplace platforms table (`MarketplaceSite`) managed via Django Admin, enabling managers to define and reorder resale sites (Wallapop, Vinted, eBay, Milanuncios, etc.). Products link dynamically to these platforms (`ProductListingLink`), allowing managers to record, view, open, and copy direct listing URLs directly from the product detail staging page (`/products/<pk>/`) and Django admin.
+9. **Product Clarifications & Lifecycle State Machine:** Structured product lifecycle states (`DRAFT`, `AWAITING_INFO`, `READY`, `SOLD`, `BLOCKED`) coupled with an in-app clarification Q&A mechanism. When managers identify missing product info during staging, they submit categorized questions; assistants are alerted via top navigation badges (`❓ Dudas (X)`) and mobile intake banners to answer promptly. Resolved answers automatically enrich the Gemini Multimodal Vision prompt for higher-converting listings.
 
 ---
 
@@ -190,7 +191,8 @@ class MarketplaceSite(models.Model):
 | `ai_title` | CharField | max_length=255, blank=True | AI-generated marketplace title (editable) |
 | `ai_description` | TextField | blank=True | AI-generated marketplace listing copy (editable) |
 | `sale_price` | DecimalField | max_digits=10, decimal_places=2, null=True, blank=True | Target or final sale price in Euros (€) |
-| `is_sold` | BooleanField | default=False | Status indicating if item has been sold |
+| `status` | CharField | max_length=20, default='draft', db_index=True | Lifecycle state: `draft`, `awaiting_info`, `ready`, `sold`, `blocked` |
+| `is_sold` | BooleanField | default=False | Status indicating if item has been sold (synchronized with status='sold') |
 | `sold_at` | DateTimeField | null=True, blank=True | Timestamp when marked as sold |
 | `created_by` | ForeignKey(User) | null=True, on_delete=SET_NULL | User who cataloged the item |
 | `created_at` | DateTimeField | auto_now_add=True | Creation timestamp |
@@ -241,6 +243,20 @@ class MarketplaceSite(models.Model):
 | `updated_at` | DateTimeField | auto_now=True | Link modification timestamp |
 
 Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_site_link')`
+
+### 5.6 `ProductClarification`
+| Field | Type | Attributes | Description |
+|---|---|---|---|
+| `id` | AutoField | Primary Key | Unique clarification question identifier |
+| `product` | ForeignKey(Product) | related_name='clarifications', on_delete=CASCADE | Parent product under review |
+| `category` | CharField | max_length=30, choices=[measurements, tag_composition, flaws_condition, material_authenticity, general] | Question category for structured classification |
+| `question` | TextField | blank=False | Clarification question submitted by manager |
+| `asked_by` | ForeignKey(User) | null=True, blank=True, on_delete=SET_NULL, related_name='asked_clarifications' | Manager who posted the question |
+| `answer` | TextField | blank=True, default="" | Response submitted by assistant |
+| `answered_by` | ForeignKey(User) | null=True, blank=True, on_delete=SET_NULL, related_name='answered_clarifications' | Assistant who answered the question |
+| `status` | CharField | max_length=20, default='pending', choices=[pending, resolved] | Status of the clarification request |
+| `created_at` | DateTimeField | auto_now_add=True | Question submission timestamp |
+| `answered_at` | DateTimeField | null=True, blank=True | Answer timestamp |
 
 ---
 
@@ -348,6 +364,24 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
   - Platforms with published counts fetched with a single optimized aggregate query:
     `MarketplaceSite.objects.filter(product_links__is_active=True).annotate(published_count=Count('product_links__product', filter=Q(product_links__is_active=True), distinct=True)).filter(published_count__gt=0).order_by('order', 'name')`.
 
+### 6.9 Product Clarifications & Staging Feedback Loop
+- **Lifecycle Progression:**
+  - `DRAFT`: Initial status when an assistant finishes intake on `/intake/`.
+  - `AWAITING_INFO`: Transitioned automatically when a manager posts a clarification question on `/products/<pk>/`.
+  - `READY`: Transitioned when all open questions on a product are resolved, ready for AI copy generation and marketplace listing.
+  - `SOLD`: Item marked as sold. Legacy `is_sold` column kept synchronized.
+  - `BLOCKED`: Item flagged as unsellable, counterfeit, or irreparable. Excluded from active listing workflows.
+- **Clarification Categories:**
+  - Categorized chips on staging UI: *Medidas / Tallas*, *Etiqueta / Composición / Marca*, *Defectos / Desgaste / Manchas*, *Material / Autenticidad*, *Consulta general*.
+- **Assistant Notification & Discovery:**
+  - Global context processor `inventory.context_processors.notifications` computes `pending_clarifications_count`.
+  - Top navigation bar renders a high-visibility badge: `❓ Dudas (X)` for authenticated assistants and managers.
+  - Mobile intake view (`/intake/`) displays a subtle dismissible alert banner informing assistants when items await their feedback.
+- **Mobile Answering Flow:**
+  - Assistants navigate directly from the notification badge to the awaiting product or the filtered dashboard (`?status=awaiting_info`).
+  - On `/products/<pk>/`, assistants can view pending questions, submit concise answers, and mark the question resolved.
+  - Submitting the final pending answer prompts the manager: *"✨ Nuevos datos disponibles — Regenerar descripción con IA"*.
+
 ---
 
 ## 7. AI Service Contract (`ai_service.py`)
@@ -358,6 +392,17 @@ def generate_product_listing(
     language: str = "en",
 ) -> dict[str, str]:
     """
+    Sends product photos, preserved raw notes, and resolved Q&A clarifications
+    to Google Gemini Multimodal Vision API. Uses dynamic prompt configuration from
+    AIPromptConfiguration (with fallback to default instructions).
+    """
+```
+When `product.clarifications.filter(status='resolved').exists()` is true, the resolved Q&A pairs are formatted into the system/prompt context:
+```text
+ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
+- [Medidas / Tallas]: Ancho axila a axila 56cm, largo 68cm.
+- [Material]: 100% Piel ovina legítima, forro en buen estado.
+```
     Inputs:
       - product.raw_note: string
       - product.images: QuerySet of ProductImage
@@ -490,6 +535,12 @@ def generate_product_listing(
 29. Selecting a platform filters the product catalog to only items published on that platform (`listing_links__site__slug=platform, listing_links__is_active=True`).
 30. Filter state is fully retained across status tabs ("Active", "Sold", "All"), keyword/date searches, and page navigation (Page 1, Page 2).
 31. Selecting "All Platforms" returns to the unfiltered inventory catalog.
+32. Managers can submit clarification questions categorized under *Medidas*, *Etiqueta*, *Defectos*, *Material*, or *General* on `/products/<pk>/`, transitioning product status to `awaiting_info`.
+33. Global context processor injects `pending_clarifications_count`, displaying an attention badge `❓ Dudas (X)` in the top navigation bar whenever unanswered questions exist.
+34. Assistants receive an alert banner on `/intake/` and can answer pending questions directly from mobile on `/products/<pk>/`.
+35. When all questions for a product are resolved, status automatically updates to `ready` (or `draft`) and prompts the manager to re-generate the AI listing.
+36. Resolved clarifications are automatically formatted and passed to the Gemini Multimodal Vision API, producing copy that incorporates verified dimensions and flaw disclosures.
+37. The dashboard supports filtering by `status=awaiting_info` and `status=blocked` with dynamically scoped badge counters.
 
 ---
 
@@ -518,6 +569,11 @@ def generate_product_listing(
 - **Platform Status Counters Scoping:** When a platform filter is active, status counters ("All", "Active", "Sold") dynamically update to reflect counts of products published on that specific platform.
 - **Platform Dropdown Formatting:** Options display platform name and active published count, e.g. `Wallapop (12)`.
 - **Platform Filter Submission:** Changing the dropdown immediately triggers form auto-submission (`onchange="this.form.submit()"`).
+- **Product Lifecycle Model:** Discrete `status` enum (`draft`, `awaiting_info`, `ready`, `sold`, `blocked`) with backward-compatible synchronization with the legacy `is_sold` column.
+- **Clarification Thread Architecture:** Dedicated `ProductClarification` model supporting single question + single answer per issue with structured category tags.
+- **Notification Mechanism:** Lightweight global context processor querying unresolved questions count, avoiding polling or websocket overhead.
+- **AI Prompt Enrichment:** Resolved Q&A details dynamically appended to Gemini Vision prompt without overwriting or mutating immutable original intake field notes (`raw_note`).
+- **Publishing Gate:** Staging UI displays a caution banner if a manager attempts to link marketplaces while a product is in `awaiting_info` or `blocked` status.
 
 ---
 
@@ -567,5 +623,21 @@ def generate_product_listing(
    - **Option A (Recommended): Instant Auto-Submit (`onchange="this.form.submit()"`):** Selecting a platform immediately refreshes the filtered catalog without needing an extra click.
    - **Option B: Explicit "Filter" Button:** User selects the platform and must click a "Filter" button.
    *Which interaction do you prefer for triggering the filter?*
+10. **Auto-Transition Status upon All Clarifications Resolved:**
+   - When the assistant answers the final pending question on a product:
+   - **Option A (Recommended): Auto-transition to `ready`:** Status becomes `ready` immediately and displays a prominent badge *"✨ Nuevos datos disponibles — Regenerar descripción con IA"*.
+   - **Option B: Auto-transition to `draft`:** Status returns to `draft` for general manager review before manual promotion to `ready`.
+   *Which status should the product automatically transition to once all clarifications are answered?*
+11. **Assistant Clarification Reply Permissions:**
+   - Can assistants close or delete clarification questions, or only submit answer text?
+   - **Option A (Recommended): Answer submission only:** Assistants can submit or update their answer; only managers can delete questions or close them without an answer.
+   - **Option B: Full resolution control:** Assistants can also mark questions as "No aplicable" / close without answering.
+   *What level of control should assistants have over clarification requests?*
+12. **Clarification Photo Attachment Support:**
+   - Should assistants be able to attach an extra photo when answering a question (e.g. close-up of a care tag or tape measure on garment)?
+   - **Option A (Recommended for MVP): Text-only responses first:** Assistants respond with text (e.g. measurements or composition); photo uploads can be added in a future phase.
+   - **Option B: Include optional photo upload in MVP:** Include an optional file input in the clarification answer form that creates an additional `ProductImage`.
+   *Do you prefer text-only answers for the MVP, or optional photo uploads immediately?*
+
 
 

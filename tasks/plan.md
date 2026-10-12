@@ -88,6 +88,14 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - **Task 32:** i18n Translations & Comprehensive Automated Test Suite for Platform Filter (Update Spanish catalogs, unit & integration tests covering dynamic platform query, filtering, counter scoping, and multi-filter retention).
 - **Checkpoint 11 (Platform Filter Complete):** Platform selector displays only platforms with active published products, filters catalog instantly on change, retains status/search/page query state, scopes status counters accurately, and passes all automated tests.
 
+### Phase 12: Product Clarifications & Lifecycle States (Vertical Slice 8)
+- **Task 33:** Domain Models & Migration for Lifecycle States & Clarifications (`ProductStatus` choices, `Product.status` field with legacy `is_sold` synchronization, `ProductClarification` model, Django admin registration).
+- **Task 34:** Global Notification Context Processor, Top Nav Badge & Mobile Intake Banner (`notifications(request)` context processor, `pending_clarifications_count`, navbar `❓ Dudas (X)` attention badge, mobile `/intake/` alert banner).
+- **Task 35:** Product Detail Staging Q&A UI & Clarification Interaction Flow (Lifecycle badge, Q&A card with category pills, manager question submission, assistant mobile reply form, auto-transition to `ready` upon resolution, AI regeneration callout, publishing gate warning).
+- **Task 36:** Dashboard Status Filtering, Dynamic Status Counters & AI Prompt Integration (Dashboard filtering for `status=awaiting_info` and `status=blocked`, scoped status counters, Gemini multimodal vision prompt enrichment with resolved clarifications).
+- **Task 37:** i18n Translations, Documentation & Regression Testing (Spanish translations in `locale/es/`, compilation, `CHANGELOG.md` update, full test suite execution, ruff linter verification).
+- **Checkpoint 12 (Product Clarifications & Lifecycle States Complete):** Full lifecycle state machine active, managers can ask categorized questions, assistants receive badges and mobile alerts to answer, answered Q&A enriches Gemini descriptions, dashboard status filtering works, and all tests pass with 0 regressions.
+
 ---
 
 ## Risks and Mitigations
