@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-12
+
 ### Added
 - **Product Clarification Feedback Loop & Granular Lifecycle States (`ProductStatus`, `ProductClarification`)**:
   - Transitioned product domain model from binary `is_sold` to a structured lifecycle state machine: `DRAFT`, `AWAITING_INFO`, `READY`, `SOLD`, and `BLOCKED` with bidirectional synchronization and 100% backward compatibility for legacy `is_sold` queries and tests.
