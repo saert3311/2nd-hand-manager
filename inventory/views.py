@@ -170,6 +170,14 @@ def dashboard_view(request):
         products = products.filter(is_sold=False)
     elif status_filter == "sold":
         products = products.filter(is_sold=True)
+    elif status_filter == "awaiting_info":
+        products = products.filter(status=ProductStatus.AWAITING_INFO)
+    elif status_filter == "blocked":
+        products = products.filter(status=ProductStatus.BLOCKED)
+    elif status_filter == "ready":
+        products = products.filter(status=ProductStatus.READY)
+    elif status_filter == "draft":
+        products = products.filter(status=ProductStatus.DRAFT)
 
     if search_query:
         products = products.filter(build_search_query(search_query))
@@ -185,7 +193,9 @@ def dashboard_view(request):
     counts = counts_qs.aggregate(
         total_count=Count("id", distinct=True),
         active_count=Count("id", filter=Q(is_sold=False), distinct=True),
-        sold_count=Count("id", filter=Q(is_sold=True), distinct=True),
+        awaiting_info_count=Count("id", filter=Q(status=ProductStatus.AWAITING_INFO), distinct=True),
+        sold_count=Count("id", filter=Q(status=ProductStatus.SOLD), distinct=True),
+        blocked_count=Count("id", filter=Q(status=ProductStatus.BLOCKED), distinct=True),
     )
 
     paginator = Paginator(products, PAGE_SIZE)
@@ -217,7 +227,9 @@ def dashboard_view(request):
         "available_platforms": available_platforms,
         "total_count": counts["total_count"] or 0,
         "active_count": counts["active_count"] or 0,
+        "awaiting_info_count": counts["awaiting_info_count"] or 0,
         "sold_count": counts["sold_count"] or 0,
+        "blocked_count": counts["blocked_count"] or 0,
         "can_manage": is_manager(request.user),
     }
     return render(request, "inventory/dashboard.html", context)

@@ -7,7 +7,7 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
-from inventory.models import Product
+from inventory.models import ClarificationStatus, Product
 
 logger = logging.getLogger(__name__)
 
@@ -96,10 +96,30 @@ def generate_product_listing(
     notes_fallback = "No se proporcionaron notas." if is_es else "None provided."
     notes_text = product.raw_note.strip() if (product.raw_note and product.raw_note.strip()) else notes_fallback
 
+    # Format resolved clarifications if any
+    resolved_clarifications = product.clarifications.filter(status=ClarificationStatus.RESOLVED).order_by("created_at")
+    clarifications_text = ""
+    if resolved_clarifications.exists():
+        if is_es:
+            clarifications_header = "\n\nACLARACIONES Y RESPUESTAS DEL ASISTENTE:"
+        else:
+            clarifications_header = "\n\nCLARIFICATIONS AND ASSISTANT ANSWERS:"
+
+        clarif_lines = []
+        for c in resolved_clarifications:
+            cat_display = c.get_category_display()
+            if is_es:
+                clarif_lines.append(f"- [{cat_display}] Pregunta: {c.question} -> Respuesta: {c.answer}")
+            else:
+                clarif_lines.append(f"- [{cat_display}] Question: {c.question} -> Answer: {c.answer}")
+
+        clarifications_text = clarifications_header + "\n" + "\n".join(clarif_lines)
+
     prompt_text = (
         f"{system_instruction}\n\n"
         f"{notes_header}\n"
         f"{notes_text}"
+        f"{clarifications_text}"
     )
 
     contents = [prompt_text]

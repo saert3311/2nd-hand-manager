@@ -797,12 +797,12 @@
 ### Task 36: Dashboard Status Filtering, Dynamic Status Counters & AI Prompt Integration
 **Description:** Update `dashboard_view` in `inventory/views.py` to support filtering by `status=awaiting_info` and `status=blocked` alongside `all`, `active`, and `sold`. Scope status counters (`total_count`, `active_count`, `awaiting_info_count`, `sold_count`, `blocked_count`) dynamically to the active platform filter and search query. Update `inventory/templates/inventory/dashboard.html` status tab bar with badges. Update `generate_product_listing` in `inventory/services/ai_service.py` to format resolved clarifications into the Gemini prompt payload alongside `raw_note`.
 **Acceptance criteria:**
-- [ ] Dashboard filters catalog by `status=awaiting_info` and `status=blocked`.
-- [ ] Status tab bar includes "Dudas pendientes" with scoped badge counter.
-- [ ] Status counters remain scoped to active platform filter (`?platform=<slug>`) and search query (`?q=<term>`).
-- [ ] `generate_product_listing` appends resolved clarification Q&As into the prompt context for Gemini Multimodal Vision.
+- [x] Dashboard filters catalog by `status=awaiting_info` and `status=blocked`.
+- [x] Status tab bar includes "Dudas pendientes" with scoped badge counter.
+- [x] Status counters remain scoped to active platform filter (`?platform=<slug>`) and search query (`?q=<term>`).
+- [x] `generate_product_listing` appends resolved clarification Q&As into the prompt context for Gemini Multimodal Vision.
 **Verification:**
-- [ ] Unit & integration tests pass: `python manage.py test tests.test_clarifications`
+- [x] Unit & integration tests pass: `python manage.py test tests.test_clarifications`
 **Dependencies:** Task 35
 **Files likely touched:**
 - `inventory/views.py`

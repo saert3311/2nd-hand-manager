@@ -1,15 +1,18 @@
 from decimal import Decimal
+from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from inventory.admin import ProductAdmin, ProductClarificationAdmin, ProductClarificationInline, manager_admin_site
 from inventory.models import (
     ClarificationCategory,
     ClarificationStatus,
+    MarketplaceSite,
     Product,
     ProductClarification,
+    ProductListingLink,
     ProductStatus,
 )
 
@@ -318,5 +321,99 @@ class ProductDetailClarificationViewTests(TestCase):
         resp = self.client.get(reverse("inventory:product_detail", kwargs={"pk": self.product.pk}))
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "ai-regeneration-callout")
+
+
+class DashboardClarificationAndLifecycleTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.manager = User.objects.create_user(username="manager", password="password123", is_staff=True)
+        self.assistant = User.objects.create_user(username="assistant", password="password123")
+        self.client.login(username="manager", password="password123")
+
+        self.site_vinted, _ = MarketplaceSite.objects.get_or_create(slug="vinted", defaults={"name": "Vinted", "is_active": True})
+        self.site_ebay, _ = MarketplaceSite.objects.get_or_create(slug="ebay", defaults={"name": "eBay", "is_active": True})
+
+        self.prod_draft = Product.objects.create(raw_note="Draft jacket", status=ProductStatus.DRAFT, created_by=self.assistant)
+        self.prod_awaiting = Product.objects.create(raw_note="Awaiting info shoes", status=ProductStatus.AWAITING_INFO, created_by=self.assistant)
+        self.prod_ready = Product.objects.create(raw_note="Ready boots", status=ProductStatus.READY, created_by=self.assistant)
+        self.prod_sold = Product.objects.create(raw_note="Sold watch", status=ProductStatus.SOLD, created_by=self.assistant)
+        self.prod_blocked = Product.objects.create(raw_note="Blocked replica coat", status=ProductStatus.BLOCKED, created_by=self.assistant)
+
+        # Attach links to vinted
+        ProductListingLink.objects.create(product=self.prod_draft, site=self.site_vinted, url="https://vinted.fr/1", is_active=True)
+        ProductListingLink.objects.create(product=self.prod_awaiting, site=self.site_vinted, url="https://vinted.fr/2", is_active=True)
+        ProductListingLink.objects.create(product=self.prod_sold, site=self.site_ebay, url="https://ebay.com/1", is_active=True)
+
+    def test_filter_by_awaiting_info(self):
+        resp = self.client.get(reverse("inventory:dashboard"), {"status": "awaiting_info"})
+        self.assertEqual(resp.status_code, 200)
+        products = list(resp.context["products"])
+        self.assertIn(self.prod_awaiting, products)
+        self.assertNotIn(self.prod_draft, products)
+        self.assertNotIn(self.prod_sold, products)
+        self.assertNotIn(self.prod_blocked, products)
+
+    def test_filter_by_blocked(self):
+        resp = self.client.get(reverse("inventory:dashboard"), {"status": "blocked"})
+        self.assertEqual(resp.status_code, 200)
+        products = list(resp.context["products"])
+        self.assertIn(self.prod_blocked, products)
+        self.assertNotIn(self.prod_awaiting, products)
+
+    def test_status_counters_overall_and_scoped_to_platform(self):
+        resp = self.client.get(reverse("inventory:dashboard"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context["total_count"], 5)
+        self.assertEqual(resp.context["awaiting_info_count"], 1)
+        self.assertEqual(resp.context["sold_count"], 1)
+        self.assertEqual(resp.context["blocked_count"], 1)
+
+        # Scoped to Vinted
+        resp_vinted = self.client.get(reverse("inventory:dashboard"), {"platform": "vinted"})
+        self.assertEqual(resp_vinted.status_code, 200)
+        self.assertEqual(resp_vinted.context["total_count"], 2)
+        self.assertEqual(resp_vinted.context["awaiting_info_count"], 1)
+        self.assertEqual(resp_vinted.context["sold_count"], 0)
+
+
+class AIServiceClarificationEnrichmentTests(TestCase):
+    def setUp(self):
+        self.manager = User.objects.create_user(username="manager", password="password123", is_staff=True)
+        self.assistant = User.objects.create_user(username="assistant", password="password123")
+        self.product = Product.objects.create(raw_note="Harris Tweed wool blazer", created_by=self.assistant)
+
+    @override_settings(GEMINI_API_KEY="test-key")
+    @patch("inventory.services.ai_service.genai.Client")
+    def test_generate_product_listing_includes_resolved_clarifications_in_prompt(self, mock_client_cls):
+        from inventory.services.ai_service import ProductListingSchema, generate_product_listing
+
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.parsed = ProductListingSchema(
+            title="Vintage Harris Tweed Wool Blazer",
+            description="Classic tailored blazer with confirmed pure wool."
+        )
+        mock_client.models.generate_content.return_value = mock_response
+
+        # Add resolved clarification
+        clarif = ProductClarification.objects.create(
+            product=self.product,
+            category=ClarificationCategory.MATERIAL_AUTHENTICITY,
+            question="Is there an internal woolmark tag?",
+            asked_by=self.manager,
+        )
+        clarif.resolve(answer="Yes, 100% Pure Scottish Virgin Wool with Orb mark", answered_by=self.assistant)
+
+        result = generate_product_listing(self.product)
+        self.assertEqual(result["title"], "Vintage Harris Tweed Wool Blazer")
+
+        # Verify prompt contents sent to Gemini
+        call_kwargs = mock_client.models.generate_content.call_args.kwargs
+        contents = call_kwargs["contents"]
+        prompt_text = contents[0]
+        self.assertIn("Harris Tweed wool blazer", prompt_text)
+        self.assertIn("Is there an internal woolmark tag?", prompt_text)
+        self.assertIn("100% Pure Scottish Virgin Wool with Orb mark", prompt_text)
 
 

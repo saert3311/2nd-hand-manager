@@ -24,7 +24,7 @@
   <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
     
     <!-- Status Tabs -->
-    <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-full lg:w-auto text-xs font-semibold">
+    <div class="flex flex-wrap items-center gap-1 bg-slate-100 p-1 rounded-xl w-full lg:w-auto text-xs font-semibold">
       <a href="?status=all{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
          class="flex-1 lg:flex-initial text-center px-3 py-1.5 rounded-lg transition {% if status_filter == 'all' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-600 hover:text-slate-900{% endif %}">
         {% trans "All" %} ({{ total_count }})
@@ -33,10 +33,20 @@
          class="flex-1 lg:flex-initial text-center px-3 py-1.5 rounded-lg transition {% if status_filter == 'active' %}bg-white text-emerald-700 shadow-sm{% else %}text-slate-600 hover:text-slate-900{% endif %}">
         {% trans "Active" %} ({{ active_count }})
       </a>
+      <a href="?status=awaiting_info{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+         class="flex-1 lg:flex-initial text-center px-3 py-1.5 rounded-lg transition {% if status_filter == 'awaiting_info' %}bg-white text-amber-800 shadow-sm font-bold{% else %}text-slate-600 hover:text-slate-900{% endif %}">
+        ❓ {% trans "Doubts" %} ({{ awaiting_info_count }})
+      </a>
       <a href="?status=sold{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
          class="flex-1 lg:flex-initial text-center px-3 py-1.5 rounded-lg transition {% if status_filter == 'sold' %}bg-white text-slate-700 shadow-sm{% else %}text-slate-600 hover:text-slate-900{% endif %}">
         {% trans "Sold" %} ({{ sold_count }})
       </a>
+      {% if blocked_count > 0 or status_filter == 'blocked' %}
+      <a href="?status=blocked{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+         class="flex-1 lg:flex-initial text-center px-3 py-1.5 rounded-lg transition {% if status_filter == 'blocked' %}bg-white text-rose-800 shadow-sm font-bold{% else %}text-slate-600 hover:text-slate-900{% endif %}">
+        ⛔ {% trans "Blocked" %} ({{ blocked_count }})
+      </a>
+      {% endif %}
     </div>
 
     <!-- Right Controls: Platform Selector & Search Form -->
@@ -109,9 +119,23 @@
 
         <!-- Badges on Photo -->
         <div class="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1.5 max-w-[80%]">
-          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm {% if product.is_sold %}bg-slate-900/80 text-white{% else %}bg-emerald-600/90 text-white{% endif %}">
-            {% if product.is_sold %}{% trans "Sold" %}{% else %}{% trans "Active" %}{% endif %}
+          {% if product.status == 'awaiting_info' %}
+          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-amber-500 text-white">
+            ❓ {% trans "Doubts" %}
           </span>
+          {% elif product.status == 'blocked' %}
+          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-rose-600 text-white">
+            ⛔ {% trans "Blocked" %}
+          </span>
+          {% elif product.is_sold %}
+          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-slate-900/80 text-white">
+            {% trans "Sold" %}
+          </span>
+          {% else %}
+          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-emerald-600/90 text-white">
+            {% trans "Active" %}
+          </span>
+          {% endif %}
           {% for link in product.listing_links.all %}
           {% if link.is_active %}
           <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-white/90 text-slate-800 shadow-xs backdrop-blur-xs">
