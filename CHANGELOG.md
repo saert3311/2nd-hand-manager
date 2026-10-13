@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added [`README.md`](file:///C:/Users/Jose/antigravity/epic-tesla/README.md) with comprehensive container and local setup documentation.
 
 ### CI/CD & Automation
-- **GitHub Actions Quality Gates Pipeline ([`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml))**:
+- **GitHub Actions Quality Gates & GHCR Publishing ([`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml))**:
   - Implemented automated Shift-Left quality gates on every pull request and push to `master`:
     1. *Gate 1*: Code linting and style compliance via `ruff check .`.
     2. *Gate 2*: Django system and deployment security checks via `python manage.py check`.
@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     4. *Gate 4*: Docker container image build with GitHub Actions layer caching.
     5. *Gate 5*: Container non-root execution verification (`id -u != 0`).
     6. *Gate 6*: Container boot smoke test, polling healthcheck and verifying expected HTML application response.
+  - Added automated `publish-image` job pushing production Docker images to **GitHub Container Registry (GHCR)** (`ghcr.io/saert3311/2nd-hand-manager:latest` and SHA tag) upon successful master builds.
+- **Production Container Orchestration & CD ([`docker-compose.prod.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/docker-compose.prod.yml))**:
+  - Configured standalone production compose using pre-built GHCR image with persistent volumes (`secondhand_data`, `secondhand_media`).
+  - Added Watchtower service for continuous hands-free deployment: automatically pulls new GHCR images, gracefully restarts the container, and prunes old images.
 
 ### Security & Hardening
 - **Multi-Axis Quality Review & Input Boundary Hardening**:

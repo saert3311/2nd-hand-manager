@@ -98,6 +98,36 @@ python manage.py test
 
 ---
 
+## 🌐 Automated Remote Deployment (GHCR + Watchtower)
+
+Deploy continuously on any remote VPS without building images on the server:
+
+### 1. Automated Image Build & Publish
+When changes merge into `master`, GitHub Actions automatically:
+- Executes all 6 quality gates and tests.
+- Builds the production image with Python 3.13 slim.
+- Publishes the image to **GitHub Container Registry**: `ghcr.io/saert3311/2nd-hand-manager:latest`.
+
+### 2. On Your Remote Server (One-Time Setup)
+1. Transfer or clone `docker-compose.prod.yml` and `.env` onto your server:
+   ```bash
+   mkdir -p /opt/secondhand && cd /opt/secondhand
+   curl -O https://raw.githubusercontent.com/saert3311/2nd-hand-manager/master/docker-compose.prod.yml
+   cp .env.example .env
+   nano .env  # set SECRET_KEY, DEBUG=False, ALLOWED_HOSTS=yourdomain.com, GEMINI_API_KEY
+   ```
+2. Start the production stack:
+   ```bash
+   docker compose -f docker-compose.prod.yml up -d
+   ```
+
+### 3. Hands-Free Automated Updates
+The included **Watchtower** service monitors `ghcr.io/saert3311/2nd-hand-manager:latest`:
+- When GitHub Actions pushes a new version, Watchtower automatically downloads the new image, gracefully restarts the web container, preserves all volumes, and deletes old images.
+- No SSH keys or webhook ports needed on the server!
+
+---
+
 ## 🔒 Security & Architecture Highlights
 
 - **Non-Root Execution**: Runs under unprivileged `appuser:appgroup` (UID 10001).
@@ -105,3 +135,4 @@ python manage.py test
 - **Decompression Bomb & Polyglot Protection**: Uploaded images are re-encoded into WebP in memory, neutralizing EXIF injection and pixel flood attacks.
 - **URL Scheme Validation**: Only `http://` and `https://` schemes permitted across marketplace links.
 - **Decoupled Storage**: Seamlessly switches between local filesystem mounts and Oracle Cloud Infrastructure (OCI) S3-compatible Object Storage via environment configuration.
+

@@ -1,0 +1,49 @@
+# ==============================================================================
+# Production Docker Compose for 2ndHand Staging Hub
+# Pre-built GHCR Image • Data Persistence • Automated CD with Watchtower
+# ==============================================================================
+
+services:
+  web:
+    image: ghcr.io/saert3311/2nd-hand-manager:latest
+    container_name: secondhand_staging_prod
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PORT=8000
+    volumes:
+      - secondhand_data:/app/data
+      - secondhand_media:/app/media
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # Automated Continuous Deployment
+  # Monitors GHCR for new images, gracefully updates the web container, and cleans old images
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: secondhand_staging_watchtower
+    restart: unless-stopped
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300
+      - WATCHTOWER_INCLUDE_STOPPED=false
+      - WATCHTOWER_REVIVE_STOPPED=false
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # If the GHCR package is private, authenticate on the server via `docker login ghcr.io`
+      # and mount ~/.docker/config.json:
+      # - /root/.docker/config.json:/config.json:ro
+
+volumes:
+  secondhand_data:
+    driver: local
+  secondhand_media:
+    driver: local
