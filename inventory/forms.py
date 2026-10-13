@@ -88,6 +88,7 @@ class ProductClarificationForm(forms.ModelForm):
         }),
     )
     question = forms.CharField(
+        max_length=2000,
         label=_("Question for Assistant"),
         widget=forms.Textarea(attrs={
             "rows": 2,
@@ -104,6 +105,7 @@ class ProductClarificationForm(forms.ModelForm):
 
 class ProductClarificationAnswerForm(forms.Form):
     answer = forms.CharField(
+        max_length=3000,
         label=_("Answer"),
         widget=forms.Textarea(attrs={
             "rows": 2,

@@ -1,5 +1,6 @@
 import io
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import ValidationError
@@ -8,10 +9,21 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from PIL import Image
 
-from inventory.forms import ProductIntakeForm, ProductUpdateForm
-from inventory.models import Product
+from inventory.forms import (
+    ProductClarificationAnswerForm,
+    ProductClarificationForm,
+    ProductIntakeForm,
+    ProductUpdateForm,
+)
+from inventory.models import (
+    ClarificationCategory,
+    MarketplaceSite,
+    Product,
+    ProductClarification,
+    ProductListingLink,
+)
 from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
-from inventory.services.image_service import validate_image_file
+from inventory.services.image_service import process_and_convert_to_webp, validate_image_file
 
 
 class SecurityAndXSSProtectionTests(TestCase):
@@ -74,6 +86,53 @@ class SecurityAndXSSProtectionTests(TestCase):
         self.assertNotIn('<script>alert("search-xss")</script>', content)
         self.assertIn('&quot;&gt;&lt;script&gt;alert(&quot;search-xss&quot;)&lt;/script&gt;', content)
 
+    def test_clarification_question_and_answer_xss_is_escaped(self):
+        self.client.login(username="mgr", password="password123")
+        product = Product.objects.create(raw_note="Jeans", created_by=self.assistant)
+        clarif = ProductClarification.objects.create(
+            product=product,
+            category=ClarificationCategory.MEASUREMENTS,
+            question="<script>alert('xss-question')</script>",
+            asked_by=self.manager,
+        )
+        clarif.resolve(
+            answer="<img src=x onerror=alert('xss-answer')>",
+            answered_by=self.assistant,
+        )
+
+        response = self.client.get(reverse("inventory:product_detail", kwargs={"pk": product.pk}))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+
+        # Unescaped payloads must not appear in HTML
+        self.assertNotIn("<script>alert('xss-question')</script>", content)
+        self.assertNotIn("<img src=x onerror=alert('xss-answer')>", content)
+
+        # Escaped payloads must appear
+        self.assertIn("&lt;script&gt;alert(&#x27;xss-question&#x27;)&lt;/script&gt;", content)
+        self.assertIn("&lt;img src=x onerror=alert(&#x27;xss-answer&#x27;)&gt;", content)
+
+    def test_marketplace_site_name_and_url_xss_is_escaped(self):
+        self.client.login(username="mgr", password="password123")
+        product = Product.objects.create(raw_note="Shoes", created_by=self.assistant)
+        site = MarketplaceSite.objects.create(
+            name="<b onmouseover=alert('site-xss')>EvilMarket</b>",
+            base_url="https://evilmarket.example.com",
+            order=1,
+        )
+        ProductListingLink.objects.create(
+            product=product,
+            site=site,
+            url="https://evilmarket.example.com/items/123",
+        )
+
+        response = self.client.get(reverse("inventory:product_detail", kwargs={"pk": product.pk}))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+
+        self.assertNotIn("<b onmouseover=alert('site-xss')>", content)
+        self.assertIn("&lt;b onmouseover=alert(&#x27;site-xss&#x27;)&gt;EvilMarket&lt;/b&gt;", content)
+
 
 class InputValidationAndBoundaryTests(TestCase):
     """
@@ -122,6 +181,80 @@ class InputValidationAndBoundaryTests(TestCase):
         valid_file = SimpleUploadedFile("item.jpg", buf.getvalue(), content_type="image/jpeg")
         # Should not raise
         validate_image_file(valid_file)
+
+    def test_product_listing_link_rejects_javascript_url_scheme(self):
+        site = MarketplaceSite.objects.create(name="SiteA", base_url="https://sitea.example.com")
+        prod = Product.objects.create(raw_note="Item")
+        link = ProductListingLink(product=prod, site=site, url="javascript:alert('xss')")
+        with self.assertRaises(ValidationError):
+            link.full_clean()
+
+    def test_marketplace_site_rejects_javascript_base_url(self):
+        site = MarketplaceSite(name="BadSite", base_url="javascript:alert('evil')")
+        with self.assertRaises(ValidationError):
+            site.full_clean()
+
+    def test_clarification_question_length_limit(self):
+        form = ProductClarificationForm(data={
+            "category": ClarificationCategory.MEASUREMENTS,
+            "question": "Q" * 2001,
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn("question", form.errors)
+
+    def test_clarification_answer_length_limit(self):
+        form = ProductClarificationAnswerForm(data={
+            "answer": "A" * 3001,
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn("answer", form.errors)
+
+    def test_image_validation_rejects_zero_byte_empty_file(self):
+        empty_file = SimpleUploadedFile("empty.jpg", b"", content_type="image/jpeg")
+        with self.assertRaises(ValidationError) as ctx:
+            validate_image_file(empty_file)
+        self.assertIn("empty", str(ctx.exception).lower())
+
+    def test_image_validation_rejects_corrupted_truncated_file(self):
+        corrupted_file = SimpleUploadedFile("corrupted.jpg", b"\xff\xd8\xff\xe0\x00\x10JFIF\x00", content_type="image/jpeg")
+        with self.assertRaises(ValidationError) as ctx:
+            validate_image_file(corrupted_file)
+        self.assertIn("not a valid or readable image", str(ctx.exception).lower())
+
+    def test_image_validation_rejects_svg_file(self):
+        svg_payload = b"<svg xmlns='http://www.w3.org/2000/svg'><script>alert(1)</script></svg>"
+        svg_file = SimpleUploadedFile("vector.svg", svg_payload, content_type="image/svg+xml")
+        with self.assertRaises(ValidationError) as ctx:
+            validate_image_file(svg_file)
+        self.assertIn("not a valid or readable image", str(ctx.exception).lower())
+
+    def test_process_and_convert_to_webp_sanitizes_path_traversal_filename(self):
+        buf = io.BytesIO()
+        Image.new("RGB", (50, 50), color="red").save(buf, format="JPEG")
+        buf.seek(0)
+        traversal_file = SimpleUploadedFile("../../../etc/passwd.jpg", buf.getvalue(), content_type="image/jpeg")
+        converted = process_and_convert_to_webp(traversal_file)
+        self.assertNotIn("..", converted.name)
+        self.assertNotIn("/", converted.name)
+        self.assertNotIn("\\", converted.name)
+        self.assertTrue(converted.name.endswith(".webp"))
+
+    def test_generate_ai_view_clamps_oversized_title(self):
+        mgr = User.objects.create_user(username="mgr_ai_clamp", password="password123", is_staff=True)
+        mgr_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
+        mgr.groups.add(mgr_group)
+        self.client.login(username="mgr_ai_clamp", password="password123")
+        product = Product.objects.create(raw_note="Coat", created_by=mgr)
+
+        with patch("inventory.services.ai_service.generate_product_listing") as mock_gen:
+            mock_gen.return_value = {
+                "title": "A" * 400,
+                "description": "Safe description",
+            }
+            resp = self.client.post(reverse("inventory:generate_ai", kwargs={"pk": product.pk}))
+            self.assertEqual(resp.status_code, 302)
+            product.refresh_from_db()
+            self.assertEqual(len(product.ai_title), 255)
 
 
 class AccessControlAndSecurityHeadersTests(TestCase):

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security & Hardening
+- **Multi-Axis Quality Review & Input Boundary Hardening**:
+  - Conducted five-axis review (Correctness, Readability, Architecture, Security, Performance) and threat analysis across intake, staging, AI generation, and marketplace publishing flows.
+  - Hardened `ProductListingLink.url` and `MarketplaceSite.base_url` models with `HTTP_URL_VALIDATOR` (`schemes=["http", "https"]`), preventing execution of `javascript:`, `data:`, and non-HTTP URL schemes at model, form, and admin boundaries.
+  - Enforced server-side length limits on clarification models and forms (`ProductClarificationForm.question` capped at 2,000 chars, `ProductClarificationAnswerForm.answer` capped at 3,000 chars).
+  - Hardened upload validation pipeline in `inventory/services/image_service.py` with explicit rejection of 0-byte/empty files, safe error conversion for truncated/corrupted images, rejection of polyglot/SVG files, and sanitization of filenames against directory traversal exploits (`clean_stem`).
+  - Implemented defensive clamping on AI-generated listing titles (`[:255]`) in `inventory/views.py` to prevent database overflow from unexpectedly long LLM responses.
+  - Verified 100% safe rendering without XSS across all templates (`product_detail.html`, `dashboard.html`, `intake.html`, `base.html`), ensuring complete HTML escaping and secure `escapejs` attribute passing.
+  - Added 11 automated security tests in `tests/test_security.py` bringing the test suite to 162 passing tests.
+
 ## [1.1.0] - 2026-10-12
 
 ### Added

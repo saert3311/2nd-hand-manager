@@ -1,11 +1,16 @@
 from decimal import Decimal
 
 from django.conf import settings
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
+
+HTTP_URL_VALIDATOR = URLValidator(
+    schemes=["http", "https"],
+    message=_("Enter a valid URL starting with http:// or https://."),
+)
 
 
 class ProductStatus(models.TextChoices):
@@ -265,6 +270,7 @@ class MarketplaceSite(models.Model):
         max_length=255,
         blank=True,
         default="",
+        validators=[HTTP_URL_VALIDATOR],
         verbose_name=_("Base URL"),
         help_text=_("Base homepage URL of the marketplace (e.g. https://es.wallapop.com)"),
     )
@@ -311,6 +317,7 @@ class ProductListingLink(models.Model):
     )
     url = models.URLField(
         max_length=1000,
+        validators=[HTTP_URL_VALIDATOR],
         verbose_name=_("Listing URL"),
         help_text=_("Direct link to the active ad on the marketplace platform"),
     )
@@ -352,6 +359,7 @@ class ProductClarification(models.Model):
         help_text=_("Area of clarification"),
     )
     question = models.TextField(
+        max_length=2000,
         verbose_name=_("Question"),
         help_text=_("Question from manager regarding missing product details"),
     )
@@ -364,6 +372,7 @@ class ProductClarification(models.Model):
         verbose_name=_("Asked By"),
     )
     answer = models.TextField(
+        max_length=3000,
         blank=True,
         default="",
         verbose_name=_("Answer"),

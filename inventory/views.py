@@ -503,8 +503,8 @@ def generate_ai_view(request, pk):
         active_language = get_language() or "en"
         listing_data = generate_product_listing(product, language=active_language)
 
-        product.ai_title = listing_data["title"]
-        product.ai_description = listing_data["description"]
+        product.ai_title = (listing_data.get("title") or "").strip()[:255]
+        product.ai_description = (listing_data.get("description") or "").strip()
         product.save(update_fields=["ai_title", "ai_description", "updated_at"])
 
         messages.success(request, _("AI listing successfully generated from photos and notes!"))

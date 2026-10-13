@@ -19,13 +19,22 @@ Image.MAX_IMAGE_PIXELS = 25_000_000
 
 def validate_image_file(uploaded_file):
     """
-    Validates that the uploaded file is within the 10MB limit and is a readable image.
+    Validates that the uploaded file is within the 10MB limit, is non-empty, and is a readable image.
     Verifies MIME/format against allowed image formats and prevents decompression bombs.
     """
-    if uploaded_file.size > MAX_IMAGE_SIZE_BYTES:
+    filename = getattr(uploaded_file, "name", "image")
+    file_size = getattr(uploaded_file, "size", 0)
+
+    if file_size <= 0:
+        raise ValidationError(
+            _("Image '%(filename)s' is empty (0 bytes).")
+            % {"filename": filename}
+        )
+
+    if file_size > MAX_IMAGE_SIZE_BYTES:
         raise ValidationError(
             _("Image '%(filename)s' exceeds the 10MB limit (%(size).1fMB).")
-            % {"filename": uploaded_file.name, "size": uploaded_file.size / (1024 * 1024)}
+            % {"filename": filename, "size": file_size / (1024 * 1024)}
         )
 
     # Verify that Pillow can read the image header and format
@@ -44,14 +53,14 @@ def validate_image_file(uploaded_file):
     except Image.DecompressionBombError as dbe:
         raise ValidationError(
             _("File '%(filename)s' is too large in pixel dimensions (possible decompression bomb).")
-            % {"filename": uploaded_file.name}
+            % {"filename": filename}
         ) from dbe
     except ValidationError:
         raise
     except Exception as exc:
         raise ValidationError(
             _("File '%(filename)s' is not a valid or readable image.")
-            % {"filename": uploaded_file.name}
+            % {"filename": filename}
         ) from exc
 
 
@@ -74,39 +83,49 @@ def process_and_convert_to_webp(uploaded_file, quality=DEFAULT_WEBP_QUALITY, max
     2. Corrects orientation based on EXIF transpose.
     3. Resizes down if larger than max_dimension while maintaining aspect ratio.
     4. Converts to WebP format.
-    5. Returns a Django ContentFile with a .webp filename.
+    5. Returns a Django ContentFile with a sanitized .webp filename.
     """
     validate_image_file(uploaded_file)
 
     if hasattr(uploaded_file, "seek"):
         uploaded_file.seek(0)
 
-    with Image.open(uploaded_file) as img:
-        # Correct mobile camera orientation
-        try:
-            img = ImageOps.exif_transpose(img)
-        except Exception:
-            pass  # Fall back if no EXIF or transpose error
+    filename = getattr(uploaded_file, "name", "img")
 
-        # Ensure color mode is compatible with WebP (RGB or RGBA)
-        if img.mode not in ("RGB", "RGBA"):
-            img = img.convert("RGB")
+    try:
+        with Image.open(uploaded_file) as img:
+            # Correct mobile camera orientation
+            try:
+                img = ImageOps.exif_transpose(img)
+            except Exception:
+                pass  # Fall back if no EXIF or transpose error
 
-        # Downscale if image is excessively large
-        width, height = img.size
-        if width > max_dimension or height > max_dimension:
-            img.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
+            # Ensure color mode is compatible with WebP (RGB or RGBA)
+            if img.mode not in ("RGB", "RGBA"):
+                img = img.convert("RGB")
 
-        # Save to in-memory WebP buffer
-        buffer = io.BytesIO()
-        img.save(buffer, format="WEBP", quality=quality, method=4)
-        buffer.seek(0)
+            # Downscale if image is excessively large
+            width, height = img.size
+            if width > max_dimension or height > max_dimension:
+                img.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
 
-        # Derive clean .webp filename
-        original_stem = Path(uploaded_file.name).stem if hasattr(uploaded_file, "name") and uploaded_file.name else "img"
-        clean_stem = "".join(c for c in original_stem if c.isalnum() or c in ("-", "_"))[:30]
-        if not clean_stem:
-            clean_stem = "img"
-        webp_filename = f"{clean_stem}_{uuid.uuid4().hex[:8]}.webp"
+            # Save to in-memory WebP buffer
+            buffer = io.BytesIO()
+            img.save(buffer, format="WEBP", quality=quality, method=4)
+            buffer.seek(0)
 
-        return ContentFile(buffer.getvalue(), name=webp_filename)
+            # Derive clean .webp filename stripped of path traversal characters
+            original_stem = Path(filename).stem if filename else "img"
+            clean_stem = "".join(c for c in original_stem if c.isalnum() or c in ("-", "_"))[:30]
+            if not clean_stem:
+                clean_stem = "img"
+            webp_filename = f"{clean_stem}_{uuid.uuid4().hex[:8]}.webp"
+
+            return ContentFile(buffer.getvalue(), name=webp_filename)
+    except ValidationError:
+        raise
+    except Exception as exc:
+        raise ValidationError(
+            _("Failed to process image '%(filename)s': %(error)s")
+            % {"filename": filename, "error": exc}
+        ) from exc
