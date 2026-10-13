@@ -1,0 +1,126 @@
+name: CI/CD Quality Gates & Docker Build
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gates:
+    name: Code Quality & Automated Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Gate 1 - Lint & Style Check (Ruff)
+        run: |
+          ruff check .
+
+      - name: Gate 2 - Django System & Security Check
+        run: |
+          python manage.py check
+
+      - name: Gate 3 - Unit & Integration Test Suite
+        env:
+          SECRET_KEY: ci-test-secret-key-12345
+          DEBUG: 'False'
+        run: |
+          python manage.py test
+
+  docker-build-and-smoke-test:
+    name: Docker Build & Container Smoke Test
+    needs: quality-gates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Gate 4 - Build Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: secondhand-staging:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Gate 5 - Verify Non-Root User Execution
+        run: |
+          USER_ID=$(docker run --rm secondhand-staging:ci id -u)
+          echo "Container runtime UID: $USER_ID"
+          if [ "$USER_ID" -eq 0 ]; then
+            echo "ERROR: Container is running as root (UID 0)! Security policy violation."
+            exit 1
+          fi
+          echo "PASS: Container runs under non-root UID $USER_ID."
+
+      - name: Gate 6 - Launch & Container Smoke Test
+        run: |
+          # Start container in detached mode
+          docker run -d \
+            --name staging-smoke-test \
+            -p 8000:8000 \
+            -e SECRET_KEY="smoke-test-secret-key-do-not-use-in-production" \
+            -e DEBUG="False" \
+            -e ALLOWED_HOSTS="*" \
+            secondhand-staging:ci
+
+          echo "Waiting for container and migrations..."
+          # Poll the root endpoint until ready or timeout (up to 40 seconds)
+          READY=0
+          for i in $(seq 1 40); do
+            if curl -s -f -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/ > /dev/null 2>&1; then
+              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/)
+              echo "Container responded with HTTP $HTTP_CODE on attempt $i"
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "$READY" -ne 1 ]; then
+            echo "ERROR: Container failed to respond within 40 seconds."
+            echo "==> Container Logs:"
+            docker logs staging-smoke-test
+            exit 1
+          fi
+
+          # Verify that root redirects or serves the login/app page
+          RESPONSE=$(curl -s -L http://127.0.0.1:8000/)
+          echo "$RESPONSE" | grep -i "2ndHand" > /dev/null
+          if [ $? -eq 0 ]; then
+            echo "PASS: Application title verified in smoke test response."
+          else
+            echo "ERROR: Expected application content missing from response."
+            echo "$RESPONSE" | head -n 30
+            exit 1
+          fi
+
+      - name: Cleanup Smoke Test Container
+        if: always()
+        run: |
+          docker rm -f staging-smoke-test || true

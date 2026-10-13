@@ -34,6 +34,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -66,12 +67,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASE_URL = os.getenv('DATABASE_URL', '').strip()
+if DATABASE_URL:
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }
-}
+else:
+    data_dir = BASE_DIR / 'data'
+    db_path = data_dir / 'db.sqlite3' if data_dir.exists() else BASE_DIR / 'db.sqlite3'
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': db_path,
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -104,6 +114,8 @@ LOCALE_PATHS = [
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT.mkdir(parents=True, exist_ok=True)
 STATICFILES_DIRS = [BASE_DIR / 'inventory' / 'static']
 
 # Media files (User uploads)
@@ -147,7 +159,7 @@ elif OCI_STORAGE_BUCKET_NAME and OCI_STORAGE_ACCESS_KEY and OCI_STORAGE_SECRET_K
             },
         },
         'staticfiles': {
-            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+            'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
         },
     }
 else:
@@ -156,7 +168,7 @@ else:
             'BACKEND': 'django.core.files.storage.FileSystemStorage',
         },
         'staticfiles': {
-            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+            'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
         },
     }
 

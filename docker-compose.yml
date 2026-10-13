@@ -1,0 +1,50 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: secondhand_staging_web
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PORT=8000
+    volumes:
+      - secondhand_data:/app/data
+      - secondhand_media:/app/media
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # Optional PostgreSQL service (activated by running: docker compose --profile postgres up)
+  db:
+    image: postgres:16-alpine
+    container_name: secondhand_staging_db
+    profiles:
+      - postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-secondhand_db}
+      POSTGRES_USER: ${POSTGRES_USER:-secondhand_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secondhand_secret_password}
+    volumes:
+      - secondhand_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-secondhand_user} -d ${POSTGRES_DB:-secondhand_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  secondhand_data:
+    driver: local
+  secondhand_media:
+    driver: local
+  secondhand_postgres_data:
+    driver: local

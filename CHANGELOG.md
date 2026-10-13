@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Production Containerization (Docker & Docker Compose)**:
+  - Created production-grade [`Dockerfile`](file:///C:/Users/Jose/antigravity/epic-tesla/Dockerfile) based on `python:3.13-slim-bookworm` configured with an unprivileged non-root user (`appuser:appgroup`, UID 10001) for least-privilege security.
+  - Added Gunicorn (`gunicorn>=23.0.0`) production WSGI HTTP server with 3 sync workers and a 120s request timeout to support AI multimodal requests.
+  - Configured WhiteNoise (`whitenoise>=6.8.0`) to compress, hash, and serve static assets directly from `/app/staticfiles`, eliminating the need for a separate Nginx container in simple deployments.
+  - Built an automated startup entrypoint script ([`docker/entrypoint.sh`](file:///C:/Users/Jose/antigravity/epic-tesla/docker/entrypoint.sh)) that handles database migrations and static collection automatically on container boot.
+  - Added native container healthcheck polling the root endpoint via `curl` with 30s intervals.
+  - Provided multi-container orchestration via [`docker-compose.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/docker-compose.yml) with persistent volumes for SQLite data (`secondhand_data`) and user photos (`secondhand_media`), plus an optional PostgreSQL profile (`--profile postgres`).
+  - Added [`README.md`](file:///C:/Users/Jose/antigravity/epic-tesla/README.md) with comprehensive container and local setup documentation.
+
+### CI/CD & Automation
+- **GitHub Actions Quality Gates Pipeline ([`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml))**:
+  - Implemented automated Shift-Left quality gates on every pull request and push to `master`:
+    1. *Gate 1*: Code linting and style compliance via `ruff check .`.
+    2. *Gate 2*: Django system and deployment security checks via `python manage.py check`.
+    3. *Gate 3*: Full automated test suite execution (`python manage.py test`, 162 tests).
+    4. *Gate 4*: Docker container image build with GitHub Actions layer caching.
+    5. *Gate 5*: Container non-root execution verification (`id -u != 0`).
+    6. *Gate 6*: Container boot smoke test, polling healthcheck and verifying expected HTML application response.
+
 ### Security & Hardening
 - **Multi-Axis Quality Review & Input Boundary Hardening**:
   - Conducted five-axis review (Correctness, Readability, Architecture, Security, Performance) and threat analysis across intake, staging, AI generation, and marketplace publishing flows.
