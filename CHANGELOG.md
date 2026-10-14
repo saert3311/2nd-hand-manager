@@ -49,6 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Production Container Orchestration & CD ([`docker-compose.prod.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/docker-compose.prod.yml))**:
   - Configured standalone production compose using pre-built GHCR image with persistent volumes (`secondhand_data`, `secondhand_media`) and fallback `build` context for native ARM/local builds.
   - Added Watchtower service for continuous hands-free deployment: automatically pulls new GHCR images, gracefully restarts the container, and prunes old images.
+  - Added attachment to external Docker network `supabase-net` enabling private ingress via Cloudflare Tunnel (`cloudflared`) without exposing container ports to the public internet.
+  - Added Django reverse proxy headers (`SECURE_PROXY_SSL_HEADER`, `USE_X_FORWARDED_HOST`) and configurable `CSRF_TRUSTED_ORIGINS` in [`config/settings.py`](file:///C:/Users/Jose/antigravity/epic-tesla/config/settings.py) for secure HTTPS routing behind Cloudflare.
 
 ### Security & Hardening
 - **Multi-Axis Quality Review & Input Boundary Hardening**:

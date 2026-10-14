@@ -12,7 +12,10 @@ services:
     container_name: secondhand_staging_prod
     restart: unless-stopped
     ports:
-      - "${PORT:-8000}:8000"
+      - "127.0.0.1:${PORT:-8000}:8000"
+    networks:
+      - default
+      - supabase-net
     env_file:
       - .env
     environment:
@@ -34,6 +37,8 @@ services:
     image: containrrr/watchtower:latest
     container_name: secondhand_staging_watchtower
     restart: unless-stopped
+    networks:
+      - default
     environment:
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_POLL_INTERVAL=300
@@ -50,3 +55,7 @@ volumes:
     driver: local
   secondhand_media:
     driver: local
+
+networks:
+  supabase-net:
+    external: true
