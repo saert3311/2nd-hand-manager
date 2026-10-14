@@ -1,9 +1,60 @@
 from decimal import Decimal
 
 from django import forms
+from django.conf import settings
+from django.contrib.admin.forms import AdminAuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import gettext_lazy as _
 
 from .models import ClarificationCategory, Product, ProductClarification, ProductStatus
+from .services.turnstile_service import verify_turnstile_token
+
+
+class TurnstileValidationMixin:
+    """
+    Mixin for Django authentication forms that validates Cloudflare Turnstile tokens
+    prior to evaluating password credentials.
+    """
+
+    def clean(self):
+        if getattr(settings, "TURNSTILE_ENABLED", False):
+            turnstile_token = self.data.get("cf-turnstile-response")
+            remote_ip = None
+            request = getattr(self, "request", None)
+            if request:
+                x_forwarded = request.META.get("HTTP_X_FORWARDED_FOR")
+                if x_forwarded:
+                    remote_ip = x_forwarded.split(",")[0].strip()
+                else:
+                    remote_ip = request.META.get("REMOTE_ADDR")
+
+            if not turnstile_token:
+                raise forms.ValidationError(
+                    _("Please complete the security challenge."),
+                    code="turnstile_missing",
+                )
+            if not verify_turnstile_token(turnstile_token, remote_ip=remote_ip):
+                raise forms.ValidationError(
+                    _("Security verification failed. Please try again."),
+                    code="turnstile_failed",
+                )
+        return super().clean()
+
+
+class TurnstileAuthenticationForm(TurnstileValidationMixin, AuthenticationForm):
+    """
+    Public login authentication form requiring Cloudflare Turnstile verification.
+    """
+    pass
+
+
+class TurnstileAdminAuthenticationForm(TurnstileValidationMixin, AdminAuthenticationForm):
+    """
+    Django Admin authentication form requiring Cloudflare Turnstile verification.
+    """
+    pass
+
+
 
 
 class ProductIntakeForm(forms.ModelForm):

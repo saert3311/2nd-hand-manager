@@ -96,6 +96,13 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - **Task 37:** i18n Translations, Documentation & Regression Testing (Spanish translations in `locale/es/`, compilation, `CHANGELOG.md` update, full test suite execution, ruff linter verification).
 - **Checkpoint 12 (Product Clarifications & Lifecycle States Complete):** Full lifecycle state machine active, managers can ask categorized questions, assistants receive badges and mobile alerts to answer, answered Q&A enriches Gemini descriptions, dashboard status filtering works, and all tests pass with 0 regressions.
 
+### Phase 13: Cloudflare Turnstile Bot & Login Protection (Vertical Slice 9)
+- **Task 38:** Configuration, Service & Context Processor (`config/settings.py`, `.env.example`, `inventory/services/turnstile_service.py`, `inventory/context_processors.py`, `tests/test_turnstile.py`).
+- **Task 39:** Public Login Protection (`inventory/forms.py`, `inventory/views.py`, `inventory/templates/registration/login.html`, `tests/test_turnstile.py`).
+- **Task 40:** Django Admin Login Protection (`inventory/forms.py`, `inventory/admin.py`, `inventory/templates/admin/login.html`, `tests/test_turnstile.py`).
+- **Task 41:** i18n Translations, Documentation & Regression Testing (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `CHANGELOG.md`).
+- **Checkpoint 13 (Turnstile Complete):** Both public `/login/` and admin `/admin/login/` challenge bot submissions, valid tokens authenticate smoothly, invalid/missing tokens reject with localized errors, fail-closed policy operates safely on timeouts, and full test suite passes with 0 regressions.
+
 ---
 
 ## Risks and Mitigations
@@ -118,6 +125,9 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 | Duplicate links created for the same platform on a product | Low | Enforce database-level `UniqueConstraint(fields=['product', 'site'])` and handle `IntegrityError` in form validation. |
 | Empty or invalid platform slug causing empty results or crashes | Low | Gracefully validate platform slug against database; use `.distinct()` on product querysets when filtering across joins. |
 | Platforms without published products cluttering the dropdown | Low | Filter `available_platforms` to only include `MarketplaceSite` rows where `product_links__is_active=True` count > 0. |
+| Cloudflare Turnstile API timeout or network failure | High | Implement fail-closed policy (Option A) with a strict 5.0s timeout to protect against bypass during attacks, with clear retry feedback. |
+| Turnstile breaking local development or headless CI | High | Automatically bypass verification when `TURNSTILE_ENABLED=False` or keys omitted; support official Cloudflare test dummy keys. |
+| Bot attacks bypassing public login and hitting admin login | High | Apply Turnstile protection uniformly to both `/login/` and `/admin/login/` (Option B). |
 
 ---
 
@@ -134,6 +144,10 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - Approved: Platform-filtered status counters scoping: status counters ("All", "Active", "Sold") dynamically update to reflect products on that specific platform (Option A).
 - Approved: Dropdown option representation: platform name with item count (`Wallapop (12)`) (Option A).
 - Approved: Platform filter submission: instant auto-submit (`onchange="this.form.submit()"`) (Option A).
+- Approved: Turnstile failure mode: Fail-closed (Option A).
+- Approved: Turnstile protection scope: Protect all login forms, including `/login/` and `/admin/login/` (Option B).
+- Approved: Turnstile widget theme: Explicit light theme (`data-theme="light"`) (Option A).
+
 
 
 

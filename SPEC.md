@@ -11,6 +11,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 7. **Dynamic AI Model & Prompt Configuration:** Database-backed configuration managed in Django administration (`AIPromptConfiguration`), enabling store managers to tune Gemini model names (free-form), temperature, and localized copywriting prompt instructions without modifying codebase files or triggering server restarts, backed by automatic fallback to hardcoded defaults.
 8. **Marketplace Sites & External Listing Links Tracking:** Database-backed marketplace platforms table (`MarketplaceSite`) managed via Django Admin, enabling managers to define and reorder resale sites (Wallapop, Vinted, eBay, Milanuncios, etc.). Products link dynamically to these platforms (`ProductListingLink`), allowing managers to record, view, open, and copy direct listing URLs directly from the product detail staging page (`/products/<pk>/`) and Django admin.
 9. **Product Clarifications & Lifecycle State Machine:** Structured product lifecycle states (`DRAFT`, `AWAITING_INFO`, `READY`, `SOLD`, `BLOCKED`) coupled with an in-app clarification Q&A mechanism. When managers identify missing product info during staging, they submit categorized questions; assistants are alerted via top navigation badges (`❓ Dudas (X)`) and mobile intake banners to answer promptly. Resolved answers automatically enrich the Gemini Multimodal Vision prompt for higher-converting listings.
+10. **Cloudflare Turnstile Login Protection:** Privacy-preserving smart CAPTCHA challenge integrated into the user login interface (`/login/`). Protects authentication against automated brute-force attacks and credential stuffing while offering seamless zero-friction verification for human staff. Fully configurable with test dummy keys and bypass options for local development and CI/CD automation.
 
 ---
 
@@ -34,6 +35,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 - **Frontend / Styling:** Django Templates + Tailwind CSS (via CDN) + lightweight Vanilla JavaScript (clipboard copy, multi-image preview, async AI generation feedback).
 - **Currency:** Euro (`€`) default formatting.
 - **Archive / Zip:** Python standard library `zipfile` for bundling photos on download directly from storage stream.
+- **Bot & Abuse Protection:** Cloudflare Turnstile (`challenges.cloudflare.com/turnstile/v0/api.js` client widget + server-side verification against `/siteverify`).
 - **Environment Management:** `python-dotenv` for local `.env` configuration.
 
 ---
@@ -102,10 +104,11 @@ epic-tesla/
 │   ├── services/
 │   │   ├── __init__.py
 │   │   ├── ai_service.py         # Gemini Multimodal Vision integration
-│   │   └── image_service.py      # Pillow WebP conversion and optimization
+│   │   ├── image_service.py      # Pillow WebP conversion and optimization
+│   │   └── turnstile_service.py  # Cloudflare Turnstile token validation service
 │   ├── templates/
 │   │   ├── registration/
-│   │   │   └── login.html        # Localized login template
+│   │   │   └── login.html        # Localized login template with Turnstile widget
 │   │   └── inventory/
 │   │       ├── base.html         # Localized layout, navbar, language selector
 │   │       ├── intake.html       # Localized mobile intake form
@@ -126,7 +129,8 @@ epic-tesla/
 │   ├── test_ai_service.py
 │   ├── test_i18n.py              # Language negotiation and translation tests
 │   ├── test_storage.py           # OCI Object Storage integration & upload tests
-│   └── test_marketplace_sites.py # Marketplace platforms and product listing links tests
+│   ├── test_marketplace_sites.py # Marketplace platforms and product listing links tests
+│   └── test_turnstile.py         # Cloudflare Turnstile challenge and verification tests
 └── docs/
     ├── intent/
     │   └── secondhand-inventory-app.md
@@ -136,7 +140,8 @@ epic-tesla/
     │   ├── PRD-oracle-object-storage.md
     │   ├── PRD-pagination-and-search.md
     │   ├── PRD-user-management-django-admin.md
-    │   └── PRD-product-marketplace-sites-tracking.md
+    │   ├── PRD-product-marketplace-sites-tracking.md
+    │   └── PRD-cloudflare-turnstile-login-protection.md
     └── SPEC.md
 ```
 
@@ -382,6 +387,38 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
   - On `/products/<pk>/`, assistants can view pending questions, submit concise answers, and mark the question resolved.
   - Submitting the final pending answer prompts the manager: *"✨ Nuevos datos disponibles — Regenerar descripción con IA"*.
 
+### 6.10 Cloudflare Turnstile Bot & Login Protection
+- **Purpose & Architecture:**
+  - Secures the public authentication view (`/login/` / `CustomLoginView`) against automated brute-force attacks and credential stuffing without degrading the experience of warehouse sourcing assistants and managers.
+  - Privacy-first and frictionless: Evaluates browser telemetry and proof-of-work in the background without interactive image puzzle challenges.
+- **Client-Side Widget Integration (`inventory/templates/registration/login.html`):**
+  - API script loaded asynchronously: `<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` only when `TURNSTILE_ENABLED=True`.
+  - Challenge container placed directly above the "Iniciar sesión" submit button:
+    `<div class="cf-turnstile my-3" data-sitekey="{{ TURNSTILE_SITE_KEY }}" data-theme="light"></div>`.
+  - Automatically populates the POST payload with the challenge token in field `cf-turnstile-response`.
+- **Server Verification Service (`inventory/services/turnstile_service.py`):**
+  - Dedicated service function `verify_turnstile_token(token: str, remote_ip: str | None = None) -> bool`.
+  - Dispatches HTTP POST to Cloudflare's validation endpoint: `https://challenges.cloudflare.com/turnstile/v0/siteverify` with fields:
+    - `secret`: `settings.TURNSTILE_SECRET_KEY`
+    - `response`: `token` (`cf-turnstile-response`)
+    - `remoteip`: optional client IP
+  - Enforces a 5.0-second HTTP request timeout.
+  - Fail-closed in production: Returns `False` on timeouts, network errors, or non-200 responses, preventing bot bypass.
+- **Form & View Integration (`inventory/forms.py` & `inventory/views.py`):**
+  - Subclass `TurnstileAuthenticationForm(AuthenticationForm)` overriding `clean()`:
+    - Evaluates Turnstile token when `settings.TURNSTILE_ENABLED` is `True`.
+    - Validates token before expensive password hashing to shield database and CPU from bot floods.
+    - Raises localized `ValidationError`:
+      - Missing token: `_("Please complete the security challenge.")` / `_("Por favor, completa la verificación de seguridad.")`
+      - Invalid/expired token: `_("Security verification failed. Please try again.")` / `_("Error en la verificación de seguridad. Por favor, inténtalo de nuevo.")`
+  - `CustomLoginView` adopts `authentication_form = TurnstileAuthenticationForm` and passes `TURNSTILE_SITE_KEY` and `TURNSTILE_ENABLED` in context.
+- **Environment Configuration & Testing Isolation:**
+  - Settings: `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `TURNSTILE_ENABLED` (boolean, defaults `False` if keys omitted), `TURNSTILE_TIMEOUT` (default `5.0`).
+  - Official Cloudflare test dummy keys supported for offline development and testing:
+    - Always passes: Sitekey `1x00000000000000000000AA`, Secret `1x0000000000000000000000000000000AA`.
+    - Always fails: Sitekey `2x00000000000000000000AB`, Secret `2x0000000000000000000000000000000AB`.
+  - Unit tests mock external network requests so automated suites run 100% offline without latency.
+
 ---
 
 ## 7. AI Service Contract (`ai_service.py`)
@@ -476,6 +513,9 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
   - Enforce uniqueness of listing links per product and marketplace site (`UniqueConstraint(fields=['product', 'site'])`).
   - Restrict marketplace platform configuration in `/admin/` strictly to managers.
   - Cascade delete listing links when a parent product is deleted.
+  - Verify Cloudflare Turnstile token on login submissions when `TURNSTILE_ENABLED=True`.
+  - Validate Turnstile token before evaluating password hash in `TurnstileAuthenticationForm.clean()` to protect CPU resources.
+  - Mock Cloudflare `siteverify` network calls during automated tests so tests run 100% offline.
 - **Ask First:**
   - Choosing between OCI S3-compatible API keys vs Native OCI API Key (PEM) authentication.
   - Configuring bucket access permissions (public bucket vs presigned URLs).
@@ -487,6 +527,8 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
   - Allowing non-manager assistants to add or modify listing URLs on the product page.
   - Allowing multiple distinct links for the exact same marketplace platform on a single product.
   - Automated marketplace scraping or API syncing with external platforms.
+  - Changing Cloudflare Turnstile failure policy (fail-closed vs fail-open) during third-party outages.
+  - Extending Turnstile challenge protection to Django Admin login (`/admin/login/`).
 - **Never:**
   - Store permanent product images on local server disk (`MEDIA_ROOT`).
   - Commit OCI secrets, private keys, or passwords to version control.
@@ -500,6 +542,8 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
   - Allow non-manager assistants to create, modify, or delete `MarketplaceSite` records in Django Admin.
   - Store unsafe URL protocols (e.g. `javascript:`, `data:`) in marketplace links.
   - Hardcode marketplace platforms in application code without a database-backed `MarketplaceSite` model.
+  - Expose `TURNSTILE_SECRET_KEY` in frontend templates, HTML comments, or client-side JavaScript.
+  - Block local development or automated CI runners when Cloudflare Turnstile keys are omitted (clean bypass when `TURNSTILE_ENABLED=False`).
 
 ---
 
@@ -541,6 +585,11 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
 35. When all questions for a product are resolved, status automatically updates to `ready` (or `draft`) and prompts the manager to re-generate the AI listing.
 36. Resolved clarifications are automatically formatted and passed to the Gemini Multimodal Vision API, producing copy that incorporates verified dimensions and flaw disclosures.
 37. The dashboard supports filtering by `status=awaiting_info` and `status=blocked` with dynamically scoped badge counters.
+38. When `TURNSTILE_ENABLED=True`, the login page (`/login/`) renders the Cloudflare Turnstile challenge widget above the submit button.
+39. Submitting valid user credentials alongside a valid Turnstile token successfully logs in assistants and managers.
+40. Submitting login credentials with a missing or invalid Turnstile token rejects authentication with an actionable localized validation error message.
+41. When `TURNSTILE_ENABLED=False` (default for local development and CI), user login operates smoothly without requiring Turnstile interaction or external network requests.
+42. Dedicated automated test suite in `tests/test_turnstile.py` passes 100% offline without network calls or external flakiness.
 
 ---
 
@@ -574,6 +623,10 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
 - **Notification Mechanism:** Lightweight global context processor querying unresolved questions count, avoiding polling or websocket overhead.
 - **AI Prompt Enrichment:** Resolved Q&A details dynamically appended to Gemini Vision prompt without overwriting or mutating immutable original intake field notes (`raw_note`).
 - **Publishing Gate:** Staging UI displays a caution banner if a manager attempts to link marketplaces while a product is in `awaiting_info` or `blocked` status.
+- **Bot & Abuse Protection Engine:** Cloudflare Turnstile chosen over legacy reCAPTCHA for privacy preservation (no cross-site ad tracking) and frictionless experience (no distorted text or puzzle grids).
+- **Form-Level Validation Hook:** Turnstile verification executed within `TurnstileAuthenticationForm.clean()` prior to database credential checks, protecting CPU resources against brute-force password hashing attacks.
+- **Test Dummy Key Compatibility:** Support for Cloudflare's standard test sitekeys/secrets (`1x00000000000000000000AA` always pass, `2x00000000000000000000AB` always fail) to facilitate deterministic testing.
+- **Fail-Secure Timeout Policy:** Default 5.0s network timeout with fail-closed behavior on timeout or third-party outage.
 
 ---
 
@@ -638,6 +691,21 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
    - **Option A (Recommended for MVP): Text-only responses first:** Assistants respond with text (e.g. measurements or composition); photo uploads can be added in a future phase.
    - **Option B: Include optional photo upload in MVP:** Include an optional file input in the clarification answer form that creates an additional `ProductImage`.
    *Do you prefer text-only answers for the MVP, or optional photo uploads immediately?*
+13. **Turnstile Failure & Timeout Policy (Fail-Closed vs Fail-Open):**
+   - If Cloudflare's `/siteverify` endpoint times out (e.g. 5.0 seconds) or returns an HTTP 5xx error:
+   - **Option A (Recommended - Fail-Closed):** Reject the login attempt and show a retry message (*"Security verification failed. Please try again."*). Maximizes security against automated attack bursts during service degradation.
+   - **Option B (Fail-Open):** Log a warning and allow the authentication to proceed checking username and password alone. Maximizes system availability if Cloudflare experiences an outage.
+   *Which policy do you prefer when the Cloudflare verification service is unreachable?*
+14. **Scope of Turnstile Protection:**
+   - Which authentication endpoints should require Turnstile verification?
+   - **Option A (Recommended - Public Login `/login/` only):** Protect the public-facing staff login interface. Django Admin (`/admin/login/`) remains protected by Django's native authentication and manager group permission gating.
+   - **Option B (Public Login + Django Admin Login):** Also apply Turnstile challenge to the Django admin login interface.
+   *Should Turnstile protect only `/login/` or also `/admin/login/`?*
+15. **Widget Theme & Appearance:**
+   - How should the Turnstile widget be rendered visually?
+   - **Option A (Recommended - Fixed Light Theme):** Explicit `data-theme="light"` to match the clean white card login container in Tailwind CSS.
+   - **Option B (Auto Theme):** `data-theme="auto"` respecting client operating system dark/light mode preferences.
+   *Which widget theme do you prefer for the login screen?*
 
 
 

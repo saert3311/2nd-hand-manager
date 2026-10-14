@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Cloudflare Turnstile Bot & Login Protection**:
+  - Integrated Cloudflare Turnstile smart challenge protection across all authentication entry points: public staff login (`/login/` / `CustomLoginView`) and Django administration login (`/admin/login/` / `ManagerAdminSite`).
+  - Implemented `verify_turnstile_token` in [`inventory/services/turnstile_service.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/services/turnstile_service.py) with a 5.0s timeout and fail-closed security policy against credential stuffing and brute-force bot attacks.
+  - Built `TurnstileValidationMixin` in [`inventory/forms.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/forms.py) executing challenge verification prior to password hashing, conserving server CPU during attack bursts.
+  - Added `TurnstileAuthenticationForm` to `CustomLoginView` and `TurnstileAdminAuthenticationForm` to `ManagerAdminSite.login_form`.
+  - Created global `turnstile` context processor in [`inventory/context_processors.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/context_processors.py) injecting `TURNSTILE_SITE_KEY` and `TURNSTILE_ENABLED` into templates.
+  - Updated [`login.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/registration/login.html) and created [`admin/login.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/admin/login.html) with responsive light-theme widgets (`data-theme="light"`), async script loading, and clear non-field error reporting.
+  - Added support for Cloudflare official test dummy keys and automated bypass when `TURNSTILE_ENABLED=False` for offline dev and CI workflows.
+  - Localized challenge validation messages in Spanish and added 25 automated tests in [`tests/test_turnstile.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_turnstile.py).
 - **Production Containerization (Docker & Docker Compose)**:
   - Created production-grade [`Dockerfile`](file:///C:/Users/Jose/antigravity/epic-tesla/Dockerfile) based on `python:3.13-slim-bookworm` configured with an unprivileged non-root user (`appuser:appgroup`, UID 10001) for least-privilege security.
   - Added Gunicorn (`gunicorn>=23.0.0`) production WSGI HTTP server with 3 sync workers and a 120s request timeout to support AI multimodal requests.

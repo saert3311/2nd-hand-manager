@@ -844,6 +844,98 @@
 - [x] Spanish and English translations active.
 - [x] Full test suite and linter pass with 0 errors.
 
+---
+
+## Phase 13: Cloudflare Turnstile Bot & Login Protection
+
+### Task 38: Turnstile Settings, Service & Global Context Processor
+**Description:** Configure Turnstile environment variables and settings (`TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `TURNSTILE_ENABLED`, `TURNSTILE_TIMEOUT`) in `config/settings.py` and `.env.example`. Implement `inventory/services/turnstile_service.py` with `verify_turnstile_token(token, remote_ip=None)` enforcing fail-closed timeout policy and supporting official Cloudflare dummy test keys. Create `turnstile` context processor in `inventory/context_processors.py` and comprehensive unit tests in `tests/test_turnstile.py`.
+**Acceptance criteria:**
+- [x] Turnstile settings configured with safe defaults (`TURNSTILE_ENABLED=False` if keys omitted).
+- [x] `verify_turnstile_token` returns `True` for valid tokens or Cloudflare pass dummy keys (`1x00000000000000000000AA`), and `False` on invalid tokens, timeouts (>5.0s), or 5xx responses.
+- [x] Global context processor injects `TURNSTILE_SITE_KEY` and `TURNSTILE_ENABLED` across all templates.
+- [x] Unit tests verify service logic, dummy keys, timeouts, and network exceptions offline.
+**Verification:**
+- [x] Unit tests pass: `python manage.py test tests.test_turnstile`
+**Dependencies:** Checkpoint 12
+**Files likely touched:**
+- `config/settings.py`
+- `.env.example`
+- `inventory/services/turnstile_service.py`
+- `inventory/context_processors.py`
+- `tests/test_turnstile.py`
+**Estimated scope:** Medium (4-5 files)
+
+---
+
+### Task 39: Public Login Protection (Form & Template)
+**Description:** Create `TurnstileValidationMixin` and `TurnstileAuthenticationForm` in `inventory/forms.py` that validates the token during `clean()` before checking credentials. Update `CustomLoginView` in `inventory/views.py` to use `TurnstileAuthenticationForm`. Update `inventory/templates/registration/login.html` to load Cloudflare Turnstile script, render widget above submit button (`data-theme="light"`), and display localized Turnstile validation error messages.
+**Acceptance criteria:**
+- [x] When `TURNSTILE_ENABLED=True`, login submission without token or with invalid token fails validation.
+- [x] Localized error messages display properly in `login.html`.
+- [x] Valid Turnstile token authenticates assistants and managers successfully.
+- [x] When `TURNSTILE_ENABLED=False`, login proceeds without requiring Turnstile.
+**Verification:**
+- [x] Integration tests pass: `python manage.py test tests.test_turnstile`
+**Dependencies:** Task 38
+**Files likely touched:**
+- `inventory/forms.py`
+- `inventory/views.py`
+- `inventory/templates/registration/login.html`
+- `tests/test_turnstile.py`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 40: Django Admin Login Protection
+**Description:** Implement `TurnstileAdminAuthenticationForm` in `inventory/forms.py` (inheriting from `TurnstileValidationMixin` and `AdminAuthenticationForm`). Set `ManagerAdminSite.login_form = TurnstileAdminAuthenticationForm` and pass `extra_context` in `inventory/admin.py`. Create `inventory/templates/admin/login.html` to render Turnstile script and widget above the admin submit button.
+**Acceptance criteria:**
+- [x] When `TURNSTILE_ENABLED=True`, `/admin/login/` renders Turnstile challenge widget with `data-theme="light"`.
+- [x] Submitting admin login without token or with invalid token is rejected with validation error.
+- [x] Submitting valid credentials and valid Turnstile token logs manager in to Django Admin.
+- [x] When `TURNSTILE_ENABLED=False`, admin login operates without requiring Turnstile.
+**Verification:**
+- [x] Integration tests pass: `python manage.py test tests.test_turnstile`
+**Dependencies:** Task 39
+**Files likely touched:**
+- `inventory/forms.py`
+- `inventory/admin.py`
+- `inventory/templates/admin/login.html`
+- `tests/test_turnstile.py`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 41: i18n Translations, Documentation & Regression Testing
+**Description:** Add Spanish translations for Turnstile validation messages (*"Por favor, completa la verificación de seguridad."*, *"Error en la verificación de seguridad. Por favor, inténtalo de nuevo."*) in `locale/es/LC_MESSAGES/django.po` and compile using `compile_locales`. Update `CHANGELOG.md` under `[Unreleased]`. Run full test suite and `ruff check .` to verify 0 regressions.
+**Acceptance criteria:**
+- [x] Spanish translations compiled to `django.mo`.
+- [x] Full automated test suite passes: `python manage.py test`.
+- [x] Linter passes with 0 warnings: `ruff check .`.
+- [x] `CHANGELOG.md` updated with Turnstile feature notes under `[Unreleased]`.
+**Verification:**
+- [x] Command succeeds: `python manage.py compile_locales`
+- [x] Full test suite passes: `python manage.py test`
+- [x] Linter passes: `ruff check .`
+**Dependencies:** Task 40
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `CHANGELOG.md`
+**Estimated scope:** Small (3 files)
+
+---
+
+## Checkpoint 13: Cloudflare Turnstile Bot & Login Protection Complete
+- [x] Both `/login/` and `/admin/login/` render Turnstile challenge when enabled.
+- [x] Valid tokens allow seamless login for assistants and managers.
+- [x] Missing/invalid tokens reject login with localized error messages.
+- [x] Fail-closed policy protects against timeout and network errors.
+- [x] Local dev and CI run cleanly with `TURNSTILE_ENABLED=False` or test dummy keys.
+- [x] Full test suite (187 tests) passes with 0 regressions.
+- [x] Code is formatted and passes Ruff linting.
+
+
 
 
 

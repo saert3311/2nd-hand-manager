@@ -21,6 +21,7 @@ from .forms import (
     ProductClarificationForm,
     ProductIntakeForm,
     ProductUpdateForm,
+    TurnstileAuthenticationForm,
 )
 from .models import (
     ClarificationCategory,
@@ -46,6 +47,7 @@ PAGE_SIZE = 20
 
 class CustomLoginView(LoginView):
     template_name = "registration/login.html"
+    authentication_form = TurnstileAuthenticationForm
     redirect_authenticated_user = True
 
     def get_success_url(self):
@@ -53,6 +55,7 @@ class CustomLoginView(LoginView):
         if is_assistant(user) and not is_manager(user):
             return reverse_lazy("inventory:intake")
         return reverse_lazy("inventory:dashboard")
+
 
 
 class CustomLogoutView(LogoutView):

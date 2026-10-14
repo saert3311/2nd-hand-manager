@@ -59,6 +59,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.i18n',
                 'inventory.context_processors.notifications',
+                'inventory.context_processors.turnstile',
             ],
         },
     },
@@ -189,3 +190,13 @@ SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
+
+# Cloudflare Turnstile Bot Protection
+TURNSTILE_SITE_KEY = os.getenv('TURNSTILE_SITE_KEY', '')
+TURNSTILE_SECRET_KEY = os.getenv('TURNSTILE_SECRET_KEY', '')
+TURNSTILE_ENABLED = (
+    os.getenv('TURNSTILE_ENABLED', 'False').lower() in ('true', '1', 'yes')
+    and bool(TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY)
+)
+TURNSTILE_TIMEOUT = float(os.getenv('TURNSTILE_TIMEOUT', '5.0'))
+

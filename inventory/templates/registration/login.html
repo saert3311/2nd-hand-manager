@@ -3,6 +3,12 @@
 
 {% block title %}{% trans "Sign In - 2ndHand Staging" %}{% endblock %}
 
+{% block extra_head %}
+{% if TURNSTILE_ENABLED %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="min-h-[70vh] flex flex-col justify-center items-center py-6 px-4">
   <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
@@ -14,7 +20,13 @@
       <p class="text-xs text-slate-500 mt-1">{% trans "Access product intake and the staging dashboard" %}</p>
     </div>
 
-    {% if form.errors %}
+    {% if form.non_field_errors %}
+      {% for error in form.non_field_errors %}
+      <div class="p-3 mb-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+        {{ error }}
+      </div>
+      {% endfor %}
+    {% elif form.errors %}
     <div class="p-3 mb-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
       {% trans "Your username and password didn't match. Please try again." %}
     </div>
@@ -37,6 +49,12 @@
                placeholder="••••••••">
       </div>
 
+      {% if TURNSTILE_ENABLED %}
+      <div class="my-4 flex justify-center">
+        <div class="cf-turnstile" data-sitekey="{{ TURNSTILE_SITE_KEY }}" data-theme="light"></div>
+      </div>
+      {% endif %}
+
       <button type="submit"
               class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow-sm hover:shadow transition duration-150 ease-in-out text-sm">
         {% trans "Sign In" %}
@@ -45,3 +63,4 @@
   </div>
 </div>
 {% endblock %}
+

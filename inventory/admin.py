@@ -1,5 +1,6 @@
 from functools import update_wrapper
 
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import GroupAdmin
@@ -11,6 +12,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
+from .forms import TurnstileAdminAuthenticationForm
 from .models import (
     AIPromptConfiguration,
     MarketplaceSite,
@@ -28,6 +30,15 @@ class ManagerAdminSite(admin.AdminSite):
     site_header = _("2ndHand Staging - Administration")
     site_title = _("2ndHand Staging Admin")
     index_title = _("Store Administration & User Management")
+    login_form = TurnstileAdminAuthenticationForm
+
+    def login(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context.update({
+            "TURNSTILE_SITE_KEY": getattr(settings, "TURNSTILE_SITE_KEY", ""),
+            "TURNSTILE_ENABLED": getattr(settings, "TURNSTILE_ENABLED", False),
+        })
+        return super().login(request, extra_context=extra_context)
 
     def has_permission(self, request):
         return bool(request.user and request.user.is_active and is_manager(request.user))
@@ -42,6 +53,7 @@ class ManagerAdminSite(admin.AdminSite):
             return parent_func(request, *args, **kwargs)
 
         return update_wrapper(inner, view)
+
 
 
 # Global admin_site instance

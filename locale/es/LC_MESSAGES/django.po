@@ -746,4 +746,11 @@ msgstr "El gestor necesita más detalles antes de publicar."
 msgid "Review"
 msgstr "Revisar"
 
+msgid "Please complete the security challenge."
+msgstr "Por favor, completa la verificación de seguridad."
+
+msgid "Security verification failed. Please try again."
+msgstr "Error en la verificación de seguridad. Por favor, inténtalo de nuevo."
+
+
 
