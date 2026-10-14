@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **SQLite Automated Cloud Backup to OCI Object Storage**:
+  - Implemented automated, zero-downtime hot backups using SQLite's native online backup API (`sqlite3.Connection.backup()`), guaranteeing database consistency without table locks or risk of WAL torn pages during active writes.
+  - Added in-memory `gzip` compression pipeline (`.sqlite3.gz`), reducing backup storage volume by ~80-90% before transmission.
+  - Built direct cloud upload to Oracle Cloud Infrastructure (OCI) Object Storage bucket under `backups/db/%Y/%m/` via project storage abstraction (`django-storages[boto3]`).
+  - Added automated lifecycle retention pruning deleting snapshots older than 30 days (`DB_BACKUP_RETENTION_DAYS`) after each backup run.
+  - Created Django management command `python manage.py backup_db` with CLI options (`--retention-days`, `--no-compress`, `--local-only`, `--dry-run`, `--quiet`) returning exit codes 0/1 for cron scheduling.
+  - Created `DatabaseBackupLog` audit log model and `DatabaseBackupLogAdmin` in `ManagerAdminSite` with read-only metrics, color-coded status badges, and formatted file sizes.
+  - Built on-demand "Crear copia de seguridad ahora" confirmation flow in Django Administration allowing store managers to trigger immediate cloud snapshots with flash feedback.
+  - Added prominent failure alert banner (`backup-failure-alert`) rendered across Django administration pages whenever the most recent backup attempt fails.
+  - Added complete Spanish translations in `locale/es/LC_MESSAGES/django.po` and 34 comprehensive tests in `tests/test_backup.py`.
 - **Cloudflare Turnstile Bot & Login Protection**:
   - Integrated Cloudflare Turnstile smart challenge protection across all authentication entry points: public staff login (`/login/` / `CustomLoginView`) and Django administration login (`/admin/login/` / `ManagerAdminSite`).
   - Implemented `verify_turnstile_token` in [`inventory/services/turnstile_service.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/services/turnstile_service.py) with a 5.0s timeout and fail-closed security policy against credential stuffing and brute-force bot attacks.

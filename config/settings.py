@@ -200,3 +200,9 @@ TURNSTILE_ENABLED = (
 )
 TURNSTILE_TIMEOUT = float(os.getenv('TURNSTILE_TIMEOUT', '5.0'))
 
+# SQLite Automated Database Backup Settings
+DB_BACKUP_RETENTION_DAYS = int(os.getenv('DB_BACKUP_RETENTION_DAYS', '30'))
+DB_BACKUP_PREFIX = os.getenv('DB_BACKUP_PREFIX', 'backups/db/').strip()
+if DB_BACKUP_PREFIX and not DB_BACKUP_PREFIX.endswith('/'):
+    DB_BACKUP_PREFIX += '/'
+

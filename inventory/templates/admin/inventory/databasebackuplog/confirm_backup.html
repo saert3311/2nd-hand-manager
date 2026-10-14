@@ -1,0 +1,29 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+  &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+  &rsaquo; <a href="{% url 'admin:inventory_databasebackuplog_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+  &rsaquo; {% trans 'Confirm Backup' %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 640px; background: white; padding: 28px; border-radius: 8px; border: 1px solid #e5e7eb; margin-top: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+  <h2 style="margin-top: 0; color: #111827; font-size: 20px;">⚡ {% trans "Create On-Demand Database Backup" %}</h2>
+  <p style="color: #4b5563; line-height: 1.6; font-size: 14px;">
+    {% trans "Are you sure you want to trigger an immediate hot backup of the SQLite database? A consistent, point-in-time snapshot (.sqlite3.gz) will be created and uploaded directly to cloud storage." %}
+  </p>
+  <form method="post" style="margin-top: 24px; display: flex; gap: 12px; align-items: center;">
+    {% csrf_token %}
+    <button type="submit" style="background-color: #2563eb; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">
+      {% trans "Yes, Create Backup Now" %}
+    </button>
+    <a href="{% url 'admin:inventory_databasebackuplog_changelist' %}" style="color: #4b5563; text-decoration: none; padding: 10px 16px; font-size: 14px;">
+      {% trans "Cancel" %}
+    </a>
+  </form>
+</div>
+{% endblock %}

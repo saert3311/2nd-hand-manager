@@ -12,6 +12,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 8. **Marketplace Sites & External Listing Links Tracking:** Database-backed marketplace platforms table (`MarketplaceSite`) managed via Django Admin, enabling managers to define and reorder resale sites (Wallapop, Vinted, eBay, Milanuncios, etc.). Products link dynamically to these platforms (`ProductListingLink`), allowing managers to record, view, open, and copy direct listing URLs directly from the product detail staging page (`/products/<pk>/`) and Django admin.
 9. **Product Clarifications & Lifecycle State Machine:** Structured product lifecycle states (`DRAFT`, `AWAITING_INFO`, `READY`, `SOLD`, `BLOCKED`) coupled with an in-app clarification Q&A mechanism. When managers identify missing product info during staging, they submit categorized questions; assistants are alerted via top navigation badges (`❓ Dudas (X)`) and mobile intake banners to answer promptly. Resolved answers automatically enrich the Gemini Multimodal Vision prompt for higher-converting listings.
 10. **Cloudflare Turnstile Login Protection:** Privacy-preserving smart CAPTCHA challenge integrated into the user login interface (`/login/`). Protects authentication against automated brute-force attacks and credential stuffing while offering seamless zero-friction verification for human staff. Fully configurable with test dummy keys and bypass options for local development and CI/CD automation.
+11. **SQLite Automated Cloud Backup to OCI Object Storage:** Automated, zero-downtime daily backups of the primary SQLite database file directly into the configured Oracle Cloud Infrastructure (OCI) Object Storage bucket using SQLite's native online backup API and gzip compression. Includes retention pruning (30 days), a CLI management command (`python manage.py backup_db`), and an audit log table with on-demand backup triggers in Django Administration (`DatabaseBackupLog`).
 
 ---
 
@@ -19,6 +20,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 - **Language / Runtime:** Python 3.13+
 - **Framework:** Django 5.x
 - **Database:** SQLite (default for low-ops development/staging; PostgreSQL compatible)
+- **Database Backup & Disaster Recovery:** Native SQLite Online Backup API (`sqlite3.Connection.backup()`) + `gzip` compression + automated upload to OCI Object Storage bucket via `boto3` / `django-storages` with automated retention lifecycle pruning.
 - **Cloud Object Storage:**
   - Oracle Cloud Infrastructure (OCI) Object Storage bucket.
   - Integration options:
@@ -57,6 +59,11 @@ python manage.py createsuperuser
 # Compile Translation Catalogs (.po -> .mo)
 python manage.py compile_locales
 
+# Automated Database Backup to OCI Object Storage
+python manage.py backup_db                  # Daily automated or manual backup
+python manage.py backup_db --local-only     # Save locally without cloud upload
+python manage.py backup_db --dry-run        # Simulate backup and retention pruning
+
 # Run Development Server
 python manage.py runserver
 
@@ -92,7 +99,7 @@ epic-tesla/
 │   ├── __init__.py
 │   ├── admin.py                  # Django admin registration
 │   ├── apps.py
-│   ├── models.py                 # Product, ProductImage (with gettext_lazy verbose names)
+│   ├── models.py                 # Product, ProductImage, DatabaseBackupLog
 │   ├── forms.py                  # ProductIntakeForm, ProductUpdateForm (localized labels/errors)
 │   ├── urls.py
 │   ├── permissions.py
@@ -100,15 +107,19 @@ epic-tesla/
 │   ├── management/
 │   │   └── commands/
 │   │       ├── setup_roles.py
-│   │       └── compile_locales.py # Python-native PO to MO compiler using polib
+│   │       ├── compile_locales.py # Python-native PO to MO compiler using polib
+│   │       └── backup_db.py       # Automated SQLite hot-backup command
 │   ├── services/
 │   │   ├── __init__.py
 │   │   ├── ai_service.py         # Gemini Multimodal Vision integration
 │   │   ├── image_service.py      # Pillow WebP conversion and optimization
-│   │   └── turnstile_service.py  # Cloudflare Turnstile token validation service
+│   │   ├── turnstile_service.py  # Cloudflare Turnstile token validation service
+│   │   └── backup_service.py     # SQLite online backup, gzip compression & OCI upload service
 │   ├── templates/
 │   │   ├── registration/
 │   │   │   └── login.html        # Localized login template with Turnstile widget
+│   │   ├── admin/
+│   │   │   └── login.html        # Django admin login with Turnstile challenge
 │   │   └── inventory/
 │   │       ├── base.html         # Localized layout, navbar, language selector
 │   │       ├── intake.html       # Localized mobile intake form
@@ -130,7 +141,8 @@ epic-tesla/
 │   ├── test_i18n.py              # Language negotiation and translation tests
 │   ├── test_storage.py           # OCI Object Storage integration & upload tests
 │   ├── test_marketplace_sites.py # Marketplace platforms and product listing links tests
-│   └── test_turnstile.py         # Cloudflare Turnstile challenge and verification tests
+│   ├── test_turnstile.py         # Cloudflare Turnstile challenge and verification tests
+│   └── test_backup.py            # SQLite online backup, compression & retention tests
 └── docs/
     ├── intent/
     │   └── secondhand-inventory-app.md
@@ -141,7 +153,8 @@ epic-tesla/
     │   ├── PRD-pagination-and-search.md
     │   ├── PRD-user-management-django-admin.md
     │   ├── PRD-product-marketplace-sites-tracking.md
-    │   └── PRD-cloudflare-turnstile-login-protection.md
+    │   ├── PRD-cloudflare-turnstile-login-protection.md
+    │   └── PRD-sqlite-automated-cloud-backup.md
     └── SPEC.md
 ```
 
@@ -262,6 +275,20 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
 | `status` | CharField | max_length=20, default='pending', choices=[pending, resolved] | Status of the clarification request |
 | `created_at` | DateTimeField | auto_now_add=True | Question submission timestamp |
 | `answered_at` | DateTimeField | null=True, blank=True | Answer timestamp |
+
+### 5.7 `DatabaseBackupLog`
+| Field | Type | Attributes | Description |
+|---|---|---|---|
+| `id` | AutoField | Primary Key | Unique backup log identifier |
+| `filename` | CharField | max_length=255 | Name of the generated backup archive (e.g. `db_20261014_030000.sqlite3.gz`) |
+| `remote_path` | CharField | max_length=500 | Storage object path in OCI Object Storage bucket (or local path if local-only) |
+| `file_size` | BigIntegerField | default=0 | Compressed backup archive size in bytes |
+| `duration_seconds` | FloatField | default=0.0 | Total backup execution time in seconds |
+| `status` | CharField | max_length=20, default='success', choices=[('success', 'Success'), ('failed', 'Failed')] | Execution outcome status |
+| `trigger_type` | CharField | max_length=20, default='scheduled', choices=[('scheduled', 'Scheduled / CLI'), ('manual', 'Manual / Admin')] | How the backup was initiated |
+| `triggered_by` | ForeignKey(User) | null=True, blank=True, on_delete=SET_NULL | User who initiated manual backup (null for scheduled/CLI runs) |
+| `error_message` | TextField | blank=True, default="" | Detailed exception trace or error description if backup failed |
+| `created_at` | DateTimeField | auto_now_add=True | Execution timestamp |
 
 ---
 
@@ -419,6 +446,28 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
     - Always fails: Sitekey `2x00000000000000000000AB`, Secret `2x0000000000000000000000000000000AB`.
   - Unit tests mock external network requests so automated suites run 100% offline without latency.
 
+### 6.11 SQLite Automated Cloud Backup & Disaster Recovery
+- **Hot-Backup Mechanism (`inventory/services/backup_service.py`):**
+  - Utilizes SQLite native online backup API (`sqlite3.Connection.backup()`).
+  - Creates consistent point-in-time database snapshots without locking database tables, terminating active connections, or interrupting ongoing web requests.
+- **Gzip Compression Pipeline:**
+  - Compresses snapshots with standard library `gzip` (`.sqlite3.gz`), reducing bandwidth and storage usage by ~80-90%.
+  - Fallback flag to preserve uncompressed `.sqlite3` when desired.
+- **Cloud Upload to OCI Object Storage:**
+  - Uploads compressed snapshots directly to the configured OCI Object Storage bucket using the project's S3-compatible backend (`OCIObjectStorage` / `boto3`).
+  - Remote key layout: `backups/db/%Y/%m/db_%Y%m%d_%H%M%S.sqlite3.gz` (customizable via `DB_BACKUP_PREFIX`).
+- **Retention Lifecycle Management:**
+  - Automatically lists remote backups under the backup prefix after every successful backup run.
+  - Prunes backups older than `DB_BACKUP_RETENTION_DAYS` (default 30 days) to prevent unbounded storage costs.
+- **Audit Logging & Admin Visibility (`DatabaseBackupLogAdmin`):**
+  - Logs execution metrics (`file_size`, `duration_seconds`, `status`, `error_message`, `trigger_type`, `remote_path`).
+  - Registered in `ManagerAdminSite` restricted to managers.
+  - Provides a "Crear copia de seguridad ahora" button / confirmation view allowing store managers to create an on-demand snapshot directly from Django administration.
+- **Management Command CLI (`inventory/management/commands/backup_db.py`):**
+  - Invoked via `python manage.py backup_db`.
+  - Supports `--retention-days <N>`, `--local-only`, `--no-compress`, `--dry-run`, and `--quiet`.
+  - Suitable for headless cron execution (`0 3 * * *`).
+
 ---
 
 ## 7. AI Service Contract (`ai_service.py`)
@@ -516,6 +565,10 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
   - Verify Cloudflare Turnstile token on login submissions when `TURNSTILE_ENABLED=True`.
   - Validate Turnstile token before evaluating password hash in `TurnstileAuthenticationForm.clean()` to protect CPU resources.
   - Mock Cloudflare `siteverify` network calls during automated tests so tests run 100% offline.
+  - Use SQLite's native online backup API (`sqlite3.Connection.backup()`) to create consistent database snapshots without locking web requests.
+  - Gzip compress database backups before uploading to OCI Object Storage to save bandwidth and storage.
+  - Prune backups older than `DB_BACKUP_RETENTION_DAYS` (default 30 days) to prevent unbounded bucket growth.
+  - Mock OCI cloud storage during automated backup tests so test suites run 100% offline.
 - **Ask First:**
   - Choosing between OCI S3-compatible API keys vs Native OCI API Key (PEM) authentication.
   - Configuring bucket access permissions (public bucket vs presigned URLs).
@@ -529,6 +582,8 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
   - Automated marketplace scraping or API syncing with external platforms.
   - Changing Cloudflare Turnstile failure policy (fail-closed vs fail-open) during third-party outages.
   - Extending Turnstile challenge protection to Django Admin login (`/admin/login/`).
+  - Changing backup retention schedule (<14 days or >90 days).
+  - Implementing database restoration directly from the Django admin web UI.
 - **Never:**
   - Store permanent product images on local server disk (`MEDIA_ROOT`).
   - Commit OCI secrets, private keys, or passwords to version control.
@@ -544,6 +599,9 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
   - Hardcode marketplace platforms in application code without a database-backed `MarketplaceSite` model.
   - Expose `TURNSTILE_SECRET_KEY` in frontend templates, HTML comments, or client-side JavaScript.
   - Block local development or automated CI runners when Cloudflare Turnstile keys are omitted (clean bypass when `TURNSTILE_ENABLED=False`).
+  - Execute raw filesystem copies of `db.sqlite3` during active web writes.
+  - Block active user requests or interrupt web traffic during database backups.
+  - Store uncompressed database dumps in public storage bucket folders.
 
 ---
 
@@ -590,6 +648,12 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
 40. Submitting login credentials with a missing or invalid Turnstile token rejects authentication with an actionable localized validation error message.
 41. When `TURNSTILE_ENABLED=False` (default for local development and CI), user login operates smoothly without requiring Turnstile interaction or external network requests.
 42. Dedicated automated test suite in `tests/test_turnstile.py` passes 100% offline without network calls or external flakiness.
+43. Running `python manage.py backup_db` creates an uncorrupted, point-in-time snapshot of the SQLite database using SQLite's native online backup API without interrupting active web transactions.
+44. The backup snapshot is gzip-compressed (`.sqlite3.gz`) and uploaded to the configured OCI Object Storage bucket under `backups/db/`.
+45. Remote backups older than `DB_BACKUP_RETENTION_DAYS` (default 30 days) are automatically pruned from the cloud bucket.
+46. Every backup execution creates an audit entry in `DatabaseBackupLog` with timestamp, file size, duration, status, remote path, and error message (if any).
+47. Store managers can inspect backup logs and trigger an immediate on-demand backup directly from Django Administration.
+48. Dedicated automated test suite in `tests/test_backup.py` passes 100% offline with zero external cloud dependencies.
 
 ---
 
@@ -627,6 +691,10 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
 - **Form-Level Validation Hook:** Turnstile verification executed within `TurnstileAuthenticationForm.clean()` prior to database credential checks, protecting CPU resources against brute-force password hashing attacks.
 - **Test Dummy Key Compatibility:** Support for Cloudflare's standard test sitekeys/secrets (`1x00000000000000000000AA` always pass, `2x00000000000000000000AB` always fail) to facilitate deterministic testing.
 - **Fail-Secure Timeout Policy:** Default 5.0s network timeout with fail-closed behavior on timeout or third-party outage.
+- **SQLite Online Backup Engine:** Native `sqlite3.Connection.backup()` chosen over raw filesystem copying to prevent torn pages, WAL inconsistencies, or database corruption during active concurrent web requests.
+- **Compression Format:** Standard library `gzip` chosen for high compression ratio (~80-90% reduction) with zero external binary dependencies.
+- **Bucket Infrastructure Reuse:** The existing OCI Object Storage bucket is reused under a dedicated prefix `backups/db/` to avoid separate bucket provisioning.
+- **Default Retention Window:** Set to 30 days of daily backups (~30-50MB total bucket usage).
 
 ---
 
@@ -706,6 +774,23 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
    - **Option A (Recommended - Fixed Light Theme):** Explicit `data-theme="light"` to match the clean white card login container in Tailwind CSS.
    - **Option B (Auto Theme):** `data-theme="auto"` respecting client operating system dark/light mode preferences.
    *Which widget theme do you prefer for the login screen?*
+16. **Backup Retention Window:**
+   - How long should daily automated backups be retained in the OCI Object Storage bucket before being automatically pruned?
+   - **Option A (Recommended — 30 Days):** Retain daily backups for 30 days. Keeps bucket storage minimal (~30-50MB total) while offering a full month of restore points.
+   - **Option B (60 Days):** Retain daily backups for 60 days.
+   - **Option C (Grandfather-Father-Son / GFS):** Keep daily backups for 7 days, weekly snapshots for 4 weeks, and monthly snapshots for 12 months.
+   *Which retention policy do you prefer for database backups?*
+17. **On-Demand Admin Backup Execution UX:**
+   - How should store managers trigger manual database backups in Django Administration?
+   - **Option A (Recommended — Admin Top Bar Button & Confirmation View):** A prominent button "Crear copia de seguridad ahora" on the `DatabaseBackupLog` changelist leading to an intermediate confirmation page that executes the backup and flashes status feedback.
+   - **Option B (Changelist Action Dropdown):** Selected as a batch action from the actions dropdown on `DatabaseBackupLog`.
+   *Which admin interaction pattern do you prefer for on-demand backups?*
+18. **Notification on Backup Failure:**
+   - If an automated scheduled backup encounters a network or storage failure:
+   - **Option A (Recommended — Django Admin Warning Banner + Log):** When the most recent backup status is `failed`, render an alert banner in Django Administration informing managers to inspect the error log.
+   - **Option B (Silent Audit Log Only):** Record failure in `DatabaseBackupLog` without displaying a banner in the Django admin UI.
+   *Which failure notification behavior do you prefer?*
+
 
 
 

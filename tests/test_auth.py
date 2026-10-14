@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from inventory.permissions import (
@@ -76,6 +76,7 @@ class AuthAndPermissionsTests(TestCase):
         response = self.client.get(reverse("inventory:root"))
         self.assertRedirects(response, reverse("inventory:dashboard"))
 
+    @override_settings(TURNSTILE_ENABLED=False)
     def test_login_flow(self):
         response = self.client.post(
             reverse("inventory:login"),

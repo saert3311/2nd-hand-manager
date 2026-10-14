@@ -1,20 +1,24 @@
 from functools import update_wrapper
 
 from django.conf import settings
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import GroupAdmin
 from django.contrib.auth.admin import UserAdmin as DefaultUserAdmin
 from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
-from django.urls import reverse
+from django.shortcuts import redirect, render
+from django.urls import path, reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from .forms import TurnstileAdminAuthenticationForm
 from .models import (
     AIPromptConfiguration,
+    BackupStatus,
+    BackupTriggerType,
+    DatabaseBackupLog,
     MarketplaceSite,
     Product,
     ProductClarification,
@@ -22,6 +26,7 @@ from .models import (
     ProductListingLink,
 )
 from .permissions import ROLE_ASSISTANT, ROLE_MANAGER, is_assistant, is_manager
+from .services.backup_service import backup_database
 
 User = get_user_model()
 
@@ -39,6 +44,19 @@ class ManagerAdminSite(admin.AdminSite):
             "TURNSTILE_ENABLED": getattr(settings, "TURNSTILE_ENABLED", False),
         })
         return super().login(request, extra_context=extra_context)
+
+    def each_context(self, request):
+        context = super().each_context(request)
+        if request.user and request.user.is_authenticated and is_manager(request.user):
+            try:
+                latest_backup = DatabaseBackupLog.objects.order_by("-created_at").first()
+                if latest_backup and latest_backup.status == BackupStatus.FAILED:
+                    context["latest_backup_failed"] = True
+                    context["latest_backup_error"] = latest_backup.error_message
+                    context["latest_backup_date"] = latest_backup.created_at
+            except Exception:
+                pass
+        return context
 
     def has_permission(self, request):
         return bool(request.user and request.user.is_active and is_manager(request.user))
@@ -473,5 +491,120 @@ class ProductClarificationAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return bool(request.user and request.user.is_active and is_manager(request.user))
+
+
+@admin.register(DatabaseBackupLog, site=admin_site)
+class DatabaseBackupLogAdmin(admin.ModelAdmin):
+    list_display = (
+        "filename",
+        "status_badge",
+        "file_size_display",
+        "duration_seconds_display",
+        "trigger_type_badge",
+        "triggered_by",
+        "created_at",
+    )
+    list_filter = ("status", "trigger_type", "created_at")
+    search_fields = ("filename", "remote_path", "error_message", "triggered_by__username")
+    readonly_fields = (
+        "filename",
+        "remote_path",
+        "file_size",
+        "duration_seconds",
+        "status",
+        "trigger_type",
+        "triggered_by",
+        "error_message",
+        "created_at",
+    )
+    change_list_template = "admin/inventory/databasebackuplog/change_list.html"
+
+    def status_badge(self, obj):
+        if obj.status == BackupStatus.SUCCESS:
+            return format_html(
+                '<span style="background-color: #d1fae5; color: #065f46; font-weight: 600; padding: 2px 8px; border-radius: 9999px;">{}</span>',
+                obj.get_status_display(),
+            )
+        return format_html(
+            '<span style="background-color: #fee2e2; color: #991b1b; font-weight: 600; padding: 2px 8px; border-radius: 9999px;">{}</span>',
+            obj.get_status_display(),
+        )
+
+    status_badge.short_description = _("Status")
+
+    def trigger_type_badge(self, obj):
+        bg = "#e0e7ff" if obj.trigger_type == BackupTriggerType.MANUAL else "#f3f4f6"
+        color = "#3730a3" if obj.trigger_type == BackupTriggerType.MANUAL else "#4b5563"
+        return format_html(
+            '<span style="background-color: {}; color: {}; padding: 2px 8px; border-radius: 9999px; font-size: 12px;">{}</span>',
+            bg,
+            color,
+            obj.get_trigger_type_display(),
+        )
+
+    trigger_type_badge.short_description = _("Trigger")
+
+    def duration_seconds_display(self, obj):
+        return f"{obj.duration_seconds:.2f}s"
+
+    duration_seconds_display.short_description = _("Duration")
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "trigger-backup/",
+                self.admin_site.admin_view(self.trigger_backup_view),
+                name="inventory_databasebackuplog_trigger_backup",
+            ),
+        ]
+        return custom_urls + urls
+
+    def trigger_backup_view(self, request):
+        if not self.has_module_permission(request):
+            raise PermissionDenied(_("Manager privileges required to trigger backups."))
+
+        if request.method == "POST":
+            log = backup_database(
+                trigger_type=BackupTriggerType.MANUAL,
+                triggered_by=request.user,
+            )
+            if log.status == BackupStatus.SUCCESS:
+                self.message_user(
+                    request,
+                    _("Database backup created successfully: %(filename)s (%(size)s)")
+                    % {"filename": log.filename, "size": log.file_size_display},
+                    level=messages.SUCCESS,
+                )
+            else:
+                self.message_user(
+                    request,
+                    _("Database backup failed: %(error)s") % {"error": log.error_message},
+                    level=messages.ERROR,
+                )
+            return redirect("admin:inventory_databasebackuplog_changelist")
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": _("Confirm Database Backup"),
+            "opts": self.model._meta,
+        }
+        return render(request, "admin/inventory/databasebackuplog/confirm_backup.html", context)
+
+    def has_module_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
 
 

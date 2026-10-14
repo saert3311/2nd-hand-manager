@@ -752,5 +752,108 @@ msgstr "Por favor, completa la verificación de seguridad."
 msgid "Security verification failed. Please try again."
 msgstr "Error en la verificación de seguridad. Por favor, inténtalo de nuevo."
 
+msgid "Filename"
+msgstr "Nombre de archivo"
+
+msgid "Name of generated backup archive (e.g. db_20261014_030000.sqlite3.gz)"
+msgstr "Nombre del archivo de copia de seguridad generado (ej. db_20261014_030000.sqlite3.gz)"
+
+msgid "Remote Path"
+msgstr "Ruta remota"
+
+msgid "Storage object path in OCI Object Storage bucket or local path"
+msgstr "Ruta del objeto en el bucket de OCI Object Storage o ruta local"
+
+msgid "File Size (Bytes)"
+msgstr "Tamaño del archivo (Bytes)"
+
+msgid "Size of backup archive in bytes"
+msgstr "Tamaño del archivo de copia de seguridad en bytes"
+
+msgid "Duration (Seconds)"
+msgstr "Duración (Segundos)"
+
+msgid "Total backup execution time in seconds"
+msgstr "Tiempo total de ejecución de la copia de seguridad en segundos"
+
+msgid "Trigger Type"
+msgstr "Tipo de activación"
+
+msgid "Triggered By"
+msgstr "Activado por"
+
+msgid "User who initiated manual backup (null for scheduled/CLI runs)"
+msgstr "Usuario que inició la copia de seguridad manual (nulo para ejecuciones programadas/CLI)"
+
+msgid "Error Message"
+msgstr "Mensaje de error"
+
+msgid "Detailed exception trace or error description if backup failed"
+msgstr "Traza detallada de la excepción o descripción del error si la copia falló"
+
+msgid "Database Backup Log"
+msgstr "Registro de copia de seguridad"
+
+msgid "Database Backup Logs"
+msgstr "Registros de copias de seguridad"
+
+msgid "Success"
+msgstr "Éxito"
+
+msgid "Failed"
+msgstr "Fallido"
+
+msgid "Scheduled / CLI"
+msgstr "Programada / CLI"
+
+msgid "Manual / Admin"
+msgstr "Manual / Admin"
+
+msgid "Backup"
+msgstr "Copia de seguridad"
+
+msgid "Trigger"
+msgstr "Activación"
+
+msgid "Duration"
+msgstr "Duración"
+
+msgid "Create Backup Now"
+msgstr "Crear copia de seguridad ahora"
+
+msgid "Confirm Database Backup"
+msgstr "Confirmar copia de seguridad de la base de datos"
+
+msgid "Create On-Demand Database Backup"
+msgstr "Crear copia de seguridad bajo demanda"
+
+msgid "Are you sure you want to trigger an immediate hot backup of the SQLite database? A consistent, point-in-time snapshot (.sqlite3.gz) will be created and uploaded directly to cloud storage."
+msgstr "¿Estás seguro de que deseas iniciar una copia de seguridad inmediata de la base de datos SQLite? Se creará una instantánea consistente (.sqlite3.gz) y se subirá directamente al almacenamiento en la nube."
+
+msgid "Yes, Create Backup Now"
+msgstr "Sí, crear copia de seguridad ahora"
+
+msgid "Database backup created successfully: %(filename)s (%(size)s)"
+msgstr "Copia de seguridad creada correctamente: %(filename)s (%(size)s)"
+
+msgid "Database backup failed: %(error)s"
+msgstr "Error al crear la copia de seguridad: %(error)s"
+
+msgid "Manager privileges required to trigger backups."
+msgstr "Se requieren privilegios de gestor para crear copias de seguridad."
+
+msgid "Warning: The most recent automated database backup failed!"
+msgstr "¡Advertencia: La última copia de seguridad automática de la base de datos ha fallado!"
+
+msgid "Please inspect the database backup audit log."
+msgstr "Por favor, inspecciona el registro de auditoría de copias de seguridad."
+
+msgid "View Backup Logs"
+msgstr "Ver registros de copia"
+
+msgid "Confirm Backup"
+msgstr "Confirmar copia"
+
+
 
 

@@ -935,6 +935,118 @@
 - [x] Full test suite (187 tests) passes with 0 regressions.
 - [x] Code is formatted and passes Ruff linting.
 
+---
+
+## Phase 14: SQLite Automated Cloud Backup & Disaster Recovery (Vertical Slice 10)
+
+### Task 42: DatabaseBackupLog Model, Migration & Model Tests
+**Description:** Implement `DatabaseBackupLog` model in `inventory/models.py` tracking backup execution metrics (`filename`, `remote_path`, `file_size`, `duration_seconds`, `status`, `trigger_type`, `triggered_by`, `error_message`, `created_at`) with proper choices and verbose names. Generate and apply migration `0009_databasebackuplog`. Write unit tests in `tests/test_backup.py` verifying model instantiation, default values, string representation, ordering, and helper methods.
+**Acceptance criteria:**
+- [x] `DatabaseBackupLog` model defined with all required fields in `inventory/models.py`.
+- [x] Migration generated and applied cleanly (`python manage.py makemigrations inventory`, `python manage.py migrate`).
+- [x] Unit tests in `tests/test_backup.py` verify model attributes, field defaults, and `__str__`.
+**Verification:**
+- [x] Migration check succeeds: `python manage.py migrate`
+- [x] Model tests pass: `python manage.py test tests.test_backup`
+**Dependencies:** Checkpoint 13
+**Files likely touched:**
+- `inventory/models.py`
+- `inventory/migrations/0009_databasebackuplog.py`
+- `tests/test_backup.py`
+**Estimated scope:** Small to Medium (3 files)
+
+---
+
+### Task 43: SQLite Hot-Backup, Compression & Cloud Upload Service
+**Description:** Implement `inventory/services/backup_service.py` with `backup_database(retention_days=30, compress=True, local_only=False, dry_run=False, trigger_type='scheduled', triggered_by=None)`. Use SQLite native online backup API (`sqlite3.Connection.backup()`) to create hot snapshot, compress via `gzip` (`.sqlite3.gz`), upload to OCI Object Storage bucket under `backups/db/%Y/%m/` via Django storages/boto3, prune remote backups older than `retention_days`, record execution details in `DatabaseBackupLog`, and handle failures gracefully without raising unhandled exceptions. Configure backup settings (`DB_BACKUP_RETENTION_DAYS`, `DB_BACKUP_PREFIX`) in `config/settings.py` and `.env.example`.
+**Acceptance criteria:**
+- [x] `backup_database()` performs consistent hot backup using `sqlite3.Connection.backup()`.
+- [x] Gzip compression reduces SQLite snapshot size and saves `.sqlite3.gz` archive.
+- [x] Remote upload streams to OCI Object Storage when configured, or saves to local `backups/` directory when `local_only=True` or cloud storage unavailable.
+- [x] Automated retention pruning deletes remote/local archives older than `retention_days`.
+- [x] Every execution (success or failure) creates a corresponding `DatabaseBackupLog` record.
+- [x] Settings `DB_BACKUP_RETENTION_DAYS` (default 30) and `DB_BACKUP_PREFIX` (default `backups/db/`) defined.
+- [x] Unit tests with mocked storage test full backup flow, dry run, local mode, pruning, and error recovery.
+**Verification:**
+- [x] Service unit tests pass: `python manage.py test tests.test_backup`
+**Dependencies:** Task 42
+**Files likely touched:**
+- `config/settings.py`
+- `.env.example`
+- `inventory/services/backup_service.py`
+- `tests/test_backup.py`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 44: Django Management Command `backup_db`
+**Description:** Implement `inventory/management/commands/backup_db.py` exposing CLI options (`--retention-days <N>`, `--no-compress`, `--local-only`, `--dry-run`, `--quiet`). Wraps `backup_database()`, formats console output (or suppresses when `--quiet`), logs summary info, and returns exit code 0 on success and 1 on failure for cron/container scheduling.
+**Acceptance criteria:**
+- [x] `python manage.py backup_db` runs default hot backup and retention pruning with formatted console output.
+- [x] Flags `--retention-days`, `--no-compress`, `--local-only`, `--dry-run`, and `--quiet` function as specified.
+- [x] Exit code is 0 on successful backup and 1 on error.
+- [x] Unit and command integration tests verify CLI invocation and options.
+**Verification:**
+- [x] Command tests pass: `python manage.py test tests.test_backup`
+- [x] Command runs: `python manage.py backup_db --local-only --dry-run`
+**Dependencies:** Task 43
+**Files likely touched:**
+- `inventory/management/commands/backup_db.py`
+- `tests/test_backup.py`
+**Estimated scope:** Small to Medium (2 files)
+
+---
+
+### Task 45: Django Admin Audit Log, On-Demand Backup & Failure Alert Banner
+**Description:** Register `DatabaseBackupLog` in `inventory/admin.py` with `DatabaseBackupLogAdmin` (read-only logs, status badges, size formatting, duration, trigger type). Add top-bar action button to trigger "Crear copia de seguridad ahora" with intermediate confirmation view and flash feedback. Implement global failure alert banner in `inventory/templates/admin/base_site.html` (or admin template override) warning managers when the most recent backup status is `failed`.
+**Acceptance criteria:**
+- [x] `DatabaseBackupLogAdmin` displayed in `ManagerAdminSite` with colored status badges, human-readable file sizes (`KB`/`MB`), and read-only protection.
+- [x] On-demand backup button with confirmation view triggers manual backup and logs `trigger_type='manual'`, associating `triggered_by=request.user`.
+- [x] Prominent alert banner renders at the top of admin pages if the latest backup attempt failed.
+- [x] Integration tests verify admin views, manual trigger flow, permission gating, and failure banner rendering.
+**Verification:**
+- [x] Admin tests pass: `python manage.py test tests.test_backup`
+**Dependencies:** Task 44
+**Files likely touched:**
+- `inventory/admin.py`
+- `inventory/templates/admin/`
+- `tests/test_backup.py`
+**Estimated scope:** Medium (3-4 files)
+
+---
+
+### Task 46: i18n Translations, Documentation & Full Regression Suite
+**Description:** Add Spanish translations in `locale/es/LC_MESSAGES/django.po` for all backup-related model fields, status choices, admin labels, button texts, confirmation messages, and alert banners. Compile binary catalog using `python manage.py compile_locales`. Update `CHANGELOG.md` under `[Unreleased]`. Run full test suite and `ruff check .` to verify 0 regressions.
+**Acceptance criteria:**
+- [x] Spanish translations compiled to `django.mo`.
+- [x] Full automated test suite passes: `python manage.py test`.
+- [x] Linter passes with 0 warnings: `ruff check .`.
+- [x] `CHANGELOG.md` updated with backup feature notes under `[Unreleased]`.
+**Verification:**
+- [x] Command succeeds: `python manage.py compile_locales`
+- [x] Full test suite passes: `python manage.py test`
+- [x] Linter passes: `ruff check .`
+**Dependencies:** Task 45
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `CHANGELOG.md`
+**Estimated scope:** Small (3 files)
+
+---
+
+## Checkpoint 14: Automated SQLite Cloud Backup Complete
+- [x] Hot backup creates consistent SQLite snapshots during active writes without locking.
+- [x] Compressed `.sqlite3.gz` archives upload to OCI Object Storage bucket.
+- [x] Retention lifecycle prunes backups older than 30 days.
+- [x] CLI command `python manage.py backup_db` runs reliably with exit codes 0/1.
+- [x] Managers can review backup logs and trigger on-demand backups in Django admin.
+- [x] Prominent warning banner alerts managers if the last backup failed.
+- [x] Local dev and offline CI work cleanly without cloud credentials.
+- [x] Full test suite passes with 0 regressions.
+- [x] Code is formatted and passes Ruff linting.
+
+
 
 
 

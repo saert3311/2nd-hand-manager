@@ -101,7 +101,13 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - **Task 39:** Public Login Protection (`inventory/forms.py`, `inventory/views.py`, `inventory/templates/registration/login.html`, `tests/test_turnstile.py`).
 - **Task 40:** Django Admin Login Protection (`inventory/forms.py`, `inventory/admin.py`, `inventory/templates/admin/login.html`, `tests/test_turnstile.py`).
 - **Task 41:** i18n Translations, Documentation & Regression Testing (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `CHANGELOG.md`).
-- **Checkpoint 13 (Turnstile Complete):** Both public `/login/` and admin `/admin/login/` challenge bot submissions, valid tokens authenticate smoothly, invalid/missing tokens reject with localized errors, fail-closed policy operates safely on timeouts, and full test suite passes with 0 regressions.
+### Phase 14: SQLite Automated Cloud Backup & Disaster Recovery (Vertical Slice 10)
+- **Task 42:** `DatabaseBackupLog` Domain Model & Migration (`inventory/models.py`, `inventory/migrations/`, `tests/test_backup.py`).
+- **Task 43:** SQLite Hot-Backup, Compression & Cloud Upload Service (`inventory/services/backup_service.py`, `config/settings.py`, `.env.example`, `tests/test_backup.py`).
+- **Task 44:** Django Management Command `backup_db` (`inventory/management/commands/backup_db.py`, `tests/test_backup.py`).
+- **Task 45:** Django Admin Audit Log, Failure Alert Banner & On-Demand Backup Trigger (`inventory/admin.py`, `inventory/templates/admin/`, `tests/test_backup.py`).
+- **Task 46:** i18n Translations, Documentation & Full Regression Suite (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `CHANGELOG.md`).
+- **Checkpoint 14 (Automated SQLite Cloud Backup Complete):** Online hot backup creates uncorrupted snapshots during active writes, compressed `.sqlite3.gz` files upload to OCI Object Storage, retention prunes backups older than 30 days, managers can inspect audit logs and trigger backups in admin with failure banner alerting, and full test suite passes with 0 regressions.
 
 ---
 
@@ -128,6 +134,10 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 | Cloudflare Turnstile API timeout or network failure | High | Implement fail-closed policy (Option A) with a strict 5.0s timeout to protect against bypass during attacks, with clear retry feedback. |
 | Turnstile breaking local development or headless CI | High | Automatically bypass verification when `TURNSTILE_ENABLED=False` or keys omitted; support official Cloudflare test dummy keys. |
 | Bot attacks bypassing public login and hitting admin login | High | Apply Turnstile protection uniformly to both `/login/` and `/admin/login/` (Option B). |
+| Database corruption from backing up active SQLite file | High | Use SQLite native online backup API (`conn.backup()`) rather than filesystem copying, ensuring atomic consistency during active writes. |
+| Unbounded cloud storage growth from daily snapshots | Medium | Enforce automated retention pruning after each backup, deleting snapshots older than 30 days. |
+| Backup failure going unnoticed until disaster recovery | High | Record every attempt in `DatabaseBackupLog` and display a prominent warning banner in Django Administration when the last backup failed. |
+| Backups failing in offline dev or CI environments | High | Support `--local-only` mode and mock S3 storage in tests so test suite runs 100% offline without credentials. |
 
 ---
 
@@ -147,6 +157,10 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - Approved: Turnstile failure mode: Fail-closed (Option A).
 - Approved: Turnstile protection scope: Protect all login forms, including `/login/` and `/admin/login/` (Option B).
 - Approved: Turnstile widget theme: Explicit light theme (`data-theme="light"`) (Option A).
+- Approved: Backup retention window: 30 days daily retention (Option A).
+- Approved: On-demand backup trigger in admin: Prominent top bar button with confirmation view (Option A).
+- Approved: Failure notification: Django Admin warning banner + structured audit log (Option A).
+
 
 
 

@@ -34,6 +34,16 @@ class ClarificationStatus(models.TextChoices):
     RESOLVED = "resolved", _("Resolved")
 
 
+class BackupStatus(models.TextChoices):
+    SUCCESS = "success", _("Success")
+    FAILED = "failed", _("Failed")
+
+
+class BackupTriggerType(models.TextChoices):
+    SCHEDULED = "scheduled", _("Scheduled / CLI")
+    MANUAL = "manual", _("Manual / Admin")
+
+
 class Product(models.Model):
     raw_note = models.TextField(
         blank=True,
@@ -411,4 +421,82 @@ class ProductClarification(models.Model):
         self.answered_at = timezone.now()
         if commit:
             self.save(update_fields=["answer", "answered_by", "status", "answered_at"])
+
+
+class DatabaseBackupLog(models.Model):
+    filename = models.CharField(
+        max_length=255,
+        verbose_name=_("Filename"),
+        help_text=_("Name of generated backup archive (e.g. db_20261014_030000.sqlite3.gz)"),
+    )
+    remote_path = models.CharField(
+        max_length=500,
+        verbose_name=_("Remote Path"),
+        help_text=_("Storage object path in OCI Object Storage bucket or local path"),
+    )
+    file_size = models.BigIntegerField(
+        default=0,
+        verbose_name=_("File Size (Bytes)"),
+        help_text=_("Size of backup archive in bytes"),
+    )
+    duration_seconds = models.FloatField(
+        default=0.0,
+        verbose_name=_("Duration (Seconds)"),
+        help_text=_("Total backup execution time in seconds"),
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=BackupStatus.choices,
+        default=BackupStatus.SUCCESS,
+        db_index=True,
+        verbose_name=_("Status"),
+    )
+    trigger_type = models.CharField(
+        max_length=20,
+        choices=BackupTriggerType.choices,
+        default=BackupTriggerType.SCHEDULED,
+        verbose_name=_("Trigger Type"),
+    )
+    triggered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="database_backups",
+        verbose_name=_("Triggered By"),
+        help_text=_("User who initiated manual backup (null for scheduled/CLI runs)"),
+    )
+    error_message = models.TextField(
+        blank=True,
+        default="",
+        verbose_name=_("Error Message"),
+        help_text=_("Detailed exception trace or error description if backup failed"),
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+        verbose_name=_("Created At"),
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = _("Database Backup Log")
+        verbose_name_plural = _("Database Backup Logs")
+
+    def __str__(self):
+        created_str = self.created_at.strftime("%Y-%m-%d %H:%M:%S") if self.created_at else ""
+        return f"{self.filename or _('Backup')} - {self.get_status_display()} ({created_str})"
+
+    @property
+    def file_size_display(self) -> str:
+        """Return human-readable formatted file size."""
+        size = self.file_size
+        if size < 1024:
+            return f"{size} B"
+        elif size < 1024 * 1024:
+            return f"{size / 1024:.1f} KB"
+        elif size < 1024 * 1024 * 1024:
+            return f"{size / (1024 * 1024):.1f} MB"
+        else:
+            return f"{size / (1024 * 1024 * 1024):.2f} GB"
 
