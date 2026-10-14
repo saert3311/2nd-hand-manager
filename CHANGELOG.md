@@ -45,9 +45,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     4. *Gate 4*: Docker container image build with GitHub Actions layer caching.
     5. *Gate 5*: Container non-root execution verification (`id -u != 0`).
     6. *Gate 6*: Container boot smoke test, polling healthcheck and verifying expected HTML application response.
-  - Added automated `publish-image` job pushing production Docker images to **GitHub Container Registry (GHCR)** (`ghcr.io/saert3311/2nd-hand-manager:latest` and SHA tag) upon successful master builds.
+    - Added automated `publish-image` job pushing production multi-architecture Docker images (`linux/amd64` and `linux/arm64`) to **GitHub Container Registry (GHCR)** via QEMU emulation (`ghcr.io/saert3311/2nd-hand-manager:latest` and SHA tag) upon successful master builds.
 - **Production Container Orchestration & CD ([`docker-compose.prod.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/docker-compose.prod.yml))**:
-  - Configured standalone production compose using pre-built GHCR image with persistent volumes (`secondhand_data`, `secondhand_media`).
+  - Configured standalone production compose using pre-built GHCR image with persistent volumes (`secondhand_data`, `secondhand_media`) and fallback `build` context for native ARM/local builds.
   - Added Watchtower service for continuous hands-free deployment: automatically pulls new GHCR images, gracefully restarts the container, and prunes old images.
 
 ### Security & Hardening

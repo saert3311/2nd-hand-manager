@@ -6,6 +6,9 @@
 services:
   web:
     image: ghcr.io/saert3311/2nd-hand-manager:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: secondhand_staging_prod
     restart: unless-stopped
     ports:
