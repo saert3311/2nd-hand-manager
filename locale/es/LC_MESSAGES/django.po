@@ -916,3 +916,19 @@ msgstr "Por favor, adjunta al menos una foto para identificar el producto."
 
 msgid "Method not allowed. Use POST."
 msgstr "Método no permitido. Usa POST."
+
+msgid "Please attach at least one photo of the product before saving."
+msgstr "Por favor, adjunta al menos una foto del producto antes de guardar."
+
+msgid "The file '%(name)s' exceeds the 10MB limit (%(size)s MB). Please select photos under 10MB."
+msgstr "El archivo '%(name)s' supera el límite de 10MB (%(size)s MB). Por favor, selecciona fotos menores de 10MB."
+
+msgid "Please enter a valid, non-negative price."
+msgstr "Por favor, introduce un precio válido no negativo."
+
+msgid "Saving product..."
+msgstr "Guardando producto..."
+
+msgid "Please wait for AI analysis to finish..."
+msgstr "Espera a que finalice el análisis con IA..."
+

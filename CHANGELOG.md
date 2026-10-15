@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Intake Form Async Protection, Double-Submit Prevention & Client-Side Validation**:
+  - Implemented client-side tri-state machine (`idle`, `identifying`, `submitting`) in [`inventory/templates/inventory/intake.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/intake.html) managing user interaction during asynchronous operations and network requests.
+  - Added asynchronous operation blocking: clicking "Identificar producto" sets `formState = 'identifying'`, disables the submit button (`#submitBtn`) with reduced opacity and informative tooltip (*"Espera a que finalice el análisis con IA..."*), and locks the photo dropzone (`pointer-events-none opacity-70`) to prevent race conditions or mutating photos mid-analysis.
+  - Implemented double-submit prevention with a synchronous boolean latch (`isSubmitting = true`), disabling the submit button, showing an animated SVG spinner, updating label to *"Guardando producto..."*, and setting `pointer-events-none` on form controls. Repeated taps or accidental double-clicks during in-flight submissions are intercepted and rejected, completely eliminating duplicate POST requests and duplicate product records in the database.
+  - Replaced native browser `window.alert()` popups with an accessible inline alert banner (`#intakeClientAlert`) adhering to WCAG 2.1 AA (`role="alert"`, `aria-live="polite"`).
+  - Added client-side zero-photos validation on submission, displaying an accessible warning message, applying a temporary warning ring (`border-rose-400 ring-2 ring-rose-200 bg-rose-50/40`) to `#dropZone`, and scrolling smoothly to the dropzone.
+  - Added pre-upload file guards inspecting image selection: rejecting batches >10 photos and inspecting `file.size > 10MB` client-side with explicit filename and MB size feedback before network transmission starts.
+  - Configured automatic clearing of the dropzone error ring and alert banner as soon as at least one valid image is selected.
+  - Added graceful recovery handling on network fetch errors, timeouts, and browser BFCache history navigation (`pageshow` event).
+  - Added Spanish translations in `locale/es/LC_MESSAGES/django.po` compiled to `django.mo`.
+  - Added comprehensive test coverage in [`tests/test_intake.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_intake.py) and verified full end-to-end user workflows using real Google Chrome via Playwright.
 - **Smart Intake Pre-flight: On-Demand Item Identification, Advisory Guidance & Direct Pricing**:
   - Implemented `identify_intake_product()` and `IntakePreflightSchema` in [`inventory/services/ai_service.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/services/ai_service.py) querying Google Gemini Multimodal Vision API (`gemini-2.5-flash`) with structured output.
   - Capped multimodal image payload to the first 3 photos (`images_bytes[:3]`) with in-memory MIME detection to minimize upload payload and latency on mobile connections.

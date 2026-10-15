@@ -1155,3 +1155,96 @@
 - [x] All new UI strings display cleanly in Spanish and English.
 - [x] Full automated test suite passes with 0 regressions.
 - [x] Code is formatted and passes Ruff linting.
+
+---
+
+## Phase 16: Intake Form Async Protection, Double-Submit Prevention & Client-Side Validation
+
+### Task 52: Accessible Client-Side File Validations & Price Bounds without alert()
+**Description:** Implement client-side validation logic and accessible DOM alerts in `inventory/templates/inventory/intake.html`. Replace all native `window.alert()` calls with an accessible inline alert banner (`#intakeClientAlert`) using `role="alert"` and `aria-live="polite"`. Add validation on form submit when 0 photos are chosen, rendering the warning message, applying a temporary warning ring (`ring-2 ring-rose-300 border-rose-400 bg-rose-50/40`) to `#dropZone`, and scrolling smoothly to the dropzone. Add pre-upload validation when photos are selected: if more than 10 images are chosen, reject the selection, reset the file input, and show an inline alert; if any file exceeds 10MB (`file.size > 10 * 1024 * 1024`), reject the selection, reset the input, and show an inline alert with the offending filename and size in MB. Auto-clear the error ring and alert banner as soon as at least one valid image is selected (per approved Option A). Ensure `sale_price` bounds check on input.
+**Acceptance criteria:**
+- [x] Submitting with 0 photos displays `#intakeClientAlert` with accessible text and highlights `#dropZone` with warning ring and smooth scroll without native `alert()`.
+- [x] Selecting >10 photos resets input, clears preview, and displays `#intakeClientAlert` without native `alert()`.
+- [x] Selecting any file >10MB rejects the selection, resets input, and displays `#intakeClientAlert` with filename and calculated size in MB.
+- [x] Selecting valid photos automatically removes any active error ring on `#dropZone` and hides `#intakeClientAlert`.
+- [x] Price input is validated to prevent negative numbers or invalid values.
+**Verification:**
+- [x] Browser manual / automated check verifies inline alerts appear and disappear cleanly without `window.alert()`.
+- [x] Django template syntax checks pass: `python manage.py check`
+**Dependencies:** None (Task 51)
+**Files likely touched:**
+- `inventory/templates/inventory/intake.html`
+**Estimated scope:** Small to Medium (1-2 files)
+
+---
+
+### Task 53: Form State Machine & Asynchronous Operation Blocking
+**Description:** Implement an explicit client-side form state machine (`'idle'`, `'identifying'`, `'submitting'`) in `inventory/templates/inventory/intake.html`. When the assistant clicks "Identificar producto" (`#identifyBtn`), transition `formState` to `'identifying'`: disable `#identifyBtn` with spinner, disable `#submitBtn` (`opacity-60 cursor-not-allowed`) with a title tooltip (*"Espera a que finalice el análisis con IA..."*), and lock `#dropZone` / `#imageInput` (`pointer-events-none opacity-70`) so photos cannot be changed mid-analysis. When the pre-flight request completes (either success or failure), return `formState` to `'idle'`, re-enable `#submitBtn`, and restore interactivity to the dropzone. Add fail-safe recovery so network timeouts or fetch errors never leave the form permanently locked.
+**Acceptance criteria:**
+- [x] Clicking "Identificar producto" sets `formState = 'identifying'`.
+- [x] While `identifying`, `#submitBtn` is disabled, has opacity reduced, and shows tooltip explaining AI analysis is in progress.
+- [x] While `identifying`, `#dropZone` has `pointer-events-none` preventing image manipulation or replacement mid-request.
+- [x] When identification resolves (success or error), `formState` returns to `'idle'`, re-enabling `#submitBtn` and `#dropZone`.
+- [x] Unhandled fetch rejection or network timeout safely catches error and restores `formState = 'idle'`.
+**Verification:**
+- [x] Unit / view tests verify intake endpoint behavior: `python manage.py test tests.test_views.IntakeIdentifyViewTests`
+- [x] Browser test script verifies submit button and dropzone are disabled during AI pre-flight.
+**Dependencies:** Task 52
+**Files likely touched:**
+- `inventory/templates/inventory/intake.html`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 54: Double-Submit Prevention & Submit Loading State
+**Description:** Add double-submit prevention to the intake form in `inventory/templates/inventory/intake.html`. Attach an interceptor to the form's `submit` event using a synchronous boolean latch (`let isSubmitting = false;`). When submit is triggered, run client-side validation; if validation fails, prevent submit and keep `isSubmitting = false`. If validation passes and `isSubmitting` is false, set `isSubmitting = true`, transition `formState` to `'submitting'`, disable `#submitBtn`, show an animated SVG spinner, update button label to *"Guardando producto..."*, disable `#identifyBtn`, and set `pointer-events-none` on the form container. If a second tap or click occurs while `isSubmitting` is true, immediately call `e.preventDefault()` and return false, eliminating duplicate POST requests and duplicate product records.
+**Acceptance criteria:**
+- [x] Double-clicking or repeatedly tapping `#submitBtn` dispatches only 1 HTTP POST request.
+- [x] Valid submission immediately shows loading spinner and changes text to *"Guardando producto..."*.
+- [x] `#identifyBtn` and form controls are locked (`pointer-events-none`) during submission.
+- [x] If client validation fails before submission, `isSubmitting` remains false and buttons remain interactive.
+**Verification:**
+- [x] Automated browser / integration test confirms repeated clicks produce exactly one POST and one database record.
+- [x] View tests pass: `python manage.py test tests.test_intake`
+**Dependencies:** Task 53
+**Files likely touched:**
+- `inventory/templates/inventory/intake.html`
+- `tests/test_intake.py`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 55: i18n Spanish Translations, Regression Tests & Playwright Browser Verification
+**Description:** Add Spanish translations in `locale/es/LC_MESSAGES/django.po` for all new UI messages (0-photo alert, >10 photos alert, >10MB file alert, submit loading text, AI in-flight tooltip). Compile binary translation catalogs via `python manage.py compile_locales`. Update integration tests in `tests/test_intake.py` and `tests/test_views.py`. Run end-to-end browser verification script (`verify_intake_browser.py`) testing the full intake workflow, double-click protection, and async blocking in a real Chrome browser. Update `CHANGELOG.md` under `[Unreleased]`. Run full test suite and Ruff linter.
+**Acceptance criteria:**
+- [x] All new UI strings localized in `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`.
+- [x] Unit & integration tests pass with 100% green: `python manage.py test`.
+- [x] Real browser verification script runs and confirms double-click lock, async identify blocking, and validation alerts.
+- [x] `CHANGELOG.md` updated under `[Unreleased]` with Phase 16 details.
+- [x] Linter passes with 0 warnings: `ruff check .`.
+**Verification:**
+- [x] Command succeeds: `python manage.py compile_locales`
+- [x] Full test suite passes: `python manage.py test`
+- [x] Browser script succeeds: `python .gemini/antigravity/brain/b80e4db2-82cf-46b6-b07e-3885a650d010/scratch/verify_intake_browser.py`
+- [x] Linter passes: `ruff check .`
+**Dependencies:** Task 54
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_intake.py`
+- `tests/test_views.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (4-5 files)
+
+---
+
+## Checkpoint 16: Intake Form Async Protection & Client-Side Validation Complete
+- [x] Double-clicking or rapid tapping on the submit button never creates duplicate product records.
+- [x] Triggering AI identification disables the submit button and locks the dropzone until the analysis resolves.
+- [x] Submitting with 0 photos highlights the dropzone and displays an accessible inline alert without native `alert()`.
+- [x] Selecting >10 photos or any photo >10MB rejects the invalid batch and shows an accessible inline alert.
+- [x] Selecting a valid photo auto-clears the dropzone error ring and alert banner.
+- [x] All new UI strings display cleanly in Spanish and English.
+- [x] Full test suite passes with 0 regressions, and real browser verification confirms the user experience.
+
+

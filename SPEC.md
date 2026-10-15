@@ -14,6 +14,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 10. **Cloudflare Turnstile Login Protection:** Privacy-preserving smart CAPTCHA challenge integrated into the user login interface (`/login/`). Protects authentication against automated brute-force attacks and credential stuffing while offering seamless zero-friction verification for human staff. Fully configurable with test dummy keys and bypass options for local development and CI/CD automation.
 11. **SQLite Automated Cloud Backup to OCI Object Storage:** Automated, zero-downtime daily backups of the primary SQLite database file directly into the configured Oracle Cloud Infrastructure (OCI) Object Storage bucket using SQLite's native online backup API and gzip compression. Includes retention pruning (30 days), a CLI management command (`python manage.py backup_db`), and an audit log table with on-demand backup triggers in Django Administration (`DatabaseBackupLog`).
 12. **Smart Intake Pre-flight & Direct Pricing:** On-demand AI product identification and pre-flight advisory assistance directly inside the mobile intake screen (`inventory:intake`). Sourcing assistants can click "Identificar producto" to trigger a fast Gemini vision scan (`/inventory/intake/identify/`) returning detected specs and a non-blocking checklist of missing details (e.g. unreadable size tags or missing flaw photos) while the physical item is still in hand. Also introduces an optional sale price field (`sale_price`, €) directly on the intake form.
+13. **Intake Form State Management, Async Blocking & Client-Side Validations:** Robust client-side form state machine (`idle`, `identifying`, `submitting`) on the mobile intake view (`/intake/`). Blocks interactions during asynchronous operations (disabling form submit and dropzone while AI pre-flight is in flight) to prevent race conditions and photo mutation; locks submit triggers on form POST to eliminate double-click duplicate records; and replaces native browser `alert()` dialogs with accessible, non-disruptive inline error alerts (`role="alert"`, `aria-live="polite"`) for zero photos, >10 image count, and >10MB individual file size limits.
 
 ---
 
@@ -490,6 +491,34 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
   - `ProductIntakeForm` includes an optional `sale_price` field in Euro (`€`).
   - When provided during intake, persisted directly to `Product.sale_price` upon form submission.
 
+### 6.13 Intake Form State Management, Async Protection & Client-Side Validations
+- **Form State Machine (`formState`):**
+  - Managed in `inventory/templates/inventory/intake.html` via vanilla JavaScript.
+  - Three discrete states: `'idle'`, `'identifying'`, and `'submitting'`.
+  - **`identifying` State:**
+    - Triggered when the assistant clicks "Identificar producto".
+    - Disables `#identifyBtn` and displays animated spinner with *"Analizando fotos con IA..."*.
+    - Disables `#submitBtn` (`opacity-60 cursor-not-allowed`) with title tooltip: *"Espera a que finalice el análisis con IA..."*.
+    - Locks `#dropZone` and `#imageInput` (`pointer-events-none opacity-70`) to prevent file selection changes mid-analysis.
+    - Transitions back to `'idle'` upon fetch completion (success or error).
+  - **`submitting` State:**
+    - Triggered when the user submits valid intake data.
+    - Locks `#submitBtn` immediately (`disabled`, `opacity-75 cursor-not-allowed`), displays spinner, and sets text to *"Guardando producto..."*.
+    - Disables `#identifyBtn` and locks form fields (`pointer-events-none`) to prevent double-click duplicate submissions.
+    - If client validation fails prior to submission, remains in `'idle'` and restores interactivity.
+- **Double-Submit Prevention:**
+  - Synchronous boolean latch `let isSubmitting = false;` guarantees that rapid successive taps or clicks dispatch at most one HTTP POST request.
+  - Form submit handler returns early with `e.preventDefault()` if `isSubmitting` is already true.
+- **Accessible Client-Side Validations (No Blocking Popups):**
+  - Native `window.alert()` is completely removed from the intake workflow.
+  - An inline banner `#intakeClientAlert` (`role="alert"`, `aria-live="polite"`) presents clean warning and error messages.
+  - **Zero Photos Guard:** If the form is submitted with 0 photos, displays an inline message (*"Por favor, adjunta al menos una foto del producto antes de guardar."*), rings the dropzone in warning rose/amber, and scrolls into view.
+  - **Max 10 Images Guard:** Selecting >10 images rejects the batch, resets the file input, and displays an inline warning banner (*"Has seleccionado más de 10 fotos. Por favor, selecciona un máximo de 10 imágenes."*).
+  - **File Size Guard (10MB limit):** Inspects `file.size > 10 * 1024 * 1024` on each selected file before network transmission. If any file exceeds 10MB, cancels selection and displays an inline error with the file name and size in MB.
+  - **Price Field Guard:** Validates `sale_price >= 0` and within `9999999.99` bounds.
+- **Fail-Safe Recovery:**
+  - If any asynchronous fetch or network error occurs, or if `beforeunload` or page reload is triggered, the state safely resets to `'idle'` with controls re-enabled so the user is never stranded.
+
 ---
 
 ## 7. AI Service Contract (`ai_service.py`)
@@ -669,11 +698,17 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
 47. Store managers can inspect backup logs and trigger an immediate on-demand backup directly from Django Administration.
 48. Dedicated automated test suite in `tests/test_backup.py` passes 100% offline with zero external cloud dependencies.
 49. On `/intake/`, the "Identificar producto" button remains disabled until at least one photo is chosen, and activates immediately upon image selection.
-50. Clicking "Identificar producto" sends photos to `/inventory/intake/identify/` and displays a loading state without locking or freezing form inputs.
+50. Clicking "Identificar producto" sends photos to `/inventory/intake/identify/` and displays a loading state while locking the submit button and image picker until the request completes, preventing race conditions.
 51. When the vision API returns missing info recommendations (e.g. missing size tag or flaw inspection), an advisory guidance banner appears above the field notes listing the suggestions.
 52. The assistant can click "Añadir sugerencia a notas" to populate the `raw_note` textarea with the AI's suggested note.
 53. The intake form includes an optional `sale_price` (€) field that successfully saves the entered price to `product.sale_price`.
 54. If the identification request fails, times out, or is skipped, the intake form can be submitted normally with zero disruption.
+55. On `/intake/`, clicking "Identificar producto" transitions the form to `identifying` state, disabling the submit button and locking the dropzone until the request resolves.
+56. Attempting to submit the intake form while AI identification is in flight is prevented with clear visual feedback.
+57. When the user submits the form with valid data, the submit button is immediately disabled with a loading spinner and *"Guardando producto..."*, preventing duplicate POST requests on repeated taps or clicks.
+58. Attempting to submit 0 photos displays an accessible inline alert banner (`#intakeClientAlert`) and highlights the dropzone without triggering native browser alerts.
+59. Selecting more than 10 photos or any photo larger than 10MB triggers an accessible inline error banner with file details, clearing invalid inputs without calling `alert()`.
+60. In the event of network failure or AI error during pre-flight identification, the form state automatically resets to `idle`, restoring submit and dropzone interactivity.
 
 ---
 
@@ -718,6 +753,8 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
 - **Intake Pre-flight Trigger:** On-demand button click ("Identificar producto") chosen over automatic scanning to conserve API quota and avoid unexpected layout jumping while selecting photos.
 - **Intake Advisory Guidance:** Purely non-blocking advisory banner chosen over a modal or blocking gate, prioritizing field intake speed and uninterrupted assistant workflow.
 - **Direct Intake Pricing:** Manual optional `sale_price` capture without automated AI pricing estimation during intake, keeping pricing responsibility with the user.
+- **Intake Form State Machine:** Tri-state machine (`idle`, `identifying`, `submitting`) managed in client-side vanilla JavaScript to eliminate race conditions between AI pre-flight and intake submission.
+- **Accessible Validation Alerts:** Browser `window.alert()` replaced with accessible inline DOM element (`role="alert"`, `aria-live="polite"`) matching Tailwind UI design system.
 
 ---
 
@@ -823,3 +860,13 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
    - **Option A (Recommended — First 3 Photos):** Send up to 3 photos (e.g. front, tag, back). Keeps payload tiny, API response ≤2.0s on mobile data, and token consumption low.
    - **Option B (All Selected Photos, up to 10):** Send all selected images. More exhaustive check, but increases mobile payload size and API latency (~3-5s).
    *Do you prefer a fast sample (up to 3 photos) or analyzing all selected images?*
+21. **Action on Oversized Files (>10MB):**
+   - When an assistant selects multiple photos where only 1 exceeds the 10MB limit:
+   - **Option A (Recommended — Reject Entire Selection):** Reject the selection, reset the file input to empty, and alert the user which file was oversized so they can re-select valid photos.
+   - **Option B (Filter & Keep Valid Photos):** Automatically filter out the oversized photo and keep the remaining valid photos in the input selection using `DataTransfer`.
+   *Which behavior do you prefer when one or more selected photos exceed 10MB?*
+22. **Dropzone Error Ring Reset Timing:**
+   - When the dropzone is highlighted in red/rose due to zero-photo submission attempt:
+   - **Option A (Recommended — Auto-clear on File Selection):** Automatically remove the error ring and alert banner as soon as the user selects at least one valid image.
+   - **Option B (Dismiss Button):** Keep the banner visible with an explicit dismiss "✕" button until closed by user or re-submitted.
+   *Which dismiss interaction do you prefer for the validation error banner?*

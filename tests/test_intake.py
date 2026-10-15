@@ -142,3 +142,27 @@ class ProductIntakeViewTests(TestCase):
         self.assertContains(resp, 'name="sale_price"')
         self.assertContains(resp, "Target Sale Price")
         self.assertContains(resp, "€")
+
+    def test_intake_get_renders_validation_and_async_elements(self):
+        self.client.login(username="assistant1", password="password123")
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'id="intakeClientAlert"')
+        self.assertContains(resp, 'role="alert"')
+        self.assertContains(resp, 'aria-live="polite"')
+        self.assertContains(resp, 'id="submitBtnIcon"')
+        self.assertContains(resp, 'id="submitBtnText"')
+        self.assertContains(resp, 'id="intakeForm"')
+        self.assertContains(resp, 'novalidate')
+        self.assertContains(resp, "Saving product...")
+        self.assertContains(resp, "Please wait for AI analysis to finish...")
+        self.assertContains(resp, "Please attach at least one photo of the product before saving.")
+
+    def test_intake_get_renders_spanish_translations(self):
+        self.client.login(username="assistant1", password="password123")
+        resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="es")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Guardando producto...")
+        self.assertContains(resp, "Espera a que finalice el análisis con IA...")
+        self.assertContains(resp, "Por favor, adjunta al menos una foto del producto antes de guardar.")
+

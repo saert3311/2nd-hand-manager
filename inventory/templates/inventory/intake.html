@@ -48,7 +48,7 @@
 
   <!-- Intake Form Card -->
   <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-    <form method="post" enctype="multipart/form-data" class="p-5 sm:p-6 space-y-5" id="intakeForm">
+    <form method="post" enctype="multipart/form-data" class="p-5 sm:p-6 space-y-5" id="intakeForm" novalidate>
       {% csrf_token %}
 
       {% if form.non_field_errors %}
@@ -59,6 +59,16 @@
       </div>
       {% endif %}
 
+      <!-- Client-Side Accessible Validation Alert Banner -->
+      <div id="intakeClientAlert" role="alert" aria-live="polite"
+           class="hidden p-3.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-xs font-semibold flex items-start justify-between gap-2.5 shadow-sm transition-all duration-200">
+        <div class="flex items-start gap-2.5">
+          <span id="clientAlertIcon" class="text-base shrink-0 leading-none mt-0.5">⚠️</span>
+          <div id="clientAlertText" class="space-y-0.5 leading-relaxed"></div>
+        </div>
+        <button type="button" id="dismissClientAlertBtn" class="text-rose-500 hover:text-rose-700 p-0.5 rounded text-xs shrink-0" title="{% trans 'Dismiss' %}">✕</button>
+      </div>
+
       <!-- Photo Upload Zone -->
       <div>
         <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
@@ -67,7 +77,7 @@
         </label>
         
         <div class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl p-6 text-center bg-slate-50 hover:bg-emerald-50/40 transition cursor-pointer relative group" id="dropZone">
-          <input type="file" name="images" id="imageInput" multiple accept="image/*" capture="environment" required
+          <input type="file" name="images" id="imageInput" multiple accept="image/*" capture="environment"
                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
           <div class="space-y-2 pointer-events-none">
             <div class="w-12 h-12 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl group-hover:scale-110 transition duration-150">
@@ -172,8 +182,8 @@
       <div class="pt-2">
         <button type="submit" id="submitBtn"
                 class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 text-base">
-          <span>💾</span>
-          <span>{% trans "Save & Catalog Next Item" %}</span>
+          <span id="submitBtnIcon">💾</span>
+          <span id="submitBtnText">{% trans "Save & Catalog Next Item" %}</span>
         </button>
       </div>
     </form>
@@ -211,6 +221,8 @@
 
 {% block extra_scripts %}
 <script>
+  const intakeForm = document.getElementById('intakeForm');
+  const dropZone = document.getElementById('dropZone');
   const imageInput = document.getElementById('imageInput');
   const previewContainer = document.getElementById('previewContainer');
   const previewGrid = document.getElementById('previewGrid');
@@ -232,11 +244,53 @@
   const applySuggestionBtnText = document.getElementById('applySuggestionBtnText');
   const dismissAdvisoryBtn = document.getElementById('dismissAdvisoryBtn');
   const rawNoteInput = document.getElementById('id_raw_note');
+  const salePriceInput = document.getElementById('id_sale_price');
+  const submitBtn = document.getElementById('submitBtn');
+  const submitBtnIcon = document.getElementById('submitBtnIcon');
+  const submitBtnText = document.getElementById('submitBtnText');
+  const intakeClientAlert = document.getElementById('intakeClientAlert');
+  const clientAlertText = document.getElementById('clientAlertText');
+  const dismissClientAlertBtn = document.getElementById('dismissClientAlertBtn');
+
   const maxImages = {{ max_images }};
   const selectedLabel = "{% trans 'selected' %}";
   const identifyUrl = "{% url 'inventory:intake_identify' %}";
 
   let lastSuggestedNote = "";
+  let formState = 'idle'; // 'idle' | 'identifying' | 'submitting'
+  let isSubmitting = false;
+
+  function showClientAlert(message, isWarning = true) {
+    if (!intakeClientAlert) return;
+    clientAlertText.textContent = message;
+    if (isWarning) {
+      intakeClientAlert.className = 'p-3.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-xs font-semibold flex items-start justify-between gap-2.5 shadow-sm transition-all duration-200';
+      document.getElementById('clientAlertIcon').textContent = '⚠️';
+      if (dismissClientAlertBtn) {
+        dismissClientAlertBtn.className = 'text-amber-500 hover:text-amber-700 p-0.5 rounded text-xs shrink-0';
+      }
+    } else {
+      intakeClientAlert.className = 'p-3.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-xs font-semibold flex items-start justify-between gap-2.5 shadow-sm transition-all duration-200';
+      document.getElementById('clientAlertIcon').textContent = '⛔';
+      if (dismissClientAlertBtn) {
+        dismissClientAlertBtn.className = 'text-rose-500 hover:text-rose-700 p-0.5 rounded text-xs shrink-0';
+      }
+    }
+    intakeClientAlert.classList.remove('hidden');
+  }
+
+  function hideClientAlert() {
+    if (intakeClientAlert) {
+      intakeClientAlert.classList.add('hidden');
+      clientAlertText.textContent = '';
+    }
+  }
+
+  function clearDropZoneHighlight() {
+    dropZone.classList.remove('border-rose-400', 'ring-2', 'ring-rose-200', 'bg-rose-50/40');
+    dropZone.classList.add('border-slate-300', 'bg-slate-50');
+    hideClientAlert();
+  }
 
   function setIdentifyButtonState(enabled) {
     if (enabled) {
@@ -250,8 +304,55 @@
     }
   }
 
+  function setFormState(newState) {
+    formState = newState;
+    if (newState === 'identifying') {
+      // Disable identify button with spinner
+      identifyBtn.disabled = true;
+      identifyBtnIcon.innerHTML = `<svg class="animate-spin h-3.5 w-3.5 text-indigo-600 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>`;
+      identifyBtnText.textContent = "{% trans 'Analyzing photos with AI...' %}";
+      identifyHelpText.textContent = "{% trans 'Checking brand, tags & condition...' %}";
+
+      // Disable submit button and lock dropZone
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
+      submitBtn.setAttribute('title', "{% trans 'Please wait for AI analysis to finish...' %}");
+      dropZone.classList.add('pointer-events-none', 'opacity-70');
+    } else if (newState === 'submitting') {
+      // Disable submit button with spinner
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+      submitBtn.classList.remove('hover:bg-emerald-700', 'active:bg-emerald-800');
+      submitBtnIcon.innerHTML = `<svg class="animate-spin h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>`;
+      submitBtnText.textContent = "{% trans 'Saving product...' %}";
+
+      // Disable identify button
+      setIdentifyButtonState(false);
+
+      // Lock interactions inside form
+      intakeForm.classList.add('pointer-events-none');
+    } else {
+      // 'idle'
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('opacity-60', 'opacity-75', 'cursor-not-allowed');
+      submitBtn.classList.add('hover:bg-emerald-700', 'active:bg-emerald-800');
+      submitBtn.removeAttribute('title');
+      submitBtnIcon.textContent = "💾";
+      submitBtnText.textContent = "{% trans 'Save & Catalog Next Item' %}";
+
+      dropZone.classList.remove('pointer-events-none', 'opacity-70');
+      intakeForm.classList.remove('pointer-events-none');
+
+      identifyBtnIcon.textContent = "🔍";
+      identifyBtnText.textContent = "{% trans 'Identify product' %}";
+      setIdentifyButtonState(imageInput.files && imageInput.files.length > 0);
+    }
+  }
+
   imageInput.addEventListener('change', function(e) {
-    const files = Array.from(e.target.files);
+    if (formState === 'identifying' || formState === 'submitting') return;
+
+    const files = Array.from(e.target.files || []);
     previewGrid.innerHTML = '';
 
     if (files.length === 0) {
@@ -261,14 +362,33 @@
       return;
     }
 
+    // 1. Max images check
     if (files.length > maxImages) {
-      alert("{% trans 'Please select a maximum of 10 photos.' %}");
+      showClientAlert("{% trans 'Please select a maximum of 10 photos.' %}", true);
       imageInput.value = '';
       previewContainer.classList.add('hidden');
       photoCount.textContent = `0 / ${maxImages} ${selectedLabel}`;
       setIdentifyButtonState(false);
       return;
     }
+
+    // 2. Individual file size check (10MB limit)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    const oversized = files.find(f => f.size > MAX_FILE_SIZE);
+    if (oversized) {
+      const sizeMb = (oversized.size / (1024 * 1024)).toFixed(1);
+      const template = "{% blocktrans %}The file '%(name)s' exceeds the 10MB limit (%(size)s MB). Please select photos under 10MB.{% endblocktrans %}";
+      const errorMsg = template.replace('%(name)s', oversized.name).replace('%(size)s', sizeMb);
+      showClientAlert(errorMsg, false);
+      imageInput.value = '';
+      previewContainer.classList.add('hidden');
+      photoCount.textContent = `0 / ${maxImages} ${selectedLabel}`;
+      setIdentifyButtonState(false);
+      return;
+    }
+
+    // Clear any previous error highlighting
+    clearDropZoneHighlight();
 
     previewContainer.classList.remove('hidden');
     photoCount.textContent = `${files.length} / ${maxImages} ${selectedLabel}`;
@@ -299,14 +419,11 @@
   });
 
   identifyBtn.addEventListener('click', async function() {
-    const files = Array.from(imageInput.files);
+    if (formState !== 'idle') return;
+    const files = Array.from(imageInput.files || []);
     if (files.length === 0) return;
 
-    // Loading state
-    identifyBtn.disabled = true;
-    identifyBtnIcon.innerHTML = `<svg class="animate-spin h-3.5 w-3.5 text-indigo-600 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>`;
-    identifyBtnText.textContent = "{% trans 'Analyzing photos with AI...' %}";
-    identifyHelpText.textContent = "{% trans 'Checking brand, tags & condition...' %}";
+    setFormState('identifying');
 
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     const formData = new FormData();
@@ -396,10 +513,8 @@
       console.warn("Intake identify error:", err);
       identifyHelpText.textContent = "{% trans 'Network error' %}";
     } finally {
-      // Restore button state
-      setIdentifyButtonState(true);
-      identifyBtnIcon.textContent = "🔍";
-      identifyBtnText.textContent = "{% trans 'Identify product' %}";
+      // Re-enable form interactions and return to idle
+      setFormState('idle');
     }
   });
 
@@ -420,5 +535,51 @@
       applySuggestionBtnText.textContent = "{% trans 'Apply suggestion to notes' %}";
     }, 1500);
   });
+
+  // Submit guard: double-click prevention + zero photos / price validations
+  intakeForm.addEventListener('submit', function(e) {
+    if (isSubmitting || formState === 'submitting' || formState === 'identifying') {
+      e.preventDefault();
+      return false;
+    }
+
+    // Check zero photos
+    const files = imageInput.files ? Array.from(imageInput.files) : [];
+    if (files.length === 0) {
+      e.preventDefault();
+      showClientAlert("{% trans 'Please attach at least one photo of the product before saving.' %}", false);
+      dropZone.classList.remove('border-slate-300', 'bg-slate-50');
+      dropZone.classList.add('border-rose-400', 'ring-2', 'ring-rose-200', 'bg-rose-50/40');
+      dropZone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+
+    // Check price bounds if present
+    if (salePriceInput && salePriceInput.value.trim() !== '') {
+      const priceVal = parseFloat(salePriceInput.value);
+      if (isNaN(priceVal) || priceVal < 0) {
+        e.preventDefault();
+        showClientAlert("{% trans 'Please enter a valid, non-negative price.' %}", false);
+        salePriceInput.focus();
+        return false;
+      }
+    }
+
+    // All client validations passed -> lock submit button and form
+    isSubmitting = true;
+    setFormState('submitting');
+    return true;
+  });
+
+  window.addEventListener('pageshow', function() {
+    isSubmitting = false;
+    setFormState('idle');
+  });
+
+  if (dismissClientAlertBtn) {
+    dismissClientAlertBtn.addEventListener('click', function() {
+      hideClientAlert();
+    });
+  }
 </script>
 {% endblock %}

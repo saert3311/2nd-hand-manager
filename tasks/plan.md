@@ -117,6 +117,13 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - **Task 51:** i18n Translations, Documentation & Full Regression Suite (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `CHANGELOG.md`).
 - **Checkpoint 15 (Smart Intake Pre-flight & Direct Pricing Complete):** Assistants can trigger on-demand AI identification on `/intake/`, receive non-blocking advisory tips for missing details, apply suggested notes with smart append, enter optional sale prices in € that persist directly to the product, and pass all automated tests with 0 regressions.
 
+### Phase 16: Intake Form Async Protection, Double-Submit Prevention & Client-Side Validation (Vertical Slice 12)
+- **Task 52:** Accessible Client-Side File Validations (0 photos, >10 count, >10MB individual size) & Price Bounds without `alert()` (`inventory/templates/inventory/intake.html`, `tests/test_views.py`).
+- **Task 53:** Form State Machine & Async Blocking (Disable submit button and dropzone during AI identification) (`inventory/templates/inventory/intake.html`, `tests/test_views.py`).
+- **Task 54:** Double-Submit Prevention & Submit Loading State (`inventory/templates/inventory/intake.html`, `tests/test_views.py`).
+- **Task 55:** i18n Spanish Translations, Unit/Integration Tests & Browser Verification (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_intake.py`, `tests/test_views.py`, `CHANGELOG.md`).
+- **Checkpoint 16 (Intake Form Async Protection & Client-Side Validation Complete):** Double-clicking submit button never triggers duplicate submissions; AI pre-flight locks submit and dropzone until finished; client validation alerts user of missing photos, >10 images, or >10MB files without browser `alert()`; error ring auto-clears on valid selection; full test suite and Playwright browser verification pass with 0 regressions.
+
 ---
 
 ## Risks and Mitigations
@@ -148,6 +155,10 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 | Backups failing in offline dev or CI environments | High | Support `--local-only` mode and mock S3 storage in tests so test suite runs 100% offline without credentials. |
 | Mobile latency during intake AI identification | Medium | Slice image inputs to the first 3 photos max (Option A) and target ≤2.0s response time with `gemini-2.5-flash`. |
 | AI identification failure blocking item intake | High | Enforce strictly non-blocking design: UI banner is advisory only, and form submit button remains functional at all times. |
+| Double form submission creating duplicate product records | High | Latch `isSubmitting = true` synchronously and disable `#submitBtn` with loading spinner upon initial valid submit. |
+| Race condition between AI pre-flight and form submission | High | Implement client-side `formState` machine: lock submit button and dropzone (`pointer-events-none`) while identify fetch is in flight. |
+| Browser `alert()` halting execution and degrading mobile UX | Medium | Replace all `alert()` calls with accessible inline alert banner (`role="alert"`, `aria-live="polite"`). |
+| Assistant uploading files >10MB wasting mobile bandwidth | Medium | Inspect `file.size` before upload starts; reject batch with explicit filename and MB size if limit exceeded. |
 
 ---
 
@@ -172,6 +183,8 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - Approved: Failure notification: Django Admin warning banner + structured audit log (Option A).
 - Approved: Suggested notes application: Append / smart fill preserving existing notes (Option A).
 - Approved: Pre-flight photo sample size: First 3 photos for speed and minimal mobile payload (Option A).
+- Approved: Action on oversized files (>10MB): Reject entire selection, reset input, and alert user which file was oversized (Option A).
+- Approved: Dropzone error ring reset timing: Auto-clear on file selection as soon as at least one valid image is chosen (Option A).
 
 
 
