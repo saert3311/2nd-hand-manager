@@ -50,8 +50,8 @@
           </a>
         </div>
 
-        <!-- Navigation Links & Language Switcher -->
-        <div class="flex items-center gap-2 sm:gap-4">
+        <!-- Desktop Navigation Bar (≥ 768px / md:) -->
+        <div class="hidden md:flex items-center gap-4">
 
           <!-- Language Selector -->
           <form action="{% url 'set_language' %}" method="post" class="inline-flex items-center">
@@ -73,11 +73,10 @@
           </form>
 
           {% if user.is_authenticated %}
-          <nav class="flex items-center gap-2 sm:gap-3">
+          <nav id="desktop-nav" class="flex items-center gap-2 sm:gap-3">
             <a href="{% url 'inventory:intake' %}" class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition border border-emerald-200">
               <span>📷</span>
-              <span class="hidden sm:inline">{% trans "New Intake" %}</span>
-              <span class="sm:hidden">{% trans "Intake" %}</span>
+              <span>{% trans "New Intake" %}</span>
             </a>
             <a href="{% url 'inventory:dashboard' %}" class="px-3 py-1.5 text-sm font-medium text-slate-700 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition">
               {% trans "Dashboard" %}
@@ -88,19 +87,19 @@
                class="badge-pending-clarifications flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300 transition shadow-sm animate-pulse"
                title="{% trans 'Pending clarifications from manager' %}">
               <span>❓</span>
-              <span class="hidden sm:inline">{% trans "Doubts" %}</span>
+              <span>{% trans "Doubts" %}</span>
               <span class="bg-amber-600 text-white text-[11px] font-extrabold px-1.5 py-0.2 rounded-full">{{ pending_clarifications_count }}</span>
             </a>
             {% endif %}
             {% if user.is_staff %}
-            <a href="{% url 'admin:index' %}" class="hidden md:inline px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-lg transition">
+            <a href="{% url 'admin:index' %}" class="px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-lg transition">
               {% trans "Admin" %}
             </a>
             {% endif %}
 
             <!-- User Menu & Logout -->
             <div class="flex items-center gap-2 border-l border-slate-200 pl-3 ml-1">
-              <span class="text-xs font-medium text-slate-600 hidden sm:inline">
+              <span class="text-xs font-medium text-slate-600">
                 {{ user.username }}
               </span>
               <form action="{% url 'inventory:logout' %}" method="post" class="inline">
@@ -115,8 +114,166 @@
 
         </div>
 
+        <!-- Mobile Header Controls (< 768px / md:hidden) -->
+        <div class="flex md:hidden items-center gap-2">
+          {% if user.is_authenticated %}
+            {% if pending_clarifications_count > 0 %}
+            <a href="{% url 'inventory:dashboard' %}?status=awaiting_info"
+               id="mobile-doubts-badge"
+               class="badge-pending-clarifications flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300 transition shadow-sm animate-pulse min-h-[36px]"
+               title="{% trans 'Pending clarifications from manager' %}">
+              <span>❓</span>
+              <span class="bg-amber-600 text-white text-[11px] font-extrabold px-1.5 py-0.2 rounded-full">{{ pending_clarifications_count }}</span>
+            </a>
+            {% endif %}
+
+            <!-- Sandwich Hamburger Toggle Button -->
+            <button id="mobile-menu-button"
+                    type="button"
+                    class="inline-flex items-center justify-center p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 w-11 h-11 transition"
+                    aria-controls="mobile-menu"
+                    aria-expanded="false"
+                    aria-label="{% trans 'Open menu' %}">
+              <!-- Hamburger Icon (☰) -->
+              <svg id="hamburger-icon" class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              <!-- Close Icon (✕) -->
+              <svg id="close-icon" class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          {% else %}
+            <!-- Unauthenticated Mobile Language Switcher (e.g. login page) -->
+            <form action="{% url 'set_language' %}" method="post" class="inline-flex items-center">
+              {% csrf_token %}
+              <input name="next" type="hidden" value="{{ request.get_full_path }}">
+              {% get_current_language as CURRENT_LANG %}
+              <div class="flex items-center bg-slate-100 rounded-lg p-0.5 text-xs font-bold border border-slate-200">
+                <button type="submit" name="language" value="en"
+                        class="px-2 py-1 rounded-md transition {% if CURRENT_LANG == 'en' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-900{% endif %}"
+                        title="English">
+                  🇬🇧 EN
+                </button>
+                <button type="submit" name="language" value="es"
+                        class="px-2 py-1 rounded-md transition {% if CURRENT_LANG == 'es' %}bg-white text-emerald-800 shadow-sm{% else %}text-slate-500 hover:text-slate-900{% endif %}"
+                        title="Español">
+                  🇪🇸 ES
+                </button>
+              </div>
+            </form>
+          {% endif %}
+        </div>
+
       </div>
     </div>
+
+    <!-- Mobile Navigation Drawer Panel -->
+    {% if user.is_authenticated %}
+    <nav id="mobile-menu"
+         class="hidden md:hidden bg-white border-b border-slate-200 shadow-lg px-4 pt-3 pb-4 space-y-3"
+         aria-label="{% trans 'Mobile navigation' %}">
+      
+      <!-- User Profile Card -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-sm font-bold text-slate-700">
+            👤
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-slate-900 leading-tight">{{ user.username }}</div>
+            <div class="text-xs text-slate-500">
+              {% if user.is_superuser %}
+                <span class="text-purple-700 font-semibold">{% trans "Superuser" %}</span>
+              {% elif user.is_staff %}
+                <span class="text-blue-700 font-semibold">{% trans "Manager" %}</span>
+              {% else %}
+                <span class="text-emerald-700 font-semibold">{% trans "Assistant" %}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Primary Navigation Links -->
+      <div class="space-y-1">
+        <a href="{% url 'inventory:intake' %}"
+           id="mobile-link-intake"
+           class="flex items-center gap-3 px-3 py-2.5 text-base font-semibold rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition min-h-[44px]">
+          <span class="text-lg">📷</span>
+          <span>{% trans "New Intake" %}</span>
+        </a>
+
+        <a href="{% url 'inventory:dashboard' %}"
+           id="mobile-link-dashboard"
+           class="flex items-center gap-3 px-3 py-2.5 text-base font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition min-h-[44px]">
+          <span class="text-lg">📊</span>
+          <span>{% trans "Dashboard" %}</span>
+        </a>
+
+        {% if pending_clarifications_count > 0 %}
+        <a href="{% url 'inventory:dashboard' %}?status=awaiting_info"
+           id="mobile-link-doubts"
+           class="badge-pending-clarifications flex items-center justify-between px-3 py-2.5 text-base font-semibold rounded-lg bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 transition min-h-[44px]">
+          <div class="flex items-center gap-3">
+            <span class="text-lg">❓</span>
+            <span>{% trans "Pending Doubts" %}</span>
+          </div>
+          <span class="bg-amber-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ pending_clarifications_count }}</span>
+        </a>
+        {% endif %}
+
+        {% if user.is_staff %}
+        <a href="{% url 'admin:index' %}"
+           id="mobile-link-admin"
+           class="flex items-center gap-3 px-3 py-2.5 text-base font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition min-h-[44px]">
+          <span class="text-lg">⚙️</span>
+          <span>{% trans "Administration Panel" %}</span>
+        </a>
+        {% endif %}
+      </div>
+
+      <!-- Segmented Bilingual Language Switcher -->
+      <div class="pt-2 border-t border-slate-100">
+        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+          {% trans "Language" %}
+        </div>
+        <form action="{% url 'set_language' %}" method="post" class="w-full">
+          {% csrf_token %}
+          <input name="next" type="hidden" value="{{ request.get_full_path }}">
+          {% get_current_language as CURRENT_LANG %}
+          <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-lg border border-slate-200">
+            <button type="submit" name="language" value="en"
+                    class="flex items-center justify-center gap-2 py-2 px-3 text-sm font-semibold rounded-md transition min-h-[44px] {% if CURRENT_LANG == 'en' %}bg-white text-slate-900 shadow-sm border border-slate-200{% else %}text-slate-600 hover:text-slate-900{% endif %}"
+                    title="English">
+              <span>🇬🇧</span>
+              <span>English</span>
+            </button>
+            <button type="submit" name="language" value="es"
+                    class="flex items-center justify-center gap-2 py-2 px-3 text-sm font-semibold rounded-md transition min-h-[44px] {% if CURRENT_LANG == 'es' %}bg-white text-emerald-800 shadow-sm border border-slate-200{% else %}text-slate-600 hover:text-slate-900{% endif %}"
+                    title="Español">
+              <span>🇪🇸</span>
+              <span>Español</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Sign Out Action -->
+      <div class="pt-2 border-t border-slate-100">
+        <form action="{% url 'inventory:logout' %}" method="post" class="w-full">
+          {% csrf_token %}
+          <button type="submit"
+                  class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg border border-rose-200 transition min-h-[44px]"
+                  title="{% trans 'Sign Out' %}">
+            <span>🚪</span>
+            <span>{% trans "Sign Out" %}</span>
+          </button>
+        </form>
+      </div>
+
+    </nav>
+    {% endif %}
   </header>
 
   <!-- Flash Messages Notifications -->
@@ -144,6 +301,73 @@
   <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
     {% trans "2ndHand Product Intake & Staging Hub • Powered by Django & Gemini Vision" %}
   </footer>
+
+  {% if user.is_authenticated %}
+  <script>
+    (function() {
+      const menuButton = document.getElementById('mobile-menu-button');
+      const mobileMenu = document.getElementById('mobile-menu');
+      const hamburgerIcon = document.getElementById('hamburger-icon');
+      const closeIcon = document.getElementById('close-icon');
+
+      if (!menuButton || !mobileMenu) return;
+
+      function openMenu() {
+        mobileMenu.classList.remove('hidden');
+        menuButton.setAttribute('aria-expanded', 'true');
+        menuButton.setAttribute('aria-label', "{% trans 'Close menu' %}");
+        if (hamburgerIcon) hamburgerIcon.classList.add('hidden');
+        if (closeIcon) closeIcon.classList.remove('hidden');
+      }
+
+      function closeMenu() {
+        mobileMenu.classList.add('hidden');
+        menuButton.setAttribute('aria-expanded', 'false');
+        menuButton.setAttribute('aria-label', "{% trans 'Open menu' %}");
+        if (hamburgerIcon) hamburgerIcon.classList.remove('hidden');
+        if (closeIcon) closeIcon.classList.add('hidden');
+      }
+
+      function toggleMenu() {
+        const isExpanded = menuButton.getAttribute('aria-expanded') === 'true';
+        if (isExpanded) {
+          closeMenu();
+        } else {
+          openMenu();
+        }
+      }
+
+      menuButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleMenu();
+      });
+
+      // Close menu when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!mobileMenu.classList.contains('hidden')) {
+          if (!mobileMenu.contains(e.target) && !menuButton.contains(e.target)) {
+            closeMenu();
+          }
+        }
+      });
+
+      // Close menu on Escape key press and restore focus to button
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !mobileMenu.classList.contains('hidden')) {
+          closeMenu();
+          menuButton.focus();
+        }
+      });
+
+      // Reset menu when window is resized to desktop breakpoint (>= 768px)
+      window.addEventListener('resize', function() {
+        if (window.innerWidth >= 768 && !mobileMenu.classList.contains('hidden')) {
+          closeMenu();
+        }
+      });
+    })();
+  </script>
+  {% endif %}
 
   {% block extra_scripts %}{% endblock %}
 </body>

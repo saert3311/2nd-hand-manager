@@ -15,6 +15,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 11. **SQLite Automated Cloud Backup to OCI Object Storage:** Automated, zero-downtime daily backups of the primary SQLite database file directly into the configured Oracle Cloud Infrastructure (OCI) Object Storage bucket using SQLite's native online backup API and gzip compression. Includes retention pruning (30 days), a CLI management command (`python manage.py backup_db`), and an audit log table with on-demand backup triggers in Django Administration (`DatabaseBackupLog`).
 12. **Smart Intake Pre-flight & Direct Pricing:** On-demand AI product identification and pre-flight advisory assistance directly inside the mobile intake screen (`inventory:intake`). Sourcing assistants can click "Identificar producto" to trigger a fast Gemini vision scan (`/inventory/intake/identify/`) returning detected specs and a non-blocking checklist of missing details (e.g. unreadable size tags or missing flaw photos) while the physical item is still in hand. Also introduces an optional sale price field (`sale_price`, €) directly on the intake form.
 13. **Intake Form State Management, Async Blocking & Client-Side Validations:** Robust client-side form state machine (`idle`, `identifying`, `submitting`) on the mobile intake view (`/intake/`). Blocks interactions during asynchronous operations (disabling form submit and dropzone while AI pre-flight is in flight) to prevent race conditions and photo mutation; locks submit triggers on form POST to eliminate double-click duplicate records; and replaces native browser `alert()` dialogs with accessible, non-disruptive inline error alerts (`role="alert"`, `aria-live="polite"`) for zero photos, >10 image count, and >10MB individual file size limits.
+14. **Responsive Mobile Navigation & Hamburger Drawer:** Streamlined, uncluttered header experience across mobile viewports (< 768px / `md:`). Collapses the horizontal links, language toggles, profile details, and logout actions into an accessible mobile hamburger drawer (`#mobile-menu`), while preserving the full desktop navigation layout on larger screens (`≥ md:`). Features WCAG 2.1 AA compliant 44×44px touch targets, dynamic SVG toggle (☰ to ✕), `aria-expanded` attributes, and `Escape` / outside-click dismissal.
 
 ---
 
@@ -519,6 +520,39 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
 - **Fail-Safe Recovery:**
   - If any asynchronous fetch or network error occurs, or if `beforeunload` or page reload is triggered, the state safely resets to `'idle'` with controls re-enabled so the user is never stranded.
 
+### 6.14 Responsive Mobile Navigation Header & Collapsible Drawer
+- **Responsive Breakpoint:**
+  - Tailwind breakpoint `md:` (768px) divides mobile and desktop navigation.
+- **Desktop Navigation (`≥ md` / ≥ 768px):**
+  - Mobile menu toggle button `#mobile-menu-button` is hidden (`md:hidden`).
+  - Standard horizontal navigation links (Intake, Dashboard, Doubts badge, Admin for managers) and language switcher form remain visible (`hidden md:flex`).
+  - User greeting, role badge, and Sign Out button remain visible in the top bar.
+- **Mobile Header Bar (`< md` / < 768px):**
+  - Standard horizontal navigation and inline language switcher are hidden.
+  - Top header bar declutters down to:
+    1. App Brand logo (`📦 2ndHand Staging`).
+    2. Compact urgent attention pill: displays `❓ {{ pending_clarifications_count }}` if unresolved clarifications exist.
+    3. Mobile Menu Toggle Button (`#mobile-menu-button`): Minimum 44×44px touch target, displaying an animated SVG hamburger icon (☰) when closed and an "✕" close icon when open.
+- **Mobile Drawer Panel (`#mobile-menu`):**
+  - Positioned directly below the sticky header bar (`bg-white border-b border-slate-200 shadow-lg`).
+  - Hidden by default (`hidden`).
+  - Accessible vertical stack containing:
+    1. **User Identity & Role Card:** Displays username and localized role badge (e.g. `👤 Conectado como: assistant (Asistente)`).
+    2. **Primary Navigation Links:**
+       - 📷 Nueva Entrada (`inventory:intake`): Styled with prominent accent background for fast field access.
+       - 📊 Catálogo / Dashboard (`inventory:dashboard`).
+       - ❓ Dudas pendientes (`inventory:dashboard?status=awaiting_info`): Includes item count badge if pending questions exist.
+       - ⚙️ Panel de Administración (`/admin/`): Rendered conditionally for users with manager permissions.
+    3. **Segmented Language Switcher:** Full-width bilingual switcher with clear flag icons and labels (`🇬🇧 English` / `🇪🇸 Español`) utilizing existing `set_language` form endpoints and CSRF tokens.
+    4. **Sign Out Action:** Clean, separated logout button to prevent accidental clicks.
+- **Accessibility & Interaction Contract:**
+  - `#mobile-menu-button`: Attributes `aria-expanded="false"`, `aria-controls="mobile-menu"`, and localized `aria-label`.
+  - Toggling updates `aria-expanded="true"` and swaps the inner SVG between hamburger and close icons.
+  - Keyboard: Pressing `Escape` while `#mobile-menu` is open immediately closes the drawer and restores focus to `#mobile-menu-button`.
+  - Click Outside: Clicking anywhere outside the mobile menu closes the drawer.
+  - Viewport Resize: Resizing window above 768px automatically ensures the drawer resets to closed state.
+  - Test Invariant Preservation: All existing navigation token IDs and classes (`badge-pending-clarifications`, `name="language"`, `value="en"`, `value="es"`, `"Sign Out"`) remain present in the DOM for automated testing compatibility.
+
 ---
 
 ## 7. AI Service Contract (`ai_service.py`)
@@ -709,6 +743,11 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
 58. Attempting to submit 0 photos displays an accessible inline alert banner (`#intakeClientAlert`) and highlights the dropzone without triggering native browser alerts.
 59. Selecting more than 10 photos or any photo larger than 10MB triggers an accessible inline error banner with file details, clearing invalid inputs without calling `alert()`.
 60. In the event of network failure or AI error during pre-flight identification, the form state automatically resets to `idle`, restoring submit and dropzone interactivity.
+61. On viewports `< 768px`, the top navigation bar displays only the brand logo, optional doubts attention pill, and the 44×44px mobile menu button (`#mobile-menu-button`).
+62. Clicking `#mobile-menu-button` opens the `#mobile-menu` drawer, toggling `aria-expanded` and switching the icon from hamburger (☰) to close (✕).
+63. The `#mobile-menu` drawer contains accessible navigation links for Intake, Dashboard, Doubts, Admin (for managers), full-width language switcher, and Sign Out.
+64. Pressing the `Escape` key or tapping outside the open `#mobile-menu` drawer immediately closes it and restores focus to the toggle button.
+65. On desktop viewports (`≥ 768px`), `#mobile-menu-button` and `#mobile-menu` remain hidden, and the full horizontal navigation bar is displayed.
 
 ---
 
@@ -755,6 +794,10 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
 - **Direct Intake Pricing:** Manual optional `sale_price` capture without automated AI pricing estimation during intake, keeping pricing responsibility with the user.
 - **Intake Form State Machine:** Tri-state machine (`idle`, `identifying`, `submitting`) managed in client-side vanilla JavaScript to eliminate race conditions between AI pre-flight and intake submission.
 - **Accessible Validation Alerts:** Browser `window.alert()` replaced with accessible inline DOM element (`role="alert"`, `aria-live="polite"`) matching Tailwind UI design system.
+- **Responsive Mobile Navigation Breakpoint:** Tailwind `md:` (768px) selected to ensure phones and small tablets receive the simplified header and collapsible drawer, while desktop and laptop screens retain the full horizontal navigation.
+- **Mobile Menu Architecture:** Lightweight vanilla JavaScript toggle with zero external dependencies, managing SVG icon switching, `aria-expanded`, keyboard `Escape`, and outside-click dismissal.
+- **Urgent Doubts Badge on Mobile Bar:** Direct mobile bar pill `❓ (X)` displayed on the sticky header next to the hamburger button when pending doubts exist, ensuring immediate visibility for sourcing assistants without needing to open the menu.
+- **Mobile Menu Panel Layout:** Sticky dropdown accordion positioned directly beneath the header (`bg-white border-b border-slate-200 shadow-lg`), leaving page content scrollable beneath with zero layout shift.
 
 ---
 
@@ -870,3 +913,13 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
    - **Option A (Recommended — Auto-clear on File Selection):** Automatically remove the error ring and alert banner as soon as the user selects at least one valid image.
    - **Option B (Dismiss Button):** Keep the banner visible with an explicit dismiss "✕" button until closed by user or re-submitted.
    *Which dismiss interaction do you prefer for the validation error banner?*
+23. **Urgent Doubts Badge on Mobile Bar:**
+    - When pending clarification questions exist (`pending_clarifications_count > 0`), should a compact doubts pill appear directly on the mobile top bar next to the sandwich button, or only inside the expanded drawer?
+    - **Option A (Recommended — Direct Mobile Bar Pill):** Display a compact pill `❓ (X)` directly on the sticky mobile top bar, so assistants instantly notice urgent manager questions without opening the menu.
+    - **Option B (Inside Menu Only):** Keep the top bar strictly minimal (only logo + sandwich button), showing the doubts count only when the menu drawer is opened.
+    *Which placement do you prefer for urgent doubt notifications on mobile?*
+24. **Drawer Style & Animation (Accordion Dropdown vs Slide-in Offcanvas):**
+    - How should the mobile navigation menu open?
+    - **Option A (Recommended — Sticky Dropdown Accordion):** Expands cleanly directly beneath the header with vertical flow (`bg-white border-b border-slate-200 shadow-lg`). Zero layout shift, extremely reliable on mobile browsers, and leaves page content scrollable beneath.
+    - **Option B (Slide-in Offcanvas Drawer from Right):** Slides in from the right edge with a dark backdrop overlay covering the entire screen.
+    *Which mobile menu transition style do you prefer?*

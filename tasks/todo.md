@@ -1248,3 +1248,88 @@
 - [x] Full test suite passes with 0 regressions, and real browser verification confirms the user experience.
 
 
+
+---
+
+## Phase 17: Responsive Mobile Navigation & Collapsible Hamburger Drawer
+
+### Task 56: Responsive Mobile Header Refactor & Hamburger Toggle Button
+**Description:** Refactor the top navigation bar in `inventory/templates/inventory/base.html` to establish clean separation between desktop and mobile navigation using Tailwind `md:` (768px). On mobile screens (`< md`), hide the inline navigation links and inline language switcher. Introduce a prominent 44×44px hamburger toggle button (`#mobile-menu-button`) on the right side of the mobile header with full ARIA attributes (`aria-expanded="false"`, `aria-controls="mobile-menu"`, `aria-label`). The button contains an animated/swappable SVG icon displaying three horizontal bars (☰) when closed and an "✕" when open. Display a compact urgent attention pill `❓ (X)` directly on the mobile top bar next to the hamburger button when `pending_clarifications_count > 0` (Decision 27). Ensure desktop viewports (`≥ md`) hide the hamburger button (`md:hidden`) and render the complete horizontal header.
+**Acceptance criteria:**
+- [x] On screens `< 768px`, the header renders only the brand logo (`📦 2ndHand Staging`), the optional doubts pill `❓ (X)`, and `#mobile-menu-button`.
+- [x] `#mobile-menu-button` meets WCAG 2.1 AA with minimum 44×44px touch target.
+- [x] `#mobile-menu-button` has `aria-expanded="false"`, `aria-controls="mobile-menu"`, and localized `aria-label`.
+- [x] Desktop screens (`≥ 768px`) hide `#mobile-menu-button` (`md:hidden`) and show full horizontal navigation.
+- [x] Existing navigation IDs, links, and test invariants (`badge-pending-clarifications`, `name="language"`, `value="en"`, `value="es"`, `"Sign Out"`) remain preserved.
+**Verification:**
+- [x] Template syntax check: `python manage.py check`
+- [x] Existing view tests continue to pass: `python manage.py test tests.test_views`
+**Dependencies:** Checkpoint 16
+**Files likely touched:**
+- `inventory/templates/inventory/base.html`
+- `tests/test_views.py`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 57: Collapsible Mobile Drawer Navigation, Keyboard & Touch Interaction
+**Description:** Implement the collapsible mobile drawer `#mobile-menu` in `inventory/templates/inventory/base.html` styled as a sticky dropdown accordion (`bg-white border-b border-slate-200 shadow-lg`) directly below the header (Decision 28). Inside the drawer, include:
+1. User profile card with username and localized role badge (`👤 Conectado como: assistant (Asistente)`).
+2. Primary workflow links: 📷 Nueva Entrada (`inventory:intake`, highlighted), 📊 Catálogo / Dashboard (`inventory:dashboard`), ❓ Dudas pendientes (`inventory:dashboard?status=awaiting_info`, with count badge), and ⚙️ Panel de Administración (`/admin/`, manager-only).
+3. Full-width segmented bilingual language switcher (`🇬🇧 English` / `🇪🇸 Español`) utilizing existing `set_language` form endpoints and CSRF tokens.
+4. Isolated high-contrast Sign Out button separated from primary links to prevent accidental taps.
+Add lightweight vanilla JavaScript handling:
+- Toggling `#mobile-menu` open/closed on button click.
+- Updating `aria-expanded="true"` / `"false"` and swapping between hamburger (☰) and close (✕) SVG icons.
+- Pressing `Escape` key immediately closes the drawer and restores focus to `#mobile-menu-button`.
+- Tapping outside the mobile menu (click outside) closes the drawer.
+- Window resize to `≥ md` automatically resets the drawer to closed.
+**Acceptance criteria:**
+- [x] `#mobile-menu` drawer smoothly expands and collapses below the sticky header.
+- [x] Tapping `#mobile-menu-button` toggles menu visibility, updates `aria-expanded`, and swaps SVG icon.
+- [x] Drawer contains all navigation links (Intake, Dashboard, Doubts, Admin for managers, Language Switcher, Sign Out) with min 44×44px touch targets.
+- [x] Pressing `Escape` or clicking outside closes the drawer and restores focus.
+- [x] Resizing window to `≥ 768px` automatically resets the drawer to closed state.
+**Verification:**
+- [x] Template syntax check: `python manage.py check`
+- [x] Unit & view tests pass: `python manage.py test tests.test_views`
+**Dependencies:** Task 56
+**Files likely touched:**
+- `inventory/templates/inventory/base.html`
+- `tests/test_views.py`
+**Estimated scope:** Medium (2 files)
+
+---
+
+### Task 58: i18n Spanish Translations, Comprehensive Unit/Integration Test Suite & Browser Verification
+**Description:** Add Spanish translations in `locale/es/LC_MESSAGES/django.po` for all new UI messages and ARIA labels (`Open menu`, `Close menu`, `Mobile navigation`, `Signed in as`, `English`, `Spanish`). Compile binary translation catalogs via `python manage.py compile_locales`. Add automated view tests in `tests/test_views.py` and `tests/test_i18n.py` verifying the mobile menu markup, ARIA attributes, desktop vs mobile visibility classes, and bilingual switcher forms. Create and execute a real Chrome browser automation script (`verify_mobile_nav_browser.py`) testing the mobile viewport (iPhone 14, 390×844): verifying initial uncluttered header, opening drawer, clicking navigation links, testing `Escape` key dismissal, and verifying outside click dismissal. Update `CHANGELOG.md` under `[Unreleased]`. Run full test suite and Ruff linter.
+**Acceptance criteria:**
+- [x] All new UI and accessibility strings localized in `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`.
+- [x] View and i18n test suites verify mobile menu elements, ARIA attributes, and language forms.
+- [x] Real Chrome browser automation script runs on mobile viewport (390×844) and passes all assertions.
+- [x] All 243+ unit and integration tests pass: `python manage.py test`.
+- [x] Code passes linter check with 0 warnings: `ruff check .`.
+- [x] `CHANGELOG.md` updated under `[Unreleased]` with Phase 17 details.
+**Verification:**
+- [x] Command succeeds: `python manage.py compile_locales`
+- [x] Full test suite passes: `python manage.py test`
+- [x] Browser script succeeds: `python .gemini/antigravity/brain/b80e4db2-82cf-46b6-b07e-3885a650d010/scratch/verify_mobile_nav_browser.py`
+- [x] Linter passes: `ruff check .`
+**Dependencies:** Task 57
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_views.py`
+- `tests/test_i18n.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (5 files)
+
+---
+
+## Checkpoint 17: Responsive Mobile Navigation Complete
+- [x] On mobile viewports (< 768px), header displays only brand, optional doubts pill, and hamburger button.
+- [x] Tapping hamburger button opens accessible dropdown drawer with all links, language switcher, and logout.
+- [x] Keyboard `Escape` and outside click dismiss the drawer cleanly.
+- [x] Desktop screens (≥ 768px) display full uncollapsed horizontal navigation without hamburger button.
+- [x] All UI strings and ARIA labels are translated in Spanish and English.
+- [x] Real browser mobile test passes 100%, and full test suite passes with 0 regressions.

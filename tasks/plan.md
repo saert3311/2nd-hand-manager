@@ -124,6 +124,23 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - **Task 55:** i18n Spanish Translations, Unit/Integration Tests & Browser Verification (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_intake.py`, `tests/test_views.py`, `CHANGELOG.md`).
 - **Checkpoint 16 (Intake Form Async Protection & Client-Side Validation Complete):** Double-clicking submit button never triggers duplicate submissions; AI pre-flight locks submit and dropzone until finished; client validation alerts user of missing photos, >10 images, or >10MB files without browser `alert()`; error ring auto-clears on valid selection; full test suite and Playwright browser verification pass with 0 regressions.
 
+### Phase 17: Responsive Mobile Navigation & Collapsible Hamburger Drawer (Vertical Slice 13)
+- **Task 56:** Accessible Mobile Hamburger Button & Sticky Header Refactor (`inventory/templates/inventory/base.html`, `tests/test_views.py`).
+  - Add Tailwind responsive breakpoint `md:` to separate desktop horizontal navbar from mobile header.
+  - Implement 44×44px `#mobile-menu-button` with dynamic SVG switching between hamburger (☰) and close (✕) icons.
+  - Render compact doubts attention badge pill `❓ (X)` directly in the mobile bar next to the button when `pending_clarifications_count > 0` (Decision 27).
+- **Task 57:** Collapsible Mobile Menu Drawer & Keyboard/Touch Interaction (`inventory/templates/inventory/base.html`, `tests/test_views.py`).
+  - Build vertical collapsible drawer `#mobile-menu` directly below sticky header (`bg-white border-b border-slate-200 shadow-lg`) (Decision 28).
+  - Include user identity card, Intake link, Dashboard link, Doubts link, conditional Admin link (for managers), segmented bilingual language switcher (`🇬🇧 English` / `🇪🇸 Español`), and isolated Sign Out action.
+  - Implement accessible vanilla JavaScript toggle handling `aria-expanded`, keyboard `Escape` dismissal, outside-click close, and auto-reset on viewport resize.
+  - Maintain DOM presence of all legacy test invariants (`badge-pending-clarifications`, `set_language`, `name="language"`, `value="en"`, `value="es"`, `"Sign Out"`).
+- **Task 58:** i18n Spanish Translations, Comprehensive Unit/Integration Test Suite & Browser Verification (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_views.py`, `tests/test_i18n.py`, `CHANGELOG.md`).
+  - Add new Spanish translation strings (`Open menu`, `Close menu`, `Mobile navigation`, `Signed in as`, `English`, `Spanish`).
+  - Compile catalogs using `compile_locales`.
+  - Add test assertions in `tests/test_views.py` and `tests/test_i18n.py` verifying mobile menu structure, ARIA attributes, and language forms.
+  - Run real browser automation on iPhone 14 mobile viewport (390×844) validating toggle, link clicking, outside click, and `Escape` key.
+- **Checkpoint 17 (Responsive Mobile Navigation Complete):** Mobile header is uncluttered and clean; hamburger button toggles accessible drawer with smooth SVG transitions; doubts notification pill alerts assistants on mobile; keyboard and click-outside close cleanly; desktop viewports retain the full horizontal bar; all 243+ tests and browser tests pass with 0 regressions.
+
 ---
 
 ## Risks and Mitigations
@@ -159,6 +176,9 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 | Race condition between AI pre-flight and form submission | High | Implement client-side `formState` machine: lock submit button and dropzone (`pointer-events-none`) while identify fetch is in flight. |
 | Browser `alert()` halting execution and degrading mobile UX | Medium | Replace all `alert()` calls with accessible inline alert banner (`role="alert"`, `aria-live="polite"`). |
 | Assistant uploading files >10MB wasting mobile bandwidth | Medium | Inspect `file.size` before upload starts; reject batch with explicit filename and MB size if limit exceeded. |
+| Mobile navigation breaking existing test assertions on tokens | High | Preserve all existing element IDs, form inputs, language tokens, and clarification badge classes across desktop and mobile templates. |
+| Inaccessible mobile drawer trapping keyboard focus or screen readers | High | Provide complete ARIA attributes (`aria-expanded`, `aria-controls`, `aria-label`), keyboard `Escape` handler returning focus, and 44×44px touch targets. |
+| Viewport resize causing desynchronized drawer states | Low | Add `resize` event listener resetting mobile drawer to closed (`hidden`, `aria-expanded="false"`) when width reaches `md:` (≥768px). |
 
 ---
 
@@ -185,6 +205,8 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - Approved: Pre-flight photo sample size: First 3 photos for speed and minimal mobile payload (Option A).
 - Approved: Action on oversized files (>10MB): Reject entire selection, reset input, and alert user which file was oversized (Option A).
 - Approved: Dropzone error ring reset timing: Auto-clear on file selection as soon as at least one valid image is chosen (Option A).
+- Approved: Urgent doubts badge on mobile bar: Direct mobile bar pill `❓ (X)` next to the sandwich button for immediate visibility (Option A).
+- Approved: Mobile drawer style: Sticky dropdown accordion directly beneath the header (`bg-white border-b border-slate-200 shadow-lg`) with page content scrollable beneath (Option A).
 
 
 

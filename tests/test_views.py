@@ -173,3 +173,95 @@ class IntakeIdentifyViewTests(TestCase):
         data = resp.json()
         self.assertFalse(data["success"])
         self.assertEqual(data["error"], "Gemini API unavailable")
+
+
+class MobileNavigationTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.assistant = User.objects.create_user(username="asst_nav", password="password123")
+        asst_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
+        self.assistant.groups.add(asst_group)
+        self.manager = User.objects.create_user(username="mgr_nav", password="password123", is_staff=True)
+
+    def test_unauthenticated_header_shows_logo_and_no_mobile_toggle(self):
+        resp = self.client.get(reverse("inventory:login"))
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode("utf-8")
+        # Brand logo is present
+        self.assertIn("2ndHand", content)
+        self.assertIn("Staging", content)
+        # Mobile menu button and drawer are omitted for unauthenticated users
+        self.assertNotIn('id="mobile-menu-button"', content)
+        self.assertNotIn('id="mobile-menu"', content)
+        # Language switcher remains present
+        self.assertIn('name="language" value="en"', content)
+
+    def test_authenticated_assistant_renders_mobile_toggle_and_drawer(self):
+        self.client.login(username="asst_nav", password="password123")
+        resp = self.client.get(reverse("inventory:intake"))
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode("utf-8")
+
+        # Mobile button
+        self.assertIn('id="mobile-menu-button"', content)
+        self.assertIn('aria-controls="mobile-menu"', content)
+        self.assertIn('aria-expanded="false"', content)
+        self.assertIn('id="hamburger-icon"', content)
+        self.assertIn('id="close-icon"', content)
+
+        # Mobile drawer
+        self.assertIn('id="mobile-menu"', content)
+        self.assertIn('asst_nav', content)
+        self.assertIn('Assistant', content)
+
+        # Primary links in drawer
+        self.assertIn(reverse("inventory:intake"), content)
+        self.assertIn(reverse("inventory:dashboard"), content)
+        # Assistant should not see Admin panel
+        self.assertNotIn(reverse("admin:index"), content)
+
+    def test_authenticated_manager_renders_admin_link_in_mobile_drawer(self):
+        self.client.login(username="mgr_nav", password="password123")
+        resp = self.client.get(reverse("inventory:dashboard"))
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode("utf-8")
+
+        self.assertIn('id="mobile-menu-button"', content)
+        self.assertIn('mgr_nav', content)
+        self.assertIn('Manager', content)
+        # Manager sees Admin link
+        self.assertIn(reverse("admin:index"), content)
+
+    def test_mobile_header_renders_doubts_badge_when_pending(self):
+        from inventory.models import ClarificationCategory, ProductClarification
+        product = Product.objects.create(raw_note="Leather boots", created_by=self.assistant)
+        ProductClarification.objects.create(
+            product=product,
+            category=ClarificationCategory.MEASUREMENTS,
+            question="What is the heel height?",
+            asked_by=self.manager,
+        )
+
+        self.client.login(username="asst_nav", password="password123")
+        resp = self.client.get(reverse("inventory:intake"))
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode("utf-8")
+
+        # Both desktop and mobile doubts badges should be rendered
+        self.assertIn("badge-pending-clarifications", content)
+        self.assertIn("status=awaiting_info", content)
+
+    def test_spanish_translations_in_mobile_navigation(self):
+        self.client.login(username="asst_nav", password="password123")
+        self.client.cookies["django_language"] = "es"
+        resp = self.client.get(reverse("inventory:intake"))
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode("utf-8")
+
+        self.assertIn("Abrir menú", content)
+        self.assertIn("Navegación móvil", content)
+        self.assertIn("Nueva Entrada", content)
+        self.assertIn("Panel de Control", content)
+        self.assertIn("Asistente", content)
+        self.assertIn("Cerrar Sesión", content)
+

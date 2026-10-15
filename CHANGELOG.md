@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Responsive Mobile Navigation Header & Collapsible Hamburger Drawer**:
+  - Refactored top navigation header in [`inventory/templates/inventory/base.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/base.html) with responsive Tailwind breakpoint (`md:` / 768px), keeping full horizontal navigation on desktop while simplifying mobile headers.
+  - Decluttered mobile viewports (< 768px) down to the brand logo, urgent doubts badge `❓ (X)`, and a prominent 44×44px hamburger toggle button (`#mobile-menu-button`).
+  - Added an accessible mobile collapsible drawer (`#mobile-menu`) styled as a sticky dropdown accordion (`bg-white border-b border-slate-200 shadow-lg`) directly beneath the header.
+  - Provided vertical hierarchy in mobile drawer: user profile card with role badge, highlighted New Intake button, Dashboard link, Doubts link, conditional Administration Panel link (managers only), full-width segmented bilingual switcher (`🇬🇧 English` / `🇪🇸 Español`), and isolated Sign Out button.
+  - Built vanilla JavaScript interaction handling: animated SVG icon toggle (☰ to ✕), `aria-expanded` updates, keyboard `Escape` dismissal returning focus to button, outside-click close, and auto-reset when viewport is resized to `≥ md`.
+  - Added Spanish translation strings (`Open menu`, `Close menu`, `Mobile navigation`, `Administration Panel`) to `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`.
+  - Added test suite `MobileNavigationTests` in [`tests/test_views.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_views.py) and end-to-end browser automation script in Playwright (`verify_mobile_nav_browser.py`) testing mobile iPhone 14 viewport (390×844) and desktop switching.
 - **Intake Form Async Protection, Double-Submit Prevention & Client-Side Validation**:
   - Implemented client-side tri-state machine (`idle`, `identifying`, `submitting`) in [`inventory/templates/inventory/intake.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/intake.html) managing user interaction during asynchronous operations and network requests.
   - Added asynchronous operation blocking: clicking "Identificar producto" sets `formState = 'identifying'`, disables the submit button (`#submitBtn`) with reduced opacity and informative tooltip (*"Espera a que finalice el análisis con IA..."*), and locks the photo dropzone (`pointer-events-none opacity-70`) to prevent race conditions or mutating photos mid-analysis.

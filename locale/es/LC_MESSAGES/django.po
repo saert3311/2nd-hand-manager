@@ -932,3 +932,15 @@ msgstr "Guardando producto..."
 msgid "Please wait for AI analysis to finish..."
 msgstr "Espera a que finalice el análisis con IA..."
 
+
+msgid "Open menu"
+msgstr "Abrir menú"
+
+msgid "Close menu"
+msgstr "Cerrar menú"
+
+msgid "Mobile navigation"
+msgstr "Navegación móvil"
+
+msgid "Administration Panel"
+msgstr "Panel de administración"
