@@ -109,6 +109,14 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - **Task 46:** i18n Translations, Documentation & Full Regression Suite (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `CHANGELOG.md`).
 - **Checkpoint 14 (Automated SQLite Cloud Backup Complete):** Online hot backup creates uncorrupted snapshots during active writes, compressed `.sqlite3.gz` files upload to OCI Object Storage, retention prunes backups older than 30 days, managers can inspect audit logs and trigger backups in admin with failure banner alerting, and full test suite passes with 0 regressions.
 
+### Phase 15: Smart Intake Pre-flight: On-Demand Item Identification, Advisory Guidance & Direct Pricing (Vertical Slice 11)
+- **Task 47:** Optional Direct Sale Price on Intake Form (`inventory/forms.py`, `inventory/views.py`, `inventory/templates/inventory/intake.html`, `tests/test_views.py`).
+- **Task 48:** AI Vision Pre-flight Service & Pydantic Schema (`inventory/services/ai_service.py`, `tests/test_ai_service.py`).
+- **Task 49:** Asynchronous Pre-flight Endpoint (`inventory/views.py`, `inventory/urls.py`, `tests/test_views.py`).
+- **Task 50:** Mobile Intake UI: On-Demand Identify Button, Loading State & Advisory Banner (`inventory/templates/inventory/intake.html`).
+- **Task 51:** i18n Translations, Documentation & Full Regression Suite (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `CHANGELOG.md`).
+- **Checkpoint 15 (Smart Intake Pre-flight & Direct Pricing Complete):** Assistants can trigger on-demand AI identification on `/intake/`, receive non-blocking advisory tips for missing details, apply suggested notes with smart append, enter optional sale prices in € that persist directly to the product, and pass all automated tests with 0 regressions.
+
 ---
 
 ## Risks and Mitigations
@@ -138,6 +146,8 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 | Unbounded cloud storage growth from daily snapshots | Medium | Enforce automated retention pruning after each backup, deleting snapshots older than 30 days. |
 | Backup failure going unnoticed until disaster recovery | High | Record every attempt in `DatabaseBackupLog` and display a prominent warning banner in Django Administration when the last backup failed. |
 | Backups failing in offline dev or CI environments | High | Support `--local-only` mode and mock S3 storage in tests so test suite runs 100% offline without credentials. |
+| Mobile latency during intake AI identification | Medium | Slice image inputs to the first 3 photos max (Option A) and target ≤2.0s response time with `gemini-2.5-flash`. |
+| AI identification failure blocking item intake | High | Enforce strictly non-blocking design: UI banner is advisory only, and form submit button remains functional at all times. |
 
 ---
 
@@ -160,6 +170,8 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - Approved: Backup retention window: 30 days daily retention (Option A).
 - Approved: On-demand backup trigger in admin: Prominent top bar button with confirmation view (Option A).
 - Approved: Failure notification: Django Admin warning banner + structured audit log (Option A).
+- Approved: Suggested notes application: Append / smart fill preserving existing notes (Option A).
+- Approved: Pre-flight photo sample size: First 3 photos for speed and minimal mobile payload (Option A).
 
 
 

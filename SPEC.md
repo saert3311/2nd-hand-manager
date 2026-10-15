@@ -13,6 +13,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 9. **Product Clarifications & Lifecycle State Machine:** Structured product lifecycle states (`DRAFT`, `AWAITING_INFO`, `READY`, `SOLD`, `BLOCKED`) coupled with an in-app clarification Q&A mechanism. When managers identify missing product info during staging, they submit categorized questions; assistants are alerted via top navigation badges (`❓ Dudas (X)`) and mobile intake banners to answer promptly. Resolved answers automatically enrich the Gemini Multimodal Vision prompt for higher-converting listings.
 10. **Cloudflare Turnstile Login Protection:** Privacy-preserving smart CAPTCHA challenge integrated into the user login interface (`/login/`). Protects authentication against automated brute-force attacks and credential stuffing while offering seamless zero-friction verification for human staff. Fully configurable with test dummy keys and bypass options for local development and CI/CD automation.
 11. **SQLite Automated Cloud Backup to OCI Object Storage:** Automated, zero-downtime daily backups of the primary SQLite database file directly into the configured Oracle Cloud Infrastructure (OCI) Object Storage bucket using SQLite's native online backup API and gzip compression. Includes retention pruning (30 days), a CLI management command (`python manage.py backup_db`), and an audit log table with on-demand backup triggers in Django Administration (`DatabaseBackupLog`).
+12. **Smart Intake Pre-flight & Direct Pricing:** On-demand AI product identification and pre-flight advisory assistance directly inside the mobile intake screen (`inventory:intake`). Sourcing assistants can click "Identificar producto" to trigger a fast Gemini vision scan (`/inventory/intake/identify/`) returning detected specs and a non-blocking checklist of missing details (e.g. unreadable size tags or missing flaw photos) while the physical item is still in hand. Also introduces an optional sale price field (`sale_price`, €) directly on the intake form.
 
 ---
 
@@ -466,7 +467,28 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
 - **Management Command CLI (`inventory/management/commands/backup_db.py`):**
   - Invoked via `python manage.py backup_db`.
   - Supports `--retention-days <N>`, `--local-only`, `--no-compress`, `--dry-run`, and `--quiet`.
-  - Suitable for headless cron execution (`0 3 * * *`).
+### 6.12 Smart Intake Pre-flight: On-Demand Item Identification & Direct Pricing
+- **On-Demand Pre-flight Trigger:**
+  - Located on the mobile intake form (`/intake/`).
+  - Gated button: "🔍 Identificar producto" (disabled when 0 photos are selected, active when ≥1 photo is chosen).
+  - Triggers asynchronous JavaScript `fetch()` to `POST /inventory/intake/identify/` using `FormData` with client-selected image files and current `raw_note`.
+  - Non-blocking: Loading indicator indicates *"Analizando fotos con IA..."*; form inputs and submit buttons remain responsive.
+- **Vision Pre-flight Service (`inventory/services/ai_service.py`):**
+  - Sends image bytes and notes to Gemini Vision (`gemini-2.5-flash`).
+  - Structured output using `IntakePreflightSchema`:
+    - `identified_title`: concise detected item title.
+    - `category`: detected product category.
+    - `detected_attributes`: list of visible attributes (color, materials, logos, cuts).
+    - `missing_or_recommended_info`: list of actionable tips (e.g. *"Tag with size is not visible"*, *"Underside sole wear not shown"*).
+    - `suggested_note`: recommended draft summary.
+- **Advisory Guidance Banner & Actionable Shortcut:**
+  - Renders above the `raw_note` field upon successful identification.
+  - Highlights missing details as bulleted warning tips (amber/blue style).
+  - Includes a one-click button: *"Añadir sugerencia a notas"* that appends or sets `suggested_note` into the `raw_note` textarea.
+  - Advisory only: Does not prevent or block form submission.
+- **Direct Sale Price Capture (`sale_price`):**
+  - `ProductIntakeForm` includes an optional `sale_price` field in Euro (`€`).
+  - When provided during intake, persisted directly to `Product.sale_price` upon form submission.
 
 ---
 
@@ -482,31 +504,23 @@ def generate_product_listing(
     to Google Gemini Multimodal Vision API. Uses dynamic prompt configuration from
     AIPromptConfiguration (with fallback to default instructions).
     """
+
+def identify_intake_product(
+    images_bytes: list[bytes],
+    raw_note: str = "",
+    language: str = "es",
+) -> dict:
+    """
+    Analyzes uploaded product images during intake using Gemini Multimodal Vision API.
+    Returns structured JSON with identified_title, category, detected_attributes,
+    missing_or_recommended_info, and suggested_note.
+    """
 ```
 When `product.clarifications.filter(status='resolved').exists()` is true, the resolved Q&A pairs are formatted into the system/prompt context:
 ```text
 ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
 - [Medidas / Tallas]: Ancho axila a axila 56cm, largo 68cm.
 - [Material]: 100% Piel ovina legítima, forro en buen estado.
-```
-    Inputs:
-      - product.raw_note: string
-      - product.images: QuerySet of ProductImage
-      - model_name: optional override; if None, resolves from active AIPromptConfiguration
-      - language: str ("es" or "en") - dynamically resolved from active request locale
-    Process:
-      - Queries active AIPromptConfiguration for the target language.
-      - If found: uses configured model_name, temperature, and custom copywriting instructions.
-      - If absent or DB error: falls back seamlessly to hardcoded defaults (gemini-2.5-flash, temp 0.3).
-      - Loads image bytes and raw notes.
-      - Envelopes prompt with fixed technical schema instructions guaranteeing ProductListingSchema output.
-      - Executes Gemini Multimodal Vision API call.
-      - Returns schema-validated JSON:
-        {
-          "title": "Concise SEO-friendly marketplace title in target language",
-          "description": "Engaging, bulleted sales copy with condition details in target language"
-        }
-    """
 ```
 
 
@@ -654,6 +668,12 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
 46. Every backup execution creates an audit entry in `DatabaseBackupLog` with timestamp, file size, duration, status, remote path, and error message (if any).
 47. Store managers can inspect backup logs and trigger an immediate on-demand backup directly from Django Administration.
 48. Dedicated automated test suite in `tests/test_backup.py` passes 100% offline with zero external cloud dependencies.
+49. On `/intake/`, the "Identificar producto" button remains disabled until at least one photo is chosen, and activates immediately upon image selection.
+50. Clicking "Identificar producto" sends photos to `/inventory/intake/identify/` and displays a loading state without locking or freezing form inputs.
+51. When the vision API returns missing info recommendations (e.g. missing size tag or flaw inspection), an advisory guidance banner appears above the field notes listing the suggestions.
+52. The assistant can click "Añadir sugerencia a notas" to populate the `raw_note` textarea with the AI's suggested note.
+53. The intake form includes an optional `sale_price` (€) field that successfully saves the entered price to `product.sale_price`.
+54. If the identification request fails, times out, or is skipped, the intake form can be submitted normally with zero disruption.
 
 ---
 
@@ -695,6 +715,9 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
 - **Compression Format:** Standard library `gzip` chosen for high compression ratio (~80-90% reduction) with zero external binary dependencies.
 - **Bucket Infrastructure Reuse:** The existing OCI Object Storage bucket is reused under a dedicated prefix `backups/db/` to avoid separate bucket provisioning.
 - **Default Retention Window:** Set to 30 days of daily backups (~30-50MB total bucket usage).
+- **Intake Pre-flight Trigger:** On-demand button click ("Identificar producto") chosen over automatic scanning to conserve API quota and avoid unexpected layout jumping while selecting photos.
+- **Intake Advisory Guidance:** Purely non-blocking advisory banner chosen over a modal or blocking gate, prioritizing field intake speed and uninterrupted assistant workflow.
+- **Direct Intake Pricing:** Manual optional `sale_price` capture without automated AI pricing estimation during intake, keeping pricing responsibility with the user.
 
 ---
 
@@ -790,7 +813,13 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
    - **Option A (Recommended — Django Admin Warning Banner + Log):** When the most recent backup status is `failed`, render an alert banner in Django Administration informing managers to inspect the error log.
    - **Option B (Silent Audit Log Only):** Record failure in `DatabaseBackupLog` without displaying a banner in the Django admin UI.
    *Which failure notification behavior do you prefer?*
-
-
-
-
+19. **Suggested Notes Application Behavior:**
+   - When the assistant clicks "Añadir sugerencia a notas" / "Apply suggestion to notes":
+   - **Option A (Recommended): Append / Smart Fill:** If `raw_note` is empty, fills it with `suggested_note`. If notes already exist, appends the suggestion on a new line preserving the assistant's original input.
+   - **Option B: Replace:** Overwrites `raw_note` completely with `suggested_note`.
+   *Which behavior do you prefer when applying the suggested note?*
+20. **Intake Vision Analysis Photo Sample Size:**
+   - How many photos should be sent to Gemini during the intake pre-flight check?
+   - **Option A (Recommended — First 3 Photos):** Send up to 3 photos (e.g. front, tag, back). Keeps payload tiny, API response ≤2.0s on mobile data, and token consumption low.
+   - **Option B (All Selected Photos, up to 10):** Send all selected images. More exhaustive check, but increases mobile payload size and API latency (~3-5s).
+   *Do you prefer a fast sample (up to 3 photos) or analyzing all selected images?*
