@@ -121,9 +121,9 @@
 
   <!-- Flash Messages Notifications -->
   {% if messages %}
-  <div class="max-w-4xl mx-auto px-4 mt-4 w-full">
+  <div id="flash-messages" class="max-w-4xl mx-auto px-4 mt-4 w-full">
     {% for message in messages %}
-    <div class="p-3.5 mb-2 rounded-lg text-sm font-medium flex items-center justify-between shadow-sm
+    <div class="flash-message p-3.5 mb-2 rounded-lg text-sm font-medium flex items-center justify-between shadow-sm
       {% if message.tags == 'error' %} bg-rose-50 text-rose-800 border border-rose-200
       {% elif message.tags == 'success' %} bg-emerald-50 text-emerald-800 border border-emerald-200
       {% elif message.tags == 'warning' %} bg-amber-50 text-amber-800 border border-amber-200
