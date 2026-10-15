@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Smart Intake Pre-flight: On-Demand Item Identification, Advisory Guidance & Direct Pricing**:
+  - Implemented `identify_intake_product()` and `IntakePreflightSchema` in [`inventory/services/ai_service.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/services/ai_service.py) querying Google Gemini Multimodal Vision API (`gemini-2.5-flash`) with structured output.
+  - Capped multimodal image payload to the first 3 photos (`images_bytes[:3]`) with in-memory MIME detection to minimize upload payload and latency on mobile connections.
+  - Built asynchronous endpoint `POST /inventory/intake/identify/` (`intake_identify_view` in [`inventory/views.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/views.py)) gated by `@login_required` with image count/format validation.
+  - Integrated mobile intake UI in [`inventory/templates/inventory/intake.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/intake.html):
+    - Added "🔍 Identificar producto" button toggling enabled state on photo selection with animated spinner and loading feedback.
+    - Added non-blocking advisory alert banner above field notes displaying identified product name, category, detected attributes, and actionable inspection checklists (size tags, sole wear, flaws).
+    - Added one-click "Añadir sugerencia a notas" smart append button populating or appending to `raw_note`.
+    - Added direct manual `sale_price` capture on `ProductIntakeForm` in [`inventory/forms.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/forms.py) persisting directly to `product.sale_price` in Euro (`€`).
+  - Added complete Spanish translations in `locale/es/LC_MESSAGES/django.po` compiled to `django.mo`.
+  - Added unit and integration tests across [`tests/test_ai_service.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_ai_service.py), [`tests/test_views.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_views.py), and [`tests/test_intake.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_intake.py).
 - **SQLite Automated Cloud Backup to OCI Object Storage**:
   - Implemented automated, zero-downtime hot backups using SQLite's native online backup API (`sqlite3.Connection.backup()`), guaranteeing database consistency without table locks or risk of WAL torn pages during active writes.
   - Added in-memory `gzip` compression pipeline (`.sqlite3.gz`), reducing backup storage volume by ~80-90% before transmission.

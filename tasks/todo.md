@@ -1046,12 +1046,112 @@
 - [x] Full test suite passes with 0 regressions.
 - [x] Code is formatted and passes Ruff linting.
 
+---
 
+## Phase 15: Smart Intake Pre-flight: On-Demand Item Identification, Advisory Guidance & Direct Pricing
 
+### Task 47: Optional Direct Sale Price on Intake Form
+**Description:** Add an optional `sale_price` field to `ProductIntakeForm` in `inventory/forms.py` (matching `Product.sale_price` bounds: min 0.00, max 9,999,999.99). Render the field in `inventory/templates/inventory/intake.html` between field notes and submit button with Euro (`€`) prefix, mobile numeric inputmode, and clean placeholder. Update `product_intake_view` in `inventory/views.py` to persist `sale_price` directly to `product.sale_price` when provided. Add unit and view integration tests in `tests/test_intake.py`.
+**Acceptance criteria:**
+- [x] `ProductIntakeForm` exposes an optional `sale_price` field validating non-negative decimal numbers.
+- [x] `intake.html` renders the `sale_price` input with Euro (`€`) prefix styling and responsive layout.
+- [x] `product_intake_view` assigns `sale_price` to `product.sale_price` on save if provided, leaving it `None` if blank.
+- [x] Unit and integration tests verify intake creation with and without `sale_price`.
+**Verification:**
+- [x] Focused tests pass: `python manage.py test tests.test_intake.ProductIntakeViewTests`
+- [x] Linter passes: `ruff check .`
+**Dependencies:** None (Task 46)
+**Files likely touched:**
+- `inventory/forms.py`
+- `inventory/templates/inventory/intake.html`
+- `tests/test_intake.py`
+**Estimated scope:** Medium (3 files)
 
+---
 
+### Task 48: AI Vision Pre-flight Service & Pydantic Schema
+**Description:** Implement `IntakePreflightSchema` and `identify_intake_product(images_bytes, raw_note, language)` in `inventory/services/ai_service.py`. Takes in-memory image bytes (sliced to the first 3 photos per approved Option A) and calls Google Gemini Multimodal Vision API (`gemini-2.5-flash`). Returns structured JSON with `identified_title`, `category`, `detected_attributes`, `missing_or_recommended_info` (list of missing tags/flaws/details), and `suggested_note`. Implement comprehensive error handling and offline mock unit tests in `tests/test_ai_service.py`.
+**Acceptance criteria:**
+- [x] `IntakePreflightSchema` defined with Pydantic for structured Gemini output.
+- [x] `identify_intake_product()` queries Gemini Vision with system instructions tailored to detecting item identity and flagging missing inspection details.
+- [x] Image list is capped to the first 3 photos (`images_bytes[:3]`) for rapid mobile response and reduced token usage.
+- [x] Returns `{ "success": True, ... }` on success, or `{ "success": False, "error": "..." }` on API failure without raising unhandled exceptions.
+- [x] Unit tests mock Gemini client and verify prompt creation, schema parsing, 3-photo truncation, and error fallback.
+**Verification:**
+- [x] Focused tests pass: `python manage.py test tests.test_ai_service`
+**Dependencies:** Task 47
+**Files likely touched:**
+- `inventory/services/ai_service.py`
+- `tests/test_ai_service.py`
+**Estimated scope:** Small to Medium (2 files)
 
+---
 
+### Task 49: Asynchronous Pre-flight Endpoint
+**Description:** Implement view `intake_identify_view(request)` at `POST /inventory/intake/identify/` in `inventory/views.py` and register the route in `inventory/urls.py`. Gated by `@login_required` (available to both Assistants and Managers). Validates uploaded image files, reads image bytes, calls `identify_intake_product()`, and returns a `JsonResponse`. Ensures CSRF protection and validates image format/count without writing temporary files to disk.
+**Acceptance criteria:**
+- [x] Route `POST /inventory/intake/identify/` (name: `inventory:intake_identify`) registered in `inventory/urls.py`.
+- [x] Gated by `@login_required`; unauthenticated requests return redirect or 403.
+- [x] Validates presence of at least 1 image file; returns HTTP 400 with helpful JSON error if empty.
+- [x] Calls `identify_intake_product()` and returns JSON payload with detected title, category, missing info tips, and suggested notes.
+- [x] Unit and integration tests verify view authorization, file validation, and JSON responses.
+**Verification:**
+- [x] Focused tests pass: `python manage.py test tests.test_views.IntakeIdentifyViewTests`
+**Dependencies:** Task 48
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/urls.py`
+- `tests/test_views.py`
+**Estimated scope:** Small to Medium (3 files)
 
+---
 
+### Task 50: Mobile Intake UI: On-Demand Identify Button, Loading State & Advisory Banner
+**Description:** Update `inventory/templates/inventory/intake.html` to integrate the on-demand pre-flight workflow. Add a "🔍 Identificar producto" button disabled when 0 photos are selected and active when ≥1 photo is chosen. Add client-side JavaScript to dispatch asynchronous `fetch()` with `FormData` to `/inventory/intake/identify/`. Display a loading spinner and "Analizando fotos con IA..." while request is in flight. Render a non-blocking advisory alert banner above `raw_note` upon response displaying detected item name and missing detail tips. Include an "Añadir sugerencia a notas" button that smart-appends `suggested_note` to `raw_note` (fills if empty, appends on new line if notes exist). Form submit button remains active and unblocked at all times.
+**Acceptance criteria:**
+- [x] "🔍 Identificar producto" button toggles enabled/disabled state based on file input selection.
+- [x] Clicking button initiates async fetch with loading feedback without freezing form inputs or submit button.
+- [x] Advisory banner renders detected title and bulleted missing detail recommendations.
+- [x] Clicking "Añadir sugerencia a notas" populates `raw_note` (fills if empty, appends on new line if existing notes present).
+- [x] If identification fails or is skipped, assistant can continue and submit the intake form normally without disruption.
+**Verification:**
+- [x] Manual template verification & client script checks.
+- [x] View tests verify template rendering and context variables: `python manage.py test tests.test_views`
+**Dependencies:** Task 49
+**Files likely touched:**
+- `inventory/templates/inventory/intake.html`
+- `tests/test_views.py`
+**Estimated scope:** Medium (2 files)
 
+---
+
+### Task 51: i18n Translations, Documentation & Full Regression Suite
+**Description:** Add Spanish translations in `locale/es/LC_MESSAGES/django.po` for all new UI strings, buttons, loading labels, placeholders, advisory banners, and error messages. Compile binary catalogs using `python manage.py compile_locales`. Update `CHANGELOG.md` under `[Unreleased]`. Run full test suite (`python manage.py test`) ensuring 0 regressions, and verify 0 Ruff lint issues.
+**Acceptance criteria:**
+- [x] Spanish translations compiled to `django.mo`.
+- [x] `CHANGELOG.md` updated under `[Unreleased]` with Smart Intake Pre-flight and Direct Pricing details.
+- [x] Full automated test suite passes: `python manage.py test`.
+- [x] Linter passes with 0 warnings: `ruff check .`.
+**Verification:**
+- [x] Command succeeds: `python manage.py compile_locales`
+- [x] Full test suite passes: `python manage.py test`
+- [x] Linter passes: `ruff check .`
+**Dependencies:** Task 50
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `CHANGELOG.md`
+**Estimated scope:** Small (3 files)
+
+---
+
+## Checkpoint 15: Smart Intake Pre-flight & Direct Pricing Complete
+- [x] Assistant can enter an optional sale price in € during intake and it persists directly to `product.sale_price`.
+- [x] "Identificar producto" button activates on photo selection and dispatches an async vision analysis.
+- [x] Vision service analyzes up to the first 3 photos and identifies brand/model while detecting missing inspection details.
+- [x] Advisory banner alerts the assistant to missing details (e.g. size tag, flaw photos) without blocking upload.
+- [x] "Añadir sugerencia a notas" smart-appends AI suggestions to the raw notes textarea.
+- [x] Intake form remains 100% functional and submittable whether identification is used, skipped, or fails.
+- [x] All new UI strings display cleanly in Spanish and English.
+- [x] Full automated test suite passes with 0 regressions.
+- [x] Code is formatted and passes Ruff linting.

@@ -69,10 +69,25 @@ class ProductIntakeForm(forms.ModelForm):
         required=False,
         label=_("Raw Field Notes")
     )
+    sale_price = forms.DecimalField(
+        min_value=Decimal("0.00"),
+        max_value=Decimal("9999999.99"),
+        decimal_places=2,
+        required=False,
+        label=_("Sale Price (€)"),
+        widget=forms.NumberInput(attrs={
+            "step": "0.01",
+            "min": "0",
+            "max": "9999999.99",
+            "placeholder": "0.00",
+            "inputmode": "decimal",
+            "class": "w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition bg-slate-50 focus:bg-white font-semibold"
+        }),
+    )
 
     class Meta:
         model = Product
-        fields = ["raw_note"]
+        fields = ["raw_note", "sale_price"]
 
 
 class ProductUpdateForm(forms.ModelForm):

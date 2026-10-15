@@ -1,4 +1,5 @@
 import io
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -33,6 +34,10 @@ class ProductIntakeViewTests(TestCase):
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "New Product Intake")
+        self.assertContains(resp, 'id="identifyBtn"')
+        self.assertContains(resp, 'id="aiAdvisoryBanner"')
+        self.assertContains(resp, 'id="applySuggestionBtn"')
+        self.assertContains(resp, 'id="id_sale_price"')
 
     def test_intake_post_without_images_fails(self):
         self.client.login(username="assistant1", password="password123")
@@ -78,3 +83,62 @@ class ProductIntakeViewTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "maximum of 10 images")
         self.assertEqual(Product.objects.count(), 0)
+
+    def test_intake_post_with_optional_sale_price_persists(self):
+        self.client.login(username="assistant1", password="password123")
+        img = self.create_dummy_image("item.jpg")
+
+        resp = self.client.post(
+            self.url,
+            {
+                "raw_note": "Vintage Nike windbreaker",
+                "sale_price": "35.50",
+                "images": [img],
+            }
+        )
+        self.assertRedirects(resp, self.url)
+        self.assertEqual(Product.objects.count(), 1)
+        product = Product.objects.first()
+        self.assertEqual(product.sale_price, Decimal("35.50"))
+        self.assertEqual(product.raw_note, "Vintage Nike windbreaker")
+
+    def test_intake_post_with_blank_sale_price_sets_none(self):
+        self.client.login(username="assistant1", password="password123")
+        img = self.create_dummy_image("item.jpg")
+
+        resp = self.client.post(
+            self.url,
+            {
+                "raw_note": "Unpriced item",
+                "sale_price": "",
+                "images": [img],
+            }
+        )
+        self.assertRedirects(resp, self.url)
+        self.assertEqual(Product.objects.count(), 1)
+        product = Product.objects.first()
+        self.assertIsNone(product.sale_price)
+
+    def test_intake_post_with_negative_sale_price_fails(self):
+        self.client.login(username="assistant1", password="password123")
+        img = self.create_dummy_image("item.jpg")
+
+        resp = self.client.post(
+            self.url,
+            {
+                "raw_note": "Negative price item",
+                "sale_price": "-15.00",
+                "images": [img],
+            }
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(Product.objects.count(), 0)
+        self.assertContains(resp, "greater than or equal to 0.00")
+
+    def test_intake_get_renders_sale_price_field(self):
+        self.client.login(username="assistant1", password="password123")
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'name="sale_price"')
+        self.assertContains(resp, "Target Sale Price")
+        self.assertContains(resp, "€")

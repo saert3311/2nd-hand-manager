@@ -85,6 +85,59 @@
           <p class="text-xs font-semibold text-slate-500 mb-2">{% trans "Selected Photos Preview:" %}</p>
           <div id="previewGrid" class="grid grid-cols-3 sm:grid-cols-4 gap-2.5"></div>
         </div>
+
+        <!-- Pre-flight Identification Trigger Button -->
+        <div class="mt-3 flex items-center justify-between gap-3">
+          <button type="button" id="identifyBtn" disabled
+                  class="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl transition duration-150 border bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed">
+            <span id="identifyBtnIcon">🔍</span>
+            <span id="identifyBtnText">{% trans "Identify product" %}</span>
+          </button>
+          <span id="identifyHelpText" class="text-[11px] text-slate-400">
+            {% trans "Select photos first" %}
+          </span>
+        </div>
+      </div>
+
+      <!-- AI Pre-flight Advisory Guidance Banner -->
+      <div id="aiAdvisoryBanner" class="hidden p-4 rounded-2xl border transition-all duration-200">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-start gap-3">
+            <div id="advisoryIcon" class="w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 mt-0.5">
+              ✨
+            </div>
+            <div class="space-y-1.5 text-xs sm:text-sm">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-bold text-slate-900" id="advisoryTitle"></span>
+                <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700" id="advisoryCategory"></span>
+              </div>
+              <!-- Detected Attributes -->
+              <div id="advisoryAttributesContainer" class="hidden text-xs text-slate-600">
+                <span class="font-semibold text-slate-700">{% trans "Detected:" %}</span>
+                <span id="advisoryAttributes"></span>
+              </div>
+              <!-- Missing / Recommended Info Tips -->
+              <div id="advisoryTipsContainer" class="hidden space-y-1 pt-1">
+                <p class="text-[11px] font-bold text-amber-800 uppercase tracking-wide flex items-center gap-1">
+                  <span>⚠️</span> {% trans "Suggested details to verify:" %}
+                </p>
+                <ul id="advisoryTipsList" class="list-disc list-inside text-xs text-amber-900 space-y-0.5 pl-1"></ul>
+              </div>
+            </div>
+          </div>
+          <button type="button" id="dismissAdvisoryBtn" class="text-slate-400 hover:text-slate-600 p-1 text-sm rounded-lg" title="{% trans 'Dismiss' %}">
+            ✕
+          </button>
+        </div>
+        <!-- Action Shortcut: Append to Notes -->
+        <div id="advisoryActionContainer" class="hidden mt-3 pt-3 border-t border-indigo-100/60 flex items-center justify-between gap-2">
+          <span class="text-[11px] text-slate-500">{% trans "Quickly copy AI suggestion into field notes" %}</span>
+          <button type="button" id="applySuggestionBtn"
+                  class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-1.5 shrink-0">
+            <span>✍️</span>
+            <span id="applySuggestionBtnText">{% trans "Apply suggestion to notes" %}</span>
+          </button>
+        </div>
       </div>
 
       <!-- Raw Notes Textarea -->
@@ -94,6 +147,25 @@
         </label>
         {{ form.raw_note }}
         <p class="text-[11px] text-slate-400 mt-1">{% trans "Brand, model, size, obvious flaws or condition notes. AI will expand this later." %}</p>
+      </div>
+
+      <!-- Optional Target Sale Price -->
+      <div>
+        <label for="id_sale_price" class="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+          <span>{% trans "Target Sale Price" %} <span class="text-slate-400 font-normal lowercase">({% trans "Optional" %})</span></span>
+        </label>
+        <div class="relative rounded-xl max-w-xs">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold text-sm">
+            €
+          </div>
+          {{ form.sale_price }}
+        </div>
+        <p class="text-[11px] text-slate-400 mt-1">{% trans "If price is already known. Can also be set later in staging." %}</p>
+        {% if form.sale_price.errors %}
+        <div class="text-rose-600 text-xs font-semibold mt-1">
+          {% for error in form.sale_price.errors %}{{ error }}{% endfor %}
+        </div>
+        {% endif %}
       </div>
 
       <!-- Submit Button -->
@@ -143,8 +215,40 @@
   const previewContainer = document.getElementById('previewContainer');
   const previewGrid = document.getElementById('previewGrid');
   const photoCount = document.getElementById('photoCount');
+  const identifyBtn = document.getElementById('identifyBtn');
+  const identifyBtnIcon = document.getElementById('identifyBtnIcon');
+  const identifyBtnText = document.getElementById('identifyBtnText');
+  const identifyHelpText = document.getElementById('identifyHelpText');
+  const aiAdvisoryBanner = document.getElementById('aiAdvisoryBanner');
+  const advisoryIcon = document.getElementById('advisoryIcon');
+  const advisoryTitle = document.getElementById('advisoryTitle');
+  const advisoryCategory = document.getElementById('advisoryCategory');
+  const advisoryAttributesContainer = document.getElementById('advisoryAttributesContainer');
+  const advisoryAttributes = document.getElementById('advisoryAttributes');
+  const advisoryTipsContainer = document.getElementById('advisoryTipsContainer');
+  const advisoryTipsList = document.getElementById('advisoryTipsList');
+  const advisoryActionContainer = document.getElementById('advisoryActionContainer');
+  const applySuggestionBtn = document.getElementById('applySuggestionBtn');
+  const applySuggestionBtnText = document.getElementById('applySuggestionBtnText');
+  const dismissAdvisoryBtn = document.getElementById('dismissAdvisoryBtn');
+  const rawNoteInput = document.getElementById('id_raw_note');
   const maxImages = {{ max_images }};
   const selectedLabel = "{% trans 'selected' %}";
+  const identifyUrl = "{% url 'inventory:intake_identify' %}";
+
+  let lastSuggestedNote = "";
+
+  function setIdentifyButtonState(enabled) {
+    if (enabled) {
+      identifyBtn.disabled = false;
+      identifyBtn.className = 'inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl transition duration-150 border bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200 cursor-pointer shadow-sm active:scale-95';
+      identifyHelpText.textContent = "{% trans 'Optional AI pre-check' %}";
+    } else {
+      identifyBtn.disabled = true;
+      identifyBtn.className = 'inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl transition duration-150 border bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed';
+      identifyHelpText.textContent = "{% trans 'Select photos first' %}";
+    }
+  }
 
   imageInput.addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
@@ -153,6 +257,7 @@
     if (files.length === 0) {
       previewContainer.classList.add('hidden');
       photoCount.textContent = `0 / ${maxImages} ${selectedLabel}`;
+      setIdentifyButtonState(false);
       return;
     }
 
@@ -161,11 +266,13 @@
       imageInput.value = '';
       previewContainer.classList.add('hidden');
       photoCount.textContent = `0 / ${maxImages} ${selectedLabel}`;
+      setIdentifyButtonState(false);
       return;
     }
 
     previewContainer.classList.remove('hidden');
     photoCount.textContent = `${files.length} / ${maxImages} ${selectedLabel}`;
+    setIdentifyButtonState(true);
 
     files.forEach((file, idx) => {
       if (!file.type.startsWith('image/')) return;
@@ -189,6 +296,129 @@
       };
       reader.readAsDataURL(file);
     });
+  });
+
+  identifyBtn.addEventListener('click', async function() {
+    const files = Array.from(imageInput.files);
+    if (files.length === 0) return;
+
+    // Loading state
+    identifyBtn.disabled = true;
+    identifyBtnIcon.innerHTML = `<svg class="animate-spin h-3.5 w-3.5 text-indigo-600 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>`;
+    identifyBtnText.textContent = "{% trans 'Analyzing photos with AI...' %}";
+    identifyHelpText.textContent = "{% trans 'Checking brand, tags & condition...' %}";
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', csrfToken);
+    formData.append('raw_note', rawNoteInput ? rawNoteInput.value : '');
+
+    // Slicing to first 3 files on client side for faster transmission
+    files.slice(0, 3).forEach(f => {
+      formData.append('images', f);
+    });
+
+    try {
+      const response = await fetch(identifyUrl, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Success display
+        aiAdvisoryBanner.className = 'mb-3 p-4 rounded-2xl border border-indigo-200 bg-indigo-50/70 shadow-sm transition-all duration-200';
+        advisoryIcon.className = 'w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm font-bold shrink-0 mt-0.5';
+        advisoryIcon.textContent = '✨';
+
+        advisoryTitle.textContent = data.identified_title || "{% trans 'Product Identified' %}";
+        if (data.category) {
+          advisoryCategory.textContent = data.category;
+          advisoryCategory.classList.remove('hidden');
+        } else {
+          advisoryCategory.classList.add('hidden');
+        }
+
+        if (data.detected_attributes && data.detected_attributes.length > 0) {
+          advisoryAttributes.textContent = data.detected_attributes.join(' • ');
+          advisoryAttributesContainer.classList.remove('hidden');
+        } else {
+          advisoryAttributesContainer.classList.add('hidden');
+        }
+
+        if (data.missing_or_recommended_info && data.missing_or_recommended_info.length > 0) {
+          advisoryTipsList.innerHTML = '';
+          data.missing_or_recommended_info.forEach(tip => {
+            const li = document.createElement('li');
+            li.textContent = tip;
+            advisoryTipsList.appendChild(li);
+          });
+          advisoryTipsContainer.classList.remove('hidden');
+        } else {
+          advisoryTipsContainer.classList.add('hidden');
+        }
+
+        if (data.suggested_note && data.suggested_note.trim()) {
+          lastSuggestedNote = data.suggested_note.trim();
+          advisoryActionContainer.classList.remove('hidden');
+        } else {
+          lastSuggestedNote = '';
+          advisoryActionContainer.classList.add('hidden');
+        }
+
+        aiAdvisoryBanner.classList.remove('hidden');
+        identifyHelpText.textContent = "{% trans 'Analysis completed!' %}";
+      } else {
+        // Non-blocking notice display
+        aiAdvisoryBanner.className = 'mb-3 p-4 rounded-2xl border border-amber-200 bg-amber-50 shadow-sm transition-all duration-200';
+        advisoryIcon.className = 'w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center text-sm font-bold shrink-0 mt-0.5';
+        advisoryIcon.textContent = '⚠️';
+        advisoryTitle.textContent = "{% trans 'Identification notice' %}";
+        advisoryCategory.classList.add('hidden');
+        advisoryAttributesContainer.classList.add('hidden');
+        advisoryTipsContainer.classList.add('hidden');
+        advisoryActionContainer.classList.add('hidden');
+
+        advisoryTipsList.innerHTML = '';
+        const li = document.createElement('li');
+        li.textContent = data.error || "{% trans 'Could not identify product from photos.' %}";
+        advisoryTipsList.appendChild(li);
+        advisoryTipsContainer.classList.remove('hidden');
+
+        aiAdvisoryBanner.classList.remove('hidden');
+        identifyHelpText.textContent = "{% trans 'AI pre-check skipped' %}";
+      }
+    } catch (err) {
+      console.warn("Intake identify error:", err);
+      identifyHelpText.textContent = "{% trans 'Network error' %}";
+    } finally {
+      // Restore button state
+      setIdentifyButtonState(true);
+      identifyBtnIcon.textContent = "🔍";
+      identifyBtnText.textContent = "{% trans 'Identify product' %}";
+    }
+  });
+
+  dismissAdvisoryBtn.addEventListener('click', function() {
+    aiAdvisoryBanner.classList.add('hidden');
+  });
+
+  applySuggestionBtn.addEventListener('click', function() {
+    if (!lastSuggestedNote || !rawNoteInput) return;
+    const currentNote = rawNoteInput.value.trim();
+    if (currentNote.length === 0) {
+      rawNoteInput.value = lastSuggestedNote;
+    } else {
+      rawNoteInput.value = currentNote + "\n" + lastSuggestedNote;
+    }
+    applySuggestionBtnText.textContent = "{% trans 'Applied!' %}";
+    setTimeout(() => {
+      applySuggestionBtnText.textContent = "{% trans 'Apply suggestion to notes' %}";
+    }, 1500);
   });
 </script>
 {% endblock %}

@@ -854,6 +854,65 @@ msgstr "Ver registros de copia"
 msgid "Confirm Backup"
 msgstr "Confirmar copia"
 
+msgid "Identify product"
+msgstr "Identificar producto"
 
+msgid "Analyzing photos with AI..."
+msgstr "Analizando fotos con IA..."
 
+msgid "Select photos first"
+msgstr "Selecciona fotos primero"
 
+msgid "Optional AI pre-check"
+msgstr "Comprobación previa con IA (opcional)"
+
+msgid "Detected:"
+msgstr "Detectado:"
+
+msgid "Suggested details to verify:"
+msgstr "Detalles sugeridos a verificar:"
+
+msgid "Quickly copy AI suggestion into field notes"
+msgstr "Copiar sugerencia de IA a notas de campo"
+
+msgid "Apply suggestion to notes"
+msgstr "Añadir sugerencia a notas"
+
+msgid "Applied!"
+msgstr "¡Añadido!"
+
+msgid "Dismiss"
+msgstr "Descartar"
+
+msgid "Checking brand, tags & condition..."
+msgstr "Comprobando marca, etiquetas y estado..."
+
+msgid "Product Identified"
+msgstr "Producto identificado"
+
+msgid "Analysis completed!"
+msgstr "¡Análisis completado!"
+
+msgid "Identification notice"
+msgstr "Aviso de identificación"
+
+msgid "Could not identify product from photos."
+msgstr "No se pudo identificar el producto a partir de las fotos."
+
+msgid "AI pre-check skipped"
+msgstr "Comprobación de IA omitida"
+
+msgid "Network error"
+msgstr "Error de red"
+
+msgid "Target Sale Price"
+msgstr "Precio de venta objetivo"
+
+msgid "If price is already known. Can also be set later in staging."
+msgstr "Si el precio ya se conoce. También se puede fijar más tarde en la preparación."
+
+msgid "Please attach at least one photo to identify the product."
+msgstr "Por favor, adjunta al menos una foto para identificar el producto."
+
+msgid "Method not allowed. Use POST."
+msgstr "Método no permitido. Usa POST."

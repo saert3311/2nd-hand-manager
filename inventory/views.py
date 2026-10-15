@@ -9,7 +9,7 @@ from django.core.paginator import Paginator
 from django.core.validators import URLValidator
 from django.db import transaction
 from django.db.models import Count, Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -34,6 +34,7 @@ from .models import (
     ProductStatus,
 )
 from .permissions import is_assistant, is_manager, manager_required
+from .services.ai_service import identify_intake_product
 from .services.image_service import (
     MAX_IMAGES_PER_PRODUCT,
     process_and_convert_to_webp,
@@ -135,6 +136,42 @@ def product_intake_view(request):
         "recent_products": recent_products,
     }
     return render(request, "inventory/intake.html", context)
+
+
+@login_required
+def intake_identify_view(request):
+    """
+    Asynchronous pre-flight AI identification endpoint for the intake screen.
+    Validates uploaded image files, reads image bytes in memory, and passes
+    them to Gemini Multimodal Vision API. Returns JSON response.
+    """
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": _("Method not allowed. Use POST.")}, status=405)
+
+    files = request.FILES.getlist("images")
+    if not files:
+        return JsonResponse(
+            {"success": False, "error": _("Please attach at least one photo to identify the product.")},
+            status=400,
+        )
+
+    try:
+        validate_images_count(files)
+        for f in files:
+            validate_image_file(f)
+    except ValidationError as e:
+        return JsonResponse(
+            {"success": False, "error": e.message if hasattr(e, "message") else str(e)},
+            status=400,
+        )
+
+    raw_note = request.POST.get("raw_note", "").strip()
+    language = get_language() or "es"
+
+    images_bytes = [f.read() for f in files[:3]]
+    result = identify_intake_product(images_bytes=images_bytes, raw_note=raw_note, language=language)
+
+    return JsonResponse(result, status=200)
 
 
 @login_required

@@ -5,8 +5,10 @@ from django.test import TestCase, override_settings
 from inventory.models import AIPromptConfiguration, Product
 from inventory.services.ai_service import (
     AIServiceError,
+    IntakePreflightSchema,
     ProductListingSchema,
     generate_product_listing,
+    identify_intake_product,
 )
 
 
@@ -203,3 +205,140 @@ class AIServiceTests(TestCase):
         self.assertEqual(call_args.kwargs.get("model"), "gemini-2.5-flash")
         config_arg = call_args.kwargs.get("config")
         self.assertEqual(config_arg.temperature, 0.3)
+
+
+class IntakePreflightServiceTests(TestCase):
+    @override_settings(GEMINI_API_KEY="")
+    def test_missing_api_key_returns_failure(self):
+        result = identify_intake_product([b"\xff\xd8\xfffakeimage"])
+        self.assertFalse(result["success"])
+        self.assertIn("GEMINI_API_KEY is not configured", result["error"])
+
+    @override_settings(GEMINI_API_KEY="test-key")
+    def test_empty_input_returns_failure_spanish(self):
+        result = identify_intake_product([], raw_note="", language="es")
+        self.assertFalse(result["success"])
+        self.assertIn("No se han proporcionado fotos ni notas", result["error"])
+
+    @override_settings(GEMINI_API_KEY="test-key")
+    def test_empty_input_returns_failure_english(self):
+        result = identify_intake_product([], raw_note="", language="en")
+        self.assertFalse(result["success"])
+        self.assertIn("No photos or notes provided", result["error"])
+
+    @override_settings(GEMINI_API_KEY="test-key")
+    @patch("inventory.services.ai_service.genai.Client")
+    def test_successful_identification_with_parsed_response(self, mock_client_cls):
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+
+        mock_response = MagicMock()
+        mock_response.parsed = IntakePreflightSchema(
+            identified_title="Nike Air Max 90 Infrared",
+            category="Calzado / Zapatillas",
+            detected_attributes=["Colorway blanco/gris/infrarrojo", "Cámara Air visible"],
+            missing_or_recommended_info=["Etiqueta de talla no visible", "Comprobar desgaste en suela"],
+            suggested_note="Nike Air Max 90 Infrared. Buen estado. Revisar etiqueta de lengüeta.",
+        )
+        mock_client.models.generate_content.return_value = mock_response
+
+        sample_img = b"\xff\xd8\xfffakejpg"
+        result = identify_intake_product([sample_img], raw_note="Zapatillas vintage", language="es")
+
+        self.assertTrue(result["success"])
+        self.assertEqual(result["identified_title"], "Nike Air Max 90 Infrared")
+        self.assertEqual(result["category"], "Calzado / Zapatillas")
+        self.assertEqual(len(result["detected_attributes"]), 2)
+        self.assertIn("Etiqueta de talla no visible", result["missing_or_recommended_info"])
+        self.assertEqual(result["suggested_note"], "Nike Air Max 90 Infrared. Buen estado. Revisar etiqueta de lengüeta.")
+
+    @override_settings(GEMINI_API_KEY="test-key")
+    @patch("inventory.services.ai_service.genai.Client")
+    def test_successful_identification_with_json_fallback(self, mock_client_cls):
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+
+        mock_response = MagicMock()
+        mock_response.parsed = None
+        mock_response.text = (
+            '{"identified_title": "Levi\'s 501 Made in USA", "category": "Pantalones",'
+            ' "detected_attributes": ["Denim rígido", "Botones plateados"],'
+            ' "missing_or_recommended_info": ["Revisar etiqueta interior W/L"],'
+            ' "suggested_note": "Levi\'s 501 Made in USA vintage."}'
+        )
+        mock_client.models.generate_content.return_value = mock_response
+
+        result = identify_intake_product([b"\x89PNG\r\n\x1a\nfakepng"])
+        self.assertTrue(result["success"])
+        self.assertEqual(result["identified_title"], "Levi's 501 Made in USA")
+        self.assertEqual(result["category"], "Pantalones")
+        self.assertIn("Denim rígido", result["detected_attributes"])
+
+    @override_settings(GEMINI_API_KEY="test-key")
+    @patch("inventory.services.ai_service.genai.Client")
+    def test_image_truncation_to_three_images(self, mock_client_cls):
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.parsed = IntakePreflightSchema(
+            identified_title="Item",
+            category="Cat",
+            detected_attributes=[],
+            missing_or_recommended_info=[],
+            suggested_note="Note",
+        )
+        mock_client.models.generate_content.return_value = mock_response
+
+        five_images = [
+            b"\xff\xd8\xff-1",
+            b"\xff\xd8\xff-2",
+            b"\xff\xd8\xff-3",
+            b"\xff\xd8\xff-4",
+            b"\xff\xd8\xff-5",
+        ]
+        identify_intake_product(five_images, raw_note="Test note")
+
+        call_args = mock_client.models.generate_content.call_args
+        contents = call_args.kwargs.get("contents")
+        # 1 text prompt + 3 images (capped) = 4 items
+        self.assertEqual(len(contents), 4)
+
+    @override_settings(GEMINI_API_KEY="test-key")
+    @patch("inventory.services.ai_service.genai.Client")
+    def test_api_network_failure_returns_failure_dict_without_exception(self, mock_client_cls):
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        mock_client.models.generate_content.side_effect = RuntimeError("Connection timeout to Gemini")
+
+        result = identify_intake_product([b"\xff\xd8\xfffake"])
+        self.assertFalse(result["success"])
+        self.assertIn("Connection timeout to Gemini", result["error"])
+
+    @override_settings(GEMINI_API_KEY="test-key")
+    @patch("inventory.services.ai_service.genai.Client")
+    def test_language_prompts(self, mock_client_cls):
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.parsed = IntakePreflightSchema(
+            identified_title="Item",
+            category="Cat",
+            detected_attributes=[],
+            missing_or_recommended_info=[],
+            suggested_note="Note",
+        )
+        mock_client.models.generate_content.return_value = mock_response
+
+        # Spanish
+        identify_intake_product([b"fake"], language="es")
+        call_args_es = mock_client.models.generate_content.call_args
+        prompt_es = call_args_es.kwargs.get("contents")[0]
+        self.assertIn("COMPLETAMENTE EN ESPAÑOL", prompt_es)
+        self.assertIn("NOTAS PRELIMINARES DEL ASISTENTE", prompt_es)
+
+        # English
+        identify_intake_product([b"fake"], language="en")
+        call_args_en = mock_client.models.generate_content.call_args
+        prompt_en = call_args_en.kwargs.get("contents")[0]
+        self.assertIn("COMPLETELY IN ENGLISH", prompt_en)
+        self.assertIn("ASSISTANT PRELIMINARY NOTES", prompt_en)

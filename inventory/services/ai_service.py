@@ -45,6 +45,43 @@ class ProductListingSchema(BaseModel):
     description: str = Field(description="Structured sales description highlighting features, condition, and flaws")
 
 
+class IntakePreflightSchema(BaseModel):
+    identified_title: str = Field(description="Detected product brand, model, and item type")
+    category: str = Field(description="High-level product category")
+    detected_attributes: list[str] = Field(default_factory=list, description="Visible attributes such as color, materials, logos")
+    missing_or_recommended_info: list[str] = Field(default_factory=list, description="Actionable checklist of missing tags, size labels, flaws, or angles")
+    suggested_note: str = Field(description="Draft summary suitable for intake notes")
+
+
+PREFLIGHT_ES_INSTRUCTION = (
+    "Eres un asistente de tasación e inventario para una tienda de artículos de segunda mano y vintage.\n"
+    "Analiza rápidamente las fotos del producto (hasta 3 fotos) y las notas preliminares para identificar el artículo "
+    "y señalar qué detalles cruciales faltan para una catalogación completa.\n\n"
+    "INSTRUCCIONES:\n"
+    "- Idioma: Responde COMPLETAMENTE EN ESPAÑOL.\n"
+    "- identified_title: Marca, modelo o tipo de prenda/objeto reconocido.\n"
+    "- category: Categoría general (ej. Calzado, Ropa Vintage, Electrónica, Accesorios).\n"
+    "- detected_attributes: Lista de atributos visibles (color, materiales, estampados, cortes).\n"
+    "- missing_or_recommended_info: Lista breve de datos o fotos que faltan o se recomienda revisar "
+    "(ej. 'Falta foto de la etiqueta de talla/composición', 'Revisar desgaste en suela o cremalleras', 'Indicar medidas').\n"
+    "- suggested_note: Resumen breve y útil que el asistente puede añadir a sus notas de campo."
+)
+
+PREFLIGHT_EN_INSTRUCTION = (
+    "You are an intake and appraisal assistant for a secondhand and vintage goods shop.\n"
+    "Quickly inspect the product photos (up to 3 photos) and preliminary notes to identify the item "
+    "and flag any crucial inspection details missing for full cataloging.\n\n"
+    "INSTRUCTIONS:\n"
+    "- Language: Respond COMPLETELY IN ENGLISH.\n"
+    "- identified_title: Recognized brand, model, or item type.\n"
+    "- category: High-level category (e.g., Footwear, Vintage Clothing, Electronics, Accessories).\n"
+    "- detected_attributes: List of visible attributes (colorway, materials, logos, cuts).\n"
+    "- missing_or_recommended_info: Short list of missing details or recommended inspection steps "
+    "(e.g., 'Size or care tag not clearly visible', 'Inspect underside sole wear', 'Check zippers or seams').\n"
+    "- suggested_note: Concise summary that the assistant can add to field notes."
+)
+
+
 def resolve_ai_configuration(language: str = "en") -> Tuple[str, float, str]:
     """
     Retrieves the active AIPromptConfiguration for the specified language.
@@ -166,3 +203,100 @@ def generate_product_listing(
     except Exception as exc:
         logger.error(f"Gemini API request failed: {exc}", exc_info=True)
         raise AIServiceError(f"AI generation failed: {exc}") from exc
+
+
+def _detect_mime_type(data: bytes) -> str:
+    """Helper to detect image MIME type from initial bytes."""
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data.startswith(b"RIFF") and b"WEBP" in data[:16]:
+        return "image/webp"
+    return "image/jpeg"
+
+
+def identify_intake_product(
+    images_bytes: list[bytes],
+    raw_note: str = "",
+    language: str = "es",
+) -> dict:
+    """
+    Analyzes uploaded product images during intake using Gemini Multimodal Vision API.
+    Caps image inputs to the first 3 photos for rapid mobile response and lower token usage.
+    Returns structured JSON with identified_title, category, detected_attributes,
+    missing_or_recommended_info, and suggested_note.
+    Does not raise unhandled exceptions; returns { 'success': False, 'error': ... } on failure.
+    """
+    valid_images = [b for b in (images_bytes or []) if b][:3]
+    note_clean = (raw_note or "").strip()
+
+    is_es = str(language).lower().startswith("es")
+    if not valid_images and not note_clean:
+        return {
+            "success": False,
+            "error": "No se han proporcionado fotos ni notas para la identificación." if is_es else "No photos or notes provided for identification.",
+        }
+
+    api_key = getattr(settings, "GEMINI_API_KEY", "") or ""
+    if not api_key.strip():
+        return {
+            "success": False,
+            "error": "GEMINI_API_KEY is not configured in environment or settings.",
+        }
+
+    system_instruction = PREFLIGHT_ES_INSTRUCTION if is_es else PREFLIGHT_EN_INSTRUCTION
+    notes_header = "NOTAS PRELIMINARES DEL ASISTENTE:" if is_es else "ASSISTANT PRELIMINARY NOTES:"
+    notes_body = note_clean if note_clean else ("Ninguna nota proporcionada." if is_es else "None provided.")
+
+    prompt_text = (
+        f"{system_instruction}\n\n"
+        f"{notes_header}\n"
+        f"{notes_body}"
+    )
+
+    contents = [prompt_text]
+    for img_data in valid_images:
+        mime = _detect_mime_type(img_data)
+        contents.append(types.Part.from_bytes(data=img_data, mime_type=mime))
+
+    try:
+        client = genai.Client(api_key=api_key.strip())
+        config = types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=IntakePreflightSchema,
+            temperature=0.2,
+        )
+        response = client.models.generate_content(
+            model=DEFAULT_MODEL_NAME,
+            contents=contents,
+            config=config,
+        )
+
+        if hasattr(response, "parsed") and response.parsed:
+            parsed = response.parsed
+            return {
+                "success": True,
+                "identified_title": getattr(parsed, "identified_title", "").strip(),
+                "category": getattr(parsed, "category", "").strip(),
+                "detected_attributes": list(getattr(parsed, "detected_attributes", []) or []),
+                "missing_or_recommended_info": list(getattr(parsed, "missing_or_recommended_info", []) or []),
+                "suggested_note": getattr(parsed, "suggested_note", "").strip(),
+            }
+
+        # Fallback to json text parsing
+        data = json.loads(response.text)
+        return {
+            "success": True,
+            "identified_title": str(data.get("identified_title", "")).strip(),
+            "category": str(data.get("category", "")).strip(),
+            "detected_attributes": list(data.get("detected_attributes", []) or []),
+            "missing_or_recommended_info": list(data.get("missing_or_recommended_info", []) or []),
+            "suggested_note": str(data.get("suggested_note", "")).strip(),
+        }
+    except Exception as exc:
+        logger.error(f"Gemini preflight identification failed: {exc}", exc_info=True)
+        return {
+            "success": False,
+            "error": f"Error en la identificación con IA: {exc}" if is_es else f"AI identification failed: {exc}",
+        }
