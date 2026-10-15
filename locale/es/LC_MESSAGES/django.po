@@ -944,3 +944,10 @@ msgstr "Navegación móvil"
 
 msgid "Administration Panel"
 msgstr "Panel de administración"
+
+msgid "Remove photo"
+msgstr "Eliminar foto"
+
+msgid "Please select a maximum of 10 photos."
+msgstr "Por favor, selecciona un máximo de 10 fotos."
+

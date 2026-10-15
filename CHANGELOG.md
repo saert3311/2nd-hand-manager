@@ -8,7 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Intake Photo Preview Management, Deletion & FileList Synchronization**:
+  - Implemented client-side photo state management in [`inventory/templates/inventory/intake.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/intake.html) tracking chosen files in an in-memory array `selectedFiles: File[]`.
+  - Added cumulative photo capture: selecting files or taking pictures with a smartphone camera appends newly selected valid files to `selectedFiles` up to the 10-image maximum rather than replacing previous selections.
+  - Built synchronization engine `syncFileInput()` utilizing standard HTML5 `DataTransfer` to keep `imageInput.files` perfectly synchronized with `selectedFiles` whenever photos are added or deleted.
+  - Implemented interactive preview cards in `#previewGrid` with index badges (`#1`, `#2`, ...) and accessible top-right delete buttons ("✕") providing a minimum 44×44px interactive touch target meeting WCAG 2.1 AA.
+  - Added single photo deletion: tapping "✕" prevents event propagation, removes the photo from `selectedFiles`, resynchronizes `imageInput.files`, dynamically re-indexes remaining badges, and updates the counter text (`X / 10 selected`).
+  - Added form state guarding: all delete buttons are disabled (`pointer-events-none opacity-50 cursor-not-allowed`) during `'identifying'` and `'submitting'` states.
+  - Retained active AI pre-flight identification advisory banner when deleting individual photos, resetting only if all photos are removed.
+  - Added Spanish translations in `locale/es/LC_MESSAGES/django.po` compiled to `django.mo`.
+  - Added comprehensive test coverage in [`tests/test_intake.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_intake.py) and verified full end-to-end user workflows using real Google Chrome via Playwright (`verify_intake_photo_management_browser.py`).
 - **Responsive Mobile Navigation Header & Collapsible Hamburger Drawer**:
+
   - Refactored top navigation header in [`inventory/templates/inventory/base.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/base.html) with responsive Tailwind breakpoint (`md:` / 768px), keeping full horizontal navigation on desktop while simplifying mobile headers.
   - Decluttered mobile viewports (< 768px) down to the brand logo, urgent doubts badge `❓ (X)`, and a prominent 44×44px hamburger toggle button (`#mobile-menu-button`).
   - Added an accessible mobile collapsible drawer (`#mobile-menu`) styled as a sticky dropdown accordion (`bg-white border-b border-slate-200 shadow-lg`) directly beneath the header.

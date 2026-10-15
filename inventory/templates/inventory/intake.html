@@ -256,6 +256,7 @@
   const selectedLabel = "{% trans 'selected' %}";
   const identifyUrl = "{% url 'inventory:intake_identify' %}";
 
+  let selectedFiles = [];
   let lastSuggestedNote = "";
   let formState = 'idle'; // 'idle' | 'identifying' | 'submitting'
   let isSubmitting = false;
@@ -304,8 +305,90 @@
     }
   }
 
+  function syncFileInput() {
+    if (typeof DataTransfer === 'undefined') return;
+    try {
+      const dt = new DataTransfer();
+      selectedFiles.forEach(file => dt.items.add(file));
+      imageInput.files = dt.files;
+    } catch (err) {
+      console.warn("DataTransfer sync fallback:", err);
+    }
+  }
+
+  function renderPreviews() {
+    previewGrid.innerHTML = '';
+
+    if (selectedFiles.length === 0) {
+      previewContainer.classList.add('hidden');
+      photoCount.textContent = `0 / ${maxImages} ${selectedLabel}`;
+      setIdentifyButtonState(false);
+      imageInput.value = '';
+      return;
+    }
+
+    clearDropZoneHighlight();
+    previewContainer.classList.remove('hidden');
+    photoCount.textContent = `${selectedFiles.length} / ${maxImages} ${selectedLabel}`;
+    setIdentifyButtonState(true);
+
+    selectedFiles.forEach((file, idx) => {
+      const div = document.createElement('div');
+      div.className = 'relative aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100 group';
+
+      const img = document.createElement('img');
+      const objectUrl = URL.createObjectURL(file);
+      img.src = objectUrl;
+      img.className = 'w-full h-full object-cover';
+      img.alt = `Preview ${idx + 1}`;
+      img.onload = () => URL.revokeObjectURL(objectUrl);
+
+      const badge = document.createElement('span');
+      badge.className = 'absolute top-1.5 left-1.5 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full pointer-events-none select-none';
+      badge.textContent = `#${idx + 1}`;
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'photo-delete-btn absolute top-0.5 right-0.5 w-11 h-11 flex items-center justify-center z-20 focus:outline-none focus:ring-2 focus:ring-rose-500 rounded-full transition-transform active:scale-95 disabled:pointer-events-none disabled:opacity-50';
+      const delLabel = `{% trans "Remove photo" %} #${idx + 1}`;
+      delBtn.setAttribute('aria-label', delLabel);
+      delBtn.title = delLabel;
+
+      const visualBadge = document.createElement('span');
+      visualBadge.className = 'w-7 h-7 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center shadow-md text-xs font-bold transition';
+      visualBadge.innerHTML = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+      delBtn.appendChild(visualBadge);
+
+      if (formState === 'identifying' || formState === 'submitting') {
+        delBtn.disabled = true;
+        delBtn.classList.add('pointer-events-none', 'opacity-50');
+      }
+
+      delBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        ev.preventDefault();
+        if (formState === 'identifying' || formState === 'submitting') return;
+
+        selectedFiles.splice(idx, 1);
+        syncFileInput();
+        renderPreviews();
+
+        if (selectedFiles.length === 0) {
+          aiAdvisoryBanner.classList.add('hidden');
+        }
+      });
+
+      div.appendChild(img);
+      div.appendChild(badge);
+      div.appendChild(delBtn);
+      previewGrid.appendChild(div);
+    });
+  }
+
   function setFormState(newState) {
     formState = newState;
+    const deleteButtons = document.querySelectorAll('.photo-delete-btn');
+
     if (newState === 'identifying') {
       // Disable identify button with spinner
       identifyBtn.disabled = true;
@@ -313,11 +396,15 @@
       identifyBtnText.textContent = "{% trans 'Analyzing photos with AI...' %}";
       identifyHelpText.textContent = "{% trans 'Checking brand, tags & condition...' %}";
 
-      // Disable submit button and lock dropZone
+      // Disable submit button and lock dropZone & delete buttons
       submitBtn.disabled = true;
       submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
       submitBtn.setAttribute('title', "{% trans 'Please wait for AI analysis to finish...' %}");
       dropZone.classList.add('pointer-events-none', 'opacity-70');
+      deleteButtons.forEach(btn => {
+        btn.disabled = true;
+        btn.classList.add('pointer-events-none', 'opacity-50');
+      });
     } else if (newState === 'submitting') {
       // Disable submit button with spinner
       submitBtn.disabled = true;
@@ -329,8 +416,12 @@
       // Disable identify button
       setIdentifyButtonState(false);
 
-      // Lock interactions inside form
+      // Lock interactions inside form & delete buttons
       intakeForm.classList.add('pointer-events-none');
+      deleteButtons.forEach(btn => {
+        btn.disabled = true;
+        btn.classList.add('pointer-events-none', 'opacity-50');
+      });
     } else {
       // 'idle'
       submitBtn.disabled = false;
@@ -342,86 +433,74 @@
 
       dropZone.classList.remove('pointer-events-none', 'opacity-70');
       intakeForm.classList.remove('pointer-events-none');
+      deleteButtons.forEach(btn => {
+        btn.disabled = false;
+        btn.classList.remove('pointer-events-none', 'opacity-50');
+      });
 
       identifyBtnIcon.textContent = "🔍";
       identifyBtnText.textContent = "{% trans 'Identify product' %}";
-      setIdentifyButtonState(imageInput.files && imageInput.files.length > 0);
+      setIdentifyButtonState(selectedFiles.length > 0);
     }
   }
 
   imageInput.addEventListener('change', function(e) {
     if (formState === 'identifying' || formState === 'submitting') return;
 
-    const files = Array.from(e.target.files || []);
-    previewGrid.innerHTML = '';
+    const incoming = Array.from(e.target.files || []);
+    if (incoming.length === 0) return;
 
-    if (files.length === 0) {
-      previewContainer.classList.add('hidden');
-      photoCount.textContent = `0 / ${maxImages} ${selectedLabel}`;
-      setIdentifyButtonState(false);
-      return;
-    }
-
-    // 1. Max images check
-    if (files.length > maxImages) {
-      showClientAlert("{% trans 'Please select a maximum of 10 photos.' %}", true);
-      imageInput.value = '';
-      previewContainer.classList.add('hidden');
-      photoCount.textContent = `0 / ${maxImages} ${selectedLabel}`;
-      setIdentifyButtonState(false);
-      return;
-    }
-
-    // 2. Individual file size check (10MB limit)
+    // 1. Individual file size check (10MB limit)
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
-    const oversized = files.find(f => f.size > MAX_FILE_SIZE);
+    const oversized = incoming.find(f => f.size > MAX_FILE_SIZE);
     if (oversized) {
       const sizeMb = (oversized.size / (1024 * 1024)).toFixed(1);
       const template = "{% blocktrans %}The file '%(name)s' exceeds the 10MB limit (%(size)s MB). Please select photos under 10MB.{% endblocktrans %}";
       const errorMsg = template.replace('%(name)s', oversized.name).replace('%(size)s', sizeMb);
       showClientAlert(errorMsg, false);
-      imageInput.value = '';
-      previewContainer.classList.add('hidden');
-      photoCount.textContent = `0 / ${maxImages} ${selectedLabel}`;
-      setIdentifyButtonState(false);
+      syncFileInput();
       return;
     }
 
-    // Clear any previous error highlighting
-    clearDropZoneHighlight();
-
-    previewContainer.classList.remove('hidden');
-    photoCount.textContent = `${files.length} / ${maxImages} ${selectedLabel}`;
-    setIdentifyButtonState(true);
-
-    files.forEach((file, idx) => {
-      if (!file.type.startsWith('image/')) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        const div = document.createElement('div');
-        div.className = 'relative aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100';
-
-        const img = document.createElement('img');
-        img.src = evt.target.result;
-        img.className = 'w-full h-full object-cover';
-        img.alt = `Preview ${idx + 1}`;
-
-        const badge = document.createElement('span');
-        badge.className = 'absolute top-1 left-1 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full';
-        badge.textContent = `#${idx + 1}`;
-
-        div.appendChild(img);
-        div.appendChild(badge);
-        previewGrid.appendChild(div);
-      };
-      reader.readAsDataURL(file);
+    // 2. Filter images and eliminate exact duplicate re-selections
+    const validIncoming = incoming.filter(f => {
+      if (!f.type.startsWith('image/')) return false;
+      const isDuplicate = selectedFiles.some(existing => 
+        existing.name === f.name && existing.size === f.size && existing.lastModified === f.lastModified
+      );
+      return !isDuplicate;
     });
+
+    if (validIncoming.length === 0) {
+      syncFileInput();
+      return;
+    }
+
+    // 3. Max images check (cumulative up to maxImages)
+    const availableSlots = maxImages - selectedFiles.length;
+    if (availableSlots <= 0) {
+      showClientAlert("{% trans 'Please select a maximum of 10 photos.' %}", true);
+      syncFileInput();
+      return;
+    }
+
+    if (validIncoming.length > availableSlots) {
+      showClientAlert("{% trans 'Please select a maximum of 10 photos.' %}", true);
+      selectedFiles.push(...validIncoming.slice(0, availableSlots));
+    } else {
+      clearDropZoneHighlight();
+      selectedFiles.push(...validIncoming);
+    }
+
+    syncFileInput();
+    renderPreviews();
   });
 
   identifyBtn.addEventListener('click', async function() {
     if (formState !== 'idle') return;
-    const files = Array.from(imageInput.files || []);
+    const files = selectedFiles;
     if (files.length === 0) return;
+
 
     setFormState('identifying');
 
@@ -544,8 +623,7 @@
     }
 
     // Check zero photos
-    const files = imageInput.files ? Array.from(imageInput.files) : [];
-    if (files.length === 0) {
+    if (selectedFiles.length === 0) {
       e.preventDefault();
       showClientAlert("{% trans 'Please attach at least one photo of the product before saving.' %}", false);
       dropZone.classList.remove('border-slate-300', 'bg-slate-50');
@@ -565,10 +643,14 @@
       }
     }
 
+    // Synchronize DataTransfer to imageInput right before form submission
+    syncFileInput();
+
     // All client validations passed -> lock submit button and form
     isSubmitting = true;
     setFormState('submitting');
     return true;
+
   });
 
   window.addEventListener('pageshow', function() {

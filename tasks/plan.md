@@ -141,6 +141,27 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
   - Run real browser automation on iPhone 14 mobile viewport (390×844) validating toggle, link clicking, outside click, and `Escape` key.
 - **Checkpoint 17 (Responsive Mobile Navigation Complete):** Mobile header is uncluttered and clean; hamburger button toggles accessible drawer with smooth SVG transitions; doubts notification pill alerts assistants on mobile; keyboard and click-outside close cleanly; desktop viewports retain the full horizontal bar; all 243+ tests and browser tests pass with 0 regressions.
 
+### Phase 18: Intake Photo Preview Management, Deletion & FileList Synchronization (Vertical Slice 14)
+- **Task 59:** Client-Side Photo State Management & Cumulative File Capture (`inventory/templates/inventory/intake.html`, `tests/test_views.py`).
+  - Introduce in-memory array `selectedFiles: File[]` managing the active photo set on `/intake/`.
+  - Implement cumulative photo capture: selecting or snapping photos appends valid images to `selectedFiles` up to the 10-image maximum rather than replacing the batch (Decision 31).
+  - Implement `syncFileInput()` utilizing standard HTML5 `DataTransfer` to mutate `imageInput.files = dt.files` whenever photos are added or deleted.
+  - Dynamically update counter text (`#photoCount`: `X / 10 selected`) and toggle "Identificar producto" button state.
+- **Task 60:** Interactive Preview Thumbnail Card & Accessible Deletion (`inventory/templates/inventory/intake.html`, `tests/test_views.py`).
+  - Render preview cards in `#previewGrid` with index badges (`#1`, `#2`, ...) and accessible delete buttons ("✕").
+  - Meet WCAG 2.1 AA with minimum 44×44px interactive touch target, 28×28px visual rose button, and localized `aria-label="Remove photo #N"`.
+  - Handle click events: stop propagation and prevent default (preventing file picker opening), splice file from `selectedFiles`, synchronize `imageInput.files` via `DataTransfer`, and re-index remaining preview cards.
+  - Reset dropzone and hide previews when all photos are deleted (`selectedFiles.length === 0`).
+  - Preserve active AI pre-flight identification advisory banner when deleting photos unless all photos are removed (Decision 32).
+  - Enforce form state guarding: disable delete buttons (`pointer-events-none opacity-50 cursor-not-allowed`) during `'identifying'` and `'submitting'` states.
+- **Task 61:** i18n Spanish Translations, Automated Tests & Real Browser Verification (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_intake.py`, `tests/test_views.py`, `CHANGELOG.md`).
+  - Add Spanish translation strings (`Remove photo` -> `Eliminar foto`) in `locale/es/LC_MESSAGES/django.po` and compile via `python manage.py compile_locales`.
+  - Update and expand unit/integration tests in `tests/test_views.py` and `tests/test_intake.py`.
+  - Create and execute a real Chrome browser automation test in scratch (`verify_intake_photo_management_browser.py`): testing photo addition, deletion of middle photo, badge re-indexing, form submission, and database verification.
+  - Update `CHANGELOG.md` under `[Unreleased]`.
+  - Verify all unit tests and Ruff linting pass with 0 regressions.
+- **Checkpoint 18 (Intake Photo Preview Management Complete):** Single photo deletion works seamlessly without re-uploading the entire batch; file input stays synchronized via `DataTransfer`; cumulative capture allows adding photos one by one; delete buttons meet 44×44px touch target guidelines; all automated and browser tests pass cleanly.
+
 ---
 
 ## Risks and Mitigations
@@ -179,6 +200,9 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 | Mobile navigation breaking existing test assertions on tokens | High | Preserve all existing element IDs, form inputs, language tokens, and clarification badge classes across desktop and mobile templates. |
 | Inaccessible mobile drawer trapping keyboard focus or screen readers | High | Provide complete ARIA attributes (`aria-expanded`, `aria-controls`, `aria-label`), keyboard `Escape` handler returning focus, and 44×44px touch targets. |
 | Viewport resize causing desynchronized drawer states | Low | Add `resize` event listener resetting mobile drawer to closed (`hidden`, `aria-expanded="false"`) when width reaches `md:` (≥768px). |
+| HTML5 `DataTransfer` unsupported in archaic browsers | Low | Modern baseline browsers (Chrome, Firefox, Safari 14.5+, Edge) fully support `new DataTransfer()`; feature detect and fallback gracefully if missing. |
+| Tapping delete button unintentionally triggering file picker | High | `#previewContainer` is positioned outside `#dropZone` in the DOM; delete button click handler calls `e.stopPropagation()` and `e.preventDefault()`. |
+| Race condition from photo deletion during active AI pre-flight or form submit | High | Form state guarding disables all delete buttons (`pointer-events-none opacity-50 cursor-not-allowed`) during `'identifying'` and `'submitting'` states. |
 
 ---
 
@@ -207,6 +231,9 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - Approved: Dropzone error ring reset timing: Auto-clear on file selection as soon as at least one valid image is chosen (Option A).
 - Approved: Urgent doubts badge on mobile bar: Direct mobile bar pill `❓ (X)` next to the sandwich button for immediate visibility (Option A).
 - Approved: Mobile drawer style: Sticky dropdown accordion directly beneath the header (`bg-white border-b border-slate-200 shadow-lg`) with page content scrollable beneath (Option A).
+- Approved: Multi-step camera capture: Cumulative append up to 10 photos (Option A).
+- Approved: AI pre-flight advisory state on photo deletion: Retain advisory banner unless all photos are deleted (Option A).
+
 
 
 

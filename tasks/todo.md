@@ -1333,3 +1333,97 @@ Add lightweight vanilla JavaScript handling:
 - [x] Desktop screens (≥ 768px) display full uncollapsed horizontal navigation without hamburger button.
 - [x] All UI strings and ARIA labels are translated in Spanish and English.
 - [x] Real browser mobile test passes 100%, and full test suite passes with 0 regressions.
+
+---
+
+## Phase 18: Intake Photo Preview Management, Deletion & FileList Synchronization
+
+### Task 59: Client-Side Photo State Management, Cumulative Capture & DataTransfer Synchronization
+**Description:** Implement client-side photo state management in `inventory/templates/inventory/intake.html`. Introduce an internal array `selectedFiles: File[]` representing the active list of chosen images. Implement cumulative photo capture: when the user selects or captures photos via the file input or drag-and-drop, newly selected valid photos (each ≤10MB) are appended to `selectedFiles` up to the maximum 10 images rather than replacing previously selected files (Decision 31). If the selection would exceed 10 images total, show an accessible inline warning banner and retain the first 10. Implement `syncFileInput()` which constructs an HTML5 `DataTransfer` object, populates it with all files from `selectedFiles`, and assigns `imageInput.files = dt.files`. Dynamically update the photo counter (`#photoCount`: `X / 10 selected`) and toggle the "Identificar producto" button state (`disabled = selectedFiles.length === 0`).
+**Acceptance criteria:**
+- [x] `selectedFiles` array tracks active files in memory.
+- [x] Cumulative file selection appends new files up to 10 max without erasing previously captured photos.
+- [x] Total count >10 displays inline warning and does not exceed 10 files.
+- [x] Individual files >10MB are rejected with clear error alert.
+- [x] `syncFileInput()` synchronizes `imageInput.files` via standard `DataTransfer`.
+- [x] `#photoCount` displays accurate active count (`X / 10 selected`).
+- [x] `#identifyBtn` is enabled when `selectedFiles.length > 0` and disabled when empty.
+**Verification:**
+- [x] Template syntax check: `python manage.py check`
+- [x] Existing view tests continue to pass: `python manage.py test tests.test_views`
+**Dependencies:** Checkpoint 17
+**Files likely touched:**
+- `inventory/templates/inventory/intake.html`
+**Estimated scope:** Medium (1 file)
+
+---
+
+### Task 60: Interactive Preview Thumbnail Card, Accessible Deletion & State Guarding
+**Description:** Refactor the thumbnail rendering logic in `inventory/templates/inventory/intake.html`. Render each photo in `#previewGrid` with an aspect-square container, an index badge `#N` at top-left, and an accessible delete button ("✕") at top-right. The delete button must provide a minimum 44×44px interactive touch target meeting WCAG 2.1 AA (using a 28×28px visual rose button with SVG cross), with `type="button"`, `aria-label="Remove photo #N"`, and `title="Remove photo"`. When clicked:
+1. Prevent event propagation and default behavior so the parent dropzone file dialog does not trigger.
+2. Remove file at index `i` from `selectedFiles`.
+3. Call `syncFileInput()` to synchronize `imageInput.files`.
+4. Re-render the preview grid, recalculating sequential badges (`#1`, `#2`, ...).
+5. Update `#photoCount` text and `#identifyBtn` state.
+6. If all photos are deleted (`selectedFiles.length === 0`), reset dropzone, hide `#previewContainer`, and reset `#photoCount`.
+7. Retain any active AI identification advisory banner unless all photos are deleted (Decision 32).
+8. Form state guarding: during `'identifying'` and `'submitting'` states, disable all delete buttons (`pointer-events-none opacity-50 cursor-not-allowed`) to prevent data race conditions mid-operation.
+**Acceptance criteria:**
+- [x] Each preview card displays an index badge `#N` and a top-right "✕" delete button.
+- [x] Delete button meets 44×44px minimum touch target with explicit `aria-label="Remove photo #N"`.
+- [x] Clicking "✕" removes only the specified photo without triggering the file dialog.
+- [x] Remaining photos are dynamically re-indexed (`#1`, `#2`, ...) and `#photoCount` updates.
+- [x] Deleting all photos resets dropzone, counter, and identify button.
+- [x] Existing AI advisory card is preserved unless all photos are deleted.
+- [x] Delete buttons are disabled/unclickable during `'identifying'` and `'submitting'` states.
+**Verification:**
+- [x] Template syntax check: `python manage.py check`
+- [x] Unit & view tests pass: `python manage.py test tests.test_views`
+**Dependencies:** Task 59
+**Files likely touched:**
+- `inventory/templates/inventory/intake.html`
+**Estimated scope:** Medium (1 file)
+
+---
+
+### Task 61: i18n Spanish Translations, Automated Tests & Real Browser Verification
+**Description:** Add Spanish translation strings for `"Remove photo"` / `"Eliminar foto"` and counter strings in `locale/es/LC_MESSAGES/django.po` and compile to `django.mo` via `python manage.py compile_locales`. Update and expand automated view tests in `tests/test_views.py` and `tests/test_intake.py` verifying template markup, delete button accessibility attributes, and successful form submissions with uploaded files. Create and execute a real Chrome browser automation test in scratch (`verify_intake_photo_management_browser.py`) testing:
+1. Selecting 3 sample images.
+2. Verifying 3 preview cards with badges `#1`, `#2`, `#3` and counter `3 / 10`.
+3. Clicking delete on photo `#2`.
+4. Verifying preview cards shrink to 2, badges re-index to `#1`, `#2`, and counter updates to `2 / 10`.
+5. Filling out intake fields and submitting the form.
+6. Verifying in the Django database that the created product has exactly 2 photos attached.
+Update `CHANGELOG.md` under `[Unreleased]`. Run full test suite and Ruff linter.
+**Acceptance criteria:**
+- [x] All new strings localized in `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`.
+- [x] Automated tests verify preview container structure, delete button ARIA labels, and intake submission.
+- [x] Real Chrome browser automation script verifies deletion, re-indexing, and submission end-to-end.
+- [x] All 248+ tests pass: `python manage.py test`.
+- [x] Ruff linter reports 0 errors: `ruff check .`.
+- [x] `CHANGELOG.md` updated under `[Unreleased]`.
+**Verification:**
+- [x] Command succeeds: `python manage.py compile_locales`
+- [x] Full test suite passes: `python manage.py test`
+- [x] Browser script succeeds: `python .gemini/antigravity/brain/b80e4db2-82cf-46b6-b07e-3885a650d010/scratch/verify_intake_photo_management_browser.py`
+- [x] Linter passes: `ruff check .`
+**Dependencies:** Task 60
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_views.py`
+- `tests/test_intake.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (5 files)
+
+---
+
+## Checkpoint 18: Intake Photo Preview Management Complete
+- [x] Assistants can delete individual photos from preview cards without re-uploading the entire batch.
+- [x] `imageInput.files` remains perfectly synchronized with client preview via standard `DataTransfer`.
+- [x] Photo counter and sequential index badges (`#1`, `#2`, ...) update dynamically upon deletion.
+- [x] Deleting all photos cleanly resets dropzone and disables identification button.
+- [x] Delete buttons meet 44×44px touch target guidelines and are locked during async operations.
+- [x] Real Chrome browser automation test passes end-to-end, and all unit tests pass with 0 regressions.
+
+

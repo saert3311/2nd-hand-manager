@@ -158,6 +158,20 @@ class ProductIntakeViewTests(TestCase):
         self.assertContains(resp, "Please wait for AI analysis to finish...")
         self.assertContains(resp, "Please attach at least one photo of the product before saving.")
 
+    def test_intake_get_renders_photo_management_elements(self):
+        self.client.login(username="assistant1", password="password123")
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'id="previewContainer"')
+        self.assertContains(resp, 'id="previewGrid"')
+        self.assertContains(resp, 'photo-delete-btn')
+        self.assertContains(resp, 'selectedFiles')
+        self.assertContains(resp, 'syncFileInput')
+        self.assertContains(resp, 'renderPreviews')
+        self.assertContains(resp, 'DataTransfer')
+        self.assertContains(resp, "Remove photo")
+        self.assertContains(resp, "Please select a maximum of 10 photos.")
+
     def test_intake_get_renders_spanish_translations(self):
         self.client.login(username="assistant1", password="password123")
         resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="es")
@@ -165,4 +179,7 @@ class ProductIntakeViewTests(TestCase):
         self.assertContains(resp, "Guardando producto...")
         self.assertContains(resp, "Espera a que finalice el análisis con IA...")
         self.assertContains(resp, "Por favor, adjunta al menos una foto del producto antes de guardar.")
+        self.assertContains(resp, "Eliminar foto")
+        self.assertContains(resp, "Por favor, selecciona un máximo de 10 fotos.")
+
 

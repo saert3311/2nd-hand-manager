@@ -16,6 +16,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 12. **Smart Intake Pre-flight & Direct Pricing:** On-demand AI product identification and pre-flight advisory assistance directly inside the mobile intake screen (`inventory:intake`). Sourcing assistants can click "Identificar producto" to trigger a fast Gemini vision scan (`/inventory/intake/identify/`) returning detected specs and a non-blocking checklist of missing details (e.g. unreadable size tags or missing flaw photos) while the physical item is still in hand. Also introduces an optional sale price field (`sale_price`, €) directly on the intake form.
 13. **Intake Form State Management, Async Blocking & Client-Side Validations:** Robust client-side form state machine (`idle`, `identifying`, `submitting`) on the mobile intake view (`/intake/`). Blocks interactions during asynchronous operations (disabling form submit and dropzone while AI pre-flight is in flight) to prevent race conditions and photo mutation; locks submit triggers on form POST to eliminate double-click duplicate records; and replaces native browser `alert()` dialogs with accessible, non-disruptive inline error alerts (`role="alert"`, `aria-live="polite"`) for zero photos, >10 image count, and >10MB individual file size limits.
 14. **Responsive Mobile Navigation & Hamburger Drawer:** Streamlined, uncluttered header experience across mobile viewports (< 768px / `md:`). Collapses the horizontal links, language toggles, profile details, and logout actions into an accessible mobile hamburger drawer (`#mobile-menu`), while preserving the full desktop navigation layout on larger screens (`≥ md:`). Features WCAG 2.1 AA compliant 44×44px touch targets, dynamic SVG toggle (☰ to ✕), `aria-expanded` attributes, and `Escape` / outside-click dismissal.
+15. **Intake Photo Preview Management & Individual Deletion:** Dynamic client-side photo management in the mobile intake form (`/intake/`). Each preview thumbnail rendered in `#previewGrid` features an accessible "✕" delete button conforming to WCAG 2.1 AA touch guidelines. Assistants can remove flawed or accidental photos individually without clearing or re-uploading the entire batch. Synchronizes with the native `<input type="file" multiple>` via the standard `DataTransfer` Web API, updates sequential `#N` badges and `X / 10 selected` counters, supports cumulative photo capture across camera snaps up to 10 photos, and disables delete actions during active AI vision or form submission states.
 
 ---
 
@@ -553,6 +554,38 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
   - Viewport Resize: Resizing window above 768px automatically ensures the drawer resets to closed state.
   - Test Invariant Preservation: All existing navigation token IDs and classes (`badge-pending-clarifications`, `name="language"`, `value="en"`, `value="es"`, `"Sign Out"`) remain present in the DOM for automated testing compatibility.
 
+### 6.15 Intake Photo Preview Management, Deletion & FileList Synchronization
+- **Client-Side File State (`selectedFiles`):**
+  - An internal JavaScript array `selectedFiles: File[]` maintains the live set of chosen image files on `/intake/`.
+  - Incremental photo capture: Selecting or snapping additional photos appends valid images to `selectedFiles` up to the 10-image maximum, rather than erasing previously selected photos.
+- **FileList Synchronization Engine (`syncFileInput`):**
+  - Employs standard HTML5 `DataTransfer` to mutate `imageInput.files = dt.files` whenever photos are added or deleted.
+  - Guarantees that form submission dispatches only the active, curated photo set.
+- **Interactive Preview Card (`#previewGrid`):**
+  - Aspect-square thumbnail container with rounded corners and border.
+  - Top-left index badge `#N` (`bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full`).
+  - Top-right accessible delete button ("✕"):
+    - Touch target: Minimum 44×44px interactive tap area.
+    - Visual button: 28×28px circular button with red/rose accent (`bg-rose-600 hover:bg-rose-700 text-white shadow-md`).
+    - SVG cross icon (`stroke-width="2.5"`).
+    - ARIA attributes: `type="button"`, `aria-label="Remove photo #N"`, `title="Remove photo"`.
+- **Dynamic Deletion Recalibration:**
+  - Tapping "✕" on photo `i`:
+    - Prevents event bubbling (stops file picker dialog from opening).
+    - Splices item `i` out of `selectedFiles`.
+    - Synchronizes `imageInput.files` via `DataTransfer`.
+    - Re-renders preview grid, updating remaining sequential badges (`#1`, `#2`, ...).
+    - Updates counter text (`X / 10 selected`).
+  - If all photos are deleted (`selectedFiles.length === 0`):
+    - Resets `imageInput.value = ''`.
+    - Hides `#previewContainer`.
+    - Resets `#photoCount` to `0 / 10 selected`.
+    - Disables `#identifyBtn` with *"Select photos first"*.
+  - If photos remain (`selectedFiles.length > 0`):
+    - Keeps `#identifyBtn` active.
+- **Form State Guarding:**
+  - During `'identifying'` or `'submitting'` states, all delete buttons are disabled (`pointer-events-none opacity-50 cursor-not-allowed`) to prevent data race conditions mid-operation.
+
 ---
 
 ## 7. AI Service Contract (`ai_service.py`)
@@ -748,6 +781,11 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
 63. The `#mobile-menu` drawer contains accessible navigation links for Intake, Dashboard, Doubts, Admin (for managers), full-width language switcher, and Sign Out.
 64. Pressing the `Escape` key or tapping outside the open `#mobile-menu` drawer immediately closes it and restores focus to the toggle button.
 65. On desktop viewports (`≥ 768px`), `#mobile-menu-button` and `#mobile-menu` remain hidden, and the full horizontal navigation bar is displayed.
+66. On `/intake/`, selecting photos renders thumbnail cards in `#previewGrid` with an individual delete button ("✕") on each image.
+67. Tapping the delete button on an individual thumbnail removes only that photo, leaving other selected photos intact.
+68. When a photo is deleted, remaining photos immediately re-index (`#1`, `#2`, ...), the photo counter updates (`X / 10 selected`), and `imageInput.files` synchronizes via `DataTransfer`.
+69. If all photos are deleted, the preview grid hides, the counter resets to `0 / 10 selected`, and the "Identificar producto" button disables.
+70. Delete buttons on thumbnail previews are disabled while AI pre-flight identification or form submission is in flight (`pointer-events-none`).
 
 ---
 
@@ -798,6 +836,10 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
 - **Mobile Menu Architecture:** Lightweight vanilla JavaScript toggle with zero external dependencies, managing SVG icon switching, `aria-expanded`, keyboard `Escape`, and outside-click dismissal.
 - **Urgent Doubts Badge on Mobile Bar:** Direct mobile bar pill `❓ (X)` displayed on the sticky header next to the hamburger button when pending doubts exist, ensuring immediate visibility for sourcing assistants without needing to open the menu.
 - **Mobile Menu Panel Layout:** Sticky dropdown accordion positioned directly beneath the header (`bg-white border-b border-slate-200 shadow-lg`), leaving page content scrollable beneath with zero layout shift.
+- **Intake Photo State Synchronization:** In-memory array `selectedFiles: File[]` synchronized to `imageInput.files` via standard HTML5 `DataTransfer` Web API, enabling single-photo deletion without full-batch re-upload.
+- **Thumbnail Delete Button Accessibility:** Delete button placed on top-right of preview cards with minimum 44×44px touch target, WCAG-compliant contrast, and localized `aria-label="Remove photo #N"`.
+- **Cumulative Photo Selection:** Smartphone camera snaps or repeated file picker selections append newly selected valid photos to `selectedFiles` up to the 10-photo maximum, enabling assistants to snap photos one-by-one.
+- **Advisory Banner Persistence on Photo Deletion:** Deleting an individual photo retains any active AI identification advisory banner unless all photos are deleted, allowing assistants to manually re-run pre-flight check if desired.
 
 ---
 
@@ -923,3 +965,14 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
     - **Option A (Recommended — Sticky Dropdown Accordion):** Expands cleanly directly beneath the header with vertical flow (`bg-white border-b border-slate-200 shadow-lg`). Zero layout shift, extremely reliable on mobile browsers, and leaves page content scrollable beneath.
     - **Option B (Slide-in Offcanvas Drawer from Right):** Slides in from the right edge with a dark backdrop overlay covering the entire screen.
     *Which mobile menu transition style do you prefer?*
+25. **Multi-Step Camera Capture Behavior (Cumulative Append vs Batch Replacement):**
+    - When an assistant takes a picture with their smartphone camera or opens the file picker again while photos are already selected:
+    - **Option A (Recommended — Cumulative Append up to 10):** Newly selected valid photos are appended to the existing list (`selectedFiles`) up to the maximum 10-photo limit. Enables taking photos one by one or in small bursts.
+    - **Option B (Batch Replacement):** Selecting new photos replaces the entire previous selection with the new files.
+    *Which behavior do you prefer when selecting additional photos?*
+26. **AI Pre-flight Advisory State on Photo Deletion:**
+    - If the assistant ran "Identificar producto" (pre-flight AI check) and an advisory card is displayed, what should happen if they delete one of the photos?
+    - **Option A (Recommended — Retain Advisory Banner):** Keep the advisory banner and suggested notes visible (only clearing if all photos are deleted), allowing the assistant to manually re-run "Identificar producto" if desired.
+    - **Option B (Auto-Clear Advisory on Any Deletion):** Immediately dismiss the AI suggestion card whenever any photo is removed to ensure suggestions strictly reflect the current photo subset.
+    *Which behavior do you prefer for the AI advisory card when a photo is deleted?*
+
