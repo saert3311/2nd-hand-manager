@@ -8,7 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Clarification Status Synchronization, Orphan Product Prevention & Dudas Badge Accuracy**:
+  - **Root Cause Resolution**: Diagnosed and resolved the persistent active `❓ Dudas` navbar badge and phantom/orphan product behavior (`Product ID=81` with note `"Mobile Nav Test Jacket"`):
+    1. *Inconsistent Product Status*: The test product had an unresolved clarification question (`"Check shoulder width?"`) but had its `Product.status` set to `draft` (rather than `awaiting_info`).
+    2. *Query Discrepancy*: The navbar badge counted all pending clarification records (`pending_clarifications_count`), but the dashboard view filtered strictly by `Product.status == ProductStatus.AWAITING_INFO`. As a result, the badge showed 1 (or N+1), but clicking the button displayed 0 products in the list because the product was in `draft` state.
+  - **Model Signal Synchronization**: Implemented `post_save` and `post_delete` signals on `ProductClarification` in [`inventory/models.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/models.py):
+    - Automatically sets `Product.status = AWAITING_INFO` whenever a clarification is created or marked `PENDING` (unless the product is sold).
+    - Automatically transitions `Product.status` to `READY` when all pending clarifications on a product are resolved or deleted.
+  - **Context Processor Exclusions**: Updated `notifications(request)` in [`inventory/context_processors.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/context_processors.py) to exclude sold items (`product__is_sold=False` and `.exclude(product__status=ProductStatus.SOLD)`).
+  - **Dashboard Filter Hardening**: Updated `dashboard_view` in [`inventory/views.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/views.py) so filtering by `status=awaiting_info` and tab counts evaluate `Q(status=ProductStatus.AWAITING_INFO) | Q(clarifications__status=ClarificationStatus.PENDING, is_sold=False)`. This ensures any product with unresolved doubts is never orphaned or invisible when clicking the doubts button.
+  - **Form Validation Guard**: Added validation to `ProductUpdateForm` in [`inventory/forms.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/forms.py) preventing products from being manually marked as `Ready to Publish` while unresolved clarifications remain.
+  - **Data Migration**: Added `inventory/migrations/0011_sync_product_clarification_status.py` healing existing mismatched records across environments.
+  - **Automated Regression Test Suite**: Added `ClarificationLifecycleSynchronizationAndOrphanPreventionTests` in [`tests/test_clarifications.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_clarifications.py) verifying signal transitions, sold item exclusion, form validation, and dashboard inclusion.
 - **Production Role Groups Seeding, Docker Initialization & CustomGroupAdmin**:
+
   - **Root Cause Resolution**: Identified and resolved the two underlying causes preventing Django user groups (`assistants`, `managers`) from being available in production Docker containers:
     1. *Missing Migration Data Seeding*: Docker's production entrypoint runs `python manage.py migrate --noinput`. Previously, groups were only created manually via `setup_roles` or local superuser scripts. No data migration existed to initialize the `auth_group` table on clean database volumes.
     2. *Django Admin Permission Gating*: `Group` was registered with Django's default `GroupAdmin`, which requires superuser privileges or `auth.view_group` permissions. Standard store managers (`is_staff=True, is_superuser=False, groups=['managers']`) were denied module access (HTTP 403 Forbidden) and groups were completely hidden from their admin index.

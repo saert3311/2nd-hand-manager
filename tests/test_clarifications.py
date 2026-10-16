@@ -417,3 +417,116 @@ class AIServiceClarificationEnrichmentTests(TestCase):
         self.assertIn("100% Pure Scottish Virgin Wool with Orb mark", prompt_text)
 
 
+class ClarificationLifecycleSynchronizationAndOrphanPreventionTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.manager = User.objects.create_user(username="mgr_sync", password="password123", is_staff=True)
+        self.assistant = User.objects.create_user(username="asst_sync", password="password123")
+        self.product = Product.objects.create(raw_note="Silk vintage shirt", created_by=self.assistant)
+
+    def test_creating_pending_clarification_automatically_sets_status_to_awaiting_info(self):
+        self.assertEqual(self.product.status, ProductStatus.DRAFT)
+        ProductClarification.objects.create(
+            product=self.product,
+            category=ClarificationCategory.MEASUREMENTS,
+            question="What is the chest measurement?",
+            asked_by=self.manager,
+        )
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.status, ProductStatus.AWAITING_INFO)
+
+    def test_resolving_clarification_transitions_status_to_ready_when_none_remain(self):
+        clarif = ProductClarification.objects.create(
+            product=self.product,
+            category=ClarificationCategory.TAG_COMPOSITION,
+            question="Is it 100% silk?",
+            asked_by=self.manager,
+        )
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.status, ProductStatus.AWAITING_INFO)
+
+        clarif.resolve("Yes, 100% mulberry silk", answered_by=self.assistant)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.status, ProductStatus.READY)
+
+    def test_deleting_clarification_transitions_status_to_ready_when_none_remain(self):
+        clarif = ProductClarification.objects.create(
+            product=self.product,
+            category=ClarificationCategory.GENERAL,
+            question="Is this vintage?",
+            asked_by=self.manager,
+        )
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.status, ProductStatus.AWAITING_INFO)
+
+        clarif.delete()
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.status, ProductStatus.READY)
+
+    def test_sold_product_is_not_overwritten_by_clarification_signal(self):
+        self.product.mark_as_sold(price=Decimal("45.00"))
+        self.assertEqual(self.product.status, ProductStatus.SOLD)
+        self.assertTrue(self.product.is_sold)
+
+        ProductClarification.objects.create(
+            product=self.product,
+            category=ClarificationCategory.GENERAL,
+            question="Should not change sold status",
+            asked_by=self.manager,
+        )
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.status, ProductStatus.SOLD)
+        self.assertTrue(self.product.is_sold)
+
+    def test_notifications_excludes_sold_products_with_pending_clarifications(self):
+        from django.test.client import RequestFactory
+
+        from inventory.context_processors import notifications
+
+        self.product.mark_as_sold(price=Decimal("45.00"))
+        ProductClarification.objects.create(
+            product=self.product,
+            category=ClarificationCategory.GENERAL,
+            question="Unanswered question on sold product",
+            asked_by=self.manager,
+        )
+
+        factory = RequestFactory()
+        req = factory.get("/")
+        req.user = self.manager
+        self.assertEqual(notifications(req)["pending_clarifications_count"], 0)
+
+    def test_dashboard_awaiting_info_filter_includes_products_with_pending_clarifications(self):
+        Product.objects.filter(pk=self.product.pk).update(status=ProductStatus.DRAFT)
+        ProductClarification.objects.create(
+            product=self.product,
+            category=ClarificationCategory.MEASUREMENTS,
+            question="Arm length?",
+            asked_by=self.manager,
+        )
+        Product.objects.filter(pk=self.product.pk).update(status=ProductStatus.DRAFT)
+
+        self.client.login(username="mgr_sync", password="password123")
+        resp = self.client.get(reverse("inventory:dashboard"), {"status": "awaiting_info"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(self.product, list(resp.context["products"]))
+        self.assertEqual(resp.context["awaiting_info_count"], 1)
+
+    def test_product_update_form_blocks_ready_status_when_pending_clarifications_exist(self):
+        from inventory.forms import ProductUpdateForm
+
+        ProductClarification.objects.create(
+            product=self.product,
+            category=ClarificationCategory.MEASUREMENTS,
+            question="Pending question",
+            asked_by=self.manager,
+        )
+        form = ProductUpdateForm(
+            data={"status": ProductStatus.READY, "is_sold": False, "ai_title": "Test Title"},
+            instance=self.product,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("status", form.errors)
+
+
+

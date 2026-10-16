@@ -3,6 +3,8 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
@@ -421,6 +423,40 @@ class ProductClarification(models.Model):
         self.answered_at = timezone.now()
         if commit:
             self.save(update_fields=["answer", "answered_by", "status", "answered_at"])
+
+
+@receiver(post_save, sender=ProductClarification)
+def sync_product_on_clarification_save(sender, instance, **kwargs):
+    if kwargs.get("raw", False):
+        return
+    product = instance.product
+    if product.is_sold or product.status == ProductStatus.SOLD:
+        return
+    if instance.status == ClarificationStatus.PENDING:
+        if product.status != ProductStatus.AWAITING_INFO:
+            product.status = ProductStatus.AWAITING_INFO
+            product.save(update_fields=["status"])
+    elif instance.status == ClarificationStatus.RESOLVED:
+        has_pending = product.clarifications.filter(status=ClarificationStatus.PENDING).exists()
+        if not has_pending and product.status == ProductStatus.AWAITING_INFO:
+            product.status = ProductStatus.READY
+            product.save(update_fields=["status"])
+
+
+@receiver(post_delete, sender=ProductClarification)
+def sync_product_on_clarification_delete(sender, instance, **kwargs):
+    if kwargs.get("raw", False):
+        return
+    try:
+        product = instance.product
+    except Product.DoesNotExist:
+        return
+    if product.is_sold or product.status == ProductStatus.SOLD:
+        return
+    has_pending = product.clarifications.filter(status=ClarificationStatus.PENDING).exists()
+    if not has_pending and product.status == ProductStatus.AWAITING_INFO:
+        product.status = ProductStatus.READY
+        product.save(update_fields=["status"])
 
 
 class DatabaseBackupLog(models.Model):

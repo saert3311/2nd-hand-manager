@@ -211,7 +211,9 @@ def dashboard_view(request):
     elif status_filter == "sold":
         products = products.filter(is_sold=True)
     elif status_filter == "awaiting_info":
-        products = products.filter(status=ProductStatus.AWAITING_INFO)
+        products = products.filter(
+            Q(status=ProductStatus.AWAITING_INFO) | Q(clarifications__status=ClarificationStatus.PENDING, is_sold=False)
+        ).distinct()
     elif status_filter == "blocked":
         products = products.filter(status=ProductStatus.BLOCKED)
     elif status_filter == "ready":
@@ -233,7 +235,11 @@ def dashboard_view(request):
     counts = counts_qs.aggregate(
         total_count=Count("id", distinct=True),
         active_count=Count("id", filter=Q(is_sold=False), distinct=True),
-        awaiting_info_count=Count("id", filter=Q(status=ProductStatus.AWAITING_INFO), distinct=True),
+        awaiting_info_count=Count(
+            "id",
+            filter=Q(status=ProductStatus.AWAITING_INFO) | Q(clarifications__status=ClarificationStatus.PENDING, is_sold=False),
+            distinct=True,
+        ),
         sold_count=Count("id", filter=Q(status=ProductStatus.SOLD), distinct=True),
         blocked_count=Count("id", filter=Q(status=ProductStatus.BLOCKED), distinct=True),
     )

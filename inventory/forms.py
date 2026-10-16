@@ -6,7 +6,7 @@ from django.contrib.admin.forms import AdminAuthenticationForm
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import gettext_lazy as _
 
-from .models import ClarificationCategory, Product, ProductClarification, ProductStatus
+from .models import ClarificationCategory, ClarificationStatus, Product, ProductClarification, ProductStatus
 from .services.turnstile_service import verify_turnstile_token
 
 
@@ -143,6 +143,19 @@ class ProductUpdateForm(forms.ModelForm):
                 "class": "w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 transition cursor-pointer"
             }),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        status = cleaned_data.get("status")
+        is_sold = cleaned_data.get("is_sold")
+        if self.instance and self.instance.pk and not is_sold and status == ProductStatus.READY:
+            if self.instance.clarifications.filter(status=ClarificationStatus.PENDING).exists():
+                self.add_error(
+                    "status",
+                    _("Cannot mark product as Ready to Publish while pending clarifications remain unresolved.")
+                )
+        return cleaned_data
+
 
 
 class ProductClarificationForm(forms.ModelForm):
