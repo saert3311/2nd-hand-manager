@@ -36,8 +36,8 @@ class SecurityAndXSSProtectionTests(TestCase):
         self.assistant = User.objects.create_user(username="asst", password="password123")
         self.manager = User.objects.create_user(username="mgr", password="password123", is_staff=True)
 
-        asst_group = Group.objects.create(name=ROLE_ASSISTANT)
-        mgr_group = Group.objects.create(name=ROLE_MANAGER)
+        asst_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
+        mgr_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
         self.assistant.groups.add(asst_group)
         self.manager.groups.add(mgr_group)
 
@@ -267,8 +267,8 @@ class AccessControlAndSecurityHeadersTests(TestCase):
         self.assistant = User.objects.create_user(username="asst_user", password="password123")
         self.manager = User.objects.create_user(username="mgr_user", password="password123", is_staff=True)
 
-        asst_group = Group.objects.create(name=ROLE_ASSISTANT)
-        mgr_group = Group.objects.create(name=ROLE_MANAGER)
+        asst_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
+        mgr_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
         self.assistant.groups.add(asst_group)
         self.manager.groups.add(mgr_group)
 

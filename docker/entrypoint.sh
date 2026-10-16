@@ -11,6 +11,10 @@ python manage.py migrate --noinput
 echo "==> Collecting static assets..."
 python manage.py collectstatic --noinput
 
+# Verify system roles and groups exist
+echo "==> Verifying system roles and groups..."
+python manage.py setup_roles --no-demo-users
+
 # Execute the container's main process (passed as arguments)
 echo "==> Launching application server: $@"
 exec "$@"

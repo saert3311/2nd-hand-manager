@@ -19,8 +19,8 @@ User = get_user_model()
 class AuthAndPermissionsTests(TestCase):
     def setUp(self):
         self.client = Client()
-        self.assistant_group = Group.objects.create(name=ROLE_ASSISTANT)
-        self.manager_group = Group.objects.create(name=ROLE_MANAGER)
+        self.assistant_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
+        self.manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
 
         self.assistant_user = User.objects.create_user(
             username="assistant_joe", password="password123"

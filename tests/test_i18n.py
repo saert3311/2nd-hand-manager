@@ -10,8 +10,8 @@ from inventory.models import Product
 
 class InternationalizationTests(TestCase):
     def setUp(self):
-        self.assistant_group = Group.objects.create(name="assistants")
-        self.manager_group = Group.objects.create(name="managers")
+        self.assistant_group, _ = Group.objects.get_or_create(name="assistants")
+        self.manager_group, _ = Group.objects.get_or_create(name="managers")
 
         self.assistant_user = User.objects.create_user(
             username="assistant_jane",

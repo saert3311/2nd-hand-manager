@@ -36,6 +36,7 @@ class AdminAccessAndUserManagementTests(TestCase):
 
         self.admin_url = reverse("admin:index")
         self.user_changelist_url = reverse("admin:auth_user_changelist")
+        self.group_changelist_url = reverse("admin:auth_group_changelist")
 
     def test_manager_can_access_admin_portal(self):
         self.client.login(username="shop_manager", password="password123")
@@ -160,3 +161,36 @@ class AdminAccessAndUserManagementTests(TestCase):
 
         content = resp.content.decode("utf-8")
         self.assertIn("Administración", content)
+
+    def test_manager_can_access_and_view_groups(self):
+        self.client.login(username="shop_manager", password="password123")
+        resp = self.client.get(self.group_changelist_url)
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode("utf-8")
+        self.assertIn(ROLE_ASSISTANT, content)
+        self.assertIn(ROLE_MANAGER, content)
+
+    def test_groups_visible_in_admin_index_for_manager(self):
+        self.client.login(username="shop_manager", password="password123")
+        resp = self.client.get(self.admin_url)
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode("utf-8")
+        self.assertIn(self.group_changelist_url, content)
+
+    def test_assistant_strictly_forbidden_from_groups_admin(self):
+        self.client.login(username="intake_asst", password="password123")
+        resp = self.client.get(self.group_changelist_url)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_default_groups_seeded_in_database(self):
+        self.assertTrue(Group.objects.filter(name=ROLE_ASSISTANT).exists())
+        self.assertTrue(Group.objects.filter(name=ROLE_MANAGER).exists())
+
+    def test_custom_group_admin_displays_member_count(self):
+        self.client.login(username="shop_manager", password="password123")
+        resp = self.client.get(self.group_changelist_url)
+        self.assertEqual(resp.status_code, 200)
+        # Check that the changelist shows count for groups
+        content = resp.content.decode("utf-8")
+        self.assertIn("Members Count", content)
+

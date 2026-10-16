@@ -21,7 +21,7 @@ class ProductDetailAndZipDownloadTests(TestCase):
         self.manager = User.objects.create_user(username="mgr", password="password123", is_staff=True)
         self.assistant = User.objects.create_user(username="asst", password="password123")
 
-        asst_group = Group.objects.create(name=ROLE_ASSISTANT)
+        asst_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
         self.assistant.groups.add(asst_group)
 
         # Create product with an image

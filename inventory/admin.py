@@ -236,8 +236,34 @@ class CustomUserAdmin(DefaultUserAdmin):
             _("Successfully activated %(count)d user(s).") % {"count": updated},
         )
 
+class CustomGroupAdmin(GroupAdmin):
+    list_display = ("name", "user_count")
 
-admin_site.register(Group, GroupAdmin)
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.annotate(num_users=Count("user"))
+
+    @admin.display(description=_("Members Count"), ordering="num_users")
+    def user_count(self, obj):
+        return obj.num_users
+
+    def has_module_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_change_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_add_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_delete_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+
+admin_site.register(Group, CustomGroupAdmin)
 
 
 class ProductImageInline(admin.TabularInline):

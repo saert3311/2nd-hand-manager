@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Production Role Groups Seeding, Docker Initialization & CustomGroupAdmin**:
+  - **Root Cause Resolution**: Identified and resolved the two underlying causes preventing Django user groups (`assistants`, `managers`) from being available in production Docker containers:
+    1. *Missing Migration Data Seeding*: Docker's production entrypoint runs `python manage.py migrate --noinput`. Previously, groups were only created manually via `setup_roles` or local superuser scripts. No data migration existed to initialize the `auth_group` table on clean database volumes.
+    2. *Django Admin Permission Gating*: `Group` was registered with Django's default `GroupAdmin`, which requires superuser privileges or `auth.view_group` permissions. Standard store managers (`is_staff=True, is_superuser=False, groups=['managers']`) were denied module access (HTTP 403 Forbidden) and groups were completely hidden from their admin index.
+  - **Automatic Data Migration**: Created `inventory/migrations/0010_seed_default_groups.py` ensuring `assistants` and `managers` groups are idempotently seeded whenever migrations are applied.
+  - **Post-Migrate Signal (Defense-in-Depth)**: Connected `ensure_default_role_groups` to the `post_migrate` signal in [`inventory/apps.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/apps.py) guaranteeing groups exist across all environments, CI runs, and database resets.
+  - **Production Entrypoint Hardening**: Updated [`docker/entrypoint.sh`](file:///C:/Users/Jose/antigravity/epic-tesla/docker/entrypoint.sh) to execute `python manage.py setup_roles --no-demo-users` during container boot, verifying and logging role initialization to stdout.
+  - **CustomGroupAdmin Implementation**: Implemented `CustomGroupAdmin` in [`inventory/admin.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/admin.py) inheriting from `GroupAdmin`, overriding permission hooks (`has_module_permission`, `has_view_permission`, `has_change_permission`, `has_add_permission`, `has_delete_permission`) to grant store managers full access, and adding a members count column (`user_count`) annotated via `Count("user")`.
+  - **Automated Regression Test Suite**: Added test coverage in [`tests/test_admin_user_management.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_admin_user_management.py) verifying group access for store managers, group visibility in admin index, member count displays, and strict HTTP 403 denial for non-manager assistants.
 - **Intake Photo Preview Management, Deletion & FileList Synchronization**:
   - Implemented client-side photo state management in [`inventory/templates/inventory/intake.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/intake.html) tracking chosen files in an in-memory array `selectedFiles: File[]`.
   - Added cumulative photo capture: selecting files or taking pictures with a smartphone camera appends newly selected valid files to `selectedFiles` up to the 10-image maximum rather than replacing previous selections.

@@ -19,7 +19,7 @@ class GenerateAIViewTests(TestCase):
         self.client = Client()
         self.manager = User.objects.create_user(username="manager_ai", password="password123", is_staff=True)
         self.assistant = User.objects.create_user(username="asst_ai", password="password123")
-        asst_group = Group.objects.create(name=ROLE_ASSISTANT)
+        asst_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
         self.assistant.groups.add(asst_group)
 
         self.product = Product.objects.create(
