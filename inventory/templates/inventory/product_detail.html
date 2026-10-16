@@ -1,5 +1,5 @@
 {% extends "inventory/base.html" %}
-{% load i18n %}
+{% load i18n l10n %}
 
 {% block title %}{{ product.display_title }} - {% trans "Staging" %}{% endblock %}
 
@@ -27,6 +27,12 @@
         {% elif product.status == 'sold' %}🏷️ {% trans "Sold" %}
         {% else %}📝 {% trans "Draft" %}{% endif %}
       </span>
+      {% if product.sale_price is not None %}
+      <span>&bull;</span>
+      <span id="product-price-badge" class="product-price-badge text-xs font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full shadow-sm">
+        €{{ product.sale_price|floatformat:2 }}
+      </span>
+      {% endif %}
     </div>
 
     <div class="flex items-center gap-2">
@@ -283,9 +289,16 @@
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">{% trans "Marketplace Listing Copy" %}</h2>
-          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full {% if product.is_sold %}bg-slate-100 text-slate-700{% else %}bg-emerald-100 text-emerald-800{% endif %}">
-            {% if product.is_sold %}{% trans "Status: Sold" %}{% else %}{% trans "Status: Available for Sale" %}{% endif %}
-          </span>
+          <div class="flex items-center gap-2">
+            {% if product.sale_price is not None %}
+            <span class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+              €{{ product.sale_price|floatformat:2 }}
+            </span>
+            {% endif %}
+            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full {% if product.is_sold %}bg-slate-100 text-slate-700{% else %}bg-emerald-100 text-emerald-800{% endif %}">
+              {% if product.is_sold %}{% trans "Status: Sold" %}{% else %}{% trans "Status: Available for Sale" %}{% endif %}
+            </span>
+          </div>
         </div>
 
         <form method="post" class="space-y-5">
@@ -328,8 +341,10 @@
               <div class="relative flex items-center">
                 <span class="absolute left-3 text-slate-400 font-bold">€</span>
                 <input type="number" step="0.01" min="0" name="sale_price" id="id_sale_price"
-                       value="{{ form.sale_price.value|default:'' }}"
-                       class="w-full pl-8 pr-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                       value="{{ form.sale_price.value|unlocalize|default:'' }}"
+                       placeholder="0.00"
+                       {% if not can_manage %}readonly disabled{% endif %}
+                       class="w-full pl-8 pr-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 {% if not can_manage %}bg-slate-50 cursor-not-allowed text-slate-600{% endif %}">
               </div>
             </div>
 

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Product Detail Staging View Sale Price Rendering & HTML5 Number Localization**:
+  - **Root Cause Resolution**: Diagnosed and resolved the issue where a sale price entered during intake appeared in the dashboard list view but was missing/empty in the product detail view:
+    1. *HTML5 Comma Sanitization*: In [`inventory/templates/inventory/product_detail.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/product_detail.html), the input field rendered `value="{{ form.sale_price.value|default:'' }}"`. Under the Spanish locale (`es`), Django's localization formats decimal values with a comma (e.g., `'35,50'`). According to the HTML5 specification, `<input type="number">` strictly requires an ASCII period floating-point representation; when given a value with a comma, web browsers (Chrome, Edge, Safari, Firefox) execute the value sanitization algorithm and reset the field to an empty string `""`.
+    2. *Data Loss Risk on Update*: If a user submitted listing changes while the field was wiped by the browser, the empty string coerced the database `sale_price` to `None`.
+    3. *Missing Visual Price Badges in Staging Detail*: Unlike the dashboard list view (which featured a prominent `€XX.XX` badge), the product detail page lacked a summary price badge in the header/breadcrumb bar and card header.
+  - **HTML5 Input Unlocalization**: Loaded `l10n` in `product_detail.html` and applied `unlocalize` (`value="{{ form.sale_price.value|unlocalize|default:'' }}"`) to guarantee standard period-separated floating-point formatting (`35.50`) regardless of active user locale.
+  - **Prominent Price Badges**: Added an eye-catching `#product-price-badge` badge (`€{{ product.sale_price|floatformat:2 }}`) to the breadcrumb top bar and staging card header in `product_detail.html`.
+  - **Assistant Readonly Guard**: Added `readonly disabled` attributes and background styling to `#id_sale_price` for non-manager assistants viewing the staging detail page.
+  - **Form Widget Attributes**: Added `placeholder="0.00"` and `inputmode="decimal"` to `ProductUpdateForm.sale_price` in [`inventory/forms.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/forms.py).
+  - **Automated Regression Test Suite**: Added end-to-end assertions in [`tests/test_intake.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_intake.py) (`test_intake_sale_price_displays_in_dashboard_and_product_detail`) and [`tests/test_i18n.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_i18n.py) verifying that intake prices render properly across dashboard and detail views under both English and Spanish locales.
+
 ### Added
 - **Clarification Status Synchronization, Orphan Product Prevention & Dudas Badge Accuracy**:
   - **Root Cause Resolution**: Diagnosed and resolved the persistent active `❓ Dudas` navbar badge and phantom/orphan product behavior (`Product ID=81` with note `"Mobile Nav Test Jacket"`):

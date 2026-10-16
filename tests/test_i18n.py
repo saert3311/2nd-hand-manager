@@ -96,6 +96,11 @@ class InternationalizationTests(TestCase):
         self.assertIn("Guardar Cambios de Publicación", content)
         # Verify raw note is preserved unchanged
         self.assertIn("Original 1994 Pink Floyd tour tee, size XL", content)
+        # Verify price badge is rendered and price input has valid unlocalized dot value
+        self.assertIn("product-price-badge", content)
+        self.assertIn("45", content)
+        self.assertIn('value="45.00"', content)
+        self.assertNotIn('value="45,00"', content)
 
     def test_manual_language_switch_sets_cookie_and_overrides_header(self):
         setlang_url = reverse("set_language")

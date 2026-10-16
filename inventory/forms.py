@@ -120,7 +120,9 @@ class ProductUpdateForm(forms.ModelForm):
             "step": "0.01",
             "min": "0",
             "max": "9999999.99",
-            "class": "w-36 px-3.5 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold"
+            "placeholder": "0.00",
+            "inputmode": "decimal",
+            "class": "w-full pl-8 pr-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500",
         }),
     )
     status = forms.ChoiceField(

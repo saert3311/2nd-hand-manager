@@ -102,6 +102,43 @@ class ProductIntakeViewTests(TestCase):
         self.assertEqual(product.sale_price, Decimal("35.50"))
         self.assertEqual(product.raw_note, "Vintage Nike windbreaker")
 
+    def test_intake_sale_price_displays_in_dashboard_and_product_detail(self):
+        self.client.login(username="assistant1", password="password123")
+        img = self.create_dummy_image("item.jpg")
+
+        self.client.post(
+            self.url,
+            {
+                "raw_note": "Vintage Nike windbreaker",
+                "sale_price": "29.99",
+                "images": [img],
+            }
+        )
+        product = Product.objects.get(raw_note="Vintage Nike windbreaker")
+
+        # 1. Check dashboard list view
+        dash_resp = self.client.get(reverse("inventory:dashboard"))
+        self.assertEqual(dash_resp.status_code, 200)
+        self.assertContains(dash_resp, "29.99")
+
+        # 2. Check product detail view in English
+        detail_resp = self.client.get(reverse("inventory:product_detail", kwargs={"pk": product.pk}))
+        self.assertEqual(detail_resp.status_code, 200)
+        self.assertContains(detail_resp, "product-price-badge")
+        self.assertContains(detail_resp, 'value="29.99"')
+
+        # 3. Check product detail view in Spanish (avoiding HTML5 comma sanitization bug)
+        detail_es = self.client.get(
+            reverse("inventory:product_detail", kwargs={"pk": product.pk}),
+            headers={"accept-language": "es"}
+        )
+        self.assertEqual(detail_es.status_code, 200)
+        content_es = detail_es.content.decode("utf-8")
+        self.assertIn("product-price-badge", content_es)
+        self.assertIn('value="29.99"', content_es)
+        self.assertNotIn('value="29,99"', content_es)
+
+
     def test_intake_post_with_blank_sale_price_sets_none(self):
         self.client.login(username="assistant1", password="password123")
         img = self.create_dummy_image("item.jpg")
