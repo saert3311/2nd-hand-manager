@@ -203,6 +203,10 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 | HTML5 `DataTransfer` unsupported in archaic browsers | Low | Modern baseline browsers (Chrome, Firefox, Safari 14.5+, Edge) fully support `new DataTransfer()`; feature detect and fallback gracefully if missing. |
 | Tapping delete button unintentionally triggering file picker | High | `#previewContainer` is positioned outside `#dropZone` in the DOM; delete button click handler calls `e.stopPropagation()` and `e.preventDefault()`. |
 | Race condition from photo deletion during active AI pre-flight or form submit | High | Form state guarding disables all delete buttons (`pointer-events-none opacity-50 cursor-not-allowed`) during `'identifying'` and `'submitting'` states. |
+| Service Worker served under `/static/` failing to control `/intake/` and `/dashboard/` | High | Serve `/sw.js` and `/manifest.json` from root routes in `inventory/urls.py` with `Service-Worker-Allowed: /` and `Cache-Control: no-cache` headers. |
+| Service Worker caching dynamic HTML pages and breaking Django CSRF tokens | High | Implement a pure network pass-through `fetch` listener in `/sw.js` with zero HTML/CSRF caching (Decision 42). |
+| Revoked or expired browser push endpoints accumulating or failing requests | Medium | Catch `WebPushException` in `push_service.py`; automatically delete `PushSubscription` records on HTTP `404`/`410 Gone` and swallow network timeouts (`timeout=5`) so user requests never fail. |
+| iOS Safari hiding `PushManager` when opened in a regular browser tab | Medium | Feature-detect `'PushManager' in window` and iOS standalone mode; display a friendly non-blocking helper toast instructing iOS users to tap *"Share → Add to Home Screen"*. |
 
 ---
 
@@ -236,6 +240,10 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - Approved: Intake title field: Hidden input auto-populated by identify button without cluttering assistant UI (Option A).
 - Approved: Zero price handling: Treats `<= 0.00` or None as price pending (Option A).
 - Approved: Fast-track transition: Items with pre-entered price promote straight from DRAFT to READY upon description creation (Option A).
+- Approved: PWA & Push target users: Both Assistants (mobile intake & answering doubts) and Managers (staging & reviewing) (Option A).
+- Approved: Push notification implementation scope: Full Web Push plumbing (`pywebpush`, VAPID keys, Service Worker `push`/`notificationclick` handlers, `PushSubscription` model, subscribe/unsubscribe/test endpoints, UI toggle) + helper service (Option A).
+- Approved: Target push workflow events: Clarification Doubts Q&A (`PENDING` / `ANSWERED`) and New Intake / Lifecycle Bottlenecks (`DRAFT` / `PRICE_PENDING`), controlled via `.env` flag `PUSH_NOTIFICATIONS_LIVE_SIGNALS`.
+- Approved: Service Worker caching strategy: Minimal pass-through Service Worker strictly for PWA installability and Push Notifications, no caching (Option B).
 
 ---
 
@@ -245,6 +253,16 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - [x] **Task 64:** Dashboard Filtering, Status Counts & Staging UI Badges (`views.py`, `dashboard.html`, `product_detail.html`)
 - [x] **Task 65:** i18n Localization, Unit & Regression Tests, and Real-Browser Verification
 - [x] **Checkpoint 19 (Lifecycle & Intake Complete):** Full lifecycle automation verified across all states (`DRAFT`, `PRICE_PENDING`, `READY`, `PUBLISHED`, `AWAITING_INFO`, `SOLD`, `BLOCKED`), intake identification uses `gemini-flash-latest` and populates `ai_title`, dashboard button filter works with live count, and all tests pass with 0 regressions.
+
+---
+
+### Phase 20: Installable PWA Support, VAPID Web Push Infrastructure & Live Signal Triggers (Vertical Slice 16)
+- [ ] **Task 66:** PWA Web App Manifest (`/manifest.json`), App Icons (`192x192`, `512x512`, `apple-touch-icon`), Meta Tags & Root Pass-Through Service Worker (`/sw.js`) (`inventory/views.py`, `inventory/urls.py`, `inventory/templates/inventory/sw.js`, `inventory/templates/inventory/base.html`, `inventory/static/inventory/icons/`).
+- [ ] **Task 67:** `PushSubscription` Model, VAPID Settings, `generate_vapid_keys` Command, Django Admin Action & `push_service.py` Dispatcher (`requirements.txt`, `config/settings.py`, `.env.example`, `inventory/models.py`, `inventory/migrations/0013_pushsubscription.py`, `inventory/admin.py`, `inventory/services/push_service.py`, `inventory/management/commands/generate_vapid_keys.py`).
+- [ ] **Task 68:** Push Subscription JSON API Endpoints (`/api/push/subscribe/`, `/api/push/unsubscribe/`, `/api/push/test/`), Navbar/Drawer Notification Toggle UI & `.env`-Guarded Live Workflow Signals (`inventory/views.py`, `inventory/urls.py`, `inventory/context_processors.py`, `inventory/models.py`, `inventory/templates/inventory/base.html`).
+- [ ] **Task 69:** Bilingual Localization (`es`/`en`), Comprehensive Unit & Integration Test Suite (`tests/test_pwa_push.py`) & Real Chrome Browser Verification (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_pwa_push.py`, `CHANGELOG.md`).
+- [ ] **Checkpoint 20 (PWA Support & Web Push Notifications Complete):** `/manifest.json` and root `/sw.js` register cleanly with scope `/`; PWA icons and meta tags render across pages; `PushSubscription` model and VAPID key generator work; subscribe/unsubscribe/test endpoints and navbar/drawer UI toggles function properly; `push_service.py` dispatches encrypted Web Push payloads and prunes `404`/`410` subscriptions; `PUSH_NOTIFICATIONS_LIVE_SIGNALS` controls automatic signal alerts for Clarification Doubts and Draft/Price Pending bottlenecks; all unit and browser tests pass with 0 regressions.
+
 
 
 

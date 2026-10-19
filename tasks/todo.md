@@ -1531,5 +1531,106 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 - [x] Catalog dashboard features a dedicated "Precio pendiente" filter tab with live counts.
 - [x] Real Chrome browser verification script confirms end-to-end functionality.
 
+---
+
+## Phase 20: Installable PWA Support, VAPID Web Push Infrastructure & Live Signal Triggers
+
+### Task 66: PWA Web App Manifest, App Icons, Meta Tags & Root Pass-Through Service Worker
+**Description:** Generate branded PWA icons (`icon-192.png`, `icon-512.png`, `apple-touch-icon.png`) under `inventory/static/inventory/icons/`. Implement `manifest_view` (`/manifest.json`) and `service_worker_view` (`/sw.js`) in `inventory/views.py` and register root routes in `inventory/urls.py`. Create `inventory/templates/inventory/sw.js` with `install`, `activate`, a zero-cache pass-through `fetch` handler, a `push` event listener (rendering JSON notifications with `tag` collapsing and `navigator.setAppBadge`), and a `notificationclick` listener (focusing existing tab or opening deep-link URL). Add `<link rel="manifest">`, `theme-color`, Apple touch icon, and Service Worker registration script to `inventory/templates/inventory/base.html`.
+**Acceptance criteria:**
+- [x] `GET /manifest.json` returns `200 OK` with `Content-Type: application/manifest+json`, `display: "standalone"`, `scope: "/"`, and valid icon references.
+- [x] `GET /sw.js` returns `200 OK` with `Content-Type: application/javascript`, `Service-Worker-Allowed: /`, and `Cache-Control: no-cache, no-store, must-revalidate`.
+- [x] `/sw.js` implements pass-through `fetch` (no HTML/CSRF caching), `push`, and `notificationclick` listeners.
+- [x] `base.html` includes `<link rel="manifest">`, `<meta name="theme-color" content="#059669">`, Apple PWA meta tags, and registers `/sw.js` on load.
+**Verification:**
+- [x] Unit tests pass: `.venv\Scripts\python.exe manage.py test tests.test_pwa_push`
+**Dependencies:** None
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/urls.py`
+- `inventory/templates/inventory/sw.js`
+- `inventory/templates/inventory/base.html`
+- `inventory/static/inventory/icons/icon-192.png`
+- `inventory/static/inventory/icons/icon-512.png`
+- `inventory/static/inventory/icons/apple-touch-icon.png`
+**Estimated scope:** Medium (5 files + static icons)
+
+---
+
+### Task 67: `PushSubscription` Model, VAPID Configuration, Key Generator Command & `push_service.py`
+**Description:** Add `pywebpush>=2.0.1` to `requirements.txt`. Add `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_CLAIMS_EMAIL`, and `PUSH_NOTIFICATIONS_LIVE_SIGNALS` to `config/settings.py` and `.env.example`. Implement the `PushSubscription` model in `inventory/models.py` (`user`, `endpoint` unique, `p256dh`, `auth`, `user_agent`, `is_active`, timestamps), generate and apply migration `0013_pushsubscription.py`, and register `PushSubscriptionAdmin` in `inventory/admin.py` with a `"Send test push notification"` admin action. Implement `inventory/management/commands/generate_vapid_keys.py` to generate ECDSA P-256 VAPID keys. Implement `inventory/services/push_service.py` with `is_push_configured()`, `send_push_to_subscription()`, `send_push_to_user()`, and `send_push_to_group()` including automatic pruning of expired subscriptions on HTTP `404`/`410 Gone`.
+**Acceptance criteria:**
+- [x] `PushSubscription` model and migration `0013_pushsubscription.py` created and applied cleanly.
+- [x] `python manage.py generate_vapid_keys` outputs valid Base64URL `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` values.
+- [x] `push_service.py` dispatches encrypted Web Push payloads via `pywebpush.webpush()` and automatically deletes subscriptions returning HTTP `404` or `410`.
+- [x] `PushSubscriptionAdmin` accessible to Managers in Django Admin with `"Send test push notification"` action.
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py generate_vapid_keys`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`
+- [x] Unit tests pass: `.venv\Scripts\python.exe manage.py test tests.test_pwa_push`
+**Dependencies:** Task 66
+**Files likely touched:**
+- `requirements.txt`
+- `config/settings.py`
+- `.env.example`
+- `inventory/models.py`
+- `inventory/migrations/0013_pushsubscription.py`
+- `inventory/admin.py`
+- `inventory/services/push_service.py`
+- `inventory/management/commands/generate_vapid_keys.py`
+**Estimated scope:** Medium (5-7 files)
+
+---
+
+### Task 68: Push Subscription JSON Endpoints, Navbar/Drawer Toggle UI & `.env`-Guarded Live Workflow Signals
+**Description:** Implement authenticated JSON endpoints `push_subscribe_view` (`POST /api/push/subscribe/`), `push_unsubscribe_view` (`POST /api/push/unsubscribe/`), and `push_test_view` (`POST /api/push/test/`) in `inventory/views.py` and `inventory/urls.py`. Update `inventory/context_processors.py` to expose `VAPID_PUBLIC_KEY`, `PUSH_CONFIGURED`, and `user_has_push_subscription`. Add the `"🔔 Activar alertas"` / `"🔔 Alertas activas"` toggle button to both the desktop navbar and mobile drawer in `inventory/templates/inventory/base.html`, including client-side `PushManager.subscribe()` handling, iOS non-standalone detection hint, and `navigator.setAppBadge` synchronization. Wire live signal handlers in `inventory/models.py` guarded by `settings.PUSH_NOTIFICATIONS_LIVE_SIGNALS` for Clarification Doubts Q&A (`PENDING` -> notify `assistants`; `ANSWERED` -> notify `managers`) and Intake/Lifecycle bottlenecks (`DRAFT` creation and `PRICE_PENDING` transition -> notify `managers`).
+**Acceptance criteria:**
+- [x] `POST /api/push/subscribe/`, `/api/push/unsubscribe/`, and `/api/push/test/` authenticate the user, validate payloads, and manage `PushSubscription` records idempotently.
+- [x] Desktop navbar (`#push-toggle-btn`) and mobile drawer (`#mobile-push-toggle-btn`) render the push toggle button and reflect active subscription state.
+- [x] When `PUSH_NOTIFICATIONS_LIVE_SIGNALS=True`, creating a doubt notifies `assistants`, answering a doubt notifies `managers`, and new `DRAFT` or `PRICE_PENDING` transitions notify `managers`.
+- [x] When `PUSH_NOTIFICATIONS_LIVE_SIGNALS=False`, signals do not dispatch push notifications.
+**Verification:**
+- [x] View and signal tests pass: `.venv\Scripts\python.exe manage.py test tests.test_pwa_push`
+**Dependencies:** Task 66, Task 67
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/urls.py`
+- `inventory/context_processors.py`
+- `inventory/models.py`
+- `inventory/templates/inventory/base.html`
+**Estimated scope:** Medium (5 files)
+
+---
+
+### Task 69: Bilingual Localization (`es`/`en`), Comprehensive Test Suite & Real Chrome Browser Verification
+**Description:** Add Spanish translations for all new PWA and Push Notification UI strings (`Enable Alerts`, `Alerts Active`, `Send Test Push`, iOS Home Screen hint, notification titles/bodies) in `locale/es/LC_MESSAGES/django.po` and compile `django.mo` via `python manage.py compile_locales`. Write comprehensive unit, API, signal, and real Chrome browser tests in `tests/test_pwa_push.py`. Update `CHANGELOG.md`. Run `ruff check .` and the full test suite (`python manage.py test`).
+**Acceptance criteria:**
+- [x] All new strings translated in `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`.
+- [x] `tests/test_pwa_push.py` covers manifest, service worker headers/scope, subscription CRUD endpoints, `410 Gone` pruning, `generate_vapid_keys`, `.env` signal triggers, and Chrome Service Worker registration.
+- [x] Full test suite passes with 0 errors and `ruff check .` passes cleanly.
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check .`
+- [x] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+**Dependencies:** Task 66, Task 67, Task 68
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_pwa_push.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (4 files)
+
+---
+
+## Checkpoint 20: Installable PWA Support, VAPID Web Push Infrastructure & Live Signal Triggers Complete
+- [x] `/manifest.json` and root-scoped pass-through `/sw.js` are served and registered cleanly across pages.
+- [x] PWA icons (`192x192`, `512x512`, `apple-touch-icon.png`) and meta tags are present in `base.html`.
+- [x] `PushSubscription` model, admin action, `generate_vapid_keys` command, and `push_service.py` are implemented and verified.
+- [x] Subscribe/unsubscribe/test JSON endpoints and navbar/drawer UI toggles work end-to-end.
+- [x] `.env` flag `PUSH_NOTIFICATIONS_LIVE_SIGNALS` controls automatic signal-driven push alerts for Clarification Doubts and Draft/Price Pending bottlenecks.
+- [x] All unit tests, browser tests, and Ruff lint checks pass with 0 regressions.
+
+
+
 
 
