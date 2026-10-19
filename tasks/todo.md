@@ -1426,4 +1426,110 @@ Update `CHANGELOG.md` under `[Unreleased]`. Run full test suite and Ruff linter.
 - [x] Delete buttons meet 44×44px touch target guidelines and are locked during async operations.
 - [x] Real Chrome browser automation test passes end-to-end, and all unit tests pass with 0 regressions.
 
+---
+
+## Phase 19: Refined Product Lifecycle States, Dashboard Filtering & Intake AI Title Autofill
+
+### Task 62: Domain Layer & State Machine Expansion
+**Description:** Expand `ProductStatus` in `inventory/models.py` with `PRICE_PENDING = "price_pending"` and `PUBLISHED = "published"`. Implement `Product.compute_lifecycle_status()` with automatic state rules:
+- `SOLD` if `self.is_sold or self.status == ProductStatus.SOLD`
+- `BLOCKED` if `self.status == ProductStatus.BLOCKED`
+- `AWAITING_INFO` if `self.clarifications.filter(status=ClarificationStatus.PENDING).exists()`
+- `PUBLISHED` if `self.listing_links.filter(is_active=True).exists()`
+- If no description (`not self.ai_description or not self.ai_description.strip()`): `DRAFT`
+- If title and description, but price is None or `<= Decimal("0.00")`: `PRICE_PENDING`
+- If title, description, and price `> Decimal("0.00")`: `READY`
+Implement `sync_lifecycle_status()` on `Product` and connect signals on `ProductListingLink` (`post_save`, `post_delete`) and `ProductClarification` (`post_save`, `post_delete`) to trigger state recalculation. Generate and execute Django migration `0012_*.py`.
+**Acceptance criteria:**
+- [x] `ProductStatus` has `PRICE_PENDING` and `PUBLISHED` options with localized display names.
+- [x] `compute_lifecycle_status()` handles all combinations of title, description, price, links, and clarifications.
+- [x] `Product.save()` automatically updates status when not manually set to SOLD or BLOCKED.
+- [x] Signals on `ProductListingLink` automatically set `PUBLISHED` on link save and revert to computed state on link delete.
+- [x] Signals on `ProductClarification` revert from `AWAITING_INFO` to computed state (`PUBLISHED`, `READY`, `PRICE_PENDING`, `DRAFT`) when doubts are resolved.
+- [x] Migration generated and applied cleanly: `python manage.py makemigrations && python manage.py migrate`.
+**Verification:**
+- [x] Command succeeds: `python manage.py makemigrations --check --dry-run`
+- [x] Unit tests pass: `python manage.py test tests.test_lifecycle`
+**Dependencies:** None
+**Files likely touched:**
+- `inventory/models.py`
+- `inventory/migrations/0012_*.py`
+- `tests/test_lifecycle.py`
+**Estimated scope:** Medium (3 files)
+
+---
+
+### Task 63: Intake AI Vision Model Upgrade & Hidden Title Autofill
+**Description:** Update `inventory/services/ai_service.py` so `identify_intake_product` uses model `gemini-flash-latest`. Update `ProductIntakeForm` in `inventory/forms.py` to include `ai_title` as a hidden input. Update `inventory/templates/inventory/intake.html` to render `{{ form.ai_title }}` and update the client-side `identifyBtn` handler to populate `document.getElementById('id_ai_title').value = data.identified_title` upon successful response. Update `ProductIntakeView` in `inventory/views.py` so `product.ai_title` is saved from the intake form.
+**Acceptance criteria:**
+- [x] `identify_intake_product` calls Google GenAI SDK with `model="gemini-flash-latest"`.
+- [x] `ProductIntakeForm` includes `ai_title` field rendered with `HiddenInput`.
+- [x] Client-side JS populates `#id_ai_title` when "Identificar producto" finishes.
+- [x] Saving the intake form stores `ai_title` on the new `Product` instance, preventing generic title fallbacks.
+**Verification:**
+- [x] Unit & view tests pass: `python manage.py test tests.test_intake`
+**Dependencies:** Task 62
+**Files likely touched:**
+- `inventory/services/ai_service.py`
+- `inventory/forms.py`
+- `inventory/templates/inventory/intake.html`
+- `inventory/views.py`
+- `tests/test_intake.py`
+**Estimated scope:** Medium (4-5 files)
+
+---
+
+### Task 64: Dashboard Filtering, Status Counts & Staging UI Badges
+**Description:** In `inventory/views.py` (`dashboard_view`), add query filtering for `status_filter == "price_pending"` and `status_filter == "published"`. Add `price_pending_count` to status counter aggregation scoped to active platform filters and search queries. In `inventory/templates/inventory/dashboard.html`, add the "Precio pendiente" button filter tab with counter badge `({{ price_pending_count }})`. In `inventory/templates/inventory/product_detail.html`, add badge styling for `PRICE_PENDING` (amber/orange badge) and `PUBLISHED` (cyan/blue badge).
+**Acceptance criteria:**
+- [x] Dashboard displays **"Precio pendiente"** tab between Active/Doubts with live count.
+- [x] Clicking "Precio pendiente" filters catalog to items with title and description but missing price.
+- [x] Counter for `price_pending_count` updates dynamically when platform or search filters are applied.
+- [x] Product detail page renders distinct badges for `PRICE_PENDING` and `PUBLISHED`.
+**Verification:**
+- [x] View tests pass: `python manage.py test tests.test_dashboard`
+**Dependencies:** Task 62, Task 63
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/templates/inventory/dashboard.html`
+- `inventory/templates/inventory/product_detail.html`
+- `tests/test_dashboard.py`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 65: i18n Localization, Unit & Regression Tests, and Real-Browser Verification
+**Description:** Add Spanish translation strings for `"Price Pending"` / `"Precio pendiente"` and `"Published"` / `"Publicado"` in `locale/es/LC_MESSAGES/django.po` and compile to `django.mo`. Write comprehensive unit tests for all state transitions, view queries, and form saves. Execute full test suite (`python manage.py test`) ensuring all 281 tests pass with 0 regressions. Create and run a real Google Chrome verification script testing:
+1. Intake form: clicking "Identificar producto" sets `ai_title` in background; item is saved in `DRAFT`.
+2. Manager adds description: item auto-transitions to `PRICE_PENDING`.
+3. Dashboard filter button "Precio pendiente" lists the item with live badge count.
+4. Manager inputs price: item auto-transitions to `READY`.
+5. Manager adds marketplace link: item auto-transitions to `PUBLISHED`.
+6. Manager deletes link: item auto-reverts to `READY`.
+**Acceptance criteria:**
+- [x] All new strings localized in `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`.
+- [x] Full automated test suite passes with 100% success (281 tests).
+- [x] Real Chrome browser verification succeeds and captures screenshots for all lifecycle states.
+**Verification:**
+- [x] Command succeeds: `python manage.py compile_locales` (or `compilemessages`)
+- [x] Full test suite passes: `python manage.py test`
+- [x] Browser script succeeds: `python manage.py test tests.test_browser_lifecycle`
+**Dependencies:** Task 62, Task 63, Task 64
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_lifecycle.py`
+- `tests/test_browser_lifecycle.py`
+**Estimated scope:** Medium (4 files)
+
+---
+
+## Checkpoint 19: Refined Product Lifecycle, Dashboard Filtering & Intake AI Title Complete
+- [x] Product status machine implements `DRAFT`, `PRICE_PENDING`, `READY`, `PUBLISHED`, `AWAITING_INFO`, `SOLD`, `BLOCKED`.
+- [x] State transitions are 100% automated on product save and link additions/deletions.
+- [x] Intake pre-flight AI identification uses `gemini-flash-latest` and populates `ai_title` hidden input.
+- [x] Catalog dashboard features a dedicated "Precio pendiente" filter tab with live counts.
+- [x] Real Chrome browser verification script confirms end-to-end functionality.
+
+
 

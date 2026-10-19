@@ -20,6 +20,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Automated Regression Test Suite**: Added end-to-end assertions in [`tests/test_intake.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_intake.py) (`test_intake_sale_price_displays_in_dashboard_and_product_detail`) and [`tests/test_i18n.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_i18n.py) verifying that intake prices render properly across dashboard and detail views under both English and Spanish locales.
 
 ### Added
+- **Refined Product Lifecycle State Machine & Automated State Transitions**:
+  - Implemented automated state machine in [`inventory/models.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/models.py) (`compute_lifecycle_status()` and `sync_lifecycle_status()`):
+    - `DRAFT`: Products lacking AI/final description (`not ai_description`).
+    - `PRICE_PENDING`: Products with title and description, but no sale price (or `sale_price <= Decimal("0.00")`).
+    - `READY`: Products with title, description, and price > 0, but no active external marketplace links.
+    - `PUBLISHED`: Automatically assigned as soon as any active external marketplace listing link (`ProductListingLink`) is added.
+    - `AWAITING_INFO` / `BLOCKED` / `SOLD`: Unsold or clarification resolution events dynamically re-evaluate the state machine.
+  - Connected automated post-save and post-delete signals on `ProductListingLink` and `ProductClarification`.
+  - Created and applied database migration `0012_add_lifecycle_states_and_sync.py`.
+  - Added unit test suite [`tests/test_lifecycle.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_lifecycle.py) verifying all lifecycle permutations.
+- **Intake Vision AI Model Upgrade (`gemini-flash-latest`) & Hidden Title Autofill**:
+  - Upgraded [`identify_intake_product`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/services/ai_service.py) model constant to `gemini-flash-latest`.
+  - Added hidden `ai_title` input to `ProductIntakeForm` in [`inventory/forms.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/forms.py) and [`inventory/templates/inventory/intake.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/intake.html).
+  - Populated `#id_ai_title` automatically via client-side JavaScript upon pre-flight AI identification, eliminating generic `Producto #XX` placeholder titles without cluttering the assistant intake view.
+- **Catalog Dashboard "Precio pendiente" Filter Tab & Status Badges**:
+  - Added `status=price_pending` filter query handling and scoped `price_pending_count` aggregation in [`inventory/views.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/views.py).
+  - Added dedicated "Precio pendiente" tab with live count badge `({{ price_pending_count }})` in [`inventory/templates/inventory/dashboard.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/dashboard.html).
+  - Added badge styling for `PRICE_PENDING` (amber) and `PUBLISHED` (cyan/blue) across dashboard cards and product detail views.
+  - Added Spanish translations in `locale/es/LC_MESSAGES/django.po` compiled to `django.mo`.
+- **End-to-End Real Chrome Lifecycle Verification Suite**:
+  - Added [`tests/test_browser_lifecycle.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_browser_lifecycle.py) testing all 11 lifecycle stages in Google Chrome via Playwright.
+  - Captured full visual verification screenshots in `screenshots/`.
 - **Clarification Status Synchronization, Orphan Product Prevention & Dudas Badge Accuracy**:
   - **Root Cause Resolution**: Diagnosed and resolved the persistent active `❓ Dudas` navbar badge and phantom/orphan product behavior (`Product ID=81` with note `"Mobile Nav Test Jacket"`):
     1. *Inconsistent Product Status*: The test product had an unresolved clarification question (`"Check shoulder width?"`) but had its `Product.status` set to `draft` (rather than `awaiting_info`).

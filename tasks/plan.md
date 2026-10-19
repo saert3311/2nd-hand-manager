@@ -233,6 +233,19 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - Approved: Mobile drawer style: Sticky dropdown accordion directly beneath the header (`bg-white border-b border-slate-200 shadow-lg`) with page content scrollable beneath (Option A).
 - Approved: Multi-step camera capture: Cumulative append up to 10 photos (Option A).
 - Approved: AI pre-flight advisory state on photo deletion: Retain advisory banner unless all photos are deleted (Option A).
+- Approved: Intake title field: Hidden input auto-populated by identify button without cluttering assistant UI (Option A).
+- Approved: Zero price handling: Treats `<= 0.00` or None as price pending (Option A).
+- Approved: Fast-track transition: Items with pre-entered price promote straight from DRAFT to READY upon description creation (Option A).
+
+---
+
+### Phase 15: Refined Product Lifecycle States, Dashboard Filtering & Intake AI Title Autofill
+- [x] **Task 62:** Domain Layer & State Machine Expansion (`inventory/models.py`, migrations, signals)
+- [x] **Task 63:** Intake AI Vision Model Upgrade (`gemini-flash-latest`) & Hidden Title Autofill (`ai_service.py`, `forms.py`, `intake.html`, `views.py`)
+- [x] **Task 64:** Dashboard Filtering, Status Counts & Staging UI Badges (`views.py`, `dashboard.html`, `product_detail.html`)
+- [x] **Task 65:** i18n Localization, Unit & Regression Tests, and Real-Browser Verification
+- [x] **Checkpoint 19 (Lifecycle & Intake Complete):** Full lifecycle automation verified across all states (`DRAFT`, `PRICE_PENDING`, `READY`, `PUBLISHED`, `AWAITING_INFO`, `SOLD`, `BLOCKED`), intake identification uses `gemini-flash-latest` and populates `ai_title`, dashboard button filter works with live count, and all tests pass with 0 regressions.
+
 
 
 
