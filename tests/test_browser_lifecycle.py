@@ -1,12 +1,11 @@
 import os
 import shutil
-from decimal import Decimal
-from PIL import Image
 
 from django.contrib.auth import get_user_model
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import override_settings
 from django.urls import reverse
+from PIL import Image
 from playwright.sync_api import sync_playwright
 
 from inventory.models import MarketplaceSite, Product, ProductStatus
