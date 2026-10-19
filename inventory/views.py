@@ -214,6 +214,10 @@ def dashboard_view(request):
         products = products.filter(
             Q(status=ProductStatus.AWAITING_INFO) | Q(clarifications__status=ClarificationStatus.PENDING, is_sold=False)
         ).distinct()
+    elif status_filter == "price_pending":
+        products = products.filter(status=ProductStatus.PRICE_PENDING)
+    elif status_filter == "published":
+        products = products.filter(status=ProductStatus.PUBLISHED)
     elif status_filter == "blocked":
         products = products.filter(status=ProductStatus.BLOCKED)
     elif status_filter == "ready":
@@ -235,6 +239,7 @@ def dashboard_view(request):
     counts = counts_qs.aggregate(
         total_count=Count("id", distinct=True),
         active_count=Count("id", filter=Q(is_sold=False), distinct=True),
+        price_pending_count=Count("id", filter=Q(status=ProductStatus.PRICE_PENDING), distinct=True),
         awaiting_info_count=Count(
             "id",
             filter=Q(status=ProductStatus.AWAITING_INFO) | Q(clarifications__status=ClarificationStatus.PENDING, is_sold=False),
@@ -273,6 +278,7 @@ def dashboard_view(request):
         "available_platforms": available_platforms,
         "total_count": counts["total_count"] or 0,
         "active_count": counts["active_count"] or 0,
+        "price_pending_count": counts["price_pending_count"] or 0,
         "awaiting_info_count": counts["awaiting_info_count"] or 0,
         "sold_count": counts["sold_count"] or 0,
         "blocked_count": counts["blocked_count"] or 0,

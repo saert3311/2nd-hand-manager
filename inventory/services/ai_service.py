@@ -12,6 +12,7 @@ from inventory.models import ClarificationStatus, Product
 logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL_NAME = "gemini-2.5-flash"
+INTAKE_IDENTIFICATION_MODEL_NAME = getattr(settings, "GEMINI_INTAKE_MODEL_NAME", "gemini-flash-latest")
 DEFAULT_TEMPERATURE = 0.3
 
 DEFAULT_ES_INSTRUCTION = (
@@ -268,7 +269,7 @@ def identify_intake_product(
             temperature=0.2,
         )
         response = client.models.generate_content(
-            model=DEFAULT_MODEL_NAME,
+            model=INTAKE_IDENTIFICATION_MODEL_NAME,
             contents=contents,
             config=config,
         )

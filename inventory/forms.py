@@ -84,10 +84,16 @@ class ProductIntakeForm(forms.ModelForm):
             "class": "w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition bg-slate-50 focus:bg-white font-semibold"
         }),
     )
+    ai_title = forms.CharField(
+        max_length=255,
+        required=False,
+        label=_("Identified Title"),
+        widget=forms.HiddenInput(attrs={"id": "id_ai_title"}),
+    )
 
     class Meta:
         model = Product
-        fields = ["raw_note", "sale_price"]
+        fields = ["raw_note", "sale_price", "ai_title"]
 
 
 class ProductUpdateForm(forms.ModelForm):

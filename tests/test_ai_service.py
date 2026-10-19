@@ -342,3 +342,22 @@ class IntakePreflightServiceTests(TestCase):
         prompt_en = call_args_en.kwargs.get("contents")[0]
         self.assertIn("COMPLETELY IN ENGLISH", prompt_en)
         self.assertIn("ASSISTANT PRELIMINARY NOTES", prompt_en)
+
+    @override_settings(GEMINI_API_KEY="test-key")
+    @patch("inventory.services.ai_service.genai.Client")
+    def test_intake_identification_uses_gemini_flash_latest_model(self, mock_client_cls):
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.parsed = IntakePreflightSchema(
+            identified_title="Vintage Denim Jacket",
+            category="Ropa",
+            detected_attributes=[],
+            missing_or_recommended_info=[],
+            suggested_note="",
+        )
+        mock_client.models.generate_content.return_value = mock_response
+
+        identify_intake_product([b"\xff\xd8\xffsample"])
+        call_args = mock_client.models.generate_content.call_args
+        self.assertEqual(call_args.kwargs.get("model"), "gemini-flash-latest")

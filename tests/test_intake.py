@@ -219,4 +219,49 @@ class ProductIntakeViewTests(TestCase):
         self.assertContains(resp, "Eliminar foto")
         self.assertContains(resp, "Por favor, selecciona un máximo de 10 fotos.")
 
+    def test_intake_get_renders_hidden_ai_title_field(self):
+        self.client.login(username="assistant1", password="password123")
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'type="hidden" name="ai_title" id="id_ai_title"')
+
+    def test_intake_post_with_ai_title_persists_and_sets_display_title(self):
+        self.client.login(username="assistant1", password="password123")
+        img = self.create_dummy_image("item.jpg")
+
+        resp = self.client.post(
+            self.url,
+            {
+                "ai_title": "Vintage Levi's 501 Big E",
+                "raw_note": "Found at estate sale, denim in pristine condition",
+                "sale_price": "85.00",
+                "images": [img],
+            }
+        )
+        self.assertRedirects(resp, self.url)
+        self.assertEqual(Product.objects.count(), 1)
+        product = Product.objects.first()
+        self.assertEqual(product.ai_title, "Vintage Levi's 501 Big E")
+        self.assertEqual(product.display_title, "Vintage Levi's 501 Big E")
+        # Since it has no description yet, status must be DRAFT
+        self.assertEqual(product.status, "draft")
+
+    def test_intake_post_without_ai_title_falls_back_to_raw_note_or_id(self):
+        self.client.login(username="assistant1", password="password123")
+        img = self.create_dummy_image("item.jpg")
+
+        resp = self.client.post(
+            self.url,
+            {
+                "ai_title": "",
+                "raw_note": "Leather boots brown size 42",
+                "sale_price": "40.00",
+                "images": [img],
+            }
+        )
+        self.assertRedirects(resp, self.url)
+        product = Product.objects.first()
+        self.assertEqual(product.ai_title, "")
+        self.assertEqual(product.display_title, "Leather boots brown size 42")
+
 
