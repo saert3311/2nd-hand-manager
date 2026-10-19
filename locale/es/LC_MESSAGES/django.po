@@ -1183,3 +1183,67 @@ msgstr "¡Alerta push de prueba enviada!"
 
 msgid "Failed to send test push alert."
 msgstr "Error al enviar la alerta push de prueba."
+
+msgid "Product Status Log"
+msgstr "Registro de Estado del Producto"
+
+msgid "Product Status Logs"
+msgstr "Registros de Estado del Producto"
+
+msgid "The product whose state changed"
+msgstr "El producto cuyo estado ha cambiado"
+
+msgid "From Status"
+msgstr "Estado anterior"
+
+msgid "Previous lifecycle status (null for initial creation)"
+msgstr "Estado anterior del ciclo de vida (nulo para creación inicial)"
+
+msgid "To Status"
+msgstr "Estado nuevo"
+
+msgid "New lifecycle status"
+msgstr "Nuevo estado del ciclo de vida"
+
+msgid "Changed By"
+msgstr "Modificado por"
+
+msgid "User who initiated the change (null if automated system event)"
+msgstr "Usuario que inició el cambio (nulo si es evento automático del sistema)"
+
+msgid "Trigger / Reason"
+msgstr "Motivo / Desencadenante"
+
+msgid "Machine code for event trigger (e.g. intake, staging_update, clarification_opened, etc.)"
+msgstr "Código del desencadenante (ej. intake, staging_update, clarification_opened, etc.)"
+
+msgid "Notes / Description"
+msgstr "Notas / Descripción"
+
+msgid "Human-readable explanation or contextual details"
+msgstr "Explicación o detalles contextuales legibles"
+
+msgid "Timestamp"
+msgstr "Marca temporal"
+
+msgid "Exact time the state change was recorded"
+msgstr "Momento exacto en que se registró el cambio de estado"
+
+msgid "Lifecycle Audit Trail"
+msgstr "Historial de Estados"
+
+msgid "changes"
+msgstr "cambios"
+
+msgid "View full history"
+msgstr "Ver historial completo"
+
+msgid "Show less"
+msgstr "Mostrar menos"
+
+msgid "No status transitions recorded yet."
+msgstr "Aún no hay transiciones de estado registradas."
+
+msgid "System / Automatic"
+msgstr "Sistema / Automático"
+

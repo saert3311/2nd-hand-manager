@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.core.validators import URLValidator
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, Prefetch, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -33,6 +33,7 @@ from .models import (
     ProductImage,
     ProductListingLink,
     ProductStatus,
+    ProductStatusLog,
     PushSubscription,
 )
 from .permissions import is_assistant, is_manager, manager_required
@@ -301,6 +302,10 @@ def product_detail_view(request, pk):
             "listing_links__site",
             "clarifications__asked_by",
             "clarifications__answered_by",
+            Prefetch(
+                "status_logs",
+                queryset=ProductStatusLog.objects.select_related("changed_by").order_by("-created_at"),
+            ),
         ),
         pk=pk,
     )
@@ -319,7 +324,7 @@ def product_detail_view(request, pk):
                     updated_product.sold_at = timezone.now()
             else:
                 updated_product.sold_at = None
-            updated_product.save()
+            updated_product.save(changed_by=request.user)
             messages.success(request, _("Product listing updated successfully."))
             return redirect("inventory:product_detail", pk=pk)
     else:
@@ -350,6 +355,7 @@ def product_detail_view(request, pk):
         "pending_clarifications": pending_clarifications,
         "resolved_clarifications": resolved_clarifications,
         "has_unapplied_clarifications": has_unapplied_clarifications,
+        "status_logs": product.status_logs.all(),
         "clarification_form": ProductClarificationForm(),
         "answer_form": ProductClarificationAnswerForm(),
         "categories": ClarificationCategory.choices,

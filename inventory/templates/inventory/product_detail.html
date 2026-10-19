@@ -246,6 +246,123 @@
         {% endif %}
       </div>
 
+      <!-- Product State Change History / Audit Trail Card -->
+      <div id="status-history-section" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-base sm:text-lg">📜</span>
+            <h3 class="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
+              {% trans "Lifecycle Audit Trail" %}
+            </h3>
+          </div>
+          <span id="status-logs-count-badge" class="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
+            {{ status_logs|length }} {% trans "changes" %}
+          </span>
+        </div>
+
+        {% if status_logs %}
+        <div class="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
+          {% for log in status_logs %}
+          <div class="status-log-entry relative text-xs sm:text-sm {% if forloop.counter > 4 %}hidden extra-status-log{% endif %}">
+            <!-- Timeline Node Dot -->
+            <div class="absolute -left-6 top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white
+              {% if log.to_status == 'ready' %}bg-emerald-500
+              {% elif log.to_status == 'published' %}bg-blue-500
+              {% elif log.to_status == 'sold' %}bg-purple-500
+              {% elif log.to_status == 'awaiting_info' %}bg-amber-500
+              {% elif log.to_status == 'price_pending' %}bg-amber-600
+              {% elif log.to_status == 'blocked' %}bg-rose-500
+              {% else %}bg-slate-400{% endif %}">
+            </div>
+
+            <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-2 hover:bg-slate-100/60 transition">
+              <!-- Transition Badges & Time -->
+              <div class="flex flex-wrap items-center justify-between gap-1.5">
+                <div class="flex flex-wrap items-center gap-1.5 font-bold text-xs">
+                  {% if log.from_status %}
+                  <span class="px-2 py-0.5 rounded-full
+                    {% if log.from_status == 'ready' %}bg-emerald-100 text-emerald-800
+                    {% elif log.from_status == 'published' %}bg-blue-100 text-blue-800
+                    {% elif log.from_status == 'sold' %}bg-purple-100 text-purple-800
+                    {% elif log.from_status == 'awaiting_info' %}bg-amber-100 text-amber-800
+                    {% elif log.from_status == 'price_pending' %}bg-amber-100 text-amber-900
+                    {% elif log.from_status == 'blocked' %}bg-rose-100 text-rose-800
+                    {% else %}bg-slate-200 text-slate-700{% endif %}">
+                    {{ log.get_from_status_display }}
+                  </span>
+                  <span class="text-slate-400 font-normal">&rarr;</span>
+                  {% else %}
+                  <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">
+                    {% trans "New" %}
+                  </span>
+                  <span class="text-slate-400 font-normal">&rarr;</span>
+                  {% endif %}
+
+                  <span class="px-2 py-0.5 rounded-full
+                    {% if log.to_status == 'ready' %}bg-emerald-100 text-emerald-800
+                    {% elif log.to_status == 'published' %}bg-blue-100 text-blue-800
+                    {% elif log.to_status == 'sold' %}bg-purple-100 text-purple-800
+                    {% elif log.to_status == 'awaiting_info' %}bg-amber-100 text-amber-800
+                    {% elif log.to_status == 'price_pending' %}bg-amber-100 text-amber-900
+                    {% elif log.to_status == 'blocked' %}bg-rose-100 text-rose-800
+                    {% else %}bg-slate-200 text-slate-700{% endif %}">
+                    {{ log.get_to_status_display }}
+                  </span>
+                </div>
+
+                <time class="text-xs text-slate-500 font-medium whitespace-nowrap" datetime="{{ log.created_at|date:'c' }}">
+                  {{ log.created_at|date:"d M Y, H:i" }}
+                </time>
+              </div>
+
+              <!-- Actor Attribution -->
+              <div class="flex items-center justify-between text-xs text-slate-600 gap-2">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-slate-400">👤</span>
+                  {% if log.changed_by %}
+                  <span class="font-bold text-slate-800">{{ log.changed_by.username }}</span>
+                  <span class="px-1.5 py-0.5 rounded text-xs font-semibold {% if log.changed_by.is_staff or log.changed_by.is_superuser %}bg-indigo-100 text-indigo-800{% else %}bg-slate-200 text-slate-700{% endif %}">
+                    {% if log.changed_by.is_staff or log.changed_by.is_superuser %}{% trans "Manager" %}{% else %}{% trans "Assistant" %}{% endif %}
+                  </span>
+                  {% else %}
+                  <span class="italic text-slate-500">{% trans "System / Automatic" %}</span>
+                  {% endif %}
+                </div>
+
+                {% if log.trigger %}
+                <span class="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-xs font-mono text-slate-600">
+                  {{ log.trigger }}
+                </span>
+                {% endif %}
+              </div>
+
+              <!-- Notes / Description -->
+              {% if log.notes %}
+              <p class="text-xs sm:text-sm text-slate-700 bg-white/80 p-2 rounded-lg border border-slate-200/60 font-medium">
+                {{ log.notes }}
+              </p>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        {% if status_logs|length > 4 %}
+        <div class="pt-2 text-center">
+          <button type="button" id="toggleStatusLogsBtn"
+                  class="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition">
+            {% trans "View full history" %} ({{ status_logs|length }})
+          </button>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <p class="text-xs sm:text-sm text-slate-500 italic">
+          {% trans "No status transitions recorded yet." %}
+        </p>
+        {% endif %}
+      </div>
+
     </div>
 
     <!-- Right Column: Staging, AI Generator & Sales Form (7 cols) -->
@@ -597,6 +714,18 @@
       btn.disabled = true;
       icon.textContent = '⏳';
       text.textContent = '{% trans "Analyzing Photos with AI..." %}';
+    });
+  }
+
+  const toggleLogsBtn = document.getElementById('toggleStatusLogsBtn');
+  if (toggleLogsBtn) {
+    let expanded = false;
+    toggleLogsBtn.addEventListener('click', () => {
+      expanded = !expanded;
+      document.querySelectorAll('.extra-status-log').forEach(el => {
+        el.classList.toggle('hidden', !expanded);
+      });
+      toggleLogsBtn.textContent = expanded ? '{% trans "Show less" %}' : '{% trans "View full history" %} ({{ status_logs|length }})';
     });
   }
 </script>

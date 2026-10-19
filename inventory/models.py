@@ -1,3 +1,4 @@
+from contextvars import ContextVar
 from decimal import Decimal
 
 from django.conf import settings
@@ -8,6 +9,8 @@ from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
+
+from .middleware import get_current_user
 
 HTTP_URL_VALIDATOR = URLValidator(
     schemes=["http", "https"],
@@ -48,7 +51,38 @@ class BackupTriggerType(models.TextChoices):
     MANUAL = "manual", _("Manual / Admin")
 
 
+_deleting_product_pks = ContextVar("deleting_product_pks", default=frozenset())
+
+
+def is_product_deleting(pk) -> bool:
+    if not pk:
+        return False
+    return pk in _deleting_product_pks.get()
+
+
+def mark_product_deleting(pk):
+    current = _deleting_product_pks.get()
+    return _deleting_product_pks.set(current | {pk})
+
+
+def unmark_product_deleting(token):
+    _deleting_product_pks.reset(token)
+
+
+class ProductQuerySet(models.QuerySet):
+    def delete(self):
+        pks = set(self.values_list("pk", flat=True))
+        current = _deleting_product_pks.get()
+        token = _deleting_product_pks.set(current | pks)
+        try:
+            return super().delete()
+        finally:
+            _deleting_product_pks.reset(token)
+
+
 class Product(models.Model):
+    objects = ProductQuerySet.as_manager()
+
     raw_note = models.TextField(
         blank=True,
         default="",
@@ -164,11 +198,17 @@ class Product(models.Model):
 
         return ProductStatus.DRAFT
 
-    def sync_lifecycle_status(self, commit=True):
+    def sync_lifecycle_status(self, user=None, trigger=None, notes=None, commit=True):
         computed = self.compute_lifecycle_status()
         if self.status != computed:
             self.status = computed
             self.is_sold = (computed == ProductStatus.SOLD)
+            if user is not None:
+                self._changed_by = user
+            if trigger is not None:
+                self._status_trigger = trigger
+            if notes is not None:
+                self._status_notes = notes
             if commit:
                 self.save(update_fields=["status", "is_sold"])
         return self.status
@@ -177,12 +217,41 @@ class Product(models.Model):
         super().__init__(*args, **kwargs)
         self._initial_status = self.status
         self._initial_is_sold = self.is_sold
+        self._changed_by = None
+        self._status_trigger = None
+        self._status_notes = None
 
-    def save(self, *args, **kwargs):
+    def _infer_status_trigger(self, from_status: str, to_status: str) -> str:
+        if to_status == ProductStatus.SOLD:
+            return "marked_sold"
+        if from_status == ProductStatus.SOLD:
+            return "reverted_unsold"
+        if to_status == ProductStatus.BLOCKED:
+            return "blocked"
+        if from_status == ProductStatus.BLOCKED:
+            return "unblocked"
+        if to_status == ProductStatus.AWAITING_INFO:
+            return "clarification_opened"
+        if from_status == ProductStatus.AWAITING_INFO:
+            return "clarification_resolved"
+        if to_status == ProductStatus.PUBLISHED:
+            return "marketplace_link_added"
+        if from_status == ProductStatus.PUBLISHED and to_status != ProductStatus.SOLD:
+            return "marketplace_link_removed"
+        if to_status == ProductStatus.PRICE_PENDING:
+            return "description_added"
+        if to_status == ProductStatus.READY:
+            return "price_assigned" if from_status == ProductStatus.PRICE_PENDING else "ready"
+        if to_status == ProductStatus.DRAFT:
+            return "draft"
+        return "status_updated"
+
+    def save(self, *args, changed_by=None, trigger=None, notes=None, **kwargs):
         initial_status = getattr(self, "_initial_status", None)
         initial_is_sold = getattr(self, "_initial_is_sold", None)
+        is_adding = self._state.adding
 
-        if self._state.adding:
+        if is_adding:
             if self.is_sold or self.status == ProductStatus.SOLD:
                 self.status = ProductStatus.SOLD
                 self.is_sold = True
@@ -223,24 +292,79 @@ class Product(models.Model):
 
         self._previous_status = initial_status
         super().save(*args, **kwargs)
+
+        from_status = None if is_adding else initial_status
+        to_status = self.status
+
+        if is_adding or from_status != to_status:
+            effective_user = (
+                changed_by
+                or getattr(self, "_changed_by", None)
+                or (self.created_by if is_adding else None)
+                or get_current_user()
+            )
+            effective_trigger = (
+                trigger
+                or getattr(self, "_status_trigger", None)
+                or ("intake" if is_adding else self._infer_status_trigger(from_status, to_status))
+            )
+            effective_notes = (
+                notes
+                or getattr(self, "_status_notes", None)
+                or ""
+            )
+            try:
+                log_status_change(
+                    product=self,
+                    from_status=from_status,
+                    to_status=to_status,
+                    user=effective_user,
+                    trigger=effective_trigger,
+                    notes=effective_notes,
+                )
+            except Exception:
+                pass
+
         self._initial_status = self.status
         self._initial_is_sold = self.is_sold
+        self._changed_by = None
+        self._status_trigger = None
+        self._status_notes = None
 
-    def mark_as_sold(self, price=None, commit=True):
+    def mark_as_sold(self, price=None, user=None, commit=True):
         self.is_sold = True
         self.status = ProductStatus.SOLD
         self.sold_at = timezone.now()
         if price is not None:
             self.sale_price = price
+        if user is not None:
+            self._changed_by = user
+        self._status_trigger = "marked_sold"
+        if price is not None:
+            self._status_notes = f"Sold for €{Decimal(str(price)):.2f}"
         if commit:
             self.save(update_fields=["is_sold", "status", "sold_at", "sale_price", "updated_at"])
 
-    def mark_as_unsold(self, commit=True):
+    def mark_as_unsold(self, user=None, commit=True):
         self.is_sold = False
         self.status = self.compute_lifecycle_status()
         self.sold_at = None
+        if user is not None:
+            self._changed_by = user
+        self._status_trigger = "reverted_unsold"
         if commit:
             self.save(update_fields=["is_sold", "status", "sold_at", "updated_at"])
+
+    def delete(self, *args, **kwargs):
+        token = None
+        if self.pk:
+            token = mark_product_deleting(self.pk)
+        try:
+            return super().delete(*args, **kwargs)
+        finally:
+            if token is not None:
+                unmark_product_deleting(token)
+
 
 
 
@@ -508,7 +632,13 @@ def sync_product_on_clarification_save(sender, instance, created=False, **kwargs
     if instance.status == ClarificationStatus.PENDING:
         if product.status != ProductStatus.AWAITING_INFO:
             product.status = ProductStatus.AWAITING_INFO
-            product.save(update_fields=["status"])
+            notes = f"Clarification opened: {instance.question[:60]}" if instance.question else ""
+            product.save(
+                update_fields=["status"],
+                changed_by=instance.asked_by,
+                trigger="clarification_opened",
+                notes=notes,
+            )
         if created and getattr(settings, "PUSH_NOTIFICATIONS_LIVE_SIGNALS", False):
             try:
                 from .permissions import ROLE_ASSISTANT
@@ -527,7 +657,13 @@ def sync_product_on_clarification_save(sender, instance, created=False, **kwargs
         has_pending = product.clarifications.filter(status=ClarificationStatus.PENDING).exists()
         if not has_pending and product.status == ProductStatus.AWAITING_INFO:
             product.status = product.compute_lifecycle_status()
-            product.save(update_fields=["status", "is_sold"])
+            notes = f"Clarification resolved: {instance.question[:60]}" if instance.question else ""
+            product.save(
+                update_fields=["status", "is_sold"],
+                changed_by=instance.answered_by,
+                trigger="clarification_resolved",
+                notes=notes,
+            )
         was_pending = getattr(instance, "_previous_status", None) == ClarificationStatus.PENDING
         if (created or was_pending) and getattr(settings, "PUSH_NOTIFICATIONS_LIVE_SIGNALS", False):
             try:
@@ -580,6 +716,8 @@ def notify_managers_on_product_lifecycle_save(sender, instance, created=False, *
 def sync_product_on_clarification_delete(sender, instance, **kwargs):
     if kwargs.get("raw", False):
         return
+    if is_product_deleting(instance.product_id):
+        return
     try:
         product = instance.product
     except Product.DoesNotExist:
@@ -589,22 +727,33 @@ def sync_product_on_clarification_delete(sender, instance, **kwargs):
     has_pending = product.clarifications.filter(status=ClarificationStatus.PENDING).exists()
     if not has_pending and product.status == ProductStatus.AWAITING_INFO:
         product.status = product.compute_lifecycle_status()
-        product.save(update_fields=["status", "is_sold"])
+        notes = f"Clarification deleted: {instance.question[:60]}" if instance.question else ""
+        product.save(
+            update_fields=["status", "is_sold"],
+            trigger="clarification_resolved",
+            notes=notes,
+        )
 
 
 @receiver(post_save, sender=ProductListingLink)
-def sync_product_on_listing_link_save(sender, instance, **kwargs):
+def sync_product_on_listing_link_save(sender, instance, created=False, **kwargs):
     if kwargs.get("raw", False):
         return
     product = instance.product
     if product.is_sold or product.status in (ProductStatus.SOLD, ProductStatus.BLOCKED, ProductStatus.AWAITING_INFO):
         return
-    product.sync_lifecycle_status()
+    site_name = instance.site.name if instance.site else "Marketplace"
+    action = "added" if created else "updated"
+    trigger = "marketplace_link_added" if instance.is_active else "marketplace_link_removed"
+    notes = f"Marketplace link {action} ({site_name})"
+    product.sync_lifecycle_status(trigger=trigger, notes=notes)
 
 
 @receiver(post_delete, sender=ProductListingLink)
 def sync_product_on_listing_link_delete(sender, instance, **kwargs):
     if kwargs.get("raw", False):
+        return
+    if is_product_deleting(instance.product_id):
         return
     try:
         product = instance.product
@@ -612,7 +761,9 @@ def sync_product_on_listing_link_delete(sender, instance, **kwargs):
         return
     if product.is_sold or product.status in (ProductStatus.SOLD, ProductStatus.BLOCKED, ProductStatus.AWAITING_INFO):
         return
-    product.sync_lifecycle_status()
+    site_name = instance.site.name if instance.site else "Marketplace"
+    notes = f"Marketplace link deleted ({site_name})"
+    product.sync_lifecycle_status(trigger="marketplace_link_removed", notes=notes)
 
 
 class DatabaseBackupLog(models.Model):
@@ -738,4 +889,83 @@ class PushSubscription(models.Model):
 
     def __str__(self):
         return f"{self.user.username} ({self.endpoint[:40]}...)"
+
+
+class ProductStatusLog(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="status_logs",
+        verbose_name=_("Product"),
+        help_text=_("The product whose state changed"),
+    )
+    from_status = models.CharField(
+        max_length=20,
+        choices=ProductStatus.choices,
+        null=True,
+        blank=True,
+        verbose_name=_("From Status"),
+        help_text=_("Previous lifecycle status (null for initial creation)"),
+    )
+    to_status = models.CharField(
+        max_length=20,
+        choices=ProductStatus.choices,
+        verbose_name=_("To Status"),
+        help_text=_("New lifecycle status"),
+    )
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="status_changes",
+        verbose_name=_("Changed By"),
+        help_text=_("User who initiated the change (null if automated system event)"),
+    )
+    trigger = models.CharField(
+        max_length=50,
+        blank=True,
+        default="",
+        verbose_name=_("Trigger / Reason"),
+        help_text=_("Machine code for event trigger (e.g. intake, staging_update, clarification_opened, etc.)"),
+    )
+    notes = models.TextField(
+        blank=True,
+        default="",
+        verbose_name=_("Notes / Description"),
+        help_text=_("Human-readable explanation or contextual details"),
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+        verbose_name=_("Timestamp"),
+        help_text=_("Exact time the state change was recorded"),
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = _("Product Status Log")
+        verbose_name_plural = _("Product Status Logs")
+
+    def __str__(self):
+        from_s = self.from_status or _("New")
+        return f"{self.product_id}: {from_s} -> {self.to_status} ({self.created_at:%Y-%m-%d %H:%M})"
+
+
+def log_status_change(product, from_status, to_status, user=None, trigger="", notes=""):
+    """
+    Creates an immutable audit log entry for a product lifecycle status change.
+    Ignores no-op transitions where from_status == to_status on existing products.
+    """
+    if product.pk and from_status == to_status:
+        return None
+    acting_user = user if (user and getattr(user, "is_authenticated", False)) else None
+    return ProductStatusLog.objects.create(
+        product=product,
+        from_status=from_status,
+        to_status=to_status,
+        changed_by=acting_user,
+        trigger=trigger or "",
+        notes=notes or "",
+    )
 

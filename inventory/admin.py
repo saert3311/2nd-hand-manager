@@ -24,6 +24,8 @@ from .models import (
     ProductClarification,
     ProductImage,
     ProductListingLink,
+    ProductStatus,
+    ProductStatusLog,
     PushSubscription,
 )
 from .permissions import ROLE_ASSISTANT, ROLE_MANAGER, is_assistant, is_manager
@@ -291,11 +293,60 @@ class ProductListingLinkInline(admin.TabularInline):
     readonly_fields = ("created_at", "updated_at")
 
 
+def format_status_badge(status_val):
+    colors = {
+        "draft": ("#f1f5f9", "#475569"),
+        "price_pending": ("#fef3c7", "#92400e"),
+        "ready": ("#dcfce7", "#166534"),
+        "published": ("#dbeafe", "#1e40af"),
+        "awaiting_info": ("#fef9c3", "#854d0e"),
+        "blocked": ("#ffe4e6", "#9f1239"),
+        "sold": ("#f3e8ff", "#6b21a8"),
+    }
+    bg, fg = colors.get(status_val, ("#f1f5f9", "#334155"))
+    label = dict(ProductStatus.choices).get(status_val, status_val)
+    return format_html(
+        '<span style="background-color: {}; color: {}; padding: 2px 8px; border-radius: 9999px; font-weight: 600; font-size: 11px; text-transform: uppercase;">{}</span>',
+        bg,
+        fg,
+        label,
+    )
+
+
 class ProductClarificationInline(admin.TabularInline):
     model = ProductClarification
     extra = 0
     fields = ("category", "question", "asked_by", "answer", "answered_by", "status", "created_at", "answered_at")
     readonly_fields = ("created_at", "answered_at")
+
+
+class ProductStatusLogInline(admin.TabularInline):
+    model = ProductStatusLog
+    extra = 0
+    can_delete = False
+    fields = ("created_at", "from_status_badge", "to_status_badge", "changed_by", "trigger", "notes")
+    readonly_fields = ("created_at", "from_status_badge", "to_status_badge", "changed_by", "trigger", "notes")
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def from_status_badge(self, instance):
+        if not instance.from_status:
+            return format_html('<span style="color: #64748b; font-style: italic;">{}</span>', _("New"))
+        return format_status_badge(instance.from_status)
+
+    from_status_badge.short_description = _("From Status")
+
+    def to_status_badge(self, instance):
+        return format_status_badge(instance.to_status)
+
+    to_status_badge.short_description = _("To Status")
 
 
 @admin.register(Product, site=admin_site)
@@ -312,7 +363,7 @@ class ProductAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "is_sold", "created_at")
     search_fields = ("ai_title", "raw_note", "ai_description")
-    inlines = [ProductImageInline, ProductListingLinkInline, ProductClarificationInline]
+    inlines = [ProductImageInline, ProductListingLinkInline, ProductClarificationInline, ProductStatusLogInline]
     readonly_fields = ("created_at", "updated_at", "sold_at")
 
     def has_module_permission(self, request):
@@ -704,6 +755,73 @@ class PushSubscriptionAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return bool(request.user and request.user.is_active and is_manager(request.user))
+
+
+@admin.register(ProductStatusLog, site=admin_site)
+class ProductStatusLogAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "product_link",
+        "from_status_badge",
+        "to_status_badge",
+        "changed_by_display",
+        "trigger",
+        "notes_short",
+        "created_at",
+    )
+    list_filter = ("to_status", "from_status", "trigger", "created_at")
+    search_fields = ("product__id", "product__ai_title", "product__raw_note", "changed_by__username", "notes")
+    date_hierarchy = "created_at"
+    readonly_fields = ("product", "from_status_badge", "to_status_badge", "changed_by", "trigger", "notes", "created_at")
+    ordering = ["-created_at"]
+
+    def product_link(self, obj):
+        url = reverse("admin:inventory_product_change", args=[obj.product_id])
+        return format_html('<a href="{}">#{} - {}</a>', url, obj.product_id, obj.product.display_title)
+
+    product_link.short_description = _("Product")
+
+    def from_status_badge(self, obj):
+        if not obj.from_status:
+            return format_html('<span style="color: #64748b; font-style: italic;">{}</span>', _("New"))
+        return format_status_badge(obj.from_status)
+
+    from_status_badge.short_description = _("From Status")
+
+    def to_status_badge(self, obj):
+        return format_status_badge(obj.to_status)
+
+    to_status_badge.short_description = _("To Status")
+
+    def changed_by_display(self, obj):
+        if obj.changed_by:
+            return obj.changed_by.username
+        return format_html('<span style="color: #64748b; font-style: italic;">{}</span>', _("System / Automatic"))
+
+    changed_by_display.short_description = _("Changed By")
+
+    def notes_short(self, obj):
+        if not obj.notes:
+            return "-"
+        return f"{obj.notes[:60]}..." if len(obj.notes) > 60 else obj.notes
+
+    notes_short.short_description = _("Notes")
+
+    def has_module_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 
 
