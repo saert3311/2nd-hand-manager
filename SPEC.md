@@ -21,6 +21,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 17. **Installable PWA Support & VAPID Web Push Alerts:** W3C Web App Manifest (`/manifest.json`), pass-through service worker (`/sw.js`), and VAPID Web Push notification infrastructure delivering instant real-time alerts to assistants (on pending doubts) and managers (on answered doubts and draft/pricing bottlenecks) controlled via `.env` live signals.
 18. **Anti-Apilación Dashboard Horizontal Rail & Mobile High-Readability Typography:** Decoupled status filter rail with horizontal touch-scrolling preventing tab stacking (*apilación*), combined with standardized high-readability typography, elimination of sub-12px micro-fonts, and minimum 16px form inputs to prevent involuntary iOS Safari viewport auto-zooming.
 19. **Product State Change History & User Audit Trail (`ProductStatusLog`):** Complete operational traceability recording every product state transition, capturing exact timestamps (`created_at`), previous and new lifecycle statuses (`from_status` $\to$ `to_status`), the acting user (`changed_by`), and contextual trigger descriptions, exposed via a visual timeline on the product staging page and searchable Django Admin changelist/inline.
+20. **Compilation & Docker Image Build Timestamp Display ("Which Compilation Are We Using?"):** Operational traceability across environments (development, staging, production) displaying the build date, time, commit hash, and environment badge in the bottom application footer ([`docs/prds/PRD-docker-build-info-and-compilation-timestamp.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-docker-build-info-and-compilation-timestamp.md)).
 
 ---
 
@@ -979,4 +980,12 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
     - **Option A (Recommended — Retain Advisory Banner):** Keep the advisory banner and suggested notes visible (only clearing if all photos are deleted), allowing the assistant to manually re-run "Identificar producto" if desired.
     - **Option B (Auto-Clear Advisory on Any Deletion):** Immediately dismiss the AI suggestion card whenever any photo is removed to ensure suggestions strictly reflect the current photo subset.
     *Which behavior do you prefer for the AI advisory card when a photo is deleted?*
+27. **Compilation & Docker Image Build Footer Format & Metadata Scope:**
+    - How should the build compilation information be presented in the bottom footer?
+    - **Option A (Recommended — UTC Timestamp + Git Commit SHA + Environment Badge):** Displays `Build: YYYY-MM-DD HH:MM UTC • Commit: [sha] • [PROD/DEV]` (localized in Spanish as `Compilación: YYYY-MM-DD HH:MM UTC • Commit: [sha] • [PROD/DEV]`). Prevents server/browser timezone drift and gives definitive identification for bug reports.
+    - **Option B (Timestamp Only):** Displays strictly `Build: YYYY-MM-DD HH:MM UTC` without commit hash or environment badge.
+    - **Option C (Localized Browser Timezone via JS):** Uses client JavaScript to convert UTC build time into the client device's local timezone.
+    *Which footer display format and scope do you prefer?*
+    - **Decision:** Option A approved — UTC Timestamp + Git Commit SHA + Environment Badge.
+
 
