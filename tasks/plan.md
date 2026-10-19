@@ -275,6 +275,16 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - [x] **Task 71:** Standardize Mobile Typography Scale, Eliminate Microscopic Fonts, and Safeguard Against iOS Safari Input Auto-Zoom (`inventory/templates/inventory/base.html`, `inventory/templates/inventory/dashboard.html`, `inventory/templates/inventory/intake.html`, `inventory/templates/inventory/product_detail.html`, `inventory/templates/registration/login.html`, `inventory/forms.py`, `tests/test_dashboard_responsive.py`).
 - [x] **Checkpoint 22 (Mobile Typography Complete):** Sub-12px arbitrary classes (`text-[10px]`, `text-[11px]`) eliminated; inputs, selects, and textareas enforce $\ge 16\text{px}$ on mobile (`text-base sm:text-sm` and CSS override); `maximum-scale=1.0, user-scalable=no` removed for WCAG 2.1 AA zoom compliance; `<meta name="text-scale" content="scale">` added; Playwright test asserts computed input font size $\ge 16\text{px}$ on $390 \times 844$ with full visual screenshots.
 
+---
+
+### Phase 23: Product State Change History & Audit Trail (Vertical Slice 19)
+- [ ] **Task 72:** Domain Model `ProductStatusLog`, Helper Functions & Database Migration (`inventory/models.py`, `inventory/migrations/0014_productstatuslog.py`).
+- [ ] **Task 73:** Request User Context Capture Middleware & Automated Lifecycle Transition Logging (`inventory/middleware.py`, `config/settings.py`, `inventory/models.py`).
+- [ ] **Task 74:** Django Administration Read-Only Audit Changelist & Product Status Log Inline (`inventory/admin.py`).
+- [ ] **Task 75:** Staging Product Detail UI Lifecycle Audit Trail Timeline Card (`inventory/views.py`, `inventory/templates/inventory/product_detail.html`).
+- [ ] **Task 76:** Bilingual Localization (`es`/`en`), Comprehensive Test Suite (`tests/test_status_history.py`) & Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `CHANGELOG.md`).
+- [ ] **Checkpoint 23 (Product State Change History Complete):** Every product state change is recorded with timestamps, user attribution, from/to statuses, and trigger notes; timeline card renders cleanly on `/products/<pk>/` across viewports; Django Admin provides a read-only audit log and inline; all 299+ tests pass with 0 regressions.
+
 
 
 

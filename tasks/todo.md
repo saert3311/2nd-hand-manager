@@ -1691,6 +1691,112 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 - [x] Pinch-to-zoom and OS dynamic text scaling preferences are supported.
 - [x] Automated unit and Playwright tests verify 100% compliance with zero regressions.
 
+---
+
+## Phase 23: Product State Change History & Audit Trail (Vertical Slice 19)
+
+### Task 72: Domain Model `ProductStatusLog`, Helper Functions & Database Migration
+**Description:** Implement `ProductStatusLog` model in `inventory/models.py` with fields: `product` (FK to `Product`, CASCADE), `from_status` (CharField choices, nullable), `to_status` (CharField choices), `changed_by` (FK to User, SET_NULL, nullable, blank), `trigger` (CharField, default=""), `notes` (TextField, default=""), and `created_at` (DateTimeField auto_now_add=True, db_index=True). Implement `log_status_change(product, from_status, to_status, user=None, trigger="", notes="")` helper function. Create and apply migration `0014_productstatuslog.py`.
+**Acceptance criteria:**
+- [ ] `ProductStatusLog` model is defined with correct choices, indexes, and verbose names.
+- [ ] `log_status_change` helper creates immutable log entries and ignores no-op transitions (`from_status == to_status`).
+- [ ] Migration `0014_productstatuslog.py` created and applied cleanly.
+- [ ] Unit tests verify model constraints and log record creation.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`
+- [ ] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_status_history`
+**Dependencies:** None
+**Files likely touched:**
+- `inventory/models.py`
+- `inventory/migrations/0014_productstatuslog.py`
+- `tests/test_status_history.py`
+**Estimated scope:** Small (3 files)
+
+---
+
+### Task 73: Request User Context Capture Middleware & Automated Lifecycle Transition Logging
+**Description:** Create `inventory/middleware.py` with `CurrentUserMiddleware` using Python's `contextvars` to thread-safely expose `get_current_user()` and `set_current_user(user)`. Register the middleware in `config/settings.py`. Hook into `Product.save()` and lifecycle transitions: detect when `initial_status != current_status`, capture acting user (explicit or from middleware), and invoke `log_status_change`. Update signals and methods (`mark_as_sold`, `mark_as_unsold`, `ProductListingLink` post_save/post_delete, `ProductClarification` post_save/post_delete) to pass appropriate triggers (`intake`, `pricing`, `staging_update`, `clarification_opened`, `clarification_resolved`, `marketplace_link_added`, `marketplace_link_removed`, `marked_sold`, `reverted_unsold`) and context notes.
+**Acceptance criteria:**
+- [ ] `CurrentUserMiddleware` captures `request.user` during web requests and resets cleanly after response.
+- [ ] Transitions during `/intake/` log `None -> DRAFT` (or `READY`) attributed to the sourcing assistant.
+- [ ] Transitions during detail editing, doubt Q&A, and marketplace links log accurate `from_status`, `to_status`, `changed_by`, and `trigger`.
+- [ ] CLI/automated transitions without a request user safely record `changed_by=None` ("Sistema / Automático").
+**Verification:**
+- [ ] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_status_history`
+**Dependencies:** Task 72
+**Files likely touched:**
+- `inventory/middleware.py`
+- `config/settings.py`
+- `inventory/models.py`
+- `tests/test_status_history.py`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 74: Django Administration Read-Only Audit Changelist & Product Status Log Inline
+**Description:** Register `ProductStatusLog` in `inventory/admin.py` with `ProductStatusLogAdmin` and `ProductStatusLogInline` inside `ProductAdmin`. Ensure complete immutability: disable add, change, and delete permissions (`has_add_permission=False`, `has_change_permission=False`, `has_delete_permission=False`). Provide list display with color-coded status badges, filters (`to_status`, `from_status`, `trigger`, `created_at`, `changed_by`), search across product ID/title/user/notes, and date hierarchy.
+**Acceptance criteria:**
+- [ ] `ProductStatusLog` appears in Django Admin under Inventory.
+- [ ] Logs cannot be added, edited, or deleted via Django Admin.
+- [ ] `ProductStatusLogInline` renders historical timeline table on product edit pages.
+- [ ] Only store managers can access the changelist and inline.
+**Verification:**
+- [ ] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_status_history`
+**Dependencies:** Task 72
+**Files likely touched:**
+- `inventory/admin.py`
+- `tests/test_status_history.py`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 75: Staging Product Detail UI Lifecycle Audit Trail Timeline Card
+**Description:** Update `inventory/views.py` (`product_detail_view`) to prefetch and supply `status_logs` ordered by `-created_at`. In `inventory/templates/inventory/product_detail.html`, add a modern, accessible **"Historial de Estados"** timeline card displaying recent transitions. Show status badges for `from_status` $\to$ `to_status`, formatted timestamp, actor (username + role badge or System), trigger badge, and contextual note. Include a collapsible toggle if there are more than 4 entries.
+**Acceptance criteria:**
+- [ ] Timeline card renders on `/products/<pk>/` with accurate historical transitions.
+- [ ] Shows who made the change (with role badge) and when (formatted localized timestamp).
+- [ ] Responsive design functions seamlessly across desktop and mobile ($390 \times 844$) screens.
+- [ ] Non-blocking and clean layout with zero layout shifts.
+**Verification:**
+- [ ] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_status_history`
+**Dependencies:** Task 72, Task 73
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/templates/inventory/product_detail.html`
+- `tests/test_status_history.py`
+**Estimated scope:** Medium (3 files)
+
+---
+
+### Task 76: Bilingual Localization (`es`/`en`), Comprehensive Test Suite & Regression Check
+**Description:** Add Spanish translation strings for all new model fields, triggers, admin titles, and timeline UI labels in `locale/es/LC_MESSAGES/django.po` and compile to `django.mo`. Write extensive unit and integration tests in `tests/test_status_history.py` covering all lifecycle permutation triggers, request user attribution, CLI/system fallback, Django admin inline, and UI rendering. Execute `ruff check .` and the full test suite (`python manage.py test`).
+**Acceptance criteria:**
+- [ ] All new strings localized in Spanish and compiled with `python manage.py compile_locales`.
+- [ ] `tests/test_status_history.py` covers 100% of state change triggers and user attribution paths.
+- [ ] Full test suite (299+ tests) passes with 0 failures and 0 regressions.
+- [ ] `ruff check .` passes with 0 warnings.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [ ] Linter passes: `.venv\Scripts\ruff.exe check .`
+- [ ] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+**Dependencies:** Task 72, Task 73, Task 74, Task 75
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_status_history.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (4 files)
+
+---
+
+## Checkpoint 23: Product State Change History & Audit Trail Complete
+- [ ] `ProductStatusLog` model and migration `0014_productstatuslog.py` applied.
+- [ ] `CurrentUserMiddleware` captures acting user during web requests; system fallback works when user is None.
+- [ ] All state transitions (`draft`, `price_pending`, `ready`, `published`, `awaiting_info`, `blocked`, `sold`) generate accurate log entries.
+- [ ] Product detail page displays an accessible visual audit timeline.
+- [ ] Django Admin provides an immutable read-only changelist and inline.
+- [ ] Full test suite passes with 0 regressions and `ruff check .` passes cleanly.
+
 
 
 
