@@ -1,3 +1,4 @@
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: 2ndHand Staging 1.0\n"
@@ -33,8 +34,11 @@ msgstr "Administración"
 msgid "Sign Out"
 msgstr "Cerrar Sesión"
 
-msgid "2ndHand Product Intake & Staging Hub • Powered by Django & Gemini Vision"
-msgstr "Centro de Entrada y Preparación de Productos de Segunda Mano • Desarrollado con Django y Gemini Vision"
+msgid ""
+"2ndHand Product Intake & Staging Hub • Powered by Django & Gemini Vision"
+msgstr ""
+"Centro de Entrada y Preparación de Productos de Segunda Mano • Desarrollado "
+"con Django y Gemini Vision"
 
 msgid "Sign In - 2ndHand Staging"
 msgstr "Iniciar Sesión - 2ndHand Staging"
@@ -109,7 +113,8 @@ msgid "Error saving product: %(error)s"
 msgstr "Error al guardar el producto: %(error)s"
 
 msgid "Manager privileges required to edit product details."
-msgstr "Se requieren permisos de gestor para editar los detalles del producto."
+msgstr ""
+"Se requieren permisos de gestor para editar los detalles del producto."
 
 msgid "Product listing updated successfully."
 msgstr "Listado de producto actualizado con éxito."
@@ -129,14 +134,21 @@ msgstr "La imagen '%(filename)s' excede el límite de 10MB (%(size).1fMB)."
 msgid "File '%(filename)s' is not a valid or readable image."
 msgstr "El archivo '%(filename)s' no es una imagen válida o legible."
 
-msgid "You can upload a maximum of %(max)d images per product. Received %(count)d."
-msgstr "Puedes subir un máximo de %(max)d imágenes por producto. Recibidas %(count)d."
+msgid ""
+"You can upload a maximum of %(max)d images per product. Received %(count)d."
+msgstr ""
+"Puedes subir un máximo de %(max)d imágenes por producto. Recibidas "
+"%(count)d."
 
 msgid "Raw Field Notes"
 msgstr "Notas de Campo Originales"
 
-msgid "Brief description / field notes (e.g., 'Vintage 90s Nike windbreaker, blue/white, small tear on left sleeve')"
-msgstr "Descripción breve / notas de campo (ej. 'Chaqueta cortavientos vintage Nike 90s, azul/blanco, pequeño desgarro en manga izquierda')"
+msgid ""
+"Brief description / field notes (e.g., 'Vintage 90s Nike windbreaker, "
+"blue/white, small tear on left sleeve')"
+msgstr ""
+"Descripción breve / notas de campo (ej. 'Chaqueta cortavientos vintage Nike "
+"90s, azul/blanco, pequeño desgarro en manga izquierda')"
 
 msgid "Listing Title"
 msgstr "Título del Producto"
@@ -180,8 +192,12 @@ msgstr "Vista previa de fotos seleccionadas:"
 msgid "Field Notes / Short Description"
 msgstr "Notas de Campo / Descripción Breve"
 
-msgid "Brand, model, size, obvious flaws or condition notes. AI will expand this later."
-msgstr "Marca, modelo, talla, defectos evidentes o estado. La IA ampliará esto más tarde."
+msgid ""
+"Brand, model, size, obvious flaws or condition notes. AI will expand this "
+"later."
+msgstr ""
+"Marca, modelo, talla, defectos evidentes o estado. La IA ampliará esto más "
+"tarde."
 
 msgid "Save & Catalog Next Item"
 msgstr "Guardar y Catalogar Siguiente Artículo"
@@ -229,10 +245,15 @@ msgid "No products found"
 msgstr "No se encontraron productos"
 
 msgid "No products matched your search \"%(query)s\". Try clearing the filter."
-msgstr "Ningún producto coincide con la búsqueda \"%(query)s\". Prueba limpiar el filtro."
+msgstr ""
+"Ningún producto coincide con la búsqueda \"%(query)s\". Prueba limpiar el "
+"filtro."
 
-msgid "There are no products in this view yet. Start by taking pictures of inventory."
-msgstr "Aún no hay productos en esta vista. Empieza tomando fotos del inventario."
+msgid ""
+"There are no products in this view yet. Start by taking pictures of "
+"inventory."
+msgstr ""
+"Aún no hay productos en esta vista. Empieza tomando fotos del inventario."
 
 msgid "Catalog First Item"
 msgstr "Catalogar Primer Artículo"
@@ -270,8 +291,12 @@ msgstr "Catalogado por"
 msgid "Gemini Multimodal Vision"
 msgstr "Gemini Visión Multimodal"
 
-msgid "Analyzes attached photos & raw notes to draft an SEO marketplace title and description."
-msgstr "Analiza las fotos adjuntas y notas de campo para redactar un título SEO y descripción para marketplace."
+msgid ""
+"Analyzes attached photos & raw notes to draft an SEO marketplace title and "
+"description."
+msgstr ""
+"Analiza las fotos adjuntas y notas de campo para redactar un título SEO y "
+"descripción para marketplace."
 
 msgid "Generate AI Listing"
 msgstr "Generar Publicación con IA"
@@ -315,8 +340,14 @@ msgstr "Analizando fotos con IA..."
 msgid "Search title, note, or date (e.g. 2026-10-10)..."
 msgstr "Buscar título, nota o fecha (ej. 2026-10-10)..."
 
-msgid "Showing <span class=\"font-bold text-slate-800\">%(start)s</span> to <span class=\"font-bold text-slate-800\">%(end)s</span> of <span class=\"font-bold text-slate-800\">%(total)s</span> products"
-msgstr "Mostrando <span class=\"font-bold text-slate-800\">%(start)s</span> a <span class=\"font-bold text-slate-800\">%(end)s</span> de <span class=\"font-bold text-slate-800\">%(total)s</span> productos"
+msgid ""
+"Showing <span class=\"font-bold text-slate-800\">%(start)s</span> to <span "
+"class=\"font-bold text-slate-800\">%(end)s</span> of <span class=\"font-bold"
+" text-slate-800\">%(total)s</span> products"
+msgstr ""
+"Mostrando <span class=\"font-bold text-slate-800\">%(start)s</span> a <span "
+"class=\"font-bold text-slate-800\">%(end)s</span> de <span class=\"font-bold"
+" text-slate-800\">%(total)s</span> productos"
 
 msgid "Pagination"
 msgstr "Paginación"
@@ -367,10 +398,15 @@ msgid "Successfully assigned Manager role to %(count)d user(s)."
 msgstr "Se asignó exitosamente el rol de Gestor a %(count)d usuario(s)."
 
 msgid "Deactivate selected users (Revoke access, preserve items)"
-msgstr "Desactivar usuarios seleccionados (Revocar acceso, preservar artículos)"
+msgstr ""
+"Desactivar usuarios seleccionados (Revocar acceso, preservar artículos)"
 
-msgid "Successfully deactivated %(count)d user(s). Access revoked while preserving product attributions."
-msgstr "Se desactivaron exitosamente %(count)d usuario(s). Acceso revocado preservando las atribuciones de productos."
+msgid ""
+"Successfully deactivated %(count)d user(s). Access revoked while preserving "
+"product attributions."
+msgstr ""
+"Se desactivaron exitosamente %(count)d usuario(s). Acceso revocado "
+"preservando las atribuciones de productos."
 
 msgid "Activate selected users"
 msgstr "Activar usuarios seleccionados"
@@ -403,7 +439,8 @@ msgid "Model Name"
 msgstr "Nombre del Modelo"
 
 msgid "Gemini model identifier (e.g. gemini-2.5-flash, gemini-2.5-pro)"
-msgstr "Identificador del modelo Gemini (ej. gemini-2.5-flash, gemini-2.5-pro)"
+msgstr ""
+"Identificador del modelo Gemini (ej. gemini-2.5-flash, gemini-2.5-pro)"
 
 msgid "Temperature"
 msgstr "Temperatura"
@@ -414,14 +451,20 @@ msgstr "Temperatura de muestreo entre 0.0 y 1.0"
 msgid "System Instruction"
 msgstr "Instrucción del Sistema"
 
-msgid "Custom listing instructions, marketplace guidelines (Wallapop, Vinted, eBay), and tone of voice."
-msgstr "Instrucciones personalizadas de publicación, pautas para marketplaces (Wallapop, Vinted, eBay) y tono de voz."
+msgid ""
+"Custom listing instructions, marketplace guidelines (Wallapop, Vinted, "
+"eBay), and tone of voice."
+msgstr ""
+"Instrucciones personalizadas de publicación, pautas para marketplaces "
+"(Wallapop, Vinted, eBay) y tono de voz."
 
 msgid "Is Active"
 msgstr "Está Activo"
 
 msgid "Whether this configuration is actively used for listing generation."
-msgstr "Indica si esta configuración se utiliza activamente para la generación de publicaciones."
+msgstr ""
+"Indica si esta configuración se utiliza activamente para la generación de "
+"publicaciones."
 
 msgid "AI Prompt Configuration"
 msgstr "Configuración de Prompts de IA"
@@ -441,14 +484,25 @@ msgstr "La temperatura debe estar entre 0.0 y 1.0."
 msgid "Model Parameters"
 msgstr "Parámetros del Modelo"
 
-msgid "Specify the Gemini model identifier (e.g. gemini-2.5-flash, gemini-2.5-pro) and sampling temperature (0.0 = deterministic, 1.0 = creative)."
-msgstr "Especifica el identificador del modelo Gemini (ej. gemini-2.5-flash, gemini-2.5-pro) y la temperatura de muestreo (0.0 = determinista, 1.0 = creativo)."
+msgid ""
+"Specify the Gemini model identifier (e.g. gemini-2.5-flash, gemini-2.5-pro) "
+"and sampling temperature (0.0 = deterministic, 1.0 = creative)."
+msgstr ""
+"Especifica el identificador del modelo Gemini (ej. gemini-2.5-flash, "
+"gemini-2.5-pro) y la temperatura de muestreo (0.0 = determinista, 1.0 = "
+"creativo)."
 
 msgid "Copywriting & Prompt Instructions"
 msgstr "Redacción e Instrucciones del Prompt"
 
-msgid "Define marketplace instructions, selling tone, and format guidelines. Note: The system automatically appends assistant field notes and enforces the structured title/description output schema."
-msgstr "Define las instrucciones del marketplace, el tono de venta y las pautas de formato. Nota: El sistema añade automáticamente las notas de campo del asistente y aplica el esquema estructurado de título/descripción."
+msgid ""
+"Define marketplace instructions, selling tone, and format guidelines. Note: "
+"The system automatically appends assistant field notes and enforces the "
+"structured title/description output schema."
+msgstr ""
+"Define las instrucciones del marketplace, el tono de venta y las pautas de "
+"formato. Nota: El sistema añade automáticamente las notas de campo del "
+"asistente y aplica el esquema estructurado de título/descripción."
 
 msgid "Status & Timestamps"
 msgstr "Estado y Marcas de Tiempo"
@@ -457,7 +511,9 @@ msgid "Site Name"
 msgstr "Nombre de la Plataforma"
 
 msgid "Marketplace platform name (e.g. Wallapop, Vinted, eBay, Milanuncios)"
-msgstr "Nombre de la plataforma de marketplace (ej. Wallapop, Vinted, eBay, Milanuncios)"
+msgstr ""
+"Nombre de la plataforma de marketplace (ej. Wallapop, Vinted, eBay, "
+"Milanuncios)"
 
 msgid "Slug"
 msgstr "Slug"
@@ -472,13 +528,16 @@ msgid "Base homepage URL of the marketplace (e.g. https://es.wallapop.com)"
 msgstr "URL principal de la plataforma (ej. https://es.wallapop.com)"
 
 msgid "Whether this platform is actively offered when adding listing links"
-msgstr "Indica si esta plataforma se ofrece activamente al añadir enlaces de publicaciones"
+msgstr ""
+"Indica si esta plataforma se ofrece activamente al añadir enlaces de "
+"publicaciones"
 
 msgid "Display Order"
 msgstr "Orden de Visualización"
 
 msgid "Sorting order for displaying platforms in dropdowns and lists"
-msgstr "Orden de clasificación para mostrar plataformas en listas y formularios"
+msgstr ""
+"Orden de clasificación para mostrar plataformas en listas y formularios"
 
 msgid "Marketplace Site"
 msgstr "Plataforma de Marketplace"
@@ -508,7 +567,8 @@ msgid "Linked Products"
 msgstr "Productos Vinculados"
 
 msgid "Manager privileges required to manage listing links."
-msgstr "Se requieren privilegios de gestor para administrar enlaces de publicación."
+msgstr ""
+"Se requieren privilegios de gestor para administrar enlaces de publicación."
 
 msgid "Marketplace link removed successfully."
 msgstr "Enlace de marketplace eliminado correctamente."
@@ -520,7 +580,8 @@ msgid "Marketplace link cleared."
 msgstr "Enlace de marketplace borrado."
 
 msgid "Please provide a valid URL starting with http:// or https://."
-msgstr "Por favor proporciona una URL válida que empiece por http:// o https://."
+msgstr ""
+"Por favor proporciona una URL válida que empiece por http:// o https://."
 
 msgid "Link for %(site)s saved successfully."
 msgstr "Enlace para %(site)s guardado correctamente."
@@ -529,7 +590,8 @@ msgid "Marketplace Listing Links"
 msgstr "Enlaces de Publicación en Marketplaces"
 
 msgid "Keep track of active listings across external resale platforms."
-msgstr "Haz seguimiento de los anuncios activos en plataformas externas de reventa."
+msgstr ""
+"Haz seguimiento de los anuncios activos en plataformas externas de reventa."
 
 msgid "active links"
 msgstr "enlaces activos"
@@ -567,8 +629,12 @@ msgstr "Pega la URL del anuncio (ej. https://...)"
 msgid "Save Link"
 msgstr "Guardar Enlace"
 
-msgid "No active marketplace platforms found. Manage platforms in Django Admin under Marketplace Sites."
-msgstr "No se encontraron plataformas activas de marketplace. Gestiona las plataformas en la Administración de Django en Plataformas de Marketplace."
+msgid ""
+"No active marketplace platforms found. Manage platforms in Django Admin "
+"under Marketplace Sites."
+msgstr ""
+"No se encontraron plataformas activas de marketplace. Gestiona las "
+"plataformas en la Administración de Django en Plataformas de Marketplace."
 
 msgid "Archived / Deactivated Marketplace Links"
 msgstr "Enlaces de Marketplaces Archivados / Desactivados"
@@ -661,7 +727,8 @@ msgid "Please provide a valid question and category."
 msgstr "Por favor proporciona una pregunta y categoría válidas."
 
 msgid "All doubts resolved! Product marked as ready to publish."
-msgstr "¡Todas las dudas resueltas! Producto marcado como listo para publicar."
+msgstr ""
+"¡Todas las dudas resueltas! Producto marcado como listo para publicar."
 
 msgid "Answer saved. %d doubts still pending."
 msgstr "Respuesta guardada. %d dudas aún pendientes."
@@ -703,7 +770,8 @@ msgid "Dismiss question"
 msgstr "Descartar pregunta"
 
 msgid "Enter answer (e.g. 52 cm chest, composition tag...)"
-msgstr "Introduce la respuesta (ej. 52 cm de pecho, etiqueta de composición...)"
+msgstr ""
+"Introduce la respuesta (ej. 52 cm de pecho, etiqueta de composición...)"
 
 msgid "Resolved Clarifications"
 msgstr "Aclaraciones Resueltas"
@@ -711,8 +779,12 @@ msgstr "Aclaraciones Resueltas"
 msgid "Ask Assistant for Missing Details"
 msgstr "Preguntar al Asistente por Detalles Faltantes"
 
-msgid "What is missing? E.g., Please check armpit-to-armpit measurement or internal wash label."
-msgstr "¿Qué falta? Ej. Por favor revisa la medida de axila a axila o la etiqueta interior de lavado."
+msgid ""
+"What is missing? E.g., Please check armpit-to-armpit measurement or internal"
+" wash label."
+msgstr ""
+"¿Qué falta? Ej. Por favor revisa la medida de axila a axila o la etiqueta "
+"interior de lavado."
 
 msgid "Send Question"
 msgstr "Enviar Pregunta"
@@ -720,8 +792,12 @@ msgstr "Enviar Pregunta"
 msgid "New clarification responses available!"
 msgstr "¡Nuevas respuestas de aclaración disponibles!"
 
-msgid "Answers from assistant have been provided. Re-generate the listing copy to include these details in the AI description."
-msgstr "El asistente ha respondido a las dudas. Regenera el anuncio para incluir estos detalles en la descripción de IA."
+msgid ""
+"Answers from assistant have been provided. Re-generate the listing copy to "
+"include these details in the AI description."
+msgstr ""
+"El asistente ha respondido a las dudas. Regenera el anuncio para incluir "
+"estos detalles en la descripción de IA."
 
 msgid "Caution: Product has pending clarifications"
 msgstr "Precaución: El producto tiene dudas pendientes"
@@ -729,8 +805,12 @@ msgstr "Precaución: El producto tiene dudas pendientes"
 msgid "Caution: Product is blocked"
 msgstr "Precaución: El producto está bloqueado"
 
-msgid "Resolve pending doubts or unblock before publishing listings to external marketplaces to avoid inaccurate product claims."
-msgstr "Resuelve las dudas pendientes o desbloquea antes de publicar en marketplaces externos para evitar descripciones inexactas."
+msgid ""
+"Resolve pending doubts or unblock before publishing listings to external "
+"marketplaces to avoid inaccurate product claims."
+msgstr ""
+"Resuelve las dudas pendientes o desbloquea antes de publicar en marketplaces"
+" externos para evitar descripciones inexactas."
 
 msgid "Pending clarifications from manager"
 msgstr "Aclaraciones pendientes del gestor"
@@ -756,7 +836,9 @@ msgid "Filename"
 msgstr "Nombre de archivo"
 
 msgid "Name of generated backup archive (e.g. db_20261014_030000.sqlite3.gz)"
-msgstr "Nombre del archivo de copia de seguridad generado (ej. db_20261014_030000.sqlite3.gz)"
+msgstr ""
+"Nombre del archivo de copia de seguridad generado (ej. "
+"db_20261014_030000.sqlite3.gz)"
 
 msgid "Remote Path"
 msgstr "Ruta remota"
@@ -783,13 +865,16 @@ msgid "Triggered By"
 msgstr "Activado por"
 
 msgid "User who initiated manual backup (null for scheduled/CLI runs)"
-msgstr "Usuario que inició la copia de seguridad manual (nulo para ejecuciones programadas/CLI)"
+msgstr ""
+"Usuario que inició la copia de seguridad manual (nulo para ejecuciones "
+"programadas/CLI)"
 
 msgid "Error Message"
 msgstr "Mensaje de error"
 
 msgid "Detailed exception trace or error description if backup failed"
-msgstr "Traza detallada de la excepción o descripción del error si la copia falló"
+msgstr ""
+"Traza detallada de la excepción o descripción del error si la copia falló"
 
 msgid "Database Backup Log"
 msgstr "Registro de copia de seguridad"
@@ -827,8 +912,14 @@ msgstr "Confirmar copia de seguridad de la base de datos"
 msgid "Create On-Demand Database Backup"
 msgstr "Crear copia de seguridad bajo demanda"
 
-msgid "Are you sure you want to trigger an immediate hot backup of the SQLite database? A consistent, point-in-time snapshot (.sqlite3.gz) will be created and uploaded directly to cloud storage."
-msgstr "¿Estás seguro de que deseas iniciar una copia de seguridad inmediata de la base de datos SQLite? Se creará una instantánea consistente (.sqlite3.gz) y se subirá directamente al almacenamiento en la nube."
+msgid ""
+"Are you sure you want to trigger an immediate hot backup of the SQLite "
+"database? A consistent, point-in-time snapshot (.sqlite3.gz) will be created"
+" and uploaded directly to cloud storage."
+msgstr ""
+"¿Estás seguro de que deseas iniciar una copia de seguridad inmediata de la "
+"base de datos SQLite? Se creará una instantánea consistente (.sqlite3.gz) y "
+"se subirá directamente al almacenamiento en la nube."
 
 msgid "Yes, Create Backup Now"
 msgstr "Sí, crear copia de seguridad ahora"
@@ -843,10 +934,13 @@ msgid "Manager privileges required to trigger backups."
 msgstr "Se requieren privilegios de gestor para crear copias de seguridad."
 
 msgid "Warning: The most recent automated database backup failed!"
-msgstr "¡Advertencia: La última copia de seguridad automática de la base de datos ha fallado!"
+msgstr ""
+"¡Advertencia: La última copia de seguridad automática de la base de datos ha"
+" fallado!"
 
 msgid "Please inspect the database backup audit log."
-msgstr "Por favor, inspecciona el registro de auditoría de copias de seguridad."
+msgstr ""
+"Por favor, inspecciona el registro de auditoría de copias de seguridad."
 
 msgid "View Backup Logs"
 msgstr "Ver registros de copia"
@@ -909,7 +1003,9 @@ msgid "Target Sale Price"
 msgstr "Precio de venta objetivo"
 
 msgid "If price is already known. Can also be set later in staging."
-msgstr "Si el precio ya se conoce. También se puede fijar más tarde en la preparación."
+msgstr ""
+"Si el precio ya se conoce. También se puede fijar más tarde en la "
+"preparación."
 
 msgid "Please attach at least one photo to identify the product."
 msgstr "Por favor, adjunta al menos una foto para identificar el producto."
@@ -920,8 +1016,12 @@ msgstr "Método no permitido. Usa POST."
 msgid "Please attach at least one photo of the product before saving."
 msgstr "Por favor, adjunta al menos una foto del producto antes de guardar."
 
-msgid "The file '%(name)s' exceeds the 10MB limit (%(size)s MB). Please select photos under 10MB."
-msgstr "El archivo '%(name)s' supera el límite de 10MB (%(size)s MB). Por favor, selecciona fotos menores de 10MB."
+msgid ""
+"The file '%(name)s' exceeds the 10MB limit (%(size)s MB). Please select "
+"photos under 10MB."
+msgstr ""
+"El archivo '%(name)s' supera el límite de 10MB (%(size)s MB). Por favor, "
+"selecciona fotos menores de 10MB."
 
 msgid "Please enter a valid, non-negative price."
 msgstr "Por favor, introduce un precio válido no negativo."
@@ -931,7 +1031,6 @@ msgstr "Guardando producto..."
 
 msgid "Please wait for AI analysis to finish..."
 msgstr "Espera a que finalice el análisis con IA..."
-
 
 msgid "Open menu"
 msgstr "Abrir menú"
@@ -960,4 +1059,127 @@ msgstr "Publicado"
 msgid "Identified Title"
 msgstr "Título identificado"
 
+msgid "Enable Alerts"
+msgstr "Activar alertas"
 
+msgid "Alerts Active"
+msgstr "Alertas activas"
+
+msgid "Test Alert"
+msgstr "Probar alerta"
+
+msgid "Send Test Alert"
+msgstr "Enviar alerta de prueba"
+
+msgid "Toggle push notification alerts on this device"
+msgstr "Alternar alertas de notificaciones push en este dispositivo"
+
+msgid "Push Notifications"
+msgstr "Notificaciones Push"
+
+msgid "Push Subscription"
+msgstr "Suscripción Push"
+
+msgid "Push Subscriptions"
+msgstr "Suscripciones Push"
+
+msgid "Push Endpoint"
+msgstr "Endpoint Push"
+
+msgid "P-256DH Key"
+msgstr "Clave P-256DH"
+
+msgid "Auth Secret"
+msgstr "Secreto Auth"
+
+msgid "User Agent"
+msgstr "Agente de usuario"
+
+msgid "Send test push notification"
+msgstr "Enviar notificación push de prueba"
+
+msgid "Web Push VAPID keys are not configured in settings/.env."
+msgstr "Las claves VAPID de Web Push no están configuradas en settings/.env."
+
+msgid "🔔 2ndHand Staging Test Alert"
+msgstr "🔔 Alerta de prueba de 2ndHand Staging"
+
+msgid "Push notifications are working on this device!"
+msgstr "¡Las notificaciones push funcionan en este dispositivo!"
+
+msgid "Successfully sent %(count)d test push notification(s)."
+msgstr "Se enviaron correctamente %(count)d notificación(es) push de prueba."
+
+msgid "Mobile intake & AI staging workspace for second-hand inventory."
+msgstr ""
+"Espacio móvil de recepción y preparación con IA para inventario de segunda "
+"mano."
+
+msgid "Method not allowed."
+msgstr "Método no permitido."
+
+msgid "Invalid JSON payload."
+msgstr "Carga JSON no válida."
+
+msgid "Missing required push subscription fields (endpoint, p256dh, auth)."
+msgstr ""
+"Faltan campos obligatorios de suscripción push (endpoint, p256dh, auth)."
+
+msgid "Invalid push endpoint URL."
+msgstr "URL de endpoint push no válida."
+
+msgid "Web Push VAPID keys are not configured."
+msgstr "Las claves VAPID de Web Push no están configuradas."
+
+msgid "❓ New Doubt on %(title)s"
+msgstr "❓ Nueva duda en %(title)s"
+
+msgid "✅ Doubt Answered: %(title)s"
+msgstr "✅ Duda respondida: %(title)s"
+
+msgid "Assistant provided clarification details."
+msgstr "El asistente proporcionó los detalles de aclaración."
+
+msgid "📦 New Intake in Draft: %(title)s"
+msgstr "📦 Nueva entrada en borrador: %(title)s"
+
+msgid "Needs AI description and staging review."
+msgstr "Necesita descripción con IA y revisión de preparación."
+
+msgid "🏷️ Price Needed: %(title)s"
+msgstr "🏷️ Precio pendiente: %(title)s"
+
+msgid "Title and description are ready — waiting for sale price (€)."
+msgstr ""
+"El título y la descripción están listos — esperando precio de venta (€)."
+
+msgid "Push notification alerts disabled on this device."
+msgstr "Alertas de notificaciones push desactivadas en este dispositivo."
+
+msgid ""
+"On iPhone/iPad: tap Share → Add to Home Screen to enable push notifications."
+msgstr ""
+"En iPhone/iPad: pulsa Compartir → Añadir a pantalla de inicio para activar "
+"las notificaciones push."
+
+msgid "Push notifications are not supported by this browser."
+msgstr "Este navegador no admite notificaciones push."
+
+msgid "Web Push VAPID keys are not configured on the server."
+msgstr "Las claves VAPID de Web Push no están configuradas en el servidor."
+
+msgid "Notification permission was denied in browser settings."
+msgstr ""
+"El permiso de notificaciones fue denegado en los ajustes del navegador."
+
+msgid "Push notification alerts enabled on this device!"
+msgstr "¡Alertas de notificaciones push activadas en este dispositivo!"
+
+msgid "Could not register push subscription."
+msgstr "No se pudo registrar la suscripción push."
+
+msgid "Test push alert dispatched!"
+msgstr "¡Alerta push de prueba enviada!"
+
+msgid "Failed to send test push alert."
+msgstr "Error al enviar la alerta push de prueba."
