@@ -244,6 +244,7 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - Approved: Push notification implementation scope: Full Web Push plumbing (`pywebpush`, VAPID keys, Service Worker `push`/`notificationclick` handlers, `PushSubscription` model, subscribe/unsubscribe/test endpoints, UI toggle) + helper service (Option A).
 - Approved: Target push workflow events: Clarification Doubts Q&A (`PENDING` / `ANSWERED`) and New Intake / Lifecycle Bottlenecks (`DRAFT` / `PRICE_PENDING`), controlled via `.env` flag `PUSH_NOTIFICATIONS_LIVE_SIGNALS`.
 - Approved: Service Worker caching strategy: Minimal pass-through Service Worker strictly for PWA installability and Push Notifications, no caching (Option B).
+- Approved: Build Compilation Footer Format & Metadata Scope: UTC Timestamp + Git Commit SHA + Environment Badge (Option A).
 
 ---
 
@@ -284,6 +285,17 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - [x] **Task 75:** Staging Product Detail UI Lifecycle Audit Trail Timeline Card (`inventory/views.py`, `inventory/templates/inventory/product_detail.html`).
 - [x] **Task 76:** Bilingual Localization (`es`/`en`), Comprehensive Test Suite (`tests/test_status_history.py`) & Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `CHANGELOG.md`).
 - [x] **Checkpoint 23 (Product State Change History Complete):** Every product state change is recorded with timestamps, user attribution, from/to statuses, and trigger notes; timeline card renders cleanly on `/products/<pk>/` across viewports; Django Admin provides a read-only audit log and inline; all 299+ tests pass with 0 regressions.
+
+---
+
+### Phase 24: Compilation & Docker Image Build Timestamp Display (Vertical Slice 20)
+- [ ] **Task 77:** Version & Build Metadata Resolution Service (`inventory/services/version_service.py`).
+- [ ] **Task 78:** Global Template Context Processor & Django Settings Registration (`inventory/context_processors.py`, `config/settings.py`).
+- [ ] **Task 79:** Dockerfile & CI/CD Workflow Metadata Injection (`Dockerfile`, `.github/workflows/ci.yml`).
+- [ ] **Task 80:** Footer UI Modernization & Responsive Layout in `base.html` (`inventory/templates/inventory/base.html`).
+- [ ] **Task 81:** Bilingual Localization, Comprehensive Unit Tests & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_build_info.py`, `CHANGELOG.md`).
+- [ ] **Checkpoint 24 (Build Compilation Info Complete):** Build timestamp, commit SHA, and environment badge display properly in footer across all views and viewports; Docker builds automatically bake in build metadata; tests pass with 0 regressions.
+
 
 
 

@@ -1797,6 +1797,109 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 - [x] Django Admin provides an immutable read-only changelist and inline.
 - [x] Full test suite passes with 0 regressions and `ruff check .` passes cleanly.
 
+---
+
+## Phase 24: Compilation & Docker Image Build Timestamp Display (Vertical Slice 20)
+
+### Task 77: Version & Build Metadata Resolution Service (`inventory/services/version_service.py`)
+**Description:** Create `inventory/services/version_service.py` with `get_build_info()`. Implement cascading resolution: (1) environment variables (`APP_BUILD_TIME`, `APP_BUILD_COMMIT`, `APP_VERSION`, `APP_ENV`), (2) filesystem check for baked Docker files (`/app/build_date.txt` and `/app/build_commit.txt` or project root), (3) Git fallback when running locally (`git log -1` and `git rev-parse --short HEAD`), and (4) default development fallback (`"Desarrollo local"` / `"Local Development"`). Cache the parsed result in memory so subsequent calls incur zero subprocess or disk I/O.
+**Acceptance criteria:**
+- [ ] `get_build_info()` resolves build timestamp, short commit SHA, and environment badge.
+- [ ] Environment variables override filesystem and Git metadata.
+- [ ] In-memory caching avoids repetitive shell execution or disk reads.
+- [ ] Gracefully handles missing Git binaries, missing repo metadata, and empty environment variables without raising exceptions.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py test tests.test_build_info`
+**Dependencies:** None
+**Files likely touched:**
+- `inventory/services/version_service.py`
+- `tests/test_build_info.py`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 78: Global Template Context Processor & Django Settings Registration
+**Description:** Implement `build_info` context processor in `inventory/context_processors.py` that exposes the `build_info` dictionary to all Django templates. Add fallback settings in `config/settings.py` (`APP_BUILD_TIME`, `APP_BUILD_COMMIT`, `APP_VERSION`, `APP_ENV`) read from `os.getenv()`, and register `'inventory.context_processors.build_info'` in `TEMPLATES[0]['OPTIONS']['context_processors']`.
+**Acceptance criteria:**
+- [ ] `inventory/context_processors.py` contains `build_info(request)`.
+- [ ] Context processor registered in `config/settings.py`.
+- [ ] `build_info` context dictionary is available in every template context (authenticated and unauthenticated).
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+- [ ] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_build_info`
+**Dependencies:** Task 77
+**Files likely touched:**
+- `inventory/context_processors.py`
+- `config/settings.py`
+- `tests/test_build_info.py`
+**Estimated scope:** Small (3 files)
+
+---
+
+### Task 79: Dockerfile & CI/CD Workflow Metadata Injection
+**Description:** Update `Dockerfile` to accept `ARG BUILD_TIME=""`, `ARG BUILD_COMMIT=""`, and `ARG APP_VERSION="1.0.0"`, exporting them as `ENV APP_BUILD_TIME`, `ENV APP_BUILD_COMMIT`, and `ENV APP_VERSION`. Add a build step in `Dockerfile` that writes `/app/build_date.txt` automatically if `BUILD_TIME` was not provided, guaranteeing every `docker build .` captures the exact build execution timestamp. Update `.github/workflows/ci.yml` in both `docker-build-and-smoke-test` and `publish-image` jobs to pass dynamic `BUILD_TIME` and `BUILD_COMMIT` build arguments.
+**Acceptance criteria:**
+- [ ] `Dockerfile` defines `ARG` and `ENV` for `BUILD_TIME`, `BUILD_COMMIT`, and `APP_VERSION`.
+- [ ] `Dockerfile` generates `/app/build_date.txt` at build time if `BUILD_TIME` is not supplied.
+- [ ] `.github/workflows/ci.yml` passes build timestamp and Git SHA during container build & push.
+- [ ] Non-root execution (`USER appuser`) and security constraints remain preserved.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\ruff.exe check .`
+- [ ] Docker configuration check: syntax and schema verification
+**Dependencies:** Task 77, Task 78
+**Files likely touched:**
+- `Dockerfile`
+- `.github/workflows/ci.yml`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 80: Footer UI Modernization & Responsive Layout in `base.html`
+**Description:** Modernize the application footer in `inventory/templates/inventory/base.html` to display the compilation metadata. Include: (1) the platform tagline/copyright, (2) an accessible, responsive horizontal flex rail containing `⏱️ Build: <build_time>` (`id="footer-build-time"`), `🔖 Commit: <commit_short>` (`id="footer-build-sha"`), and an environment status badge (`PROD`, `STAGING`, `DEV`). Ensure mobile responsiveness with `flex-wrap justify-center gap-x-2 gap-y-1` and `text-[11px] sm:text-xs`, preventing horizontal overflow on $390 \times 844$ viewports.
+**Acceptance criteria:**
+- [ ] Footer renders build timestamp, commit hash, and environment badge across all pages (`/dashboard/`, `/intake/`, `/products/<pk>/`, `/login/`).
+- [ ] Elements feature standard DOM IDs (`#footer-build-time`, `#footer-build-sha`).
+- [ ] Layout flows seamlessly on mobile viewports without horizontal scrollbars or clipping.
+- [ ] Conforms to WCAG color contrast standards.
+**Verification:**
+- [ ] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_build_info`
+**Dependencies:** Task 77, Task 78
+**Files likely touched:**
+- `inventory/templates/inventory/base.html`
+- `tests/test_build_info.py`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 81: Bilingual Localization, Comprehensive Unit Tests & Full Regression Check
+**Description:** Add Spanish translation strings for `"Build:"`, `"Commit:"`, `"Development"`, `"Production"`, and `"Staging"` in `locale/es/LC_MESSAGES/django.po` and compile to `django.mo`. Write extensive unit tests in `tests/test_build_info.py` validating environment variable parsing, filesystem fallbacks, Git fallbacks, template rendering, and locale switching. Run `ruff check .` and the full regression suite (`python manage.py test`).
+**Acceptance criteria:**
+- [ ] Spanish translations compiled in `django.mo`.
+- [ ] `tests/test_build_info.py` tests all fallback layers and template rendering.
+- [ ] Full test suite (314+ tests) passes with 0 failures and 0 errors.
+- [ ] `ruff check .` passes with 0 warnings.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [ ] Linter passes: `.venv\Scripts\ruff.exe check .`
+- [ ] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+**Dependencies:** Task 77, Task 78, Task 79, Task 80
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_build_info.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (4 files)
+
+---
+
+## Checkpoint 24: Build Compilation & Version Info Complete
+- [ ] Build timestamp, commit SHA, and environment badge display properly in footer across all views and viewports.
+- [ ] Docker builds automatically bake in build metadata.
+- [ ] Local development cleanly falls back to Git commit information.
+- [ ] All unit and regression tests pass with 0 failures.
+- [ ] `ruff check .` passes cleanly.
+
+
 
 
 
