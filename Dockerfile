@@ -35,8 +35,28 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
+# Build metadata arguments
+ARG BUILD_TIME=""
+ARG BUILD_COMMIT=""
+ARG APP_VERSION="1.0.0"
+
+ENV APP_BUILD_TIME=${BUILD_TIME} \
+    APP_BUILD_COMMIT=${BUILD_COMMIT} \
+    APP_VERSION=${APP_VERSION}
+
 # Copy application source code with non-root ownership
 COPY --chown=appuser:appgroup . /app/
+
+# Bake build date/time and commit files into container image
+RUN if [ -z "$BUILD_TIME" ]; then \
+        date -u +"%Y-%m-%d %H:%M UTC" > /app/build_date.txt; \
+    else \
+        echo "$BUILD_TIME" > /app/build_date.txt; \
+    fi && \
+    if [ -n "$BUILD_COMMIT" ]; then \
+        echo "$BUILD_COMMIT" > /app/build_commit.txt; \
+    fi && \
+    chown appuser:appgroup /app/build_date.txt /app/build_commit.txt 2>/dev/null || true
 
 # Ensure entrypoint script has execution permissions
 RUN chmod +x /app/docker/entrypoint.sh

@@ -50,3 +50,14 @@ def pwa_push(request):
         "user_has_push_subscription": has_sub,
     }
 
+
+def build_info(request):
+    """
+    Global context processor injecting compilation timestamp, Git commit SHA,
+    application version, and environment metadata into templates.
+    """
+    from inventory.services.version_service import get_build_info
+
+    return {"build_info": get_build_info()}
+
+

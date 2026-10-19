@@ -63,6 +63,7 @@ TEMPLATES = [
                 'inventory.context_processors.notifications',
                 'inventory.context_processors.turnstile',
                 'inventory.context_processors.pwa_push',
+                'inventory.context_processors.build_info',
             ],
         },
     },
@@ -226,4 +227,11 @@ if VAPID_CLAIMS_EMAIL and not VAPID_CLAIMS_EMAIL.startswith('mailto:'):
 PUSH_NOTIFICATIONS_LIVE_SIGNALS = (
     os.getenv('PUSH_NOTIFICATIONS_LIVE_SIGNALS', 'False').lower() in ('true', '1', 't', 'yes')
 )
+
+# Compilation & Build Metadata
+APP_BUILD_TIME = os.getenv('APP_BUILD_TIME', '').strip()
+APP_BUILD_COMMIT = os.getenv('APP_BUILD_COMMIT', '').strip()
+APP_VERSION = os.getenv('APP_VERSION', '1.0.0').strip()
+APP_ENV = os.getenv('APP_ENV', '').strip()
+
 

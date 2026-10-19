@@ -374,9 +374,34 @@
     {% block content %}{% endblock %}
   </main>
 
-  <!-- Minimal Footer -->
-  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
-    {% trans "2ndHand Product Intake & Staging Hub • Powered by Django & Gemini Vision" %}
+  <!-- Application Footer with Compilation & Build Metadata -->
+  <footer class="bg-white border-t border-slate-200 py-4 px-4 text-center text-xs text-slate-400 space-y-1.5" role="contentinfo">
+    <div>
+      {% trans "2ndHand Product Intake & Staging Hub • Powered by Django & Gemini Vision" %}
+    </div>
+    {% if build_info %}
+    <div class="flex items-center justify-center flex-wrap gap-x-2 gap-y-1 text-slate-500 text-[11px] sm:text-xs">
+      <span class="inline-flex items-center gap-1 font-mono">
+        <span aria-hidden="true">⏱️</span>
+        <span class="text-slate-400">{% trans "Build:" %}</span>
+        <span class="font-medium text-slate-600" id="footer-build-time">{{ build_info.build_time }}</span>
+      </span>
+      {% if build_info.commit_short %}
+      <span class="text-slate-300" aria-hidden="true">•</span>
+      <span class="inline-flex items-center gap-1 font-mono">
+        <span aria-hidden="true">🔖</span>
+        <span class="text-slate-400">{% trans "Commit:" %}</span>
+        <span class="font-medium text-slate-600" id="footer-build-sha">{{ build_info.commit_short }}</span>
+      </span>
+      {% endif %}
+      {% if build_info.environment_badge %}
+      <span class="text-slate-300" aria-hidden="true">•</span>
+      <span class="px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider {{ build_info.badge_css }}" id="footer-build-env">
+        {{ build_info.environment_badge }}
+      </span>
+      {% endif %}
+    </div>
+    {% endif %}
   </footer>
 
   <!-- Global PWA Service Worker Registration -->

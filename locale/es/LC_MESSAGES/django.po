@@ -1247,3 +1247,19 @@ msgstr "Aún no hay transiciones de estado registradas."
 msgid "System / Automatic"
 msgstr "Sistema / Automático"
 
+msgid "Build:"
+msgstr "Compilación:"
+
+msgid "Commit:"
+msgstr "Commit:"
+
+msgid "Development"
+msgstr "Desarrollo"
+
+msgid "Production"
+msgstr "Producción"
+
+msgid "Staging"
+msgstr "Staging"
+
+
