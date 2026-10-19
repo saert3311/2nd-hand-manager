@@ -9,12 +9,12 @@
   <!-- Top Action Bar -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-      <h1 class="text-2xl font-black text-slate-900 tracking-tight">{% trans "Inventory Catalog" %}</h1>
-      <p class="text-xs sm:text-sm text-slate-500 mt-0.5">{% trans "Track, stage, and prepare marketplace listings." %}</p>
+      <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{% trans "Inventory Catalog" %}</h1>
+      <p class="text-sm sm:text-base text-slate-500 mt-0.5">{% trans "Track, stage, and prepare marketplace listings." %}</p>
     </div>
     <div class="flex items-center gap-2">
       <a href="{% url 'inventory:intake' %}"
-         class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-sm transition">
+         class="inline-flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm sm:text-base font-bold rounded-xl shadow-sm transition">
         <span>📸</span> {% trans "New Intake" %}
       </a>
     </div>
@@ -25,7 +25,7 @@
     
     <!-- Status Segmented Control (Pill Rail) -->
     <div class="relative">
-      <nav class="flex items-center gap-1.5 sm:gap-2 p-1.5 bg-slate-100/80 rounded-xl overflow-x-auto no-scrollbar overscroll-contain text-xs font-semibold"
+      <nav class="flex items-center gap-1.5 sm:gap-2 p-1.5 bg-slate-100/80 rounded-xl overflow-x-auto no-scrollbar overscroll-contain text-sm font-semibold"
            aria-label="{% trans 'Filter products by status' %}"
            role="tablist">
         
@@ -33,9 +33,9 @@
         <a href="?status=all{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            aria-selected="{% if status_filter == 'all' %}true{% else %}false{% endif %}"
-           class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg transition duration-150 {% if status_filter == 'all' %}bg-white text-slate-900 shadow-xs ring-1 ring-slate-200/80 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
+           class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'all' %}bg-white text-slate-900 shadow-xs ring-1 ring-slate-200/80 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
           <span>{% trans "All" %}</span>
-          <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] {% if status_filter == 'all' %}bg-slate-100 text-slate-800 font-bold{% else %}bg-slate-200/80 text-slate-600{% endif %}">
+          <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs {% if status_filter == 'all' %}bg-slate-100 text-slate-800 font-bold{% else %}bg-slate-200/80 text-slate-600{% endif %}">
             ({{ total_count }})
           </span>
         </a>
@@ -44,9 +44,9 @@
         <a href="?status=active{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            aria-selected="{% if status_filter == 'active' %}true{% else %}false{% endif %}"
-           class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg transition duration-150 {% if status_filter == 'active' %}bg-white text-emerald-800 shadow-xs ring-1 ring-emerald-200 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
+           class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'active' %}bg-white text-emerald-800 shadow-xs ring-1 ring-emerald-200 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
           <span>{% trans "Active" %}</span>
-          <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] {% if status_filter == 'active' %}bg-emerald-100 text-emerald-800 font-bold{% else %}bg-slate-200/80 text-slate-600{% endif %}">
+          <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs {% if status_filter == 'active' %}bg-emerald-100 text-emerald-800 font-bold{% else %}bg-slate-200/80 text-slate-600{% endif %}">
             ({{ active_count }})
           </span>
         </a>
@@ -55,10 +55,10 @@
         <a href="?status=price_pending{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            aria-selected="{% if status_filter == 'price_pending' %}true{% else %}false{% endif %}"
-           class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg transition duration-150 {% if status_filter == 'price_pending' %}bg-white text-amber-900 shadow-xs ring-1 ring-amber-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
+           class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'price_pending' %}bg-white text-amber-900 shadow-xs ring-1 ring-amber-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
           <span aria-hidden="true">🏷️</span>
           <span>{% trans "Price Pending" %}</span>
-          <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] {% if status_filter == 'price_pending' %}bg-amber-100 text-amber-900 font-bold{% elif price_pending_count > 0 %}bg-amber-100 text-amber-800 font-bold{% else %}bg-slate-200/80 text-slate-600{% endif %}">
+          <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs {% if status_filter == 'price_pending' %}bg-amber-100 text-amber-900 font-bold{% elif price_pending_count > 0 %}bg-amber-100 text-amber-800 font-bold{% else %}bg-slate-200/80 text-slate-600{% endif %}">
             ({{ price_pending_count }})
           </span>
         </a>
@@ -67,10 +67,10 @@
         <a href="?status=awaiting_info{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            aria-selected="{% if status_filter == 'awaiting_info' %}true{% else %}false{% endif %}"
-           class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg transition duration-150 {% if status_filter == 'awaiting_info' %}bg-white text-amber-900 shadow-xs ring-1 ring-amber-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
+           class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'awaiting_info' %}bg-white text-amber-900 shadow-xs ring-1 ring-amber-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
           <span aria-hidden="true">❓</span>
           <span>{% trans "Doubts" %}</span>
-          <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] {% if status_filter == 'awaiting_info' %}bg-amber-100 text-amber-900 font-bold{% elif awaiting_info_count > 0 %}bg-amber-100 text-amber-800 font-bold{% else %}bg-slate-200/80 text-slate-600{% endif %}">
+          <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs {% if status_filter == 'awaiting_info' %}bg-amber-100 text-amber-900 font-bold{% elif awaiting_info_count > 0 %}bg-amber-100 text-amber-800 font-bold{% else %}bg-slate-200/80 text-slate-600{% endif %}">
             ({{ awaiting_info_count }})
           </span>
         </a>
@@ -79,9 +79,9 @@
         <a href="?status=sold{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            aria-selected="{% if status_filter == 'sold' %}true{% else %}false{% endif %}"
-           class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg transition duration-150 {% if status_filter == 'sold' %}bg-white text-slate-900 shadow-xs ring-1 ring-slate-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
+           class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'sold' %}bg-white text-slate-900 shadow-xs ring-1 ring-slate-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
           <span>{% trans "Sold" %}</span>
-          <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] {% if status_filter == 'sold' %}bg-slate-200 text-slate-800 font-bold{% else %}bg-slate-200/80 text-slate-600{% endif %}">
+          <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs {% if status_filter == 'sold' %}bg-slate-200 text-slate-800 font-bold{% else %}bg-slate-200/80 text-slate-600{% endif %}">
             ({{ sold_count }})
           </span>
         </a>
@@ -91,10 +91,10 @@
         <a href="?status=blocked{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            aria-selected="{% if status_filter == 'blocked' %}true{% else %}false{% endif %}"
-           class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg transition duration-150 {% if status_filter == 'blocked' %}bg-white text-rose-900 shadow-xs ring-1 ring-rose-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
+           class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'blocked' %}bg-white text-rose-900 shadow-xs ring-1 ring-rose-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
           <span aria-hidden="true">⛔</span>
           <span>{% trans "Blocked" %}</span>
-          <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] {% if status_filter == 'blocked' %}bg-rose-100 text-rose-800 font-bold{% else %}bg-rose-100 text-rose-700 font-bold{% endif %}">
+          <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs {% if status_filter == 'blocked' %}bg-rose-100 text-rose-800 font-bold{% else %}bg-rose-100 text-rose-700 font-bold{% endif %}">
             ({{ blocked_count }})
           </span>
         </a>
@@ -118,11 +118,11 @@
           <input type="text" name="q" value="{{ search_query }}"
                  placeholder="{% trans 'Search title, note, or date (e.g. 2026-10-10)...' %}"
                  aria-label="{% trans 'Search products by title, note, or date' %}"
-                 class="w-full pl-9 pr-9 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-normal text-slate-800 placeholder:text-slate-400 transition">
-          <span class="absolute left-3 top-2.5 text-slate-400 text-xs pointer-events-none" aria-hidden="true">🔍</span>
+                 class="w-full pl-10 pr-10 py-2.5 text-base sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-normal text-slate-800 placeholder:text-slate-400 transition">
+          <span class="absolute left-3.5 top-3 text-slate-400 text-sm pointer-events-none" aria-hidden="true">🔍</span>
           {% if search_query %}
           <a href="?status={{ status_filter }}{% if platform_filter %}&platform={{ platform_filter }}{% endif %}"
-             class="absolute right-2.5 top-1.5 p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/60 text-xs font-bold transition"
+             class="absolute right-3 top-2.5 p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/60 text-sm font-bold transition"
              title="{% trans 'Clear search' %}"
              aria-label="{% trans 'Clear search' %}">&times;</a>
           {% endif %}
@@ -131,7 +131,7 @@
 
       <!-- Platform Selector Form -->
       {% if available_platforms %}
-      <form method="get" class="w-full sm:w-56 shrink-0" id="platformFilterForm">
+      <form method="get" class="w-full sm:w-60 shrink-0" id="platformFilterForm">
         {% if status_filter != 'all' %}
         <input type="hidden" name="status" value="{{ status_filter }}">
         {% endif %}
@@ -141,7 +141,7 @@
         <div class="relative w-full">
           <select name="platform" onchange="this.form.submit()"
                   aria-label="{% trans 'Filter by marketplace platform' %}"
-                  class="w-full appearance-none pl-8 pr-8 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800 transition cursor-pointer">
+                  class="w-full appearance-none pl-9 pr-9 py-2.5 text-base sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800 transition cursor-pointer">
             <option value="">{% trans "All Platforms" %}</option>
             {% for platform in available_platforms %}
             <option value="{{ platform.slug }}" {% if platform_filter == platform.slug %}selected{% endif %}>
@@ -149,8 +149,8 @@
             </option>
             {% endfor %}
           </select>
-          <span class="absolute left-2.5 top-2.5 text-slate-400 text-xs pointer-events-none" aria-hidden="true">🔗</span>
-          <span class="absolute right-2.5 top-2.5 text-slate-400 text-[10px] pointer-events-none" aria-hidden="true">▼</span>
+          <span class="absolute left-3 top-3 text-slate-400 text-sm pointer-events-none" aria-hidden="true">🔗</span>
+          <span class="absolute right-3 top-3 text-slate-400 text-xs pointer-events-none" aria-hidden="true">▼</span>
         </div>
       </form>
       {% endif %}
@@ -159,7 +159,7 @@
       {% if search_query or platform_filter %}
       <div class="shrink-0 flex items-center">
         <a href="?status={{ status_filter }}"
-           class="inline-flex items-center gap-1 px-3 py-2 text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-transparent hover:border-rose-100 transition"
+           class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-transparent hover:border-rose-100 transition"
            title="{% trans 'Clear search' %}"
            aria-label="{% trans 'Clear search' %}">
           <span aria-hidden="true">&times;</span>
@@ -193,75 +193,75 @@
         <!-- Badges on Photo -->
         <div class="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1.5 max-w-[80%]">
           {% if product.status == 'awaiting_info' %}
-          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-amber-500 text-white">
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-amber-500 text-white">
             ❓ {% trans "Doubts" %}
           </span>
           {% elif product.status == 'blocked' %}
-          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-rose-600 text-white">
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-rose-600 text-white">
             ⛔ {% trans "Blocked" %}
           </span>
           {% elif product.status == 'price_pending' %}
-          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-amber-600 text-white">
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-amber-600 text-white">
             🏷️ {% trans "Price Pending" %}
           </span>
           {% elif product.status == 'published' %}
-          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-blue-600 text-white">
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-blue-600 text-white">
             🚀 {% trans "Published" %}
           </span>
           {% elif product.status == 'ready' %}
-          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-emerald-600 text-white">
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-emerald-600 text-white">
             ✨ {% trans "Ready" %}
           </span>
           {% elif product.status == 'draft' %}
-          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-slate-600 text-white">
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-slate-600 text-white">
             📝 {% trans "Draft" %}
           </span>
           {% elif product.is_sold %}
-          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-slate-900/80 text-white">
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-slate-900/80 text-white">
             {% trans "Sold" %}
           </span>
           {% else %}
-          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-emerald-600/90 text-white">
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-emerald-600/90 text-white">
             {% trans "Active" %}
           </span>
           {% endif %}
           {% for link in product.listing_links.all %}
           {% if link.is_active %}
-          <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-white/90 text-slate-800 shadow-xs backdrop-blur-xs">
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-white/90 text-slate-800 shadow-xs backdrop-blur-xs">
             {{ link.site.name }}
           </span>
           {% endif %}
           {% endfor %}
         </div>
 
-        <div class="absolute bottom-2.5 right-2.5 bg-black/60 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full backdrop-blur-xs flex items-center gap-1">
+        <div class="absolute bottom-2.5 right-2.5 bg-black/60 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-xs flex items-center gap-1.5">
           <span>📷</span> {{ product.images.count }}
         </div>
       </a>
 
       <!-- Content -->
-      <div class="p-4 flex flex-col flex-grow justify-between space-y-3">
+      <div class="p-4 sm:p-5 flex flex-col flex-grow justify-between space-y-3">
         <div>
-          <a href="{% url 'inventory:product_detail' product.pk %}" class="block font-bold text-slate-900 text-sm group-hover:text-emerald-700 line-clamp-1 transition">
+          <a href="{% url 'inventory:product_detail' product.pk %}" class="block font-bold text-slate-900 text-base group-hover:text-emerald-700 line-clamp-1 transition">
             {{ product.display_title }}
           </a>
           
           {% if product.raw_note %}
-          <p class="text-xs text-slate-500 line-clamp-2 mt-1">
+          <p class="text-sm text-slate-600 line-clamp-2 mt-1.5 leading-relaxed">
             {{ product.raw_note }}
           </p>
           {% endif %}
         </div>
 
-        <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+        <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between text-sm">
           <div>
             {% if product.sale_price is not None %}
-            <span class="font-extrabold text-slate-900 text-sm">€{{ product.sale_price|floatformat:2 }}</span>
+            <span class="font-extrabold text-slate-900 text-base sm:text-lg">€{{ product.sale_price|floatformat:2 }}</span>
             {% else %}
-            <span class="text-slate-400 italic">{% trans "No price set" %}</span>
+            <span class="text-slate-400 italic text-sm">{% trans "No price set" %}</span>
             {% endif %}
           </div>
-          <span class="text-slate-400 text-[11px]">{{ product.created_at|date:"M d" }}</span>
+          <span class="text-slate-400 text-xs font-medium">{{ product.created_at|date:"M d" }}</span>
         </div>
       </div>
 
@@ -271,24 +271,24 @@
 
   <!-- Pagination Controls -->
   {% if page_obj.has_other_pages %}
-  <div class="bg-white px-4 py-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+  <div class="bg-white px-4 py-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
     <!-- Results Counter -->
-    <div class="text-xs text-slate-500">
+    <div class="text-xs sm:text-sm text-slate-600">
       {% blocktrans trimmed with start=page_obj.start_index end=page_obj.end_index total=paginator.count %}
       Showing <span class="font-bold text-slate-800">{{ start }}</span> to <span class="font-bold text-slate-800">{{ end }}</span> of <span class="font-bold text-slate-800">{{ total }}</span> products
       {% endblocktrans %}
     </div>
 
     <!-- Navigation Buttons & Numbers -->
-    <nav class="flex items-center gap-1" aria-label="{% trans 'Pagination' %}">
+    <nav class="flex items-center gap-1.5" aria-label="{% trans 'Pagination' %}">
       <!-- Previous Button -->
       {% if page_obj.has_previous %}
       <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
-         class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition">
+         class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition min-h-[38px]">
         <span>&larr;</span> {% trans "Previous" %}
       </a>
       {% else %}
-      <span class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-300 bg-slate-50 rounded-lg border border-slate-100 cursor-not-allowed">
+      <span class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-300 bg-slate-50 rounded-xl border border-slate-100 cursor-not-allowed min-h-[38px]">
         <span>&larr;</span> {% trans "Previous" %}
       </span>
       {% endif %}
@@ -297,14 +297,14 @@
       <div class="hidden sm:flex items-center gap-1">
         {% for num in elided_page_range %}
           {% if num == paginator.ELLIPSIS %}
-            <span class="px-2 py-1 text-xs text-slate-400 font-bold">&hellip;</span>
+            <span class="px-2.5 py-1.5 text-xs sm:text-sm text-slate-400 font-bold">&hellip;</span>
           {% elif num == page_obj.number %}
-            <span class="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 rounded-lg shadow-xs" aria-current="page">
+            <span class="px-3.5 py-2 text-xs sm:text-sm font-bold text-white bg-emerald-600 rounded-xl shadow-xs" aria-current="page">
               {{ num }}
             </span>
           {% else %}
             <a href="?page={{ num }}{% if query_string %}&{{ query_string }}{% endif %}"
-               class="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition">
+               class="px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition">
               {{ num }}
             </a>
           {% endif %}
@@ -314,11 +314,11 @@
       <!-- Next Button -->
       {% if page_obj.has_next %}
       <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
-         class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition">
+         class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition min-h-[38px]">
         {% trans "Next" %} <span>&rarr;</span>
       </a>
       {% else %}
-      <span class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-300 bg-slate-50 rounded-lg border border-slate-100 cursor-not-allowed">
+      <span class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-300 bg-slate-50 rounded-xl border border-slate-100 cursor-not-allowed min-h-[38px]">
         {% trans "Next" %} <span>&rarr;</span>
       </span>
       {% endif %}
@@ -329,15 +329,15 @@
   {% else %}
   <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3">
     <div class="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center text-3xl">📦</div>
-    <h3 class="text-base font-bold text-slate-800">{% trans "No products found" %}</h3>
-    <p class="text-xs text-slate-500 max-w-sm mx-auto">
+    <h3 class="text-lg font-bold text-slate-800">{% trans "No products found" %}</h3>
+    <p class="text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
       {% if search_query %}
       {% blocktrans with query=search_query %}No products matched your search "{{ query }}". Try clearing the filter.{% endblocktrans %}
       {% else %}
       {% trans "There are no products in this view yet. Start by taking pictures of inventory." %}
       {% endif %}
     </p>
-    <a href="{% url 'inventory:intake' %}" class="inline-block mt-2 px-4 py-2 bg-emerald-600 text-white font-semibold text-xs rounded-xl shadow-sm hover:bg-emerald-700 transition">
+    <a href="{% url 'inventory:intake' %}" class="inline-block mt-2 px-5 py-2.5 bg-emerald-600 text-white font-semibold text-sm rounded-xl shadow-sm hover:bg-emerald-700 transition">
       {% trans "Catalog First Item" %}
     </a>
   </div>

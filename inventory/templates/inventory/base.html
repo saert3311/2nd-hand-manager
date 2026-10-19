@@ -2,7 +2,8 @@
 <html lang="{{ LANGUAGE_CODE|default:'en' }}" class="h-full bg-slate-50 text-slate-900">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="text-scale" content="scale">
   <title>{% block title %}2ndHand Staging{% endblock %}</title>
   <!-- PWA Manifest & Standalone Meta Tags -->
   <link rel="manifest" href="{% url 'inventory:manifest' %}">
@@ -34,6 +35,14 @@
     /* Mobile tap target and scroll optimizations */
     body {
       -webkit-tap-highlight-color: transparent;
+    }
+    /* Ensure input, select and textarea fonts on mobile viewports are at least 16px to prevent iOS auto-zoom and squinting */
+    @media (max-width: 640px) {
+      input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+      select,
+      textarea {
+        font-size: 1rem !important;
+      }
     }
     /* Hide scrollbars while preserving touch, mousewheel & trackpad horizontal scroll */
     .no-scrollbar::-webkit-scrollbar {
@@ -156,10 +165,10 @@
             {% if pending_clarifications_count > 0 %}
             <a href="{% url 'inventory:dashboard' %}?status=awaiting_info"
                id="mobile-doubts-badge"
-               class="badge-pending-clarifications flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300 transition shadow-sm animate-pulse min-h-[36px]"
+               class="badge-pending-clarifications flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300 transition shadow-sm animate-pulse min-h-[38px]"
                title="{% trans 'Pending clarifications from manager' %}">
               <span>❓</span>
-              <span class="bg-amber-600 text-white text-[11px] font-extrabold px-1.5 py-0.2 rounded-full">{{ pending_clarifications_count }}</span>
+              <span class="bg-amber-600 text-white text-xs font-black px-2 py-0.5 rounded-full">{{ pending_clarifications_count }}</span>
             </a>
             {% endif %}
 

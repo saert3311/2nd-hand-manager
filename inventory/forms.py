@@ -64,7 +64,7 @@ class ProductIntakeForm(forms.ModelForm):
             "rows": 3,
             "maxlength": "5000",
             "placeholder": _("Brief description / field notes (e.g., 'Vintage 90s Nike windbreaker, blue/white, small tear on left sleeve')"),
-            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition bg-slate-50 focus:bg-white resize-y"
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition bg-slate-50 focus:bg-white resize-y"
         }),
         required=False,
         label=_("Raw Field Notes")
@@ -81,7 +81,7 @@ class ProductIntakeForm(forms.ModelForm):
             "max": "9999999.99",
             "placeholder": "0.00",
             "inputmode": "decimal",
-            "class": "w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition bg-slate-50 focus:bg-white font-semibold"
+            "class": "w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition bg-slate-50 focus:bg-white font-semibold"
         }),
     )
     ai_title = forms.CharField(
@@ -103,7 +103,7 @@ class ProductUpdateForm(forms.ModelForm):
         label=_("Listing Title"),
         widget=forms.TextInput(attrs={
             "maxlength": "255",
-            "class": "w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
         }),
     )
     ai_description = forms.CharField(
@@ -113,7 +113,7 @@ class ProductUpdateForm(forms.ModelForm):
         widget=forms.Textarea(attrs={
             "rows": 6,
             "maxlength": "10000",
-            "class": "w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-xs leading-relaxed resize-y"
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono leading-relaxed resize-y"
         }),
     )
     sale_price = forms.DecimalField(
@@ -128,7 +128,7 @@ class ProductUpdateForm(forms.ModelForm):
             "max": "9999999.99",
             "placeholder": "0.00",
             "inputmode": "decimal",
-            "class": "w-full pl-8 pr-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500",
+            "class": "w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500",
         }),
     )
     status = forms.ChoiceField(
@@ -136,7 +136,7 @@ class ProductUpdateForm(forms.ModelForm):
         required=False,
         label=_("Lifecycle Status"),
         widget=forms.Select(attrs={
-            "class": "px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+            "class": "w-full sm:w-auto px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
         }),
     )
 

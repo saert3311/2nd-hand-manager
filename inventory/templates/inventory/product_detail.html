@@ -8,14 +8,14 @@
 
   <!-- Breadcrumb & Top Bar -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
+    <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-semibold text-slate-500">
       <a href="{% url 'inventory:dashboard' %}" class="hover:text-slate-800 transition flex items-center gap-1">
         &larr; {% trans "Back to Dashboard" %}
       </a>
       <span>&bull;</span>
       <span class="text-slate-800">{% trans "Product" %} #{{ product.id }}</span>
       <span>&bull;</span>
-      <span id="product-status-badge" class="product-status-badge text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider
+      <span id="product-status-badge" class="product-status-badge text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider
         {% if product.status == 'awaiting_info' %}bg-amber-100 text-amber-800 border border-amber-300
         {% elif product.status == 'ready' %}bg-emerald-100 text-emerald-800 border border-emerald-300
         {% elif product.status == 'price_pending' %}bg-amber-100 text-amber-900 border border-amber-300
@@ -33,7 +33,7 @@
       </span>
       {% if product.sale_price is not None %}
       <span>&bull;</span>
-      <span id="product-price-badge" class="product-price-badge text-xs font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full shadow-sm">
+      <span id="product-price-badge" class="product-price-badge text-xs sm:text-sm font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full shadow-sm">
         €{{ product.sale_price|floatformat:2 }}
       </span>
       {% endif %}
@@ -43,7 +43,7 @@
       <!-- ZIP Download Button -->
       {% if product.images.exists %}
       <a href="{% url 'inventory:download_zip' product.pk %}"
-         class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-sm transition">
+         class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition">
         <span>💾</span> {% trans "Download All Photos (.ZIP)" %}
       </a>
       {% endif %}
@@ -59,10 +59,10 @@
       <!-- Photo Gallery Card -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
         <div class="flex items-center justify-between">
-          <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider">
+          <h2 class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider">
             {% trans "Photos" %} ({{ product.images.count }})
           </h2>
-          <span class="text-[11px] text-slate-400">{% trans "Saved as WebP" %}</span>
+          <span class="text-xs text-slate-400">{% trans "Saved as WebP" %}</span>
         </div>
 
         {% if product.images.exists %}
@@ -81,7 +81,7 @@
           {% endfor %}
         </div>
         {% else %}
-        <div class="aspect-square bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 text-xs">
+        <div class="aspect-square bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 text-sm">
           {% trans "No photos attached." %}
         </div>
         {% endif %}
@@ -90,15 +90,15 @@
       <!-- Preserved Raw Notes Card -->
       <div class="bg-amber-50/60 rounded-2xl border border-amber-200 p-5 space-y-2">
         <div class="flex items-center justify-between">
-          <h3 class="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+          <h3 class="text-xs sm:text-sm font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
             <span>📝</span> {% trans "Preserved Intake Notes" %}
           </h3>
-          <span class="text-[10px] text-amber-700 font-medium">{% trans "Read-Only" %}</span>
+          <span class="text-xs text-amber-700 font-semibold">{% trans "Read-Only" %}</span>
         </div>
-        <p class="text-xs sm:text-sm text-amber-950 font-mono whitespace-pre-wrap leading-relaxed">
+        <p class="text-sm sm:text-base text-amber-950 font-mono whitespace-pre-wrap leading-relaxed">
           {% if product.raw_note %}{{ product.raw_note }}{% else %}<span class="italic text-amber-700/70">{% trans "No field notes provided during intake." %}</span>{% endif %}
         </p>
-        <div class="pt-2 border-t border-amber-200/60 text-[11px] text-amber-800 flex justify-between">
+        <div class="pt-2 border-t border-amber-200/60 text-xs text-amber-800 flex justify-between">
           <span>{% trans "Cataloged by" %} {{ product.created_by.username|default:"System" }}</span>
           <span>{{ product.created_at|date:"M d, Y H:i" }}</span>
         </div>
@@ -108,24 +108,24 @@
       <div id="clarifications-section" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <div class="flex items-center gap-2">
-            <span class="text-base">❓</span>
-            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
+            <span class="text-base sm:text-lg">❓</span>
+            <h3 class="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
               {% trans "Product Clarifications" %}
             </h3>
           </div>
-          <div class="flex items-center gap-1.5 text-[11px] font-bold">
+          <div class="flex items-center gap-1.5 text-xs font-bold">
             {% if pending_clarifications.exists %}
-            <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+            <span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
               {{ pending_clarifications.count }} {% trans "pending" %}
             </span>
             {% endif %}
             {% if resolved_clarifications.exists %}
-            <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+            <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
               {{ resolved_clarifications.count }} {% trans "resolved" %}
             </span>
             {% endif %}
             {% if not pending_clarifications.exists and not resolved_clarifications.exists %}
-            <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+            <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
               {% trans "None" %}
             </span>
             {% endif %}
@@ -135,17 +135,17 @@
         <!-- Pending Clarifications List -->
         {% if pending_clarifications.exists %}
         <div class="space-y-3">
-          <h4 class="text-[11px] font-bold text-amber-900 uppercase tracking-wider">
+          <h4 class="text-xs sm:text-sm font-bold text-amber-900 uppercase tracking-wider">
             {% trans "Pending Doubts (Needs Answer)" %}
           </h4>
           {% for clarif in pending_clarifications %}
           <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 space-y-2.5">
             <div class="flex items-start justify-between gap-2">
               <div class="flex items-center gap-2">
-                <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md bg-amber-200 text-amber-900">
+                <span class="px-2 py-0.5 text-xs font-bold uppercase tracking-wider rounded-md bg-amber-200 text-amber-900">
                   {{ clarif.get_category_display }}
                 </span>
-                <span class="text-[11px] text-slate-500">
+                <span class="text-xs text-slate-500">
                   {{ clarif.asked_by.username }} &bull; {{ clarif.created_at|date:"M d, H:i" }}
                 </span>
               </div>
@@ -153,26 +153,26 @@
               <form method="post" action="{% url 'inventory:delete_clarification' product.pk clarif.pk %}" class="inline">
                 {% csrf_token %}
                 <button type="submit" onclick="return confirm('{% trans 'Dismiss this clarification question?' %}');"
-                        class="text-[11px] text-slate-400 hover:text-rose-600 transition" title="{% trans 'Dismiss question' %}">
+                        class="text-sm text-slate-400 hover:text-rose-600 transition p-1" title="{% trans 'Dismiss question' %}">
                   ✕
                 </button>
               </form>
               {% endif %}
             </div>
 
-            <p class="text-xs font-semibold text-slate-900 leading-snug">
+            <p class="text-sm sm:text-base font-semibold text-slate-900 leading-snug">
               {{ clarif.question }}
             </p>
 
             <!-- Inline Answer Form -->
             <form method="post" action="{% url 'inventory:answer_clarification' product.pk clarif.pk %}" class="space-y-2 pt-1">
               {% csrf_token %}
-              <div class="flex gap-2">
+              <div class="flex flex-col sm:flex-row gap-2">
                 <input type="text" name="answer" required
                        placeholder="{% trans 'Enter answer (e.g. 52 cm chest, composition tag...)' %}"
-                       class="flex-1 px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+                       class="flex-1 px-3 py-2 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
                 <button type="submit"
-                        class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition whitespace-nowrap shadow-sm">
+                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-lg transition whitespace-nowrap shadow-sm">
                   {% trans "Answer" %}
                 </button>
               </div>
@@ -185,23 +185,23 @@
         <!-- Resolved Clarifications List -->
         {% if resolved_clarifications.exists %}
         <div class="space-y-2.5 pt-2 border-t border-slate-100">
-          <h4 class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+          <h4 class="text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wider">
             {% trans "Resolved Clarifications" %}
           </h4>
           {% for clarif in resolved_clarifications %}
-          <div class="bg-emerald-50/50 border border-emerald-200 rounded-xl p-3 space-y-1.5 text-xs">
-            <div class="flex items-center justify-between text-[11px]">
-              <span class="px-2 py-0.5 font-bold uppercase tracking-wider rounded-md bg-emerald-100 text-emerald-800 text-[10px]">
+          <div class="bg-emerald-50/50 border border-emerald-200 rounded-xl p-3.5 space-y-1.5 text-xs sm:text-sm">
+            <div class="flex items-center justify-between text-xs">
+              <span class="px-2 py-0.5 font-bold uppercase tracking-wider rounded-md bg-emerald-100 text-emerald-800 text-xs">
                 {{ clarif.get_category_display }}
               </span>
-              <span class="text-slate-400">
+              <span class="text-xs text-slate-400">
                 {{ clarif.answered_by.username|default:"Assistant" }} &bull; {{ clarif.answered_at|date:"M d, H:i" }}
               </span>
             </div>
-            <p class="text-slate-700 font-medium">
+            <p class="text-slate-800 font-medium">
               <span class="font-bold text-slate-900">Q:</span> {{ clarif.question }}
             </p>
-            <p class="text-emerald-950 font-semibold bg-white p-2 rounded-lg border border-emerald-100">
+            <p class="text-emerald-950 font-semibold bg-white p-2.5 rounded-lg border border-emerald-100 text-sm">
               <span class="text-emerald-700">✓</span> {{ clarif.answer }}
             </p>
           </div>
@@ -212,32 +212,32 @@
         <!-- Ask New Clarification Question (Managers Only) -->
         {% if can_manage %}
         <div class="pt-3 border-t border-slate-100 space-y-2">
-          <h4 class="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+          <h4 class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
             <span>➕</span> {% trans "Ask Assistant for Missing Details" %}
           </h4>
           <form method="post" action="{% url 'inventory:add_clarification' product.pk %}" class="space-y-2.5">
             {% csrf_token %}
             <div>
-              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
                 {% trans "Category" %}
               </label>
-              <select name="category" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-emerald-500">
+              <select name="category" class="w-full px-3 py-2 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-emerald-500">
                 {% for cat_val, cat_label in categories %}
                 <option value="{{ cat_val }}">{{ cat_label }}</option>
                 {% endfor %}
               </select>
             </div>
             <div>
-              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
                 {% trans "Question" %}
               </label>
               <textarea name="question" rows="2" required
                         placeholder="{% trans 'What is missing? E.g., Please check armpit-to-armpit measurement or internal wash label.' %}"
-                        class="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"></textarea>
+                        class="w-full px-3 py-2 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"></textarea>
             </div>
             <div class="flex justify-end">
               <button type="submit"
-                      class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition shadow-sm">
+                      class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-sm">
                 {% trans "Send Question" %}
               </button>
             </div>
@@ -256,8 +256,8 @@
       <div class="ai-regeneration-callout bg-amber-50 border border-amber-300 text-amber-900 rounded-2xl p-4 flex items-start gap-3 shadow-sm">
         <span class="text-xl shrink-0">💡</span>
         <div class="space-y-1">
-          <h4 class="font-bold text-xs uppercase tracking-wider text-amber-950">{% trans "New clarification responses available!" %}</h4>
-          <p class="text-xs text-amber-800">
+          <h4 class="font-bold text-xs sm:text-sm uppercase tracking-wider text-amber-950">{% trans "New clarification responses available!" %}</h4>
+          <p class="text-xs sm:text-sm text-amber-800">
             {% trans "Answers from assistant have been provided. Re-generate the listing copy to include these details in the AI description." %}
           </p>
         </div>
@@ -267,10 +267,10 @@
       <!-- AI Action Banner -->
       <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-5 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h3 class="font-extrabold text-base flex items-center gap-2">
+          <h3 class="font-extrabold text-base sm:text-lg flex items-center gap-2">
             <span>✨</span> {% trans "Gemini Multimodal Vision" %}
           </h3>
-          <p class="text-xs text-emerald-100 mt-0.5">
+          <p class="text-xs sm:text-sm text-emerald-100 mt-0.5">
             {% trans "Analyzes attached photos & raw notes to draft an SEO marketplace title and description." %}
           </p>
         </div>
@@ -279,27 +279,27 @@
         <form method="post" action="{% url 'inventory:generate_ai' product.pk %}" id="aiForm">
           {% csrf_token %}
           <button type="submit" id="aiBtn"
-                  class="whitespace-nowrap px-4 py-2.5 bg-white hover:bg-emerald-50 text-emerald-900 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5">
+                  class="whitespace-nowrap px-4 py-2.5 bg-white hover:bg-emerald-50 text-emerald-900 font-bold text-xs sm:text-sm rounded-xl shadow-md transition flex items-center gap-1.5">
             <span id="aiIcon">⚡</span>
             <span id="aiText">{% trans "Generate AI Listing" %}</span>
           </button>
         </form>
         {% else %}
-        <span class="text-xs bg-white/20 text-white px-3 py-1.5 rounded-lg">{% trans "Manager Only" %}</span>
+        <span class="text-xs sm:text-sm bg-white/20 text-white px-3 py-1.5 rounded-lg">{% trans "Manager Only" %}</span>
         {% endif %}
       </div>
 
       <!-- Listing Staging Form Card -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">{% trans "Marketplace Listing Copy" %}</h2>
+          <h2 class="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider">{% trans "Marketplace Listing Copy" %}</h2>
           <div class="flex items-center gap-2">
             {% if product.sale_price is not None %}
-            <span class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+            <span class="text-xs sm:text-sm font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
               €{{ product.sale_price|floatformat:2 }}
             </span>
             {% endif %}
-            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full {% if product.is_sold %}bg-slate-100 text-slate-700{% else %}bg-emerald-100 text-emerald-800{% endif %}">
+            <span class="text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-full {% if product.is_sold %}bg-slate-100 text-slate-700{% else %}bg-emerald-100 text-emerald-800{% endif %}">
               {% if product.is_sold %}{% trans "Status: Sold" %}{% else %}{% trans "Status: Available for Sale" %}{% endif %}
             </span>
           </div>
@@ -311,11 +311,11 @@
           <!-- Title Field with Copy Button -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <label for="id_ai_title" class="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              <label for="id_ai_title" class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider">
                 {% trans "Listing Title" %}
               </label>
               <button type="button" onclick="copyToClipboard('id_ai_title', this)"
-                      class="text-xs font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md transition">
+                      class="text-xs sm:text-sm font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md transition">
                 <span>📋</span> {% trans "Copy Title" %}
               </button>
             </div>
@@ -325,11 +325,11 @@
           <!-- Description Field with Copy Button -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <label for="id_ai_description" class="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              <label for="id_ai_description" class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider">
                 {% trans "Listing Description / Copy" %}
               </label>
               <button type="button" onclick="copyToClipboard('id_ai_description', this)"
-                      class="text-xs font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md transition">
+                      class="text-xs sm:text-sm font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md transition">
                 <span>📋</span> {% trans "Copy Description" %}
               </button>
             </div>
@@ -339,36 +339,36 @@
           <!-- Pricing & Status Controls -->
           <div class="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
             <div>
-              <label for="id_sale_price" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label for="id_sale_price" class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 {% trans "Sale Price (€)" %}
               </label>
               <div class="relative flex items-center">
-                <span class="absolute left-3 text-slate-400 font-bold">€</span>
+                <span class="absolute left-3 text-slate-400 font-bold text-base sm:text-sm">€</span>
                 <input type="number" step="0.01" min="0" name="sale_price" id="id_sale_price"
                        value="{{ form.sale_price.value|unlocalize|default:'' }}"
                        placeholder="0.00"
                        {% if not can_manage %}readonly disabled{% endif %}
-                       class="w-full pl-8 pr-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 {% if not can_manage %}bg-slate-50 cursor-not-allowed text-slate-600{% endif %}">
+                       class="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 {% if not can_manage %}bg-slate-50 cursor-not-allowed text-slate-600{% endif %}">
               </div>
             </div>
 
             <div>
-              <label for="id_status" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label for="id_status" class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 {% trans "Lifecycle Status" %}
               </label>
               {{ form.status }}
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 {% trans "Sold Status" %}
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer select-none py-1">
                 {{ form.is_sold }}
-                <span class="text-xs font-semibold text-slate-700">{% trans "Mark Product as Sold" %}</span>
+                <span class="text-sm font-semibold text-slate-700">{% trans "Mark Product as Sold" %}</span>
               </label>
               {% if product.sold_at %}
-              <p class="text-[11px] text-slate-400 mt-0.5">{% trans "Sold on" %} {{ product.sold_at|date:"M d, Y H:i" }}</p>
+              <p class="text-xs text-slate-400 mt-0.5">{% trans "Sold on" %} {{ product.sold_at|date:"M d, Y H:i" }}</p>
               {% endif %}
             </div>
           </div>
@@ -377,7 +377,7 @@
           {% if can_manage %}
           <div class="pt-3 flex items-center justify-end gap-3">
             <button type="submit"
-                    class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition">
+                    class="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm sm:text-base rounded-xl shadow-sm transition">
               {% trans "Save Listing Changes" %}
             </button>
           </div>
@@ -390,24 +390,24 @@
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <div class="flex items-center gap-2">
-            <span class="text-base">🔗</span>
+            <span class="text-base sm:text-lg">🔗</span>
             <div>
-              <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">
+              <h2 class="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider">
                 {% trans "Marketplace Listing Links" %}
               </h2>
-              <p class="text-[11px] text-slate-500 mt-0.5">
+              <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
                 {% trans "Keep track of active listings across external resale platforms." %}
               </p>
             </div>
           </div>
-          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
+          <span class="text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
             {{ product.listing_links.count }} {% trans "published" %}
           </span>
         </div>
 
         {% if product.status == 'awaiting_info' or product.status == 'blocked' %}
         <!-- Publishing Gate Caution -->
-        <div class="publishing-gate-caution bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-3.5 flex items-start gap-2.5 text-xs">
+        <div class="publishing-gate-caution bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-3.5 flex items-start gap-2.5 text-xs sm:text-sm">
           <span class="text-base shrink-0">⚠️</span>
           <div>
             <span class="font-bold">
@@ -426,22 +426,22 @@
           <div data-site-slug="{{ row.site.slug }}" class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition space-y-2.5">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <span class="font-bold text-xs text-slate-800">{{ row.site.name }}</span>
+                <span class="font-bold text-sm text-slate-800">{{ row.site.name }}</span>
                 {% if row.site.base_url %}
                 <a href="{{ row.site.base_url }}" target="_blank" rel="noopener noreferrer"
-                   class="text-[11px] text-slate-400 hover:text-slate-600 transition" title="{% trans 'Visit platform home' %}">
+                   class="text-xs text-slate-400 hover:text-slate-600 transition" title="{% trans 'Visit platform home' %}">
                   ({{ row.site.base_url|truncatechars:30 }})
                 </a>
                 {% endif %}
               </div>
               <div>
                 {% if row.link %}
-                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                   {% trans "Listed" %}
                 </span>
                 {% else %}
-                <span class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-200/70 text-slate-600">
+                <span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-slate-200/70 text-slate-600">
                   {% trans "Not Listed" %}
                 </span>
                 {% endif %}
@@ -452,13 +452,13 @@
             <!-- Existing Link View & Action -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white p-2.5 rounded-lg border border-slate-200">
               <a href="{{ row.link.url }}" target="_blank" rel="noopener noreferrer"
-                 class="text-xs font-medium text-emerald-700 hover:text-emerald-900 break-all flex items-center gap-1.5 group">
+                 class="text-xs sm:text-sm font-medium text-emerald-700 hover:text-emerald-900 break-all flex items-center gap-1.5 group">
                 <span class="group-hover:translate-x-0.5 transition-transform">↗</span>
                 <span>{{ row.link.url }}</span>
               </a>
               <div class="flex items-center gap-1.5 shrink-0">
                 <button type="button" onclick="copyLinkUrl('{{ row.link.url|escapejs }}', this)"
-                        class="text-xs px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center gap-1">
+                        class="text-xs sm:text-sm px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center gap-1">
                   <span>📋</span> {% trans "Copy URL" %}
                 </button>
                 {% if can_manage %}
@@ -467,7 +467,7 @@
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="site_id" value="{{ row.site.id }}">
                   <button type="submit" onclick="return confirm('{% trans 'Are you sure you want to remove this link?' %}');"
-                          class="text-xs px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-md font-medium transition flex items-center gap-1">
+                          class="text-xs sm:text-sm px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-md font-medium transition flex items-center gap-1">
                     <span>✕</span> {% trans "Remove" %}
                   </button>
                 </form>
@@ -484,9 +484,9 @@
               <input type="hidden" name="site_id" value="{{ row.site.id }}">
               <input type="url" name="url" value="{{ row.link.url|default:'' }}"
                      placeholder="{% if row.link %}{% trans 'Update listing URL' %}{% else %}{% trans 'Paste listing URL (e.g. https://...)' %}{% endif %}"
-                     class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono">
+                     class="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono">
               <button type="submit"
-                      class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg transition whitespace-nowrap">
+                      class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-lg transition whitespace-nowrap">
                 {% if row.link %}{% trans "Update" %}{% else %}{% trans "Save Link" %}{% endif %}
               </button>
             </form>
@@ -495,7 +495,7 @@
           {% endfor %}
         </div>
         {% else %}
-        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-slate-500">
+        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center text-sm text-slate-500">
           {% trans "No active marketplace platforms found. Manage platforms in Django Admin under Marketplace Sites." %}
         </div>
         {% endif %}
@@ -503,11 +503,11 @@
         {% if extra_inactive_links %}
         <!-- Inactive/Archived Platforms with Existing Links -->
         <div class="pt-3 border-t border-slate-100 space-y-2">
-          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+          <h3 class="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">
             {% trans "Archived / Deactivated Marketplace Links" %}
           </h3>
           {% for link in extra_inactive_links %}
-          <div class="p-2.5 rounded-lg border border-amber-200 bg-amber-50/50 flex items-center justify-between gap-2 text-xs">
+          <div class="p-2.5 rounded-lg border border-amber-200 bg-amber-50/50 flex items-center justify-between gap-2 text-xs sm:text-sm">
             <div class="flex items-center gap-2">
               <span class="font-bold text-slate-700">{{ link.site.name }}</span>
               <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="text-emerald-700 hover:underline">

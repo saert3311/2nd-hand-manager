@@ -143,3 +143,49 @@ class DashboardResponsiveUITests(StaticLiveServerTestCase):
                 self.assertTrue(os.path.exists(screenshot_path))
 
             browser.close()
+
+    def test_mobile_typography_and_input_font_sizes(self):
+        """
+        Verifies that mobile font sizes comply with WCAG and prevent iOS Safari auto-zoom
+        by ensuring inputs have computed font-size >= 16px on mobile viewports (390x844).
+        """
+        with sync_playwright() as p:
+            browser = p.chromium.launch(channel="chrome", headless=True)
+            context = browser.new_context()
+            page = context.new_page()
+            page.set_viewport_size({"width": 390, "height": 844})
+
+            # 1. Login page mobile check
+            page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path="browser_verification_screenshots/mobile_login_390x844.png")
+
+            # Verify input computed font size is >= 16px
+            username_font_size = page.evaluate("() => window.getComputedStyle(document.getElementById('id_username')).fontSize")
+            self.assertGreaterEqual(float(username_font_size.replace("px", "")), 16.0)
+
+            # 2. Login as manager
+            page.fill("#id_username", "resp_manager")
+            page.fill("#id_password", "password123")
+            with page.expect_navigation():
+                page.click("#loginSubmitBtn")
+            page.wait_for_load_state("networkidle")
+
+            # 3. Intake page mobile check
+            page.goto(f"{self.live_server_url}{reverse('inventory:intake')}")
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path="browser_verification_screenshots/mobile_intake_390x844.png")
+
+            raw_note_font_size = page.evaluate("() => window.getComputedStyle(document.getElementById('id_raw_note')).fontSize")
+            self.assertGreaterEqual(float(raw_note_font_size.replace("px", "")), 16.0)
+
+            # 4. Product detail page mobile check
+            first_product = Product.objects.filter(status=ProductStatus.AWAITING_INFO).first()
+            page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', args=[first_product.pk])}")
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path="browser_verification_screenshots/mobile_product_detail_390x844.png")
+
+            title_font_size = page.evaluate("() => window.getComputedStyle(document.getElementById('id_ai_title')).fontSize")
+            self.assertGreaterEqual(float(title_font_size.replace("px", "")), 16.0)
+
+            browser.close()
