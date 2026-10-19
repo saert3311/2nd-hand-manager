@@ -278,12 +278,12 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 ---
 
 ### Phase 23: Product State Change History & Audit Trail (Vertical Slice 19)
-- [ ] **Task 72:** Domain Model `ProductStatusLog`, Helper Functions & Database Migration (`inventory/models.py`, `inventory/migrations/0014_productstatuslog.py`).
-- [ ] **Task 73:** Request User Context Capture Middleware & Automated Lifecycle Transition Logging (`inventory/middleware.py`, `config/settings.py`, `inventory/models.py`).
-- [ ] **Task 74:** Django Administration Read-Only Audit Changelist & Product Status Log Inline (`inventory/admin.py`).
-- [ ] **Task 75:** Staging Product Detail UI Lifecycle Audit Trail Timeline Card (`inventory/views.py`, `inventory/templates/inventory/product_detail.html`).
-- [ ] **Task 76:** Bilingual Localization (`es`/`en`), Comprehensive Test Suite (`tests/test_status_history.py`) & Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `CHANGELOG.md`).
-- [ ] **Checkpoint 23 (Product State Change History Complete):** Every product state change is recorded with timestamps, user attribution, from/to statuses, and trigger notes; timeline card renders cleanly on `/products/<pk>/` across viewports; Django Admin provides a read-only audit log and inline; all 299+ tests pass with 0 regressions.
+- [x] **Task 72:** Domain Model `ProductStatusLog`, Helper Functions & Database Migration (`inventory/models.py`, `inventory/migrations/0014_productstatuslog.py`).
+- [x] **Task 73:** Request User Context Capture Middleware & Automated Lifecycle Transition Logging (`inventory/middleware.py`, `config/settings.py`, `inventory/models.py`).
+- [x] **Task 74:** Django Administration Read-Only Audit Changelist & Product Status Log Inline (`inventory/admin.py`).
+- [x] **Task 75:** Staging Product Detail UI Lifecycle Audit Trail Timeline Card (`inventory/views.py`, `inventory/templates/inventory/product_detail.html`).
+- [x] **Task 76:** Bilingual Localization (`es`/`en`), Comprehensive Test Suite (`tests/test_status_history.py`) & Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `CHANGELOG.md`).
+- [x] **Checkpoint 23 (Product State Change History Complete):** Every product state change is recorded with timestamps, user attribution, from/to statuses, and trigger notes; timeline card renders cleanly on `/products/<pk>/` across viewports; Django Admin provides a read-only audit log and inline; all 299+ tests pass with 0 regressions.
 
 
 
