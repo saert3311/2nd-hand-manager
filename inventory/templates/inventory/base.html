@@ -1,9 +1,17 @@
-{% load i18n %}<!DOCTYPE html>
+{% load i18n static %}<!DOCTYPE html>
 <html lang="{{ LANGUAGE_CODE|default:'en' }}" class="h-full bg-slate-50 text-slate-900">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>{% block title %}2ndHand Staging{% endblock %}</title>
+  <!-- PWA Manifest & Standalone Meta Tags -->
+  <link rel="manifest" href="{% url 'inventory:manifest' %}">
+  <meta name="theme-color" content="#059669">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="2ndHand">
+  <link rel="apple-touch-icon" href="{% static 'inventory/icons/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="192x192" href="{% static 'inventory/icons/icon-192.png' %}">
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -96,6 +104,26 @@
               {% trans "Admin" %}
             </a>
             {% endif %}
+
+            <!-- Web Push Alerts Toggle (Desktop) -->
+            <div class="flex items-center gap-1">
+              <button type="button"
+                      id="push-toggle-btn"
+                      data-subscribed="{% if user_has_push_subscription %}true{% else %}false{% endif %}"
+                      class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition {% if user_has_push_subscription %}bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100{% else %}bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200{% endif %}"
+                      title="{% trans 'Toggle push notification alerts on this device' %}">
+                <span class="push-toggle-icon">{% if user_has_push_subscription %}🔔{% else %}🔕{% endif %}</span>
+                <span class="push-toggle-label">
+                  {% if user_has_push_subscription %}{% trans "Alerts Active" %}{% else %}{% trans "Enable Alerts" %}{% endif %}
+                </span>
+              </button>
+              <button type="button"
+                      id="push-test-btn"
+                      class="{% if not user_has_push_subscription %}hidden {% endif %}px-2 py-1.5 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 border border-slate-200 transition"
+                      title="{% trans 'Send Test Alert' %}">
+                {% trans "Test Alert" %}
+              </button>
+            </div>
 
             <!-- User Menu & Logout -->
             <div class="flex items-center gap-2 border-l border-slate-200 pl-3 ml-1">
@@ -233,6 +261,30 @@
         {% endif %}
       </div>
 
+      <!-- Mobile Web Push Notifications Toggle -->
+      <div class="pt-2 border-t border-slate-100 space-y-2">
+        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          {% trans "Push Notifications" %}
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button"
+                  id="mobile-push-toggle-btn"
+                  data-subscribed="{% if user_has_push_subscription %}true{% else %}false{% endif %}"
+                  class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-semibold rounded-lg border transition min-h-[44px] {% if user_has_push_subscription %}bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100{% else %}bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200{% endif %}">
+            <span class="push-toggle-icon">{% if user_has_push_subscription %}🔔{% else %}🔕{% endif %}</span>
+            <span class="push-toggle-label">
+              {% if user_has_push_subscription %}{% trans "Alerts Active" %}{% else %}{% trans "Enable Alerts" %}{% endif %}
+            </span>
+          </button>
+          <button type="button"
+                  id="mobile-push-test-btn"
+                  class="{% if not user_has_push_subscription %}hidden {% endif %}px-3 py-2.5 text-sm font-medium rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition min-h-[44px]">
+            {% trans "Test Alert" %}
+          </button>
+        </div>
+        <p id="push-status-hint" class="hidden text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2"></p>
+      </div>
+
       <!-- Segmented Bilingual Language Switcher -->
       <div class="pt-2 border-t border-slate-100">
         <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
@@ -276,6 +328,14 @@
     {% endif %}
   </header>
 
+  <!-- Global Push Status Banner (Desktop & Mobile Feedback) -->
+  <div id="global-push-banner" class="hidden max-w-4xl mx-auto px-4 mt-3 w-full">
+    <div class="p-3 rounded-lg text-xs font-medium flex items-center justify-between shadow-sm bg-emerald-50 text-emerald-800 border border-emerald-200">
+      <span id="global-push-banner-text"></span>
+      <button type="button" onclick="document.getElementById('global-push-banner').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 ml-3 text-base leading-none">&times;</button>
+    </div>
+  </div>
+
   <!-- Flash Messages Notifications -->
   {% if messages %}
   <div id="flash-messages" class="max-w-4xl mx-auto px-4 mt-4 w-full">
@@ -302,6 +362,26 @@
     {% trans "2ndHand Product Intake & Staging Hub • Powered by Django & Gemini Vision" %}
   </footer>
 
+  <!-- Global PWA Service Worker Registration -->
+  <script>
+    (function() {
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register("{% url 'inventory:service_worker' %}", { scope: '/' }).catch(function() {});
+        });
+      }
+      // Sync PWA app icon badge with pending clarifications count
+      var pendingCount = {{ pending_clarifications_count|default:0 }};
+      if ('setAppBadge' in navigator) {
+        if (pendingCount > 0) {
+          navigator.setAppBadge(pendingCount).catch(function() {});
+        } else if ('clearAppBadge' in navigator) {
+          navigator.clearAppBadge().catch(function() {});
+        }
+      }
+    })();
+  </script>
+
   {% if user.is_authenticated %}
   <script>
     (function() {
@@ -310,60 +390,242 @@
       const hamburgerIcon = document.getElementById('hamburger-icon');
       const closeIcon = document.getElementById('close-icon');
 
-      if (!menuButton || !mobileMenu) return;
-
-      function openMenu() {
-        mobileMenu.classList.remove('hidden');
-        menuButton.setAttribute('aria-expanded', 'true');
-        menuButton.setAttribute('aria-label', "{% trans 'Close menu' %}");
-        if (hamburgerIcon) hamburgerIcon.classList.add('hidden');
-        if (closeIcon) closeIcon.classList.remove('hidden');
-      }
-
-      function closeMenu() {
-        mobileMenu.classList.add('hidden');
-        menuButton.setAttribute('aria-expanded', 'false');
-        menuButton.setAttribute('aria-label', "{% trans 'Open menu' %}");
-        if (hamburgerIcon) hamburgerIcon.classList.remove('hidden');
-        if (closeIcon) closeIcon.classList.add('hidden');
-      }
-
-      function toggleMenu() {
-        const isExpanded = menuButton.getAttribute('aria-expanded') === 'true';
-        if (isExpanded) {
-          closeMenu();
-        } else {
-          openMenu();
+      if (menuButton && mobileMenu) {
+        function openMenu() {
+          mobileMenu.classList.remove('hidden');
+          menuButton.setAttribute('aria-expanded', 'true');
+          menuButton.setAttribute('aria-label', "{% trans 'Close menu' %}");
+          if (hamburgerIcon) hamburgerIcon.classList.add('hidden');
+          if (closeIcon) closeIcon.classList.remove('hidden');
         }
-      }
 
-      menuButton.addEventListener('click', function(e) {
-        e.stopPropagation();
-        toggleMenu();
-      });
+        function closeMenu() {
+          mobileMenu.classList.add('hidden');
+          menuButton.setAttribute('aria-expanded', 'false');
+          menuButton.setAttribute('aria-label', "{% trans 'Open menu' %}");
+          if (hamburgerIcon) hamburgerIcon.classList.remove('hidden');
+          if (closeIcon) closeIcon.classList.add('hidden');
+        }
 
-      // Close menu when clicking outside
-      document.addEventListener('click', function(e) {
-        if (!mobileMenu.classList.contains('hidden')) {
-          if (!mobileMenu.contains(e.target) && !menuButton.contains(e.target)) {
+        function toggleMenu() {
+          const isExpanded = menuButton.getAttribute('aria-expanded') === 'true';
+          if (isExpanded) {
             closeMenu();
+          } else {
+            openMenu();
           }
         }
-      });
 
-      // Close menu on Escape key press and restore focus to button
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && !mobileMenu.classList.contains('hidden')) {
-          closeMenu();
-          menuButton.focus();
-        }
-      });
+        menuButton.addEventListener('click', function(e) {
+          e.stopPropagation();
+          toggleMenu();
+        });
 
-      // Reset menu when window is resized to desktop breakpoint (>= 768px)
-      window.addEventListener('resize', function() {
-        if (window.innerWidth >= 768 && !mobileMenu.classList.contains('hidden')) {
-          closeMenu();
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+          if (!mobileMenu.classList.contains('hidden')) {
+            if (!mobileMenu.contains(e.target) && !menuButton.contains(e.target)) {
+              closeMenu();
+            }
+          }
+        });
+
+        // Close menu on Escape key press and restore focus to button
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape' && !mobileMenu.classList.contains('hidden')) {
+            closeMenu();
+            menuButton.focus();
+          }
+        });
+
+        // Reset menu when window is resized to desktop breakpoint (>= 768px)
+        window.addEventListener('resize', function() {
+          if (window.innerWidth >= 768 && !mobileMenu.classList.contains('hidden')) {
+            closeMenu();
+          }
+        });
+      }
+
+      // Web Push Notification Subscription Controls
+      const vapidPublicKey = "{{ VAPID_PUBLIC_KEY|escapejs }}";
+      const pushToggleBtns = [
+        document.getElementById('push-toggle-btn'),
+        document.getElementById('mobile-push-toggle-btn')
+      ].filter(Boolean);
+      const pushTestBtns = [
+        document.getElementById('push-test-btn'),
+        document.getElementById('mobile-push-test-btn')
+      ].filter(Boolean);
+      const pushStatusHint = document.getElementById('push-status-hint');
+      const globalPushBanner = document.getElementById('global-push-banner');
+      const globalPushBannerText = document.getElementById('global-push-banner-text');
+
+      function getCsrfToken() {
+        const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        return input ? input.value : '';
+      }
+
+      function showPushFeedback(message) {
+        if (pushStatusHint) {
+          pushStatusHint.textContent = message;
+          pushStatusHint.classList.remove('hidden');
         }
+        if (globalPushBanner && globalPushBannerText) {
+          globalPushBannerText.textContent = message;
+          globalPushBanner.classList.remove('hidden');
+        }
+      }
+
+      function setPushButtonsState(isSubscribed) {
+        pushToggleBtns.forEach(function(btn) {
+          btn.setAttribute('data-subscribed', isSubscribed ? 'true' : 'false');
+          const iconEl = btn.querySelector('.push-toggle-icon');
+          const labelEl = btn.querySelector('.push-toggle-label');
+          if (iconEl) iconEl.textContent = isSubscribed ? '🔔' : '🔕';
+          if (labelEl) {
+            labelEl.textContent = isSubscribed
+              ? "{% trans 'Alerts Active' %}"
+              : "{% trans 'Enable Alerts' %}";
+          }
+          if (isSubscribed) {
+            btn.className = btn.className
+              .replace(/bg-slate-100|text-slate-700|border-slate-200|hover:bg-slate-200/g, '')
+              .trim() + ' bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100';
+          } else {
+            btn.className = btn.className
+              .replace(/bg-emerald-50|text-emerald-800|border-emerald-200|hover:bg-emerald-100/g, '')
+              .trim() + ' bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200';
+          }
+        });
+        pushTestBtns.forEach(function(btn) {
+          if (isSubscribed) {
+            btn.classList.remove('hidden');
+          } else {
+            btn.classList.add('hidden');
+          }
+        });
+      }
+
+      function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+          outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+      }
+
+      async function handlePushToggle() {
+        const currentlySubscribed =
+          pushToggleBtns.length > 0 &&
+          pushToggleBtns[0].getAttribute('data-subscribed') === 'true';
+
+        if (currentlySubscribed) {
+          let endpoint = '';
+          if ('serviceWorker' in navigator && 'PushManager' in window) {
+            try {
+              const reg = await navigator.serviceWorker.getRegistration('/');
+              if (reg && reg.pushManager) {
+                const sub = await reg.pushManager.getSubscription();
+                if (sub) {
+                  endpoint = sub.endpoint;
+                  await sub.unsubscribe();
+                }
+              }
+            } catch (e) {}
+          }
+          await fetch("{% url 'inventory:push_unsubscribe' %}", {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({ endpoint: endpoint })
+          });
+          setPushButtonsState(false);
+          showPushFeedback("{% trans 'Push notification alerts disabled on this device.' %}");
+          return;
+        }
+
+        // Check iOS non-standalone mode
+        const ua = window.navigator.userAgent || '';
+        const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+        const isStandalone =
+          window.matchMedia('(display-mode: standalone)').matches ||
+          window.navigator.standalone === true;
+        if (isIOS && !isStandalone) {
+          showPushFeedback("{% trans 'On iPhone/iPad: tap Share → Add to Home Screen to enable push notifications.' %}");
+          return;
+        }
+
+        if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+          showPushFeedback("{% trans 'Push notifications are not supported by this browser.' %}");
+          return;
+        }
+
+        if (!vapidPublicKey) {
+          showPushFeedback("{% trans 'Web Push VAPID keys are not configured on the server.' %}");
+          return;
+        }
+
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          showPushFeedback("{% trans 'Notification permission was denied in browser settings.' %}");
+          return;
+        }
+
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+          });
+          const response = await fetch("{% url 'inventory:push_subscribe' %}", {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify(subscription.toJSON())
+          });
+          if (response.ok) {
+            setPushButtonsState(true);
+            showPushFeedback("{% trans 'Push notification alerts enabled on this device!' %}");
+          } else {
+            showPushFeedback("{% trans 'Could not register push subscription.' %}");
+          }
+        } catch (err) {
+          showPushFeedback("{% trans 'Could not register push subscription.' %}");
+        }
+      }
+
+      async function handlePushTest() {
+        try {
+          const response = await fetch("{% url 'inventory:push_test' %}", {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({})
+          });
+          if (response.ok) {
+            showPushFeedback("{% trans 'Test push alert dispatched!' %}");
+          } else {
+            showPushFeedback("{% trans 'Failed to send test push alert.' %}");
+          }
+        } catch (err) {
+          showPushFeedback("{% trans 'Failed to send test push alert.' %}");
+        }
+      }
+
+      pushToggleBtns.forEach(function(btn) {
+        btn.addEventListener('click', handlePushToggle);
+      });
+      pushTestBtns.forEach(function(btn) {
+        btn.addEventListener('click', handlePushTest);
       });
     })();
   </script>

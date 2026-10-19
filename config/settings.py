@@ -61,6 +61,7 @@ TEMPLATES = [
                 'django.template.context_processors.i18n',
                 'inventory.context_processors.notifications',
                 'inventory.context_processors.turnstile',
+                'inventory.context_processors.pwa_push',
             ],
         },
     },
@@ -213,4 +214,15 @@ DB_BACKUP_RETENTION_DAYS = int(os.getenv('DB_BACKUP_RETENTION_DAYS', '30'))
 DB_BACKUP_PREFIX = os.getenv('DB_BACKUP_PREFIX', 'backups/db/').strip()
 if DB_BACKUP_PREFIX and not DB_BACKUP_PREFIX.endswith('/'):
     DB_BACKUP_PREFIX += '/'
+
+# Web Push Notifications (VAPID) & Live Signal Settings
+VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY', '').strip()
+VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY', '').strip()
+VAPID_CLAIMS_EMAIL = os.getenv('VAPID_CLAIMS_EMAIL', 'mailto:admin@localhost').strip()
+if VAPID_CLAIMS_EMAIL and not VAPID_CLAIMS_EMAIL.startswith('mailto:'):
+    VAPID_CLAIMS_EMAIL = f'mailto:{VAPID_CLAIMS_EMAIL}'
+
+PUSH_NOTIFICATIONS_LIVE_SIGNALS = (
+    os.getenv('PUSH_NOTIFICATIONS_LIVE_SIGNALS', 'False').lower() in ('true', '1', 't', 'yes')
+)
 

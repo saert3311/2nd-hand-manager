@@ -6,6 +6,7 @@ from .views import (
     dashboard_view,
     generate_ai_view,
     intake_identify_view,
+    manifest_view,
     product_add_clarification_view,
     product_answer_clarification_view,
     product_delete_clarification_view,
@@ -13,13 +14,22 @@ from .views import (
     product_download_zip_view,
     product_intake_view,
     product_manage_link_view,
+    push_subscribe_view,
+    push_test_view,
+    push_unsubscribe_view,
     root_redirect_view,
+    service_worker_view,
 )
 
 app_name = "inventory"
 
 urlpatterns = [
     path("", root_redirect_view, name="root"),
+    path("manifest.json", manifest_view, name="manifest"),
+    path("sw.js", service_worker_view, name="service_worker"),
+    path("api/push/subscribe/", push_subscribe_view, name="push_subscribe"),
+    path("api/push/unsubscribe/", push_unsubscribe_view, name="push_unsubscribe"),
+    path("api/push/test/", push_test_view, name="push_test"),
     path("login/", CustomLoginView.as_view(), name="login"),
     path("logout/", CustomLogoutView.as_view(), name="logout"),
     path("intake/", product_intake_view, name="intake"),

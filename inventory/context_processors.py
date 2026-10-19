@@ -30,3 +30,23 @@ def turnstile(request):
         "TURNSTILE_ENABLED": getattr(settings, "TURNSTILE_ENABLED", False),
     }
 
+
+def pwa_push(request):
+    """
+    Global context processor exposing VAPID public key, push configuration status,
+    and whether the authenticated user has at least one active PushSubscription.
+    """
+    from inventory.models import PushSubscription
+    from inventory.services.push_service import is_push_configured
+
+    vapid_public_key = getattr(settings, "VAPID_PUBLIC_KEY", "").strip()
+    push_configured = is_push_configured()
+    has_sub = False
+    if getattr(request, "user", None) and request.user.is_authenticated:
+        has_sub = PushSubscription.objects.filter(user=request.user, is_active=True).exists()
+    return {
+        "VAPID_PUBLIC_KEY": vapid_public_key,
+        "PUSH_CONFIGURED": push_configured,
+        "user_has_push_subscription": has_sub,
+    }
+

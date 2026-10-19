@@ -24,6 +24,7 @@ from .models import (
     ProductClarification,
     ProductImage,
     ProductListingLink,
+    PushSubscription,
 )
 from .permissions import ROLE_ASSISTANT, ROLE_MANAGER, is_assistant, is_manager
 from .services.backup_service import backup_database
@@ -628,6 +629,78 @@ class DatabaseBackupLogAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+    def has_delete_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+
+@admin.register(PushSubscription, site=admin_site)
+class PushSubscriptionAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "short_endpoint",
+        "is_active",
+        "user_agent_short",
+        "updated_at",
+    )
+    list_filter = ("is_active", "created_at", "updated_at")
+    search_fields = ("user__username", "endpoint", "user_agent")
+    readonly_fields = ("created_at", "updated_at")
+    actions = ["send_test_push_action"]
+
+    def short_endpoint(self, obj):
+        return f"{obj.endpoint[:60]}..." if len(obj.endpoint) > 60 else obj.endpoint
+
+    short_endpoint.short_description = _("Push Endpoint")
+
+    def user_agent_short(self, obj):
+        if not obj.user_agent:
+            return "-"
+        return f"{obj.user_agent[:50]}..." if len(obj.user_agent) > 50 else obj.user_agent
+
+    user_agent_short.short_description = _("User Agent")
+
+    @admin.action(description=_("Send test push notification"))
+    def send_test_push_action(self, request, queryset):
+        from .services.push_service import is_push_configured, send_push_to_subscription
+
+        if not is_push_configured():
+            self.message_user(
+                request,
+                _("Web Push VAPID keys are not configured in settings/.env."),
+                level=messages.WARNING,
+            )
+            return
+
+        sent_count = 0
+        for sub in queryset:
+            if send_push_to_subscription(
+                subscription=sub,
+                title=str(_("🔔 2ndHand Staging Test Alert")),
+                body=str(_("Push notifications are working on this device!")),
+                url=reverse("inventory:dashboard"),
+                tag="2ndhand-test-push",
+            ):
+                sent_count += 1
+
+        self.message_user(
+            request,
+            _("Successfully sent %(count)d test push notification(s).") % {"count": sent_count},
+            level=messages.SUCCESS if sent_count > 0 else messages.WARNING,
+        )
+
+    def has_module_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_change_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_add_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
 
     def has_delete_permission(self, request, obj=None):
         return bool(request.user and request.user.is_active and is_manager(request.user))

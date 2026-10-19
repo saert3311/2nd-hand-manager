@@ -221,6 +221,7 @@ class Product(models.Model):
             fields.add("status")
             kwargs["update_fields"] = list(fields)
 
+        self._previous_status = initial_status
         super().save(*args, **kwargs)
         self._initial_status = self.status
         self._initial_is_sold = self.is_sold
@@ -476,8 +477,17 @@ class ProductClarification(models.Model):
         verbose_name = _("Product Clarification")
         verbose_name_plural = _("Product Clarifications")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._initial_status = self.status
+
     def __str__(self):
         return f"{self.get_category_display()} - {self.product.display_title}"
+
+    def save(self, *args, **kwargs):
+        self._previous_status = getattr(self, "_initial_status", None)
+        super().save(*args, **kwargs)
+        self._initial_status = self.status
 
     def resolve(self, answer: str, answered_by=None, commit=True):
         self.answer = answer
@@ -489,7 +499,7 @@ class ProductClarification(models.Model):
 
 
 @receiver(post_save, sender=ProductClarification)
-def sync_product_on_clarification_save(sender, instance, **kwargs):
+def sync_product_on_clarification_save(sender, instance, created=False, **kwargs):
     if kwargs.get("raw", False):
         return
     product = instance.product
@@ -499,11 +509,71 @@ def sync_product_on_clarification_save(sender, instance, **kwargs):
         if product.status != ProductStatus.AWAITING_INFO:
             product.status = ProductStatus.AWAITING_INFO
             product.save(update_fields=["status"])
+        if created and getattr(settings, "PUSH_NOTIFICATIONS_LIVE_SIGNALS", False):
+            try:
+                from .permissions import ROLE_ASSISTANT
+                from .services.push_service import send_push_to_group
+
+                send_push_to_group(
+                    group_name=ROLE_ASSISTANT,
+                    title=str(_("❓ New Doubt on %(title)s") % {"title": product.display_title}),
+                    body=(instance.question or "")[:140],
+                    url=f"/products/{product.pk}/",
+                    tag=f"clarification-product-{product.pk}",
+                )
+            except Exception:
+                pass
     elif instance.status == ClarificationStatus.RESOLVED:
         has_pending = product.clarifications.filter(status=ClarificationStatus.PENDING).exists()
         if not has_pending and product.status == ProductStatus.AWAITING_INFO:
             product.status = product.compute_lifecycle_status()
             product.save(update_fields=["status", "is_sold"])
+        was_pending = getattr(instance, "_previous_status", None) == ClarificationStatus.PENDING
+        if (created or was_pending) and getattr(settings, "PUSH_NOTIFICATIONS_LIVE_SIGNALS", False):
+            try:
+                from .permissions import ROLE_MANAGER
+                from .services.push_service import send_push_to_group
+
+                send_push_to_group(
+                    group_name=ROLE_MANAGER,
+                    title=str(_("✅ Doubt Answered: %(title)s") % {"title": product.display_title}),
+                    body=(instance.answer or str(_("Assistant provided clarification details.")))[:140],
+                    url=f"/products/{product.pk}/",
+                    tag=f"clarification-resolved-{product.pk}",
+                )
+            except Exception:
+                pass
+
+
+@receiver(post_save, sender=Product)
+def notify_managers_on_product_lifecycle_save(sender, instance, created=False, **kwargs):
+    if kwargs.get("raw", False) or not getattr(settings, "PUSH_NOTIFICATIONS_LIVE_SIGNALS", False):
+        return
+    previous_status = getattr(instance, "_previous_status", None)
+    try:
+        from .permissions import ROLE_MANAGER
+        from .services.push_service import send_push_to_group
+
+        if created and instance.status == ProductStatus.DRAFT:
+            send_push_to_group(
+                group_name=ROLE_MANAGER,
+                title=str(_("📦 New Intake in Draft: %(title)s") % {"title": instance.display_title}),
+                body=str(_("Needs AI description and staging review.")),
+                url=f"/products/{instance.pk}/",
+                tag=f"product-draft-{instance.pk}",
+            )
+        elif instance.status == ProductStatus.PRICE_PENDING and (
+            created or previous_status != ProductStatus.PRICE_PENDING
+        ):
+            send_push_to_group(
+                group_name=ROLE_MANAGER,
+                title=str(_("🏷️ Price Needed: %(title)s") % {"title": instance.display_title}),
+                body=str(_("Title and description are ready — waiting for sale price (€).")),
+                url=f"/products/{instance.pk}/",
+                tag=f"product-price-pending-{instance.pk}",
+            )
+    except Exception:
+        pass
 
 
 @receiver(post_delete, sender=ProductClarification)
@@ -621,4 +691,51 @@ class DatabaseBackupLog(models.Model):
             return f"{size / (1024 * 1024):.1f} MB"
         else:
             return f"{size / (1024 * 1024 * 1024):.2f} GB"
+
+
+class PushSubscription(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="push_subscriptions",
+        verbose_name=_("User"),
+    )
+    endpoint = models.URLField(
+        max_length=1000,
+        unique=True,
+        validators=[HTTP_URL_VALIDATOR],
+        verbose_name=_("Push Endpoint"),
+        help_text=_("Unique browser push service endpoint URL"),
+    )
+    p256dh = models.CharField(
+        max_length=255,
+        verbose_name=_("P-256DH Key"),
+        help_text=_("Client public encryption key (Base64URL)"),
+    )
+    auth = models.CharField(
+        max_length=255,
+        verbose_name=_("Auth Secret"),
+        help_text=_("Client authentication secret (Base64URL)"),
+    )
+    user_agent = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        verbose_name=_("User Agent"),
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        verbose_name=_("Is Active"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
+
+    class Meta:
+        ordering = ["-updated_at"]
+        verbose_name = _("Push Subscription")
+        verbose_name_plural = _("Push Subscriptions")
+
+    def __str__(self):
+        return f"{self.user.username} ({self.endpoint[:40]}...)"
 

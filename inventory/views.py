@@ -1,4 +1,5 @@
 import io
+import json
 import zipfile
 
 from django.contrib import messages
@@ -32,6 +33,7 @@ from .models import (
     ProductImage,
     ProductListingLink,
     ProductStatus,
+    PushSubscription,
 )
 from .permissions import is_assistant, is_manager, manager_required
 from .services.ai_service import identify_intake_product
@@ -566,3 +568,168 @@ def generate_ai_view(request, pk):
         messages.error(request, _("Unexpected error during AI generation: %(error)s") % {"error": exc})
 
     return redirect("inventory:product_detail", pk=pk)
+
+
+def manifest_view(request):
+    """
+    Serves the W3C Web App Manifest (/manifest.json) for PWA installation.
+    """
+    manifest_data = {
+        "name": "2ndHand Product Intake & Staging Hub",
+        "short_name": "2ndHand",
+        "description": str(_("Mobile intake & AI staging workspace for second-hand inventory.")),
+        "start_url": "/",
+        "scope": "/",
+        "display": "standalone",
+        "orientation": "portrait-primary",
+        "background_color": "#f8fafc",
+        "theme_color": "#059669",
+        "icons": [
+            {
+                "src": "/static/inventory/icons/icon-192.png",
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any",
+            },
+            {
+                "src": "/static/inventory/icons/icon-192.png",
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "maskable",
+            },
+            {
+                "src": "/static/inventory/icons/icon-512.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any",
+            },
+            {
+                "src": "/static/inventory/icons/icon-512.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "maskable",
+            },
+        ],
+        "shortcuts": [
+            {
+                "name": str(_("New Intake")),
+                "short_name": str(_("Intake")),
+                "url": "/intake/",
+                "icons": [{"src": "/static/inventory/icons/icon-192.png", "sizes": "192x192"}],
+            },
+            {
+                "name": str(_("Catalog Dashboard")),
+                "short_name": str(_("Dashboard")),
+                "url": "/dashboard/",
+                "icons": [{"src": "/static/inventory/icons/icon-192.png", "sizes": "192x192"}],
+            },
+            {
+                "name": str(_("Pending Doubts")),
+                "short_name": str(_("Doubts")),
+                "url": "/dashboard/?status=awaiting_info",
+                "icons": [{"src": "/static/inventory/icons/icon-192.png", "sizes": "192x192"}],
+            },
+        ],
+    }
+    return JsonResponse(manifest_data, content_type="application/manifest+json")
+
+
+def service_worker_view(request):
+    """
+    Serves the root Service Worker (/sw.js) with root scope permission and zero caching.
+    """
+    response = render(request, "inventory/sw.js", content_type="application/javascript")
+    response["Service-Worker-Allowed"] = "/"
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
+
+@login_required
+def push_subscribe_view(request):
+    """
+    Registers or updates an authenticated user's browser PushSubscription.
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": _("Method not allowed.")}, status=405)
+
+    try:
+        data = json.loads(request.body.decode("utf-8") or "{}")
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({"error": _("Invalid JSON payload.")}, status=400)
+
+    endpoint = (data.get("endpoint") or "").strip()
+    keys = data.get("keys") if isinstance(data.get("keys"), dict) else {}
+    p256dh = (keys.get("p256dh") or data.get("p256dh") or "").strip()
+    auth = (keys.get("auth") or data.get("auth") or "").strip()
+
+    if not endpoint or not p256dh or not auth:
+        return JsonResponse(
+            {"error": _("Missing required push subscription fields (endpoint, p256dh, auth).")},
+            status=400,
+        )
+
+    validator = URLValidator(schemes=["http", "https"])
+    try:
+        validator(endpoint)
+    except ValidationError:
+        return JsonResponse({"error": _("Invalid push endpoint URL.")}, status=400)
+
+    user_agent = (request.META.get("HTTP_USER_AGENT") or "")[:500]
+    subscription, _created = PushSubscription.objects.update_or_create(
+        endpoint=endpoint,
+        defaults={
+            "user": request.user,
+            "p256dh": p256dh,
+            "auth": auth,
+            "user_agent": user_agent,
+            "is_active": True,
+        },
+    )
+    return JsonResponse({"status": "subscribed", "id": subscription.pk})
+
+
+@login_required
+def push_unsubscribe_view(request):
+    """
+    Removes an authenticated user's browser PushSubscription by endpoint (or all for user if omitted).
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": _("Method not allowed.")}, status=405)
+
+    try:
+        data = json.loads(request.body.decode("utf-8") or "{}")
+    except (ValueError, UnicodeDecodeError):
+        data = {}
+
+    endpoint = (data.get("endpoint") or "").strip()
+    qs = PushSubscription.objects.filter(user=request.user)
+    if endpoint:
+        qs = qs.filter(endpoint=endpoint)
+    deleted_count, _details = qs.delete()
+    return JsonResponse({"status": "unsubscribed", "deleted": deleted_count})
+
+
+@login_required
+def push_test_view(request):
+    """
+    Sends a self-test Web Push notification to all active subscriptions of the authenticated user.
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": _("Method not allowed.")}, status=405)
+
+    from .services.push_service import is_push_configured, send_push_to_user
+
+    if not is_push_configured():
+        return JsonResponse(
+            {"error": _("Web Push VAPID keys are not configured.")},
+            status=503,
+        )
+
+    sent_count = send_push_to_user(
+        user=request.user,
+        title=str(_("🔔 2ndHand Staging Test Alert")),
+        body=str(_("Push notifications are working on this device!")),
+        url=str(reverse_lazy("inventory:dashboard")),
+        tag="2ndhand-test-push",
+    )
+    return JsonResponse({"status": "ok", "sent": sent_count})
