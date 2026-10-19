@@ -1630,6 +1630,67 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 - [x] `.env` flag `PUSH_NOTIFICATIONS_LIVE_SIGNALS` controls automatic signal-driven push alerts for Clarification Doubts and Draft/Price Pending bottlenecks.
 - [x] All unit tests, browser tests, and Ruff lint checks pass with 0 regressions.
 
+---
+
+## Phase 21: Dashboard Status Toolbar Modernization & Apilación Prevention (Vertical Slice 17)
+
+### Task 70: Horizontal Status Navigation Rail, Toolbar Decoupling & Multi-Viewport Anti-Apilación Verification
+**Description:** Refactor [`inventory/templates/inventory/dashboard.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/dashboard.html) to decouple the status navigation tabs from the action/filter toolbar (search input and platform selector). Enclose status tabs in an accessible `<nav role="tablist">` with horizontal scrolling (`overflow-x-auto`, `flex-nowrap`, `whitespace-nowrap`, hidden scrollbars) and smooth touch momentum scrolling (`-webkit-overflow-scrolling: touch`). Upgrade all status tab touch targets to $\ge 36\text{px}$ height with responsive padding and badge counters. Add Playwright multi-viewport responsive test `test_dashboard_responsive_tabs_no_apilation` in [`tests/test_dashboard_responsive.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_dashboard_responsive.py) testing across 390px, 768px, 1024px, and 1440px viewports and asserting that all tabs share identical vertical offset ($\Delta \le 4\text{px}$) with zero apilación.
+**Acceptance criteria:**
+- [x] Status navigation tabs sit in a single horizontal scroll rail without wrapping or piling up vertically across mobile and tablet viewports.
+- [x] Filter toolbar (search and platform select) is cleanly isolated beneath the status rail.
+- [x] All tabs meet WCAG touch target standards ($\ge 36\text{px}$ mobile / $32\text{px}$ desktop).
+- [x] Playwright multi-viewport automated test passes across 4 standard screen widths with audit screenshots captured in `browser_verification_screenshots/`.
+**Verification:**
+- [x] Test passes: `.venv\Scripts\python.exe manage.py test tests.test_dashboard_responsive`
+**Dependencies:** None
+**Files likely touched:**
+- `inventory/templates/inventory/dashboard.html`
+- `tests/test_dashboard_responsive.py`
+**Estimated scope:** Small (2 files)
+
+---
+
+## Checkpoint 21: Dashboard Status Toolbar Modernization Complete
+- [x] Horizontal scroll rail prevents tab apilación across mobile, tablet, laptop, and desktop viewports.
+- [x] Status filter tab touch targets and counter badges satisfy WCAG standards.
+- [x] Playwright multi-viewport responsive tests pass and screenshots are stored for visual audit.
+
+---
+
+## Phase 22: Responsive Mobile Typography & Form Readability Adaptation (Vertical Slice 18)
+
+### Task 71: Standardize Mobile Typography Scale, Eliminate Microscopic Fonts & Prevent iOS Safari Auto-Zoom
+**Description:** Audit and adapt typography across all key application templates ([`base.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/base.html), [`dashboard.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/dashboard.html), [`intake.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/intake.html), [`product_detail.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/product_detail.html), [`login.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/registration/login.html)) and form widgets ([`inventory/forms.py`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/forms.py)). Eliminate sub-12px arbitrary font sizes (`text-[10px]`, `text-[11px]`) and static unscaled `text-xs` on primary content, buttons, labels, and badges. Enforce input font sizes $\ge 16\text{px}$ on mobile (`text-base sm:text-sm` and `@media (max-width: 640px) { input, select, textarea { font-size: 1rem !important; } }`) to prevent iOS Safari auto-zoom. Remove `maximum-scale=1.0, user-scalable=no` for WCAG 2.1 AA pinch-to-zoom compliance, and add `<meta name="text-scale" content="scale">` for OS dynamic type preferences. Add Playwright test `test_mobile_typography_and_input_font_sizes` in [`tests/test_dashboard_responsive.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_dashboard_responsive.py) asserting computed input font-size $\ge 16\text{px}$ on 390x844 mobile viewport and capturing visual screenshots.
+**Acceptance criteria:**
+- [x] Arbitrary `text-[10px]` and `text-[11px]` classes eliminated; critical text scaled to `text-xs sm:text-sm` or `text-sm sm:text-base`.
+- [x] All form inputs render at $\ge 16\text{px}$ on mobile screens preventing involuntary iOS Safari auto-zoom.
+- [x] Viewport meta tag allows pinch-to-zoom up to 200% and `<meta name="text-scale" content="scale">` is active.
+- [x] Full test suite (299 tests) passes cleanly and `ruff check .` passes with 0 issues.
+- [x] Playwright assertions confirm computed font size $\ge 16\text{px}$ on mobile viewports.
+**Verification:**
+- [x] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [x] Responsive tests pass: `.venv\Scripts\python.exe manage.py test tests.test_dashboard_responsive`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check .`
+**Dependencies:** Task 70
+**Files likely touched:**
+- `inventory/templates/inventory/base.html`
+- `inventory/templates/inventory/dashboard.html`
+- `inventory/templates/inventory/intake.html`
+- `inventory/templates/inventory/product_detail.html`
+- `inventory/templates/registration/login.html`
+- `inventory/forms.py`
+- `tests/test_dashboard_responsive.py`
+**Estimated scope:** Medium (7 files)
+
+---
+
+## Checkpoint 22: Responsive Mobile Typography & Form Readability Complete
+- [x] All application views render legible, comfortably readable typography on smartphone screens.
+- [x] Involuntary iOS Safari auto-zoom on form inputs is eliminated with computed font size $\ge 16\text{px}$.
+- [x] Pinch-to-zoom and OS dynamic text scaling preferences are supported.
+- [x] Automated unit and Playwright tests verify 100% compliance with zero regressions.
+
 
 
 
