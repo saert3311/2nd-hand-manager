@@ -173,3 +173,12 @@ class InternationalizationTests(TestCase):
                 "Introduzca un número" in errors or "número" in errors.lower(),
                 f"Expected Spanish validation error, got: {errors}"
             )
+
+    def test_product_lifecycle_translations_in_spanish(self):
+        from django.utils import translation
+        from django.utils.translation import gettext as _
+
+        with translation.override("es"):
+            self.assertEqual(_("Price Pending"), "Precio pendiente")
+            self.assertEqual(_("Published"), "Publicado")
+            self.assertEqual(_("Identified Title"), "Título identificado")

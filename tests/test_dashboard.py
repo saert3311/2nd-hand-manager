@@ -75,3 +75,38 @@ class DashboardViewTests(TestCase):
         resp2 = self.client.get(self.url, {"q": "headphones"})
         self.assertEqual(len(resp2.context["products"]), 1)
         self.assertEqual(resp2.context["products"][0], self.p1)
+
+    def test_dashboard_price_pending_filter_and_count(self):
+        self.client.login(username="testmanager", password="password123")
+        # Product with title and description, but no price -> PRICE_PENDING
+        p_pending = Product.objects.create(
+            raw_note="Denim jacket vintage",
+            ai_title="Levi's Vintage Denim Jacket",
+            ai_description="Classic blue denim jacket in good vintage condition.",
+            sale_price=None,
+        )
+        self.assertEqual(p_pending.status, "price_pending")
+
+        resp = self.client.get(self.url, {"status": "price_pending"})
+        self.assertEqual(resp.status_code, 200)
+        products = list(resp.context["products"])
+        self.assertEqual(len(products), 1)
+        self.assertEqual(products[0], p_pending)
+        self.assertEqual(resp.context["price_pending_count"], 1)
+        self.assertContains(resp, "Price Pending")
+        self.assertContains(resp, "(1)")
+
+    def test_product_detail_renders_price_pending_badge(self):
+        self.client.login(username="testmanager", password="password123")
+        p_pending = Product.objects.create(
+            raw_note="Vintage watch",
+            ai_title="Omega Seamaster Vintage Watch",
+            ai_description="Authentic automatic movement, light cosmetic wear.",
+            sale_price=Decimal("0.00"),
+        )
+        self.assertEqual(p_pending.status, "price_pending")
+
+        resp = self.client.get(reverse("inventory:product_detail", kwargs={"pk": p_pending.pk}))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "product-status-badge")
+        self.assertContains(resp, "Price Pending")

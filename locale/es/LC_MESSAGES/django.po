@@ -951,3 +951,13 @@ msgstr "Eliminar foto"
 msgid "Please select a maximum of 10 photos."
 msgstr "Por favor, selecciona un máximo de 10 fotos."
 
+msgid "Price Pending"
+msgstr "Precio pendiente"
+
+msgid "Published"
+msgstr "Publicado"
+
+msgid "Identified Title"
+msgstr "Título identificado"
+
+

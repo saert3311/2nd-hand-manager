@@ -33,6 +33,10 @@
          class="flex-1 lg:flex-initial text-center px-3 py-1.5 rounded-lg transition {% if status_filter == 'active' %}bg-white text-emerald-700 shadow-sm{% else %}text-slate-600 hover:text-slate-900{% endif %}">
         {% trans "Active" %} ({{ active_count }})
       </a>
+      <a href="?status=price_pending{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+         class="flex-1 lg:flex-initial text-center px-3 py-1.5 rounded-lg transition {% if status_filter == 'price_pending' %}bg-white text-amber-800 shadow-sm font-bold{% else %}text-slate-600 hover:text-slate-900{% endif %}">
+        🏷️ {% trans "Price Pending" %} ({{ price_pending_count }})
+      </a>
       <a href="?status=awaiting_info{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
          class="flex-1 lg:flex-initial text-center px-3 py-1.5 rounded-lg transition {% if status_filter == 'awaiting_info' %}bg-white text-amber-800 shadow-sm font-bold{% else %}text-slate-600 hover:text-slate-900{% endif %}">
         ❓ {% trans "Doubts" %} ({{ awaiting_info_count }})
@@ -126,6 +130,22 @@
           {% elif product.status == 'blocked' %}
           <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-rose-600 text-white">
             ⛔ {% trans "Blocked" %}
+          </span>
+          {% elif product.status == 'price_pending' %}
+          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-amber-600 text-white">
+            🏷️ {% trans "Price Pending" %}
+          </span>
+          {% elif product.status == 'published' %}
+          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-blue-600 text-white">
+            🚀 {% trans "Published" %}
+          </span>
+          {% elif product.status == 'ready' %}
+          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-emerald-600 text-white">
+            ✨ {% trans "Ready" %}
+          </span>
+          {% elif product.status == 'draft' %}
+          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-slate-600 text-white">
+            📝 {% trans "Draft" %}
           </span>
           {% elif product.is_sold %}
           <span class="text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-slate-900/80 text-white">
