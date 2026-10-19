@@ -35,6 +35,14 @@
     body {
       -webkit-tap-highlight-color: transparent;
     }
+    /* Hide scrollbars while preserving touch, mousewheel & trackpad horizontal scroll */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
