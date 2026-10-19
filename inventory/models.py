@@ -17,8 +17,10 @@ HTTP_URL_VALIDATOR = URLValidator(
 
 class ProductStatus(models.TextChoices):
     DRAFT = "draft", _("Draft")
-    AWAITING_INFO = "awaiting_info", _("Awaiting Info")
+    PRICE_PENDING = "price_pending", _("Price Pending")
     READY = "ready", _("Ready to Publish")
+    PUBLISHED = "published", _("Published")
+    AWAITING_INFO = "awaiting_info", _("Awaiting Info")
     SOLD = "sold", _("Sold")
     BLOCKED = "blocked", _("Blocked")
 
@@ -124,6 +126,53 @@ class Product(models.Model):
     def primary_image(self):
         return self.images.order_by("order", "id").first()
 
+    def compute_lifecycle_status(self) -> str:
+        """
+        Calculates the lifecycle status according to business precedence:
+        1. SOLD if marked sold
+        2. BLOCKED if administratively blocked
+        3. AWAITING_INFO if pending clarifications exist
+        4. PUBLISHED if any active marketplace link is attached
+        5. DRAFT if no description exists
+        6. PRICE_PENDING if title and description exist but price is None or <= 0
+        7. READY if title, description, and price > 0 exist
+        """
+        if self.is_sold:
+            return ProductStatus.SOLD
+        if self.status == ProductStatus.BLOCKED:
+            return ProductStatus.BLOCKED
+        if self.pk and self.clarifications.filter(status=ClarificationStatus.PENDING).exists():
+            return ProductStatus.AWAITING_INFO
+        if self.pk and self.listing_links.filter(is_active=True).exists():
+            return ProductStatus.PUBLISHED
+
+        has_title = bool((self.ai_title or "").strip())
+        has_description = bool((self.ai_description or "").strip())
+        has_price = False
+        if self.sale_price is not None:
+            try:
+                has_price = Decimal(str(self.sale_price)) > Decimal("0.00")
+            except (ValueError, TypeError, ArithmeticError):
+                has_price = False
+
+        if not has_description:
+            return ProductStatus.DRAFT
+        if has_title and has_description and not has_price:
+            return ProductStatus.PRICE_PENDING
+        if has_title and has_description and has_price:
+            return ProductStatus.READY
+
+        return ProductStatus.DRAFT
+
+    def sync_lifecycle_status(self, commit=True):
+        computed = self.compute_lifecycle_status()
+        if self.status != computed:
+            self.status = computed
+            self.is_sold = (computed == ProductStatus.SOLD)
+            if commit:
+                self.save(update_fields=["status", "is_sold"])
+        return self.status
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._initial_status = self.status
@@ -134,22 +183,36 @@ class Product(models.Model):
         initial_is_sold = getattr(self, "_initial_is_sold", None)
 
         if self._state.adding:
-            if self.is_sold and self.status == ProductStatus.DRAFT:
+            if self.is_sold or self.status == ProductStatus.SOLD:
                 self.status = ProductStatus.SOLD
+                self.is_sold = True
+            elif self.status == ProductStatus.BLOCKED:
+                self.is_sold = False
+            elif self.status == ProductStatus.AWAITING_INFO:
+                self.is_sold = False
             else:
+                self.status = self.compute_lifecycle_status()
                 self.is_sold = (self.status == ProductStatus.SOLD)
         else:
             status_changed = self.status != initial_status
             is_sold_changed = self.is_sold != initial_is_sold
 
             if status_changed:
-                self.is_sold = (self.status == ProductStatus.SOLD)
+                if self.status == ProductStatus.SOLD:
+                    self.is_sold = True
+                elif self.status in (ProductStatus.BLOCKED, ProductStatus.AWAITING_INFO):
+                    self.is_sold = False
+                else:
+                    self.is_sold = False
+                    self.status = self.compute_lifecycle_status()
             elif is_sold_changed:
                 if self.is_sold:
                     self.status = ProductStatus.SOLD
                 else:
-                    self.status = ProductStatus.READY
+                    self.status = self.compute_lifecycle_status()
             else:
+                if self.status not in (ProductStatus.SOLD, ProductStatus.BLOCKED, ProductStatus.AWAITING_INFO):
+                    self.status = self.compute_lifecycle_status()
                 self.is_sold = (self.status == ProductStatus.SOLD)
 
         if "update_fields" in kwargs and kwargs["update_fields"] is not None:
@@ -173,7 +236,7 @@ class Product(models.Model):
 
     def mark_as_unsold(self, commit=True):
         self.is_sold = False
-        self.status = ProductStatus.READY
+        self.status = self.compute_lifecycle_status()
         self.sold_at = None
         if commit:
             self.save(update_fields=["is_sold", "status", "sold_at", "updated_at"])
@@ -439,8 +502,8 @@ def sync_product_on_clarification_save(sender, instance, **kwargs):
     elif instance.status == ClarificationStatus.RESOLVED:
         has_pending = product.clarifications.filter(status=ClarificationStatus.PENDING).exists()
         if not has_pending and product.status == ProductStatus.AWAITING_INFO:
-            product.status = ProductStatus.READY
-            product.save(update_fields=["status"])
+            product.status = product.compute_lifecycle_status()
+            product.save(update_fields=["status", "is_sold"])
 
 
 @receiver(post_delete, sender=ProductClarification)
@@ -455,8 +518,31 @@ def sync_product_on_clarification_delete(sender, instance, **kwargs):
         return
     has_pending = product.clarifications.filter(status=ClarificationStatus.PENDING).exists()
     if not has_pending and product.status == ProductStatus.AWAITING_INFO:
-        product.status = ProductStatus.READY
-        product.save(update_fields=["status"])
+        product.status = product.compute_lifecycle_status()
+        product.save(update_fields=["status", "is_sold"])
+
+
+@receiver(post_save, sender=ProductListingLink)
+def sync_product_on_listing_link_save(sender, instance, **kwargs):
+    if kwargs.get("raw", False):
+        return
+    product = instance.product
+    if product.is_sold or product.status in (ProductStatus.SOLD, ProductStatus.BLOCKED, ProductStatus.AWAITING_INFO):
+        return
+    product.sync_lifecycle_status()
+
+
+@receiver(post_delete, sender=ProductListingLink)
+def sync_product_on_listing_link_delete(sender, instance, **kwargs):
+    if kwargs.get("raw", False):
+        return
+    try:
+        product = instance.product
+    except Product.DoesNotExist:
+        return
+    if product.is_sold or product.status in (ProductStatus.SOLD, ProductStatus.BLOCKED, ProductStatus.AWAITING_INFO):
+        return
+    product.sync_lifecycle_status()
 
 
 class DatabaseBackupLog(models.Model):

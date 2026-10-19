@@ -39,14 +39,18 @@ class ProductLifecycleAndClarificationModelTests(TestCase):
         ]
         product = Product.objects.create(raw_note="Item")
         for st in valid_statuses:
-            product.status = st
-            product.save()
+            Product.objects.filter(pk=product.pk).update(status=st)
             product.refresh_from_db()
             self.assertEqual(product.status, st)
 
     def test_product_is_sold_synchronization(self):
-        product = Product.objects.create(raw_note="Item")
-        self.assertEqual(product.status, ProductStatus.DRAFT)
+        product = Product.objects.create(
+            raw_note="Item",
+            ai_title="Vintage Item",
+            ai_description="Detailed description of vintage item.",
+            sale_price=Decimal("120.00"),
+        )
+        self.assertEqual(product.status, ProductStatus.READY)
         self.assertFalse(product.is_sold)
 
         # 1. Setting status = SOLD syncs is_sold to True
@@ -55,11 +59,11 @@ class ProductLifecycleAndClarificationModelTests(TestCase):
         product.refresh_from_db()
         self.assertTrue(product.is_sold)
 
-        # 2. Setting is_sold = False syncs status to READY (or DRAFT if no AI title)
+        # 2. Setting is_sold = False syncs status to READY (since it has title, desc, price)
         product.is_sold = False
         product.save()
         product.refresh_from_db()
-        self.assertNotEqual(product.status, ProductStatus.SOLD)
+        self.assertEqual(product.status, ProductStatus.READY)
         self.assertFalse(product.is_sold)
 
         # 3. mark_as_sold method updates status to SOLD
@@ -236,7 +240,13 @@ class ProductDetailClarificationViewTests(TestCase):
         self.client = Client()
         self.manager = User.objects.create_user(username="manager", password="password123", is_staff=True)
         self.assistant = User.objects.create_user(username="assistant", password="password123")
-        self.product = Product.objects.create(raw_note="Oversized trench coat", created_by=self.assistant)
+        self.product = Product.objects.create(
+            raw_note="Oversized trench coat",
+            ai_title="Vintage Oversized Trench Coat",
+            ai_description="Classic beige oversized trench coat in great condition.",
+            sale_price=Decimal("89.00"),
+            created_by=self.assistant,
+        )
 
     def test_manager_can_add_clarification_and_shifts_status_to_awaiting_info(self):
         self.client.login(username="manager", password="password123")
@@ -422,10 +432,16 @@ class ClarificationLifecycleSynchronizationAndOrphanPreventionTests(TestCase):
         self.client = Client()
         self.manager = User.objects.create_user(username="mgr_sync", password="password123", is_staff=True)
         self.assistant = User.objects.create_user(username="asst_sync", password="password123")
-        self.product = Product.objects.create(raw_note="Silk vintage shirt", created_by=self.assistant)
+        self.product = Product.objects.create(
+            raw_note="Silk vintage shirt",
+            ai_title="Vintage Silk Shirt",
+            ai_description="100% pure silk vintage button down shirt in excellent condition.",
+            sale_price=Decimal("35.00"),
+            created_by=self.assistant,
+        )
 
     def test_creating_pending_clarification_automatically_sets_status_to_awaiting_info(self):
-        self.assertEqual(self.product.status, ProductStatus.DRAFT)
+        self.assertEqual(self.product.status, ProductStatus.READY)
         ProductClarification.objects.create(
             product=self.product,
             category=ClarificationCategory.MEASUREMENTS,
