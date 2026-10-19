@@ -289,12 +289,12 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 ---
 
 ### Phase 24: Compilation & Docker Image Build Timestamp Display (Vertical Slice 20)
-- [ ] **Task 77:** Version & Build Metadata Resolution Service (`inventory/services/version_service.py`).
-- [ ] **Task 78:** Global Template Context Processor & Django Settings Registration (`inventory/context_processors.py`, `config/settings.py`).
-- [ ] **Task 79:** Dockerfile & CI/CD Workflow Metadata Injection (`Dockerfile`, `.github/workflows/ci.yml`).
-- [ ] **Task 80:** Footer UI Modernization & Responsive Layout in `base.html` (`inventory/templates/inventory/base.html`).
-- [ ] **Task 81:** Bilingual Localization, Comprehensive Unit Tests & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_build_info.py`, `CHANGELOG.md`).
-- [ ] **Checkpoint 24 (Build Compilation Info Complete):** Build timestamp, commit SHA, and environment badge display properly in footer across all views and viewports; Docker builds automatically bake in build metadata; tests pass with 0 regressions.
+- [x] **Task 77:** Version & Build Metadata Resolution Service (`inventory/services/version_service.py`).
+- [x] **Task 78:** Global Template Context Processor & Django Settings Registration (`inventory/context_processors.py`, `config/settings.py`).
+- [x] **Task 79:** Dockerfile & CI/CD Workflow Metadata Injection (`Dockerfile`, `.github/workflows/ci.yml`).
+- [x] **Task 80:** Footer UI Modernization & Responsive Layout in `base.html` (`inventory/templates/inventory/base.html`).
+- [x] **Task 81:** Bilingual Localization, Comprehensive Unit Tests & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_build_info.py`, `CHANGELOG.md`).
+- [x] **Checkpoint 24 (Build Compilation Info Complete):** Build timestamp, commit SHA, and environment badge display properly in footer across all views and viewports; Docker builds automatically bake in build metadata; tests pass with 0 regressions.
 
 
 
