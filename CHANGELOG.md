@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-21
+
 ### Fixed
 - **Product Detail Staging View Sale Price Rendering & HTML5 Number Localization**:
   - **Root Cause Resolution**: Diagnosed and resolved the issue where a sale price entered during intake appeared in the dashboard list view but was missing/empty in the product detail view:
