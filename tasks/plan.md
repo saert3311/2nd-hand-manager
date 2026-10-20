@@ -300,12 +300,12 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 ---
 
 ### Phase 25: Intake AI Valuation & Reference Pricing (Vertical Slice 21)
-- [ ] **Task 82:** Domain Model Expansion & Database Migration (`inventory/models.py`, `inventory/migrations/0015_product_estimated_prices.py`, `inventory/admin.py`).
-- [ ] **Task 83:** AI Service Schema & Prompt Upgrade (`inventory/services/ai_service.py`, `inventory/views.py`).
-- [ ] **Task 84:** Intake Form & Mobile UI Valuation Integration (`inventory/forms.py`, `inventory/templates/inventory/intake.html`).
-- [ ] **Task 85:** Staging Product Detail View Reference Benchmarks (`inventory/templates/inventory/product_detail.html`).
-- [ ] **Task 86:** Bilingual Localization, Automated Unit & Integration Tests & Regression Verification (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_ai_valuation.py`, `CHANGELOG.md`).
-- [ ] **Checkpoint 25 (Intake AI Valuation & Reference Pricing Complete):** Intake identification estimates new MSRP and used resale value; values persist in `Product` model; intake form displays reference badges with one-click "Usar reventa" button; staging product detail shows benchmark badges beside manager sale price with "Aplicar" action; all unit and regression tests pass with 0 regressions.
+- [x] **Task 82:** Domain Model Expansion & Database Migration (`inventory/models.py`, `inventory/migrations/0015_product_estimated_prices.py`, `inventory/admin.py`).
+- [x] **Task 83:** AI Service Schema & Prompt Upgrade (`inventory/services/ai_service.py`, `inventory/views.py`).
+- [x] **Task 84:** Intake Form & Mobile UI Valuation Integration (`inventory/forms.py`, `inventory/templates/inventory/intake.html`).
+- [x] **Task 85:** Staging Product Detail View Reference Benchmarks (`inventory/templates/inventory/product_detail.html`).
+- [x] **Task 86:** Bilingual Localization, Automated Unit & Integration Tests & Regression Verification (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_ai_valuation.py`, `CHANGELOG.md`).
+- [x] **Checkpoint 25 (Intake AI Valuation & Reference Pricing Complete):** Intake identification estimates new MSRP and used resale value; values persist in `Product` model; intake form displays reference badges with one-click "Usar reventa" button; staging product detail shows benchmark badges beside manager sale price with "Aplicar" action; all unit and regression tests pass with 0 regressions.
 
 
 

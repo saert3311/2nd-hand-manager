@@ -110,6 +110,30 @@ class Product(models.Model):
         ],
         help_text=_("Sale price in Euros (€)")
     )
+    estimated_retail_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(Decimal("0.00")),
+            MaxValueValidator(Decimal("9999999.99")),
+        ],
+        verbose_name=_("Estimated Retail Price (€)"),
+        help_text=_("Estimated original retail price when new (MSRP)"),
+    )
+    estimated_resale_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(Decimal("0.00")),
+            MaxValueValidator(Decimal("9999999.99")),
+        ],
+        verbose_name=_("Estimated Resale Price (€)"),
+        help_text=_("Estimated secondhand market resale value"),
+    )
     status = models.CharField(
         max_length=20,
         choices=ProductStatus.choices,

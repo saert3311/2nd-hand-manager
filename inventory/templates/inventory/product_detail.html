@@ -467,6 +467,31 @@
                        {% if not can_manage %}readonly disabled{% endif %}
                        class="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 {% if not can_manage %}bg-slate-50 cursor-not-allowed text-slate-600{% endif %}">
               </div>
+              <!-- Benchmark Valuation References -->
+              {% if product.estimated_retail_price is not None or product.estimated_resale_price is not None %}
+              <div class="mt-2 space-y-1.5" id="detail-valuation-benchmarks">
+                <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                  {% if product.estimated_retail_price is not None %}
+                  <span id="ref-retail-price" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium">
+                    <span class="text-slate-400">🏷️</span> <span class="font-semibold">{% trans "PVP Nuevo (MSRP):" %}</span> <span class="font-mono font-bold">€{{ product.estimated_retail_price|floatformat:2 }}</span>
+                  </span>
+                  {% endif %}
+                  {% if product.estimated_resale_price is not None %}
+                  <span id="ref-resale-price" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/60 font-medium">
+                    <span class="text-emerald-500">✨</span> <span class="font-semibold">{% trans "Reventa estimada:" %}</span> <span class="font-mono font-bold">€{{ product.estimated_resale_price|floatformat:2 }}</span>
+                  </span>
+                  {% endif %}
+                </div>
+                {% if can_manage and product.estimated_resale_price is not None %}
+                <div>
+                  <button type="button" id="btnApplyResalePrice" data-resale="{{ product.estimated_resale_price|unlocalize }}"
+                          class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded transition cursor-pointer shadow-xs active:scale-95">
+                    <span>✨</span> {% blocktrans with price=product.estimated_resale_price|floatformat:2 %}Aplicar reventa (€{{ price }}){% endblocktrans %}
+                  </button>
+                </div>
+                {% endif %}
+              </div>
+              {% endif %}
             </div>
 
             <div>
@@ -726,6 +751,20 @@
         el.classList.toggle('hidden', !expanded);
       });
       toggleLogsBtn.textContent = expanded ? '{% trans "Show less" %}' : '{% trans "View full history" %} ({{ status_logs|length }})';
+    });
+  }
+
+  const btnApplyResale = document.getElementById('btnApplyResalePrice');
+  if (btnApplyResale) {
+    btnApplyResale.addEventListener('click', function() {
+      const resaleVal = this.getAttribute('data-resale');
+      const saleInput = document.getElementById('id_sale_price');
+      if (saleInput && resaleVal) {
+        saleInput.value = parseFloat(resaleVal).toFixed(2);
+        saleInput.focus();
+        saleInput.classList.add('ring-2', 'ring-emerald-500');
+        setTimeout(() => saleInput.classList.remove('ring-2', 'ring-emerald-500'), 1200);
+      }
     });
   }
 </script>

@@ -1263,3 +1263,45 @@ msgid "Staging"
 msgstr "Staging"
 
 
+
+msgid "Estimated Retail Price (€)"
+msgstr "PVP nuevo estimado (€)"
+
+msgid "Estimated original retail price when new (MSRP)"
+msgstr "Precio original estimado cuando era nuevo en tienda (MSRP)"
+
+msgid "Estimated Resale Price (€)"
+msgstr "Precio de reventa estimado (€)"
+
+msgid "Estimated secondhand market resale value"
+msgstr "Valor estimado en el mercado de reventa de segunda mano"
+
+msgid "Est. Resale (€)"
+msgstr "Reventa est. (€)"
+
+msgid "Est. Retail (€)"
+msgstr "PVP nuevo est. (€)"
+
+msgid "Est. New Retail (MSRP)"
+msgstr "PVP Nuevo estimado (MSRP)"
+
+msgid "Est. Used Resale"
+msgstr "Reventa usada estimada"
+
+msgid "PVP Nuevo (MSRP):"
+msgstr "PVP Nuevo (MSRP):"
+
+msgid "Reventa estimada:"
+msgstr "Reventa estimada:"
+
+msgid "Usar precio de reventa estimado"
+msgstr "Usar precio de reventa estimado"
+
+msgid "PVP Nuevo:"
+msgstr "PVP Nuevo:"
+
+msgid "Reventa est.:"
+msgstr "Reventa est.:"
+
+msgid "Aplicar reventa (€%(price)s)"
+msgstr "Aplicar reventa (€%(price)s)"

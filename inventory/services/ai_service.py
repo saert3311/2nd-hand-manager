@@ -52,12 +52,20 @@ class IntakePreflightSchema(BaseModel):
     detected_attributes: list[str] = Field(default_factory=list, description="Visible attributes such as color, materials, logos")
     missing_or_recommended_info: list[str] = Field(default_factory=list, description="Actionable checklist of missing tags, size labels, flaws, or angles")
     suggested_note: str = Field(description="Draft summary suitable for intake notes")
+    estimated_retail_price: Optional[float] = Field(
+        default=None,
+        description="Estimated original retail price when brand new in Euros (€) (MSRP). Null if impossible to estimate."
+    )
+    estimated_resale_price: Optional[float] = Field(
+        default=None,
+        description="Estimated realistic secondhand market resale value in Euros (€) considering condition in Spain/Europe. Null if impossible to estimate."
+    )
 
 
 PREFLIGHT_ES_INSTRUCTION = (
     "Eres un asistente de tasación e inventario para una tienda de artículos de segunda mano y vintage.\n"
-    "Analiza rápidamente las fotos del producto (hasta 3 fotos) y las notas preliminares para identificar el artículo "
-    "y señalar qué detalles cruciales faltan para una catalogación completa.\n\n"
+    "Analiza rápidamente las fotos del producto (hasta 3 fotos) y las notas preliminares para identificar el artículo, "
+    "estimar su tasación de mercado y señalar qué detalles cruciales faltan para una catalogación completa.\n\n"
     "INSTRUCCIONES:\n"
     "- Idioma: Responde COMPLETAMENTE EN ESPAÑOL.\n"
     "- identified_title: Marca, modelo o tipo de prenda/objeto reconocido.\n"
@@ -65,13 +73,15 @@ PREFLIGHT_ES_INSTRUCTION = (
     "- detected_attributes: Lista de atributos visibles (color, materiales, estampados, cortes).\n"
     "- missing_or_recommended_info: Lista breve de datos o fotos que faltan o se recomienda revisar "
     "(ej. 'Falta foto de la etiqueta de talla/composición', 'Revisar desgaste en suela o cremalleras', 'Indicar medidas').\n"
-    "- suggested_note: Resumen breve y útil que el asistente puede añadir a sus notas de campo."
+    "- suggested_note: Resumen breve y útil que el asistente puede añadir a sus notas de campo.\n"
+    "- estimated_retail_price: Estimación numérica en Euros (€) del precio original de venta nuevo en tienda (PVP nuevo / MSRP). Devuelve null si es artesanal, sin marca o imposible de tasar objetivamente.\n"
+    "- estimated_resale_price: Estimación numérica en Euros (€) del valor de reventa realista en el mercado de segunda mano en España/Europa (Wallapop, Vinted, eBay) según el estado detectado. Devuelve null si no es tasable objetivamente."
 )
 
 PREFLIGHT_EN_INSTRUCTION = (
     "You are an intake and appraisal assistant for a secondhand and vintage goods shop.\n"
-    "Quickly inspect the product photos (up to 3 photos) and preliminary notes to identify the item "
-    "and flag any crucial inspection details missing for full cataloging.\n\n"
+    "Quickly inspect the product photos (up to 3 photos) and preliminary notes to identify the item, "
+    "estimate its market valuation, and flag any crucial inspection details missing for full cataloging.\n\n"
     "INSTRUCTIONS:\n"
     "- Language: Respond COMPLETELY IN ENGLISH.\n"
     "- identified_title: Recognized brand, model, or item type.\n"
@@ -79,7 +89,9 @@ PREFLIGHT_EN_INSTRUCTION = (
     "- detected_attributes: List of visible attributes (colorway, materials, logos, cuts).\n"
     "- missing_or_recommended_info: Short list of missing details or recommended inspection steps "
     "(e.g., 'Size or care tag not clearly visible', 'Inspect underside sole wear', 'Check zippers or seams').\n"
-    "- suggested_note: Concise summary that the assistant can add to field notes."
+    "- suggested_note: Concise summary that the assistant can add to field notes.\n"
+    "- estimated_retail_price: Numeric estimate in Euros (€) of the original retail price when brand new in store (MSRP). Return null if unbranded, handmade, or impossible to estimate objectively.\n"
+    "- estimated_resale_price: Numeric estimate in Euros (€) of the realistic secondhand market resale value in Spain/Europe (Wallapop, Vinted, eBay) considering detected condition. Return null if impossible to estimate objectively."
 )
 
 
@@ -217,6 +229,19 @@ def _detect_mime_type(data: bytes) -> str:
     return "image/jpeg"
 
 
+def _clean_price(val: object) -> Optional[float]:
+    """Helper to validate, sanitize, and round float pricing estimates."""
+    if val is None:
+        return None
+    try:
+        f = float(val)
+        if f < 0 or f > 9999999.99:
+            return None
+        return round(f, 2)
+    except (ValueError, TypeError):
+        return None
+
+
 def identify_intake_product(
     images_bytes: list[bytes],
     raw_note: str = "",
@@ -283,6 +308,8 @@ def identify_intake_product(
                 "detected_attributes": list(getattr(parsed, "detected_attributes", []) or []),
                 "missing_or_recommended_info": list(getattr(parsed, "missing_or_recommended_info", []) or []),
                 "suggested_note": getattr(parsed, "suggested_note", "").strip(),
+                "estimated_retail_price": _clean_price(getattr(parsed, "estimated_retail_price", None)),
+                "estimated_resale_price": _clean_price(getattr(parsed, "estimated_resale_price", None)),
             }
 
         # Fallback to json text parsing
@@ -294,6 +321,8 @@ def identify_intake_product(
             "detected_attributes": list(data.get("detected_attributes", []) or []),
             "missing_or_recommended_info": list(data.get("missing_or_recommended_info", []) or []),
             "suggested_note": str(data.get("suggested_note", "")).strip(),
+            "estimated_retail_price": _clean_price(data.get("estimated_retail_price")),
+            "estimated_resale_price": _clean_price(data.get("estimated_resale_price")),
         }
     except Exception as exc:
         logger.error(f"Gemini preflight identification failed: {exc}", exc_info=True)

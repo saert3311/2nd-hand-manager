@@ -90,10 +90,32 @@ class ProductIntakeForm(forms.ModelForm):
         label=_("Identified Title"),
         widget=forms.HiddenInput(attrs={"id": "id_ai_title"}),
     )
+    estimated_retail_price = forms.DecimalField(
+        min_value=Decimal("0.00"),
+        max_value=Decimal("9999999.99"),
+        decimal_places=2,
+        required=False,
+        label=_("Estimated Retail Price (€)"),
+        widget=forms.HiddenInput(attrs={"id": "id_estimated_retail_price"}),
+    )
+    estimated_resale_price = forms.DecimalField(
+        min_value=Decimal("0.00"),
+        max_value=Decimal("9999999.99"),
+        decimal_places=2,
+        required=False,
+        label=_("Estimated Resale Price (€)"),
+        widget=forms.HiddenInput(attrs={"id": "id_estimated_resale_price"}),
+    )
 
     class Meta:
         model = Product
-        fields = ["raw_note", "sale_price", "ai_title"]
+        fields = [
+            "raw_note",
+            "sale_price",
+            "ai_title",
+            "estimated_retail_price",
+            "estimated_resale_price",
+        ]
 
 
 class ProductUpdateForm(forms.ModelForm):

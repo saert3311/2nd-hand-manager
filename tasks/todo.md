@@ -1906,14 +1906,14 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 82: Domain Model Expansion & Database Migration (`inventory/models.py`, `inventory/migrations/0015_product_estimated_prices.py`, `inventory/admin.py`)
 **Description:** Add `estimated_retail_price` and `estimated_resale_price` decimal fields to the `Product` model in `inventory/models.py`. Both fields should allow `null=True, blank=True`, validate non-negative values up to `9999999.99` with `max_digits=10, decimal_places=2`, and provide translatable `verbose_name` and `help_text`. Generate migration `0015_product_estimated_prices.py` and apply it cleanly. Update `inventory/admin.py` to display the new fields in `ProductAdmin` list display and fieldsets.
 **Acceptance criteria:**
-- [ ] `Product.estimated_retail_price` and `Product.estimated_resale_price` defined in `inventory/models.py`.
-- [ ] Migration `0015_product_estimated_prices.py` generated and applied cleanly to SQLite.
-- [ ] `ProductAdmin` in `inventory/admin.py` exposes both valuation fields in `list_display`, `fieldsets`, or `readonly_fields`.
-- [ ] Admin and model validations enforce non-negative values.
+- [x] `Product.estimated_retail_price` and `Product.estimated_resale_price` defined in `inventory/models.py`.
+- [x] Migration `0015_product_estimated_prices.py` generated and applied cleanly to SQLite.
+- [x] `ProductAdmin` in `inventory/admin.py` exposes both valuation fields in `list_display`, `fieldsets`, or `readonly_fields`.
+- [x] Admin and model validations enforce non-negative values.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py migrate`
-- [ ] Model checks pass: `.venv\Scripts\python.exe manage.py check`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py migrate`
+- [x] Model checks pass: `.venv\Scripts\python.exe manage.py check`
 **Dependencies:** None
 **Files likely touched:**
 - `inventory/models.py`
@@ -1926,13 +1926,13 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 83: AI Service Schema & Prompt Upgrade (`inventory/services/ai_service.py`, `inventory/views.py`)
 **Description:** Update `IntakePreflightSchema` in `inventory/services/ai_service.py` to add `estimated_retail_price: Optional[float] = None` and `estimated_resale_price: Optional[float] = None` with descriptive field annotations. Update `PREFLIGHT_ES_INSTRUCTION` and `PREFLIGHT_EN_INSTRUCTION` to evaluate original new retail MSRP and realistic second-hand market value (Wallapop, Vinted, eBay in €), explicitly instructing the model to return `null` if the item is unbranded or impossible to estimate. Ensure `identify_intake_product()` rounds float values to 2 decimal places and handles nulls gracefully. Update `intake_identify_view` in `inventory/views.py` to pass both fields in the JSON response payload.
 **Acceptance criteria:**
-- [ ] `IntakePreflightSchema` supports `estimated_retail_price` and `estimated_resale_price`.
-- [ ] Both Spanish and English preflight instructions guide Gemini to appraise new retail MSRP and used resale value in Euros (€).
-- [ ] `identify_intake_product()` returns clean float/Decimal values rounded to 2 decimal places, or `None` if unable to value.
-- [ ] `intake_identify_view` returns `estimated_retail_price` and `estimated_resale_price` in the JSON response dictionary.
+- [x] `IntakePreflightSchema` supports `estimated_retail_price` and `estimated_resale_price`.
+- [x] Both Spanish and English preflight instructions guide Gemini to appraise new retail MSRP and used resale value in Euros (€).
+- [x] `identify_intake_product()` returns clean float/Decimal values rounded to 2 decimal places, or `None` if unable to value.
+- [x] `intake_identify_view` returns `estimated_retail_price` and `estimated_resale_price` in the JSON response dictionary.
 **Verification:**
-- [ ] Unit tests pass: `.venv\Scripts\python.exe manage.py test tests.test_ai_service`
-- [ ] Linter passes: `.venv\Scripts\ruff.exe check inventory/services/ai_service.py inventory/views.py`
+- [x] Unit tests pass: `.venv\Scripts\python.exe manage.py test tests.test_ai_service`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check inventory/services/ai_service.py inventory/views.py`
 **Dependencies:** Task 82
 **Files likely touched:**
 - `inventory/services/ai_service.py`
@@ -1944,14 +1944,14 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 84: Intake Form & Mobile UI Valuation Integration (`inventory/forms.py`, `inventory/templates/inventory/intake.html`)
 **Description:** Update `ProductIntakeForm` in `inventory/forms.py` to include `estimated_retail_price` and `estimated_resale_price` using `forms.HiddenInput` widgets. In `inventory/templates/inventory/intake.html`, render `#advisoryValuationContainer` inside `#aiAdvisoryBanner` displaying cards for "PVP Nuevo (MSRP)" and "Reventa estimada". Beneath the target sale price input (`#id_sale_price`), render benchmark badges and a one-click button "✨ Usar precio de reventa estimado" (`#btnUseEstimatedResale`) that fills `#id_sale_price` with `data.estimated_resale_price` when clicked. Update the client-side JavaScript to populate the hidden fields upon receiving the preflight identification JSON.
 **Acceptance criteria:**
-- [ ] `ProductIntakeForm` binds `estimated_retail_price` and `estimated_resale_price` as hidden inputs.
-- [ ] When the assistant clicks "Identificar producto", the valuation badges in `#advisoryValuationContainer` update with the formatted prices or hide gracefully if `null`.
-- [ ] Benchmark reference badges and `#btnUseEstimatedResale` button appear below `#id_sale_price`.
-- [ ] Clicking "Usar precio de reventa estimado" populates `#id_sale_price.value` with the detected resale price.
-- [ ] Submitting the intake form persists both values into the newly created `Product` record.
+- [x] `ProductIntakeForm` binds `estimated_retail_price` and `estimated_resale_price` as hidden inputs.
+- [x] When the assistant clicks "Identificar producto", the valuation badges in `#advisoryValuationContainer` update with the formatted prices or hide gracefully if `null`.
+- [x] Benchmark reference badges and `#btnUseEstimatedResale` button appear below `#id_sale_price`.
+- [x] Clicking "Usar precio de reventa estimado" populates `#id_sale_price.value` with the detected resale price.
+- [x] Submitting the intake form persists both values into the newly created `Product` record.
 **Verification:**
-- [ ] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake`
-- [ ] Linter passes: `.venv\Scripts\ruff.exe check inventory/forms.py`
+- [x] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check inventory/forms.py`
 **Dependencies:** Task 82, Task 83
 **Files likely touched:**
 - `inventory/forms.py`
@@ -1963,13 +1963,13 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 85: Staging Product Detail View Reference Benchmarks (`inventory/templates/inventory/product_detail.html`)
 **Description:** In `inventory/templates/inventory/product_detail.html`, inside the Pricing & Status section adjacent to the manager's `Sale Price (€)` input (`#id_sale_price`), render benchmark badges displaying: (1) `PVP Nuevo (MSRP): €XX.XX`, (2) `Reventa estimada: €YY.YY`, and (3) an optional discount-to-new percentage badge if both retail and sale price exist. For managers (`can_manage`), provide a quick-click pill "Aplicar reventa (€YY.YY)" that populates `#id_sale_price` without overwriting unless explicitly tapped. Gracefully display "—" if valuation is not available.
 **Acceptance criteria:**
-- [ ] Product detail view displays benchmark badges `#ref-retail-price` and `#ref-resale-price` near `#id_sale_price`.
-- [ ] "Aplicar reventa" quick button populates `#id_sale_price` on click.
-- [ ] Layout remains responsive on mobile screens ($390 \times 844$) without horizontal scroll or layout shifts.
-- [ ] Graceful fallback displayed when valuation is null or unestimated.
+- [x] Product detail view displays benchmark badges `#ref-retail-price` and `#ref-resale-price` near `#id_sale_price`.
+- [x] "Aplicar reventa" quick button populates `#id_sale_price` on click.
+- [x] Layout remains responsive on mobile screens ($390 \times 844$) without horizontal scroll or layout shifts.
+- [x] Graceful fallback displayed when valuation is null or unestimated.
 **Verification:**
-- [ ] Unit tests pass: `.venv\Scripts\python.exe manage.py test tests.test_views`
-- [ ] Template validation: no unclosed tags or syntax errors.
+- [x] Unit tests pass: `.venv\Scripts\python.exe manage.py test tests.test_views`
+- [x] Template validation: no unclosed tags or syntax errors.
 **Dependencies:** Task 82, Task 83, Task 84
 **Files likely touched:**
 - `inventory/templates/inventory/product_detail.html`
@@ -1980,16 +1980,16 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 86: Bilingual Localization, Automated Unit & Integration Tests & Regression Verification (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_ai_valuation.py`, `CHANGELOG.md`)
 **Description:** Add Spanish translations for all new strings ("Estimated Retail Price (€)", "Estimated Resale Price (€)", "Est. New Retail (MSRP)", "Est. Used Resale", "Usar precio de reventa estimado", "Aplicar reventa", etc.) in `locale/es/LC_MESSAGES/django.po` and compile to `django.mo`. Create a dedicated test suite `tests/test_ai_valuation.py` covering: (1) Pydantic schema validation with valid floats, integer values, nulls, and missing fields; (2) Mock Gemini response in `identify_intake_product` parsing valuation; (3) `ProductIntakeForm` binding and saving `estimated_retail_price` and `estimated_resale_price`; (4) Product detail view rendering reference benchmarks; (5) Null valuation handling; (6) Validation limits (non-negative, max digits). Run `ruff check .` and the full regression test suite (323+ tests).
 **Acceptance criteria:**
-- [ ] Spanish translations compiled in `django.mo`.
-- [ ] `tests/test_ai_valuation.py` covers schema validation, form binding, view rendering, and edge cases.
-- [ ] Full test suite (323+ tests) passes with 0 failures and 0 errors.
-- [ ] `ruff check .` passes cleanly with 0 warnings.
-- [ ] `CHANGELOG.md` updated documenting Phase 25 additions.
+- [x] Spanish translations compiled in `django.mo`.
+- [x] `tests/test_ai_valuation.py` covers schema validation, form binding, view rendering, and edge cases.
+- [x] Full test suite (323+ tests) passes with 0 failures and 0 errors.
+- [x] `ruff check .` passes cleanly with 0 warnings.
+- [x] `CHANGELOG.md` updated documenting Phase 25 additions.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
-- [ ] Linter passes: `.venv\Scripts\ruff.exe check .`
-- [ ] Targeted test succeeds: `.venv\Scripts\python.exe manage.py test tests.test_ai_valuation`
-- [ ] Full test suite succeeds: `.venv\Scripts\python.exe manage.py test`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check .`
+- [x] Targeted test succeeds: `.venv\Scripts\python.exe manage.py test tests.test_ai_valuation`
+- [x] Full test suite succeeds: `.venv\Scripts\python.exe manage.py test`
 **Dependencies:** Task 82, Task 83, Task 84, Task 85
 **Files likely touched:**
 - `locale/es/LC_MESSAGES/django.po`
@@ -2001,13 +2001,13 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ---
 
 ## Checkpoint 25: Intake AI Valuation & Reference Pricing Complete
-- [ ] Model fields `estimated_retail_price` and `estimated_resale_price` migrated and registered in admin.
-- [ ] AI preflight scan parses and returns new MSRP and secondhand resale price estimates in € or null.
-- [ ] Intake mobile view displays reference valuation cards and provides one-click button to adopt resale price.
-- [ ] Staging product detail view displays reference benchmark badges beside manager sale price input with quick-apply action.
-- [ ] Bilingual localization compiled and verified.
-- [ ] All unit and regression tests pass with 0 failures.
-- [ ] `ruff check .` passes cleanly.
+- [x] Model fields `estimated_retail_price` and `estimated_resale_price` migrated and registered in admin.
+- [x] AI preflight scan parses and returns new MSRP and secondhand resale price estimates in € or null.
+- [x] Intake mobile view displays reference valuation cards and provides one-click button to adopt resale price.
+- [x] Staging product detail view displays reference benchmark badges beside manager sale price input with quick-apply action.
+- [x] Bilingual localization compiled and verified.
+- [x] All unit and regression tests pass with 0 failures.
+- [x] `ruff check .` passes cleanly.
 
 
 

@@ -356,6 +356,8 @@ class ProductAdmin(admin.ModelAdmin):
         "display_title",
         "status",
         "sale_price_display",
+        "estimated_resale_price_display",
+        "estimated_retail_price_display",
         "is_sold",
         "images_count",
         "created_by",
@@ -387,6 +389,20 @@ class ProductAdmin(admin.ModelAdmin):
         return "-"
 
     sale_price_display.short_description = _("Price (€)")
+
+    def estimated_resale_price_display(self, obj):
+        if obj.estimated_resale_price is not None:
+            return f"€{obj.estimated_resale_price:.2f}"
+        return "-"
+
+    estimated_resale_price_display.short_description = _("Est. Resale (€)")
+
+    def estimated_retail_price_display(self, obj):
+        if obj.estimated_retail_price is not None:
+            return f"€{obj.estimated_retail_price:.2f}"
+        return "-"
+
+    estimated_retail_price_display.short_description = _("Est. Retail (€)")
 
     def images_count(self, obj):
         return obj.images.count()
