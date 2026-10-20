@@ -245,6 +245,7 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - Approved: Target push workflow events: Clarification Doubts Q&A (`PENDING` / `ANSWERED`) and New Intake / Lifecycle Bottlenecks (`DRAFT` / `PRICE_PENDING`), controlled via `.env` flag `PUSH_NOTIFICATIONS_LIVE_SIGNALS`.
 - Approved: Service Worker caching strategy: Minimal pass-through Service Worker strictly for PWA installability and Push Notifications, no caching (Option B).
 - Approved: Build Compilation Footer Format & Metadata Scope: UTC Timestamp + Git Commit SHA + Environment Badge (Option A).
+- Approved: Intake AI Valuation & Reference Pricing: Reference Badges + Optional "Usar reventa" Button in intake and manager staging (Option A).
 
 ---
 
@@ -295,6 +296,17 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - [x] **Task 80:** Footer UI Modernization & Responsive Layout in `base.html` (`inventory/templates/inventory/base.html`).
 - [x] **Task 81:** Bilingual Localization, Comprehensive Unit Tests & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_build_info.py`, `CHANGELOG.md`).
 - [x] **Checkpoint 24 (Build Compilation Info Complete):** Build timestamp, commit SHA, and environment badge display properly in footer across all views and viewports; Docker builds automatically bake in build metadata; tests pass with 0 regressions.
+
+---
+
+### Phase 25: Intake AI Valuation & Reference Pricing (Vertical Slice 21)
+- [ ] **Task 82:** Domain Model Expansion & Database Migration (`inventory/models.py`, `inventory/migrations/0015_product_estimated_prices.py`, `inventory/admin.py`).
+- [ ] **Task 83:** AI Service Schema & Prompt Upgrade (`inventory/services/ai_service.py`, `inventory/views.py`).
+- [ ] **Task 84:** Intake Form & Mobile UI Valuation Integration (`inventory/forms.py`, `inventory/templates/inventory/intake.html`).
+- [ ] **Task 85:** Staging Product Detail View Reference Benchmarks (`inventory/templates/inventory/product_detail.html`).
+- [ ] **Task 86:** Bilingual Localization, Automated Unit & Integration Tests & Regression Verification (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_ai_valuation.py`, `CHANGELOG.md`).
+- [ ] **Checkpoint 25 (Intake AI Valuation & Reference Pricing Complete):** Intake identification estimates new MSRP and used resale value; values persist in `Product` model; intake form displays reference badges with one-click "Usar reventa" button; staging product detail shows benchmark badges beside manager sale price with "Aplicar" action; all unit and regression tests pass with 0 regressions.
+
 
 
 

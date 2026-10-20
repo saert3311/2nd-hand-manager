@@ -993,6 +993,8 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
     - **Option A (Recommended — Reference Badges + Optional "Usar reventa" Button):** Render the estimated new and used prices as benchmark pills in the AI advisory card and beneath the target sale price input, with a one-click button "Usar precio estimado" to populate the sale price field if desired without overwriting without explicit assistant consent.
     - **Option B (Auto-populate Sale Price):** Automatically set the `sale_price` input value to `estimated_resale_price` if `sale_price` is currently empty.
     *Which adoption pattern do you prefer for the intake sale price?*
+    - **Decision:** Option A approved — Reference Badges + Optional "Usar reventa" Button.
+
 
 
 
