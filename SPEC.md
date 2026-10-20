@@ -22,6 +22,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 18. **Anti-Apilación Dashboard Horizontal Rail & Mobile High-Readability Typography:** Decoupled status filter rail with horizontal touch-scrolling preventing tab stacking (*apilación*), combined with standardized high-readability typography, elimination of sub-12px micro-fonts, and minimum 16px form inputs to prevent involuntary iOS Safari viewport auto-zooming.
 19. **Product State Change History & User Audit Trail (`ProductStatusLog`):** Complete operational traceability recording every product state transition, capturing exact timestamps (`created_at`), previous and new lifecycle statuses (`from_status` $\to$ `to_status`), the acting user (`changed_by`), and contextual trigger descriptions, exposed via a visual timeline on the product staging page and searchable Django Admin changelist/inline.
 20. **Compilation & Docker Image Build Timestamp Display ("Which Compilation Are We Using?"):** Operational traceability across environments (development, staging, production) displaying the build date, time, commit hash, and environment badge in the bottom application footer ([`docs/prds/PRD-docker-build-info-and-compilation-timestamp.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-docker-build-info-and-compilation-timestamp.md)).
+21. **Intake AI Valuation & Reference Pricing ("New Retail Value & Used Resale Value"):** AI appraisal benchmarks estimating both the original new retail value (MSRP) and realistic secondhand market resale value during intake identification, persisted to the `Product` model and displayed near the sale price in both the intake form and product staging detail view ([`docs/prds/PRD-intake-ai-valuation-reference-prices.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-intake-ai-valuation-reference-prices.md)).
 
 ---
 
@@ -987,5 +988,11 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
     - **Option C (Localized Browser Timezone via JS):** Uses client JavaScript to convert UTC build time into the client device's local timezone.
     *Which footer display format and scope do you prefer?*
     - **Decision:** Option A approved — UTC Timestamp + Git Commit SHA + Environment Badge.
+28. **Intake AI Valuation & Reference Pricing Adoption Pattern:**
+    - When Gemini preflight identification estimates the original new price (MSRP) and used resale value during intake:
+    - **Option A (Recommended — Reference Badges + Optional "Usar reventa" Button):** Render the estimated new and used prices as benchmark pills in the AI advisory card and beneath the target sale price input, with a one-click button "Usar precio estimado" to populate the sale price field if desired without overwriting without explicit assistant consent.
+    - **Option B (Auto-populate Sale Price):** Automatically set the `sale_price` input value to `estimated_resale_price` if `sale_price` is currently empty.
+    *Which adoption pattern do you prefer for the intake sale price?*
+
 
 
