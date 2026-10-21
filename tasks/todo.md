@@ -2036,14 +2036,14 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 88: Sourcing Session Service Engine & Configuration Settings (`config/settings.py`, `inventory/services/intake_batch_service.py`)
 **Description:** Add `INTAKE_SESSION_DEBOUNCE_MINUTES` setting in `config/settings.py` (default: 15, reading from `os.getenv`). Create `inventory/services/intake_batch_service.py` implementing: (1) `get_debounce_minutes()` helper; (2) `record_product_intake(product, assistant=None)` to find an active un-notified session within the debounce window or instantiate a new session, increment `product_count`, update `last_activity_at`, and assign `product.batch_session`; (3) `process_pending_intake_batches(debounce_minutes=None, dry_run=False)` to query expired unnotified sessions (`is_notified=False` and `last_activity_at <= now - window`), format bilingual push notifications (`📦 Lote completado: %(count)s nuevos productos`), dispatch them to `ROLE_MANAGER` via `send_push_to_group`, and flag `is_notified=True` with `closed_at=now()`.
 **Acceptance criteria:**
-- [ ] `INTAKE_SESSION_DEBOUNCE_MINUTES` defined in `config/settings.py` with integer fallback to 15.
-- [ ] `record_product_intake()` groups uploads within 15 minutes into the same `IntakeBatchSession` and sets `product.batch_session`.
-- [ ] Uploads occurring after the 15-minute window or after session closure initiate a new `IntakeBatchSession`.
-- [ ] `process_pending_intake_batches()` queries only unnotified expired sessions, formats title and body, dispatches push alerts, and marks sessions closed/notified idempotently.
-- [ ] `dry_run=True` reports what would be processed without mutating records or sending Web Push alerts.
+- [x] `INTAKE_SESSION_DEBOUNCE_MINUTES` defined in `config/settings.py` with integer fallback to 15.
+- [x] `record_product_intake()` groups uploads within 15 minutes into the same `IntakeBatchSession` and sets `product.batch_session`.
+- [x] Uploads occurring after the 15-minute window or after session closure initiate a new `IntakeBatchSession`.
+- [x] `process_pending_intake_batches()` queries only unnotified expired sessions, formats title and body, dispatches push alerts, and marks sessions closed/notified idempotently.
+- [x] `dry_run=True` reports what would be processed without mutating records or sending Web Push alerts.
 **Verification:**
-- [ ] Unit tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake_batch_notifications`
-- [ ] Linter passes: `.venv\Scripts\ruff.exe check inventory/services/intake_batch_service.py config/settings.py`
+- [x] Unit tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake_batch_notifications`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check inventory/services/intake_batch_service.py config/settings.py`
 **Dependencies:** Task 87
 **Files likely touched:**
 - `config/settings.py`

@@ -228,6 +228,12 @@ PUSH_NOTIFICATIONS_LIVE_SIGNALS = (
     os.getenv('PUSH_NOTIFICATIONS_LIVE_SIGNALS', 'False').lower() in ('true', '1', 't', 'yes')
 )
 
+# Intake Sourcing Batch Notification Inactivity Debounce (Minutes)
+try:
+    INTAKE_SESSION_DEBOUNCE_MINUTES = int(os.getenv('INTAKE_SESSION_DEBOUNCE_MINUTES', '15'))
+except (TypeError, ValueError):
+    INTAKE_SESSION_DEBOUNCE_MINUTES = 15
+
 # Compilation & Build Metadata
 APP_BUILD_TIME = os.getenv('APP_BUILD_TIME', '').strip()
 APP_BUILD_COMMIT = os.getenv('APP_BUILD_COMMIT', '').strip()
