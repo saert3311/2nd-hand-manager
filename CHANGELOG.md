@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-21
+
 ### Added
 - **Consolidated Intake Session Notifications ("Debounced Manager Push Alerts") (Phase 26)**:
   - **Debounced Intake Sourcing Session Engine**: Created `IntakeBatchSession` model in `inventory/models.py` with `assistant`, `started_at`, `last_activity_at`, `product_count`, `is_notified`, and `closed_at`. Added foreign key `batch_session` on `Product` for complete operational auditability. Generated and applied database migration `0016_intake_batch_session.py`.
