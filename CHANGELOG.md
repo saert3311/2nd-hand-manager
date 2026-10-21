@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Consolidated Intake Session Notifications ("Debounced Manager Push Alerts") (Phase 26)**:
+  - **Debounced Intake Sourcing Session Engine**: Created `IntakeBatchSession` model in `inventory/models.py` with `assistant`, `started_at`, `last_activity_at`, `product_count`, `is_notified`, and `closed_at`. Added foreign key `batch_session` on `Product` for complete operational auditability. Generated and applied database migration `0016_intake_batch_session.py`.
+  - **Session Dispatcher & Configuration**: Implemented `inventory/services/intake_batch_service.py` with `record_product_intake()` and `process_pending_intake_batches()`. Added `INTAKE_SESSION_DEBOUNCE_MINUTES` setting in `config/settings.py` (default: 15 minutes, configurable via `.env`).
+  - **Lifecycle Signal Refactoring**: Refactored `notify_managers_on_product_lifecycle_save` post-save signal in `inventory/models.py` to eliminate individual draft push alerts. When an assistant uploads products in draft, they are grouped under the assistant's active `IntakeBatchSession`. After 15 minutes of inactivity, a single consolidated push alert (`📦 Lote completado: %(count)s nuevos productos`) is dispatched to `ROLE_MANAGER` pointing to `/dashboard/?status=draft`.
+  - **Urgent Alert Isolation**: Verified that urgent clarification doubts (`ProductClarification`) and price pending transitions (`PRICE_PENDING`) remain 100% instant and un-debounced.
+  - **Management Command for CLI & Cron**: Built `python manage.py process_intake_batches` supporting `--debounce-minutes`, `--dry-run`, `--no-notify`, and `--quiet` options.
+  - **Django Administration**: Registered `IntakeBatchSessionAdmin` in `manager_admin_site` with `BatchProductInline` displaying associated products, push status badges, and search by assistant.
+  - **Bilingual Localization & Automated Tests**: Added Spanish catalog entries in `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`. Added 11 unit and integration tests in `tests/test_intake_batch_notifications.py` covering debounce windows, grouping, idempotency, multi-assistant isolation, and admin permissions.
+
 ## [1.2.0] - 2026-10-21
 
 ### Fixed

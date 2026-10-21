@@ -310,12 +310,12 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 ---
 
 ### Phase 26: Consolidated Intake Session Notifications & Debounced Alerts (Vertical Slice 22)
-- [ ] **Task 87:** Domain Model `IntakeBatchSession`, `Product.batch_session` Foreign Key, Migration `0016_intake_batch_session.py` & Django Admin Registration (`inventory/models.py`, `inventory/migrations/0016_intake_batch_session.py`, `inventory/admin.py`).
-- [ ] **Task 88:** Sourcing Session Service Engine & Configuration Settings (`config/settings.py`, `inventory/services/intake_batch_service.py`).
-- [ ] **Task 89:** Lifecycle Post-Save Signal Refactoring & Urgent Alert Preservation (`inventory/models.py`, `tests/test_pwa_push.py`).
-- [ ] **Task 90:** Management Command `process_intake_batches` for CLI & Automated Cron Execution (`inventory/management/commands/process_intake_batches.py`).
-- [ ] **Task 91:** Bilingual Translations, Comprehensive Automated Test Suite & Regression Verification (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_intake_batch_notifications.py`, `CHANGELOG.md`).
-- [ ] **Checkpoint 26 (Consolidated Intake Session Notifications Complete):** Uploading multiple products consecutively records them under a single `IntakeBatchSession`; no immediate manager push alerts are dispatched for drafts; after the 15-minute sliding inactivity window passes, a single consolidated push alert (`📦 Lote completado: [X] nuevos productos`) is dispatched to `ROLE_MANAGER`; urgent clarification doubts and price pending alerts remain instant; CLI management command supports normal and dry-run execution; all unit and regression tests pass with 0 failures and 0 warnings.
+- [x] **Task 87:** Domain Model `IntakeBatchSession`, `Product.batch_session` Foreign Key, Migration `0016_intake_batch_session.py` & Django Admin Registration (`inventory/models.py`, `inventory/migrations/0016_intake_batch_session.py`, `inventory/admin.py`).
+- [x] **Task 88:** Sourcing Session Service Engine & Configuration Settings (`config/settings.py`, `inventory/services/intake_batch_service.py`).
+- [x] **Task 89:** Lifecycle Post-Save Signal Refactoring & Urgent Alert Preservation (`inventory/models.py`, `tests/test_pwa_push.py`).
+- [x] **Task 90:** Management Command `process_intake_batches` for CLI & Automated Cron Execution (`inventory/management/commands/process_intake_batches.py`).
+- [x] **Task 91:** Bilingual Translations, Comprehensive Automated Test Suite & Regression Verification (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_intake_batch_notifications.py`, `CHANGELOG.md`).
+- [x] **Checkpoint 26 (Consolidated Intake Session Notifications Complete):** Uploading multiple products consecutively records them under a single `IntakeBatchSession`; no immediate manager push alerts are dispatched for drafts; after the 15-minute sliding inactivity window passes, a single consolidated push alert (`📦 Lote completado: [X] nuevos productos`) is dispatched to `ROLE_MANAGER`; urgent clarification doubts and price pending alerts remain instant; CLI management command supports normal and dry-run execution; all unit and regression tests pass with 0 failures and 0 warnings.
 
 
 

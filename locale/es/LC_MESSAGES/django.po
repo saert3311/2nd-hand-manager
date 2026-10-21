@@ -1305,3 +1305,55 @@ msgstr "Reventa est.:"
 
 msgid "Aplicar reventa (€%(price)s)"
 msgstr "Aplicar reventa (€%(price)s)"
+
+msgid "Intake Batch Session"
+msgstr "Sesión de lote de subida"
+
+msgid "Intake Batch Sessions"
+msgstr "Sesiones de lote de subida"
+
+msgid "Started At"
+msgstr "Iniciado a las"
+
+msgid "Last Activity At"
+msgstr "Última actividad a las"
+
+msgid "Product Count"
+msgstr "Cantidad de productos"
+
+msgid "Is Notified"
+msgstr "Notificado"
+
+msgid "Closed At"
+msgstr "Cerrado a las"
+
+msgid "The intake uploading session in which this product was cataloged"
+msgstr "La sesión de subida en la que se catalogó este producto"
+
+msgid "The assistant who uploaded products during this session"
+msgstr "El asistente que subió los productos durante esta sesión"
+
+msgid "Timestamp when the first product of the batch was uploaded"
+msgstr "Fecha y hora en que se subió el primer producto del lote"
+
+msgid "Timestamp of the most recent product upload in this session"
+msgstr "Fecha y hora de la subida de producto más reciente en esta sesión"
+
+msgid "Total number of products cataloged during this batch session"
+msgstr "Número total de productos catalogados durante esta sesión de lote"
+
+msgid "Whether the consolidated manager push notification has been sent"
+msgstr "Indica si ya se envió la notificación push consolidada para managers"
+
+msgid "Timestamp when the session was finalized and marked closed"
+msgstr "Fecha y hora en que se finalizó y cerró la sesión"
+
+msgid "📦 Lote completado: %(count)s nuevos productos"
+msgstr "📦 Lote completado: %(count)s nuevos productos"
+
+msgid "Toca para revisar las prendas en el panel de staging."
+msgstr "Toca para revisar las prendas en el panel de staging."
+
+msgid "Push Status"
+msgstr "Estado push"
+

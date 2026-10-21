@@ -2091,16 +2091,16 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 91: Bilingual Translations, Comprehensive Automated Test Suite & Regression Verification (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_intake_batch_notifications.py`, `CHANGELOG.md`)
 **Description:** Add Spanish translations for all new strings ("Intake Batch Session", "Intake Batch Sessions", "Started At", "Last Activity At", "Product Count", "Is Notified", "Closed At", "📦 Lote completado: %(count)s nuevos productos", "📦 Lote completado: %(count)s productos catalogados por %(assistant)s", "Toca para revisar las prendas en el panel de staging.") in `locale/es/LC_MESSAGES/django.po` and compile to `django.mo`. Build a dedicated test suite `tests/test_intake_batch_notifications.py` covering: (1) sequential upload grouping into single session; (2) inactivity window debounce expiration; (3) single consolidated push dispatch with correct count and URL `/dashboard/?status=draft`; (4) idempotency (no duplicate dispatch on second pass); (5) independent session tracking per assistant; (6) creation of new session after previous session closed; (7) CLI command execution with `--dry-run` and live modes; (8) isolation ensuring clarifications and price pending alerts remain instant. Update `CHANGELOG.md` with Phase 26 details and verify full test suite (337+ tests).
 **Acceptance criteria:**
-- [ ] Spanish translations compiled in `django.mo` with 0 fuzzy or missing entries.
-- [ ] Comprehensive test suite in `tests/test_intake_batch_notifications.py` passes 100%.
-- [ ] Full regression suite (337+ tests) passes with 0 failures and 0 errors.
-- [ ] `ruff check .` passes with 0 warnings.
-- [ ] `CHANGELOG.md` updated with Phase 26 release notes.
+- [x] Spanish translations compiled in `django.mo` with 0 fuzzy or missing entries.
+- [x] Comprehensive test suite in `tests/test_intake_batch_notifications.py` passes 100%.
+- [x] Full regression suite (337+ tests) passes with 0 failures and 0 errors.
+- [x] `ruff check .` passes with 0 warnings.
+- [x] `CHANGELOG.md` updated with Phase 26 release notes.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
-- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake_batch_notifications`
-- [ ] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
-- [ ] Linter passes: `.venv\Scripts\ruff.exe check .`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake_batch_notifications`
+- [x] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check .`
 **Dependencies:** Task 87, Task 88, Task 89, Task 90
 **Files likely touched:**
 - `locale/es/LC_MESSAGES/django.po`
@@ -2112,14 +2112,14 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ---
 
 ## Checkpoint 26: Consolidated Intake Session Notifications Complete
-- [ ] `IntakeBatchSession` model and migration `0016_intake_batch_session.py` applied cleanly and registered in admin.
-- [ ] Uploading consecutive products during intake groups them under one `IntakeBatchSession` without sending individual push alerts.
-- [ ] After 15 minutes of inactivity, a single consolidated push alert is dispatched to store managers with the accurate batch count.
-- [ ] Management command `process_intake_batches` operates reliably in live and dry-run modes.
-- [ ] Urgent clarification questions and price pending notifications continue to notify immediately without debouncing.
-- [ ] Bilingual localization compiled and verified.
-- [ ] All unit and regression tests pass with 0 failures.
-- [ ] `ruff check .` passes cleanly.
+- [x] `IntakeBatchSession` model and migration `0016_intake_batch_session.py` applied cleanly and registered in admin.
+- [x] Uploading consecutive products during intake groups them under one `IntakeBatchSession` without sending individual push alerts.
+- [x] After 15 minutes of inactivity, a single consolidated push alert is dispatched to store managers with the accurate batch count.
+- [x] Management command `process_intake_batches` operates reliably in live and dry-run modes.
+- [x] Urgent clarification questions and price pending notifications continue to notify immediately without debouncing.
+- [x] Bilingual localization compiled and verified.
+- [x] All unit and regression tests pass with 0 failures.
+- [x] `ruff check .` passes cleanly.
 
 
 

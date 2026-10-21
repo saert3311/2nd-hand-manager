@@ -843,14 +843,24 @@ class ProductStatusLogAdmin(admin.ModelAdmin):
 
 class BatchProductInline(admin.TabularInline):
     model = Product
-    fields = ("id", "ai_title", "status", "sale_price", "created_at")
-    readonly_fields = ("id", "ai_title", "status", "sale_price", "created_at")
+    fk_name = "batch_session"
+    fields = ("id", "display_title", "status", "sale_price", "created_at")
+    readonly_fields = ("id", "display_title", "status", "sale_price", "created_at")
     extra = 0
     can_delete = False
     show_change_link = True
 
     def has_add_permission(self, request, obj=None):
         return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
 
 
 @admin.register(IntakeBatchSession, site=admin_site)
@@ -903,6 +913,9 @@ class IntakeBatchSessionAdmin(admin.ModelAdmin):
         return bool(request.user and request.user.is_active and is_manager(request.user))
 
     def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_change_permission(self, request, obj=None):
         return bool(request.user and request.user.is_active and is_manager(request.user))
 
 

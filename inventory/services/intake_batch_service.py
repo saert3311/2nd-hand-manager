@@ -8,7 +8,7 @@ from django.utils.translation import gettext as _
 
 from inventory.models import IntakeBatchSession, Product
 from inventory.permissions import ROLE_MANAGER
-from inventory.services.push_service import send_push_to_group
+from inventory.services import push_service
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ def process_pending_intake_batches(
         if not dry_run:
             if notify_managers:
                 try:
-                    sent_count = send_push_to_group(
+                    sent_count = push_service.send_push_to_group(
                         group_name=ROLE_MANAGER,
                         title=title,
                         body=body,
