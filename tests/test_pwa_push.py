@@ -366,17 +366,17 @@ class LivePushWorkflowSignalsTests(TestCase):
     @patch("inventory.services.push_service.send_push_to_group")
     @override_settings(PUSH_NOTIFICATIONS_LIVE_SIGNALS=True)
     def test_signals_fire_for_doubts_and_lifecycle_when_enabled(self, mock_send_group):
-        # 1. New DRAFT product -> notifies managers
+        # 1. New DRAFT product -> debounced into IntakeBatchSession without immediate push spam
         product = Product.objects.create(
             raw_note="Vintage leather bag",
             ai_title="Vintage Leather Crossbody Bag",
             created_by=self.assistant,
         )
         self.assertEqual(product.status, ProductStatus.DRAFT)
-        mock_send_group.assert_called_once()
-        self.assertEqual(mock_send_group.call_args.kwargs["group_name"], ROLE_MANAGER)
-        self.assertEqual(mock_send_group.call_args.kwargs["url"], f"/products/{product.pk}/")
-        self.assertEqual(mock_send_group.call_args.kwargs["tag"], f"product-draft-{product.pk}")
+        mock_send_group.assert_not_called()
+        self.assertIsNotNone(product.batch_session)
+        self.assertEqual(product.batch_session.product_count, 1)
+        self.assertEqual(product.batch_session.assistant, self.assistant)
 
         # 2. Adding description without price transitions to PRICE_PENDING -> notifies managers
         mock_send_group.reset_mock()

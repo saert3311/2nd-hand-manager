@@ -716,22 +716,33 @@ def sync_product_on_clarification_save(sender, instance, created=False, **kwargs
 
 @receiver(post_save, sender=Product)
 def notify_managers_on_product_lifecycle_save(sender, instance, created=False, **kwargs):
-    if kwargs.get("raw", False) or not getattr(settings, "PUSH_NOTIFICATIONS_LIVE_SIGNALS", False):
+    if kwargs.get("raw", False):
         return
+
+    # Sourcing session batch grouping for newly created draft uploads
+    if created and instance.status == ProductStatus.DRAFT:
+        try:
+            from .services.intake_batch_service import (
+                process_pending_intake_batches,
+                record_product_intake,
+            )
+
+            record_product_intake(product=instance, assistant=instance.created_by)
+            if getattr(settings, "PUSH_NOTIFICATIONS_LIVE_SIGNALS", False):
+                process_pending_intake_batches()
+        except Exception:
+            pass
+        return
+
+    if not getattr(settings, "PUSH_NOTIFICATIONS_LIVE_SIGNALS", False):
+        return
+
     previous_status = getattr(instance, "_previous_status", None)
     try:
         from .permissions import ROLE_MANAGER
         from .services.push_service import send_push_to_group
 
-        if created and instance.status == ProductStatus.DRAFT:
-            send_push_to_group(
-                group_name=ROLE_MANAGER,
-                title=str(_("📦 New Intake in Draft: %(title)s") % {"title": instance.display_title}),
-                body=str(_("Needs AI description and staging review.")),
-                url=f"/products/{instance.pk}/",
-                tag=f"product-draft-{instance.pk}",
-            )
-        elif instance.status == ProductStatus.PRICE_PENDING and (
+        if instance.status == ProductStatus.PRICE_PENDING and (
             created or previous_status != ProductStatus.PRICE_PENDING
         ):
             send_push_to_group(

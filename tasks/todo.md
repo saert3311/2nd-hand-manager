@@ -2055,14 +2055,14 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 89: Lifecycle Post-Save Signal Refactoring & Urgent Alert Preservation (`inventory/models.py`, `tests/test_pwa_push.py`)
 **Description:** Refactor `notify_managers_on_product_lifecycle_save` post-save signal in `inventory/models.py`. When a product is created in `ProductStatus.DRAFT`, suppress the immediate `send_push_to_group` call and instead invoke `record_product_intake(product=instance, assistant=instance.created_by)`. Opportunistically call `process_pending_intake_batches()` to clean up any past expired sessions. Crucially verify that immediate notifications for `PRICE_PENDING` and all `ProductClarification` question/answer signals remain instant and untouched. Update existing signal tests in `tests/test_pwa_push.py` to reflect the debounced batch behavior for draft products.
 **Acceptance criteria:**
-- [ ] Creating a draft product no longer dispatches an immediate individual Web Push alert to managers.
-- [ ] The created draft product is assigned to the assistant's active `IntakeBatchSession`.
-- [ ] Immediate alerts for `PRICE_PENDING` still fire immediately when a product transitions to price pending.
-- [ ] Immediate alerts for clarification questions and resolved answers in `notify_assistant_on_clarification_save` and `notify_manager_on_clarification_answer` continue firing immediately.
-- [ ] Existing signal test in `tests/test_pwa_push.py` updated to verify debounced intake recording.
+- [x] Creating a draft product no longer dispatches an immediate individual Web Push alert to managers.
+- [x] The created draft product is assigned to the assistant's active `IntakeBatchSession`.
+- [x] Immediate alerts for `PRICE_PENDING` still fire immediately when a product transitions to price pending.
+- [x] Immediate alerts for clarification questions and resolved answers in `notify_assistant_on_clarification_save` and `notify_manager_on_clarification_answer` continue firing immediately.
+- [x] Existing signal test in `tests/test_pwa_push.py` updated to verify debounced intake recording.
 **Verification:**
-- [ ] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_pwa_push`
-- [ ] Linter passes: `.venv\Scripts\ruff.exe check inventory/models.py tests/test_pwa_push.py`
+- [x] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_pwa_push`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check inventory/models.py tests/test_pwa_push.py`
 **Dependencies:** Task 87, Task 88
 **Files likely touched:**
 - `inventory/models.py`
