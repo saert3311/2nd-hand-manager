@@ -23,6 +23,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 19. **Product State Change History & User Audit Trail (`ProductStatusLog`):** Complete operational traceability recording every product state transition, capturing exact timestamps (`created_at`), previous and new lifecycle statuses (`from_status` $\to$ `to_status`), the acting user (`changed_by`), and contextual trigger descriptions, exposed via a visual timeline on the product staging page and searchable Django Admin changelist/inline.
 20. **Compilation & Docker Image Build Timestamp Display ("Which Compilation Are We Using?"):** Operational traceability across environments (development, staging, production) displaying the build date, time, commit hash, and environment badge in the bottom application footer ([`docs/prds/PRD-docker-build-info-and-compilation-timestamp.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-docker-build-info-and-compilation-timestamp.md)).
 21. **Intake AI Valuation & Reference Pricing ("New Retail Value & Used Resale Value"):** AI appraisal benchmarks estimating both the original new retail value (MSRP) and realistic secondhand market resale value during intake identification, persisted to the `Product` model and displayed near the sale price in both the intake form and product staging detail view ([`docs/prds/PRD-intake-ai-valuation-reference-prices.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-intake-ai-valuation-reference-prices.md)).
+22. **Consolidated Intake Session Notifications ("Debounced Manager Push Alerts"):** Database-backed debounced sourcing session engine (`IntakeBatchSession`) bundling consecutive product uploads by an assistant within a 15-minute sliding inactivity window into a single consolidated Web Push alert to store managers (`📦 Lote completado: [X] nuevos productos`), eliminating notification spam while keeping urgent clarification doubts instant ([`docs/prds/PRD-consolidated-intake-session-notifications.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-consolidated-intake-session-notifications.md)).
 
 ---
 
@@ -219,6 +220,9 @@ class MarketplaceSite(models.Model):
 | `ai_title` | CharField | max_length=255, blank=True | AI-generated marketplace title (editable) |
 | `ai_description` | TextField | blank=True | AI-generated marketplace listing copy (editable) |
 | `sale_price` | DecimalField | max_digits=10, decimal_places=2, null=True, blank=True | Target or final sale price in Euros (€) |
+| `estimated_retail_price` | DecimalField | max_digits=10, decimal_places=2, null=True, blank=True | Estimated original retail price when brand new (MSRP, €) |
+| `estimated_resale_price` | DecimalField | max_digits=10, decimal_places=2, null=True, blank=True | Estimated secondhand market resale value (€) |
+| `batch_session` | ForeignKey(IntakeBatchSession) | null=True, blank=True, on_delete=SET_NULL, related_name='products' | Intake uploading session during which item was cataloged |
 | `status` | CharField | max_length=20, default='draft', db_index=True | Lifecycle state: `draft`, `awaiting_info`, `ready`, `sold`, `blocked` |
 | `is_sold` | BooleanField | default=False | Status indicating if item has been sold (synchronized with status='sold') |
 | `sold_at` | DateTimeField | null=True, blank=True | Timestamp when marked as sold |
@@ -299,6 +303,44 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
 | `triggered_by` | ForeignKey(User) | null=True, blank=True, on_delete=SET_NULL | User who initiated manual backup (null for scheduled/CLI runs) |
 | `error_message` | TextField | blank=True, default="" | Detailed exception trace or error description if backup failed |
 | `created_at` | DateTimeField | auto_now_add=True | Execution timestamp |
+
+### 5.8 `PushSubscription`
+| Field | Type | Attributes | Description |
+|---|---|---|---|
+| `id` | AutoField | Primary Key | Unique push subscription identifier |
+| `user` | ForeignKey(User) | related_name='push_subscriptions', on_delete=CASCADE | Subscribed user (manager or assistant) |
+| `endpoint` | URLField | max_length=1000, unique=True | Unique browser push service endpoint URL |
+| `p256dh` | CharField | max_length=255 | Client public encryption key (Base64URL) |
+| `auth` | CharField | max_length=255 | Client authentication secret (Base64URL) |
+| `user_agent` | CharField | max_length=500, blank=True, default="" | Subscribing device user agent string |
+| `is_active` | BooleanField | default=True, db_index=True | Whether subscription is active and deliverable |
+| `created_at` | DateTimeField | auto_now_add=True | Subscription registration timestamp |
+| `updated_at` | DateTimeField | auto_now=True | Last subscription update timestamp |
+
+### 5.9 `ProductStatusLog`
+| Field | Type | Attributes | Description |
+|---|---|---|---|
+| `id` | AutoField | Primary Key | Unique status change log identifier |
+| `product` | ForeignKey(Product) | related_name='status_logs', on_delete=CASCADE | Parent product whose state changed |
+| `from_status` | CharField | max_length=20, null=True, blank=True | Previous lifecycle status (null for initial creation) |
+| `to_status` | CharField | max_length=20 | New lifecycle status |
+| `changed_by` | ForeignKey(User) | null=True, blank=True, on_delete=SET_NULL | User who initiated the state change (null for automated system events) |
+| `trigger` | CharField | max_length=50, blank=True, default="" | Machine trigger code (e.g. intake, clarification_opened, etc.) |
+| `notes` | TextField | blank=True, default="" | Human-readable explanation or context |
+| `created_at` | DateTimeField | auto_now_add=True, db_index=True | Exact timestamp of state change |
+
+### 5.10 `IntakeBatchSession`
+| Field | Type | Attributes | Description |
+|---|---|---|---|
+| `id` | AutoField | Primary Key | Unique intake batch session identifier |
+| `assistant` | ForeignKey(User) | related_name='intake_batches', on_delete=CASCADE | Sourcing assistant who cataloged the items |
+| `started_at` | DateTimeField | default=timezone.now | Timestamp of the first item intake in the batch |
+| `last_activity_at` | DateTimeField | default=timezone.now, db_index=True | Timestamp of the most recent item intake in the batch |
+| `product_count` | PositiveIntegerField | default=1 | Total count of products cataloged during this session |
+| `is_notified` | BooleanField | default=False, db_index=True | Whether consolidated push alert has been dispatched to managers |
+| `closed_at` | DateTimeField | null=True, blank=True | Timestamp when session was finalized and marked closed |
+| `created_at` | DateTimeField | auto_now_add=True | Creation timestamp |
+| `updated_at` | DateTimeField | auto_now=True | Modification timestamp |
 
 ---
 
@@ -591,6 +633,32 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
     - Keeps `#identifyBtn` active.
 - **Form State Guarding:**
   - During `'identifying'` or `'submitting'` states, all delete buttons are disabled (`pointer-events-none opacity-50 cursor-not-allowed`) to prevent data race conditions mid-operation.
+
+### 6.16 Consolidated Intake Session Notifications ("Debounced Manager Push Alerts")
+- **Problem & Rationale:**
+  - Sourcing assistants frequently catalogue 10–20 products consecutively during a sourcing run.
+  - Sending immediate Web Push notifications for each individual draft causes notification spam for store managers, leading to alert muting.
+- **Debounced Sourcing Batch Engine (`IntakeBatchSession`):**
+  - When a product is created in `DRAFT` status:
+    - The immediate push notification in `notify_managers_on_product_lifecycle_save` is suppressed.
+    - The system looks for an open `IntakeBatchSession` (`is_notified=False`) for the assistant within the sliding inactivity window (`INTAKE_SESSION_DEBOUNCE_MINUTES = 15`).
+    - If found, increments `product_count` and updates `last_activity_at = timezone.now()`.
+    - If not found or if the previous session exceeded the window, creates a new `IntakeBatchSession(product_count=1)`.
+    - Links `product.batch_session = session`.
+- **Consolidated Web Push Dispatch:**
+  - Evaluates expired sessions where `is_notified=False` and `timezone.now() - last_activity_at >= 15 min`.
+  - Dispatches a single consolidated Web Push notification to `ROLE_MANAGER`:
+    - **Title:** `📦 Lote completado: %(count)s nuevos productos` (or `📦 Lote completado: %(count)s productos catalogados por %(assistant)s`).
+    - **Body:** `Toca para revisar las prendas en el panel de staging.`
+    - **URL:** `/dashboard/?status=draft`
+    - **Tag:** `intake-batch-{session.id}`
+  - Sets `session.is_notified = True` and `session.closed_at = timezone.now()`.
+- **Zero-Broker Architecture & Execution Triggers:**
+  - Operates without Celery or Redis.
+  - Triggered via CLI management command: `python manage.py process_intake_batches` (with `--dry-run` support) for cron jobs or host system timers.
+  - Opportunistic evaluation during intake uploads ensures prompt dispatch without external worker overhead.
+- **Urgent Notification Isolation:**
+  - Urgent clarification questions and answers (`ProductClarification`) and price pending transitions (`PRICE_PENDING`) bypass debouncing and remain instant real-time alerts.
 
 ---
 
@@ -994,6 +1062,13 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
     - **Option B (Auto-populate Sale Price):** Automatically set the `sale_price` input value to `estimated_resale_price` if `sale_price` is currently empty.
     *Which adoption pattern do you prefer for the intake sale price?*
     - **Decision:** Option A approved — Reference Badges + Optional "Usar reventa" Button.
+29. **Consolidated Intake Session Notification Inactivity Window & Dispatch Architecture:**
+    - How should sourcing uploads be grouped to eliminate manager notification fatigue?
+    - **Option A (Recommended & Selected): Database-Backed Debounced Sourcing Session Engine (`IntakeBatchSession`):**
+      Consecutive uploads by the same assistant within a sliding 15-minute inactivity window are bundled into one session. When 15 minutes pass without new uploads, a single consolidated Web Push notification is dispatched to store managers (`📦 Lote completado: [X] nuevos productos catalogados por [Asistente]`), pointing to `/dashboard/?status=draft`. Processed via `python manage.py process_intake_batches` and intake request hooks without external message brokers (no Celery, no Redis).
+    - **Option B (Manual "Finish Batch" Button on Mobile):** Assistant must remember to tap a "Finish Sourcing Session" button after uploading their items.
+    *Which session completion pattern do you prefer?*
+    - **Decision:** Option A approved — Database-backed 15-minute sliding inactivity debounce window.
 
 
 
