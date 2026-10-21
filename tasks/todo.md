@@ -2016,14 +2016,14 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 87: Domain Model `IntakeBatchSession`, `Product.batch_session` Foreign Key, Migration `0016_intake_batch_session.py` & Django Admin Registration (`inventory/models.py`, `inventory/migrations/0016_intake_batch_session.py`, `inventory/admin.py`)
 **Description:** Implement the `IntakeBatchSession` domain model in `inventory/models.py` with fields: `assistant` (FK User), `started_at` (DateTimeField), `last_activity_at` (DateTimeField, db_index=True), `product_count` (PositiveIntegerField, default=1), `is_notified` (BooleanField, default=False, db_index=True), `closed_at` (DateTimeField, null=True, blank=True), and timestamps. Add compound indexes on `["is_notified", "last_activity_at"]` and `["assistant", "is_notified"]`. Add foreign key `batch_session = models.ForeignKey(IntakeBatchSession, null=True, blank=True, on_delete=models.SET_NULL, related_name="products")` to the `Product` model. Generate migration `0016_intake_batch_session.py` and apply it cleanly. Register `IntakeBatchSessionAdmin` in `inventory/admin.py` with `list_display`, `list_filter`, and a read-only tabular inline of associated products.
 **Acceptance criteria:**
-- [ ] `IntakeBatchSession` model created with all required fields, indexes, and string representation.
-- [ ] `Product.batch_session` foreign key added with `on_delete=models.SET_NULL` and `related_name="products"`.
-- [ ] Migration `0016_intake_batch_session.py` generated and applied cleanly without errors.
-- [ ] `IntakeBatchSessionAdmin` registered in `manager_admin_site` with `ProductInline` and searchable assistant fields.
+- [x] `IntakeBatchSession` model created with all required fields, indexes, and string representation.
+- [x] `Product.batch_session` foreign key added with `on_delete=models.SET_NULL` and `related_name="products"`.
+- [x] Migration `0016_intake_batch_session.py` generated and applied cleanly without errors.
+- [x] `IntakeBatchSessionAdmin` registered in `manager_admin_site` with `ProductInline` and searchable assistant fields.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py migrate`
-- [ ] Django check passes: `.venv\Scripts\python.exe manage.py check`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py migrate`
+- [x] Django check passes: `.venv\Scripts\python.exe manage.py check`
 **Dependencies:** None
 **Files likely touched:**
 - `inventory/models.py`

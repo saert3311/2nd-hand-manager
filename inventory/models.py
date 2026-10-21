@@ -159,6 +159,15 @@ class Product(models.Model):
         on_delete=models.SET_NULL,
         related_name="created_products"
     )
+    batch_session = models.ForeignKey(
+        "IntakeBatchSession",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="products",
+        verbose_name=_("Intake Batch Session"),
+        help_text=_("The intake uploading session in which this product was cataloged"),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -992,4 +1001,59 @@ def log_status_change(product, from_status, to_status, user=None, trigger="", no
         trigger=trigger or "",
         notes=notes or "",
     )
+
+
+class IntakeBatchSession(models.Model):
+    assistant = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="intake_batches",
+        verbose_name=_("Assistant"),
+        help_text=_("The assistant who uploaded products during this session"),
+    )
+    started_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name=_("Started At"),
+        help_text=_("Timestamp when the first product of the batch was uploaded"),
+    )
+    last_activity_at = models.DateTimeField(
+        default=timezone.now,
+        db_index=True,
+        verbose_name=_("Last Activity At"),
+        help_text=_("Timestamp of the most recent product upload in this session"),
+    )
+    product_count = models.PositiveIntegerField(
+        default=1,
+        verbose_name=_("Product Count"),
+        help_text=_("Total number of products cataloged during this batch session"),
+    )
+    is_notified = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name=_("Is Notified"),
+        help_text=_("Whether the consolidated manager push notification has been sent"),
+    )
+    closed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Closed At"),
+        help_text=_("Timestamp when the session was finalized and marked closed"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-last_activity_at"]
+        verbose_name = _("Intake Batch Session")
+        verbose_name_plural = _("Intake Batch Sessions")
+        indexes = [
+            models.Index(fields=["is_notified", "last_activity_at"]),
+            models.Index(fields=["assistant", "is_notified"]),
+        ]
+
+    def __str__(self):
+        assistant_name = self.assistant.get_full_name() or self.assistant.username
+        status_label = _("Notified") if self.is_notified else _("Pending")
+        return f"Batch #{self.pk} by {assistant_name} ({self.product_count} items) - {status_label}"
+
 

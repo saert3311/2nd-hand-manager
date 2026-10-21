@@ -19,6 +19,7 @@ from .models import (
     BackupStatus,
     BackupTriggerType,
     DatabaseBackupLog,
+    IntakeBatchSession,
     MarketplaceSite,
     Product,
     ProductClarification,
@@ -366,7 +367,8 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = ("status", "is_sold", "created_at")
     search_fields = ("ai_title", "raw_note", "ai_description")
     inlines = [ProductImageInline, ProductListingLinkInline, ProductClarificationInline, ProductStatusLogInline]
-    readonly_fields = ("created_at", "updated_at", "sold_at")
+    readonly_fields = ("created_at", "updated_at", "sold_at", "batch_session")
+    list_select_related = ("created_by", "batch_session")
 
     def has_module_permission(self, request):
         return bool(request.user and request.user.is_active and is_manager(request.user))
@@ -837,6 +839,72 @@ class ProductStatusLogAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+class BatchProductInline(admin.TabularInline):
+    model = Product
+    fields = ("id", "ai_title", "status", "sale_price", "created_at")
+    readonly_fields = ("id", "ai_title", "status", "sale_price", "created_at")
+    extra = 0
+    can_delete = False
+    show_change_link = True
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(IntakeBatchSession, site=admin_site)
+class IntakeBatchSessionAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "assistant_display",
+        "product_count",
+        "is_notified_badge",
+        "started_at",
+        "last_activity_at",
+        "closed_at",
+    )
+    list_filter = ("is_notified", "started_at")
+    search_fields = ("assistant__username", "assistant__first_name", "assistant__last_name", "assistant__email")
+    date_hierarchy = "last_activity_at"
+    readonly_fields = (
+        "assistant",
+        "started_at",
+        "last_activity_at",
+        "product_count",
+        "is_notified",
+        "closed_at",
+        "created_at",
+        "updated_at",
+    )
+    inlines = [BatchProductInline]
+    ordering = ["-last_activity_at"]
+
+    def assistant_display(self, obj):
+        name = obj.assistant.get_full_name() or obj.assistant.username
+        return f"{name} (@{obj.assistant.username})"
+
+    assistant_display.short_description = _("Assistant")
+
+    def is_notified_badge(self, obj):
+        if obj.is_notified:
+            return format_html(
+                '<span style="background-color: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600;">{}</span>',
+                _("Notified"),
+            )
+        return format_html(
+            '<span style="background-color: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600;">{}</span>',
+            _("Pending"),
+        )
+
+    is_notified_badge.short_description = _("Push Status")
+
+    def has_module_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
 
 
 
