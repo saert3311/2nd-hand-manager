@@ -2009,6 +2009,119 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 - [x] All unit and regression tests pass with 0 failures.
 - [x] `ruff check .` passes cleanly.
 
+---
+
+## Phase 26: Consolidated Intake Session Notifications & Debounced Alerts (Vertical Slice 22)
+
+### Task 87: Domain Model `IntakeBatchSession`, `Product.batch_session` Foreign Key, Migration `0016_intake_batch_session.py` & Django Admin Registration (`inventory/models.py`, `inventory/migrations/0016_intake_batch_session.py`, `inventory/admin.py`)
+**Description:** Implement the `IntakeBatchSession` domain model in `inventory/models.py` with fields: `assistant` (FK User), `started_at` (DateTimeField), `last_activity_at` (DateTimeField, db_index=True), `product_count` (PositiveIntegerField, default=1), `is_notified` (BooleanField, default=False, db_index=True), `closed_at` (DateTimeField, null=True, blank=True), and timestamps. Add compound indexes on `["is_notified", "last_activity_at"]` and `["assistant", "is_notified"]`. Add foreign key `batch_session = models.ForeignKey(IntakeBatchSession, null=True, blank=True, on_delete=models.SET_NULL, related_name="products")` to the `Product` model. Generate migration `0016_intake_batch_session.py` and apply it cleanly. Register `IntakeBatchSessionAdmin` in `inventory/admin.py` with `list_display`, `list_filter`, and a read-only tabular inline of associated products.
+**Acceptance criteria:**
+- [ ] `IntakeBatchSession` model created with all required fields, indexes, and string representation.
+- [ ] `Product.batch_session` foreign key added with `on_delete=models.SET_NULL` and `related_name="products"`.
+- [ ] Migration `0016_intake_batch_session.py` generated and applied cleanly without errors.
+- [ ] `IntakeBatchSessionAdmin` registered in `manager_admin_site` with `ProductInline` and searchable assistant fields.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py migrate`
+- [ ] Django check passes: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** None
+**Files likely touched:**
+- `inventory/models.py`
+- `inventory/migrations/0016_intake_batch_session.py`
+- `inventory/admin.py`
+**Estimated scope:** Small (3 files)
+
+---
+
+### Task 88: Sourcing Session Service Engine & Configuration Settings (`config/settings.py`, `inventory/services/intake_batch_service.py`)
+**Description:** Add `INTAKE_SESSION_DEBOUNCE_MINUTES` setting in `config/settings.py` (default: 15, reading from `os.getenv`). Create `inventory/services/intake_batch_service.py` implementing: (1) `get_debounce_minutes()` helper; (2) `record_product_intake(product, assistant=None)` to find an active un-notified session within the debounce window or instantiate a new session, increment `product_count`, update `last_activity_at`, and assign `product.batch_session`; (3) `process_pending_intake_batches(debounce_minutes=None, dry_run=False)` to query expired unnotified sessions (`is_notified=False` and `last_activity_at <= now - window`), format bilingual push notifications (`📦 Lote completado: %(count)s nuevos productos`), dispatch them to `ROLE_MANAGER` via `send_push_to_group`, and flag `is_notified=True` with `closed_at=now()`.
+**Acceptance criteria:**
+- [ ] `INTAKE_SESSION_DEBOUNCE_MINUTES` defined in `config/settings.py` with integer fallback to 15.
+- [ ] `record_product_intake()` groups uploads within 15 minutes into the same `IntakeBatchSession` and sets `product.batch_session`.
+- [ ] Uploads occurring after the 15-minute window or after session closure initiate a new `IntakeBatchSession`.
+- [ ] `process_pending_intake_batches()` queries only unnotified expired sessions, formats title and body, dispatches push alerts, and marks sessions closed/notified idempotently.
+- [ ] `dry_run=True` reports what would be processed without mutating records or sending Web Push alerts.
+**Verification:**
+- [ ] Unit tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake_batch_notifications`
+- [ ] Linter passes: `.venv\Scripts\ruff.exe check inventory/services/intake_batch_service.py config/settings.py`
+**Dependencies:** Task 87
+**Files likely touched:**
+- `config/settings.py`
+- `inventory/services/intake_batch_service.py`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 89: Lifecycle Post-Save Signal Refactoring & Urgent Alert Preservation (`inventory/models.py`, `tests/test_pwa_push.py`)
+**Description:** Refactor `notify_managers_on_product_lifecycle_save` post-save signal in `inventory/models.py`. When a product is created in `ProductStatus.DRAFT`, suppress the immediate `send_push_to_group` call and instead invoke `record_product_intake(product=instance, assistant=instance.created_by)`. Opportunistically call `process_pending_intake_batches()` to clean up any past expired sessions. Crucially verify that immediate notifications for `PRICE_PENDING` and all `ProductClarification` question/answer signals remain instant and untouched. Update existing signal tests in `tests/test_pwa_push.py` to reflect the debounced batch behavior for draft products.
+**Acceptance criteria:**
+- [ ] Creating a draft product no longer dispatches an immediate individual Web Push alert to managers.
+- [ ] The created draft product is assigned to the assistant's active `IntakeBatchSession`.
+- [ ] Immediate alerts for `PRICE_PENDING` still fire immediately when a product transitions to price pending.
+- [ ] Immediate alerts for clarification questions and resolved answers in `notify_assistant_on_clarification_save` and `notify_manager_on_clarification_answer` continue firing immediately.
+- [ ] Existing signal test in `tests/test_pwa_push.py` updated to verify debounced intake recording.
+**Verification:**
+- [ ] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_pwa_push`
+- [ ] Linter passes: `.venv\Scripts\ruff.exe check inventory/models.py tests/test_pwa_push.py`
+**Dependencies:** Task 87, Task 88
+**Files likely touched:**
+- `inventory/models.py`
+- `tests/test_pwa_push.py`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 90: Management Command `process_intake_batches` for CLI & Automated Cron Execution (`inventory/management/commands/process_intake_batches.py`)
+**Description:** Create `inventory/management/commands/process_intake_batches.py` exposing CLI command `python manage.py process_intake_batches`. Support `--debounce-minutes` (integer override) and `--dry-run` (simulation mode) options. The command executes `process_pending_intake_batches()` and outputs a clean, human-readable summary of processed sessions and dispatched push alerts to `stdout`.
+**Acceptance criteria:**
+- [ ] Command `process_intake_batches` registered and callable via `manage.py`.
+- [ ] `--debounce-minutes` flag allows overriding the default inactivity window.
+- [ ] `--dry-run` flag executes in simulation mode without updating database records or dispatching push alerts.
+- [ ] Stdout reports the exact number of expired batches found and notifications sent.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py process_intake_batches --dry-run`
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py process_intake_batches --help`
+**Dependencies:** Task 88
+**Files likely touched:**
+- `inventory/management/commands/process_intake_batches.py`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 91: Bilingual Translations, Comprehensive Automated Test Suite & Regression Verification (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_intake_batch_notifications.py`, `CHANGELOG.md`)
+**Description:** Add Spanish translations for all new strings ("Intake Batch Session", "Intake Batch Sessions", "Started At", "Last Activity At", "Product Count", "Is Notified", "Closed At", "📦 Lote completado: %(count)s nuevos productos", "📦 Lote completado: %(count)s productos catalogados por %(assistant)s", "Toca para revisar las prendas en el panel de staging.") in `locale/es/LC_MESSAGES/django.po` and compile to `django.mo`. Build a dedicated test suite `tests/test_intake_batch_notifications.py` covering: (1) sequential upload grouping into single session; (2) inactivity window debounce expiration; (3) single consolidated push dispatch with correct count and URL `/dashboard/?status=draft`; (4) idempotency (no duplicate dispatch on second pass); (5) independent session tracking per assistant; (6) creation of new session after previous session closed; (7) CLI command execution with `--dry-run` and live modes; (8) isolation ensuring clarifications and price pending alerts remain instant. Update `CHANGELOG.md` with Phase 26 details and verify full test suite (337+ tests).
+**Acceptance criteria:**
+- [ ] Spanish translations compiled in `django.mo` with 0 fuzzy or missing entries.
+- [ ] Comprehensive test suite in `tests/test_intake_batch_notifications.py` passes 100%.
+- [ ] Full regression suite (337+ tests) passes with 0 failures and 0 errors.
+- [ ] `ruff check .` passes with 0 warnings.
+- [ ] `CHANGELOG.md` updated with Phase 26 release notes.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake_batch_notifications`
+- [ ] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [ ] Linter passes: `.venv\Scripts\ruff.exe check .`
+**Dependencies:** Task 87, Task 88, Task 89, Task 90
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_intake_batch_notifications.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (4 files)
+
+---
+
+## Checkpoint 26: Consolidated Intake Session Notifications Complete
+- [ ] `IntakeBatchSession` model and migration `0016_intake_batch_session.py` applied cleanly and registered in admin.
+- [ ] Uploading consecutive products during intake groups them under one `IntakeBatchSession` without sending individual push alerts.
+- [ ] After 15 minutes of inactivity, a single consolidated push alert is dispatched to store managers with the accurate batch count.
+- [ ] Management command `process_intake_batches` operates reliably in live and dry-run modes.
+- [ ] Urgent clarification questions and price pending notifications continue to notify immediately without debouncing.
+- [ ] Bilingual localization compiled and verified.
+- [ ] All unit and regression tests pass with 0 failures.
+- [ ] `ruff check .` passes cleanly.
+
+
 
 
 
