@@ -2074,13 +2074,13 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 90: Management Command `process_intake_batches` for CLI & Automated Cron Execution (`inventory/management/commands/process_intake_batches.py`)
 **Description:** Create `inventory/management/commands/process_intake_batches.py` exposing CLI command `python manage.py process_intake_batches`. Support `--debounce-minutes` (integer override) and `--dry-run` (simulation mode) options. The command executes `process_pending_intake_batches()` and outputs a clean, human-readable summary of processed sessions and dispatched push alerts to `stdout`.
 **Acceptance criteria:**
-- [ ] Command `process_intake_batches` registered and callable via `manage.py`.
-- [ ] `--debounce-minutes` flag allows overriding the default inactivity window.
-- [ ] `--dry-run` flag executes in simulation mode without updating database records or dispatching push alerts.
-- [ ] Stdout reports the exact number of expired batches found and notifications sent.
+- [x] Command `process_intake_batches` registered and callable via `manage.py`.
+- [x] `--debounce-minutes` flag allows overriding the default inactivity window.
+- [x] `--dry-run` flag executes in simulation mode without updating database records or dispatching push alerts.
+- [x] Stdout reports the exact number of expired batches found and notifications sent.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py process_intake_batches --dry-run`
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py process_intake_batches --help`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py process_intake_batches --dry-run`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py process_intake_batches --help`
 **Dependencies:** Task 88
 **Files likely touched:**
 - `inventory/management/commands/process_intake_batches.py`
