@@ -2149,12 +2149,12 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 93: Gemini AI Taxonomy Auto-Classification, Staging Form/View/Template Controls & `classify_products` Backfill Command
 **Description:** Extend `ProductListingSchema` and `IntakePreflightSchema` in `inventory/services/ai_service.py` so Gemini returns `category_slug` (constrained to the 12 official category slugs) and `condition` (constrained to the 4 official condition codes). Update `generate_ai_view` in `inventory/views.py` to auto-assign `product.category` and `product.condition` when generating AI copy. Update `ProductUpdateForm` (`inventory/forms.py`) and `inventory/templates/inventory/product_detail.html` + `dashboard.html` so Managers can view/edit `category`, `condition`, `is_public`, `is_featured`, `is_reserved`, see public view/click metrics (`views_count`, `whatsapp_clicks`, `link.clicks_count`), and open the public storefront page. Create `inventory/management/commands/classify_products.py` supporting heuristic keyword classification and `--use-ai` Gemini classification for existing products.
 **Acceptance criteria:**
-- [ ] `ProductListingSchema` includes `category_slug` and `condition`, and `generate_ai_view` populates `product.category` and `product.condition`.
-- [ ] `ProductUpdateForm` and staging detail view allow editing `category`, `condition`, `is_public`, `is_featured`, `is_reserved` and display conversion click counters.
-- [ ] `python manage.py classify_products` classifies existing uncategorized products cleanly.
+- [x] `ProductListingSchema` includes `category_slug` and `condition`, and `generate_ai_view` populates `product.category` and `product.condition`.
+- [x] `ProductUpdateForm` and staging detail view allow editing `category`, `condition`, `is_public`, `is_featured`, `is_reserved` and display conversion click counters.
+- [x] `python manage.py classify_products` classifies existing uncategorized products cleanly.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py classify_products`
-- [ ] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_ai_service tests.test_views`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py classify_products`
+- [x] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_ai_service tests.test_views`
 **Dependencies:** Task 92
 **Files likely touched:**
 - `inventory/services/ai_service.py`

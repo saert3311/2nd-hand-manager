@@ -25,11 +25,13 @@ from .forms import (
     TurnstileAuthenticationForm,
 )
 from .models import (
+    Category,
     ClarificationCategory,
     ClarificationStatus,
     MarketplaceSite,
     Product,
     ProductClarification,
+    ProductCondition,
     ProductImage,
     ProductListingLink,
     ProductStatus,
@@ -201,7 +203,7 @@ def dashboard_view(request):
         .order_by("order", "name")
     )
 
-    products = Product.objects.prefetch_related("images", "listing_links__site").all()
+    products = Product.objects.select_related("category").prefetch_related("images", "listing_links__site").all()
 
     if platform_filter:
         products = products.filter(
@@ -297,7 +299,7 @@ def product_detail_view(request, pk):
     download ZIP, and edit pricing / sold status.
     """
     product = get_object_or_404(
-        Product.objects.prefetch_related(
+        Product.objects.select_related("category").prefetch_related(
             "images",
             "listing_links__site",
             "clarifications__asked_by",
@@ -318,12 +320,20 @@ def product_detail_view(request, pk):
 
         form = ProductUpdateForm(request.POST, instance=product)
         if form.is_valid():
+            from datetime import timedelta
+
             updated_product = form.save(commit=False)
             if updated_product.is_sold:
                 if not updated_product.sold_at:
                     updated_product.sold_at = timezone.now()
+                updated_product.is_reserved = False
+                updated_product.reserved_until = None
             else:
                 updated_product.sold_at = None
+                if updated_product.is_reserved and not updated_product.reserved_until:
+                    updated_product.reserved_until = timezone.now() + timedelta(hours=24)
+                elif not updated_product.is_reserved:
+                    updated_product.reserved_until = None
             updated_product.save(changed_by=request.user)
             messages.success(request, _("Product listing updated successfully."))
             return redirect("inventory:product_detail", pk=pk)
@@ -558,14 +568,38 @@ def generate_ai_view(request, pk):
     product = get_object_or_404(Product.objects.prefetch_related("images"), pk=pk)
 
     try:
-        from .services.ai_service import AIServiceError, generate_product_listing
+        from .services.ai_service import (
+            AIServiceError,
+            generate_product_listing,
+            infer_taxonomy_heuristically,
+        )
 
         active_language = get_language() or "en"
         listing_data = generate_product_listing(product, language=active_language)
 
         product.ai_title = (listing_data.get("title") or "").strip()[:255]
         product.ai_description = (listing_data.get("description") or "").strip()
-        product.save(update_fields=["ai_title", "ai_description", "updated_at"])
+
+        cat_slug = (listing_data.get("category_slug") or "").strip()
+        cond_code = (listing_data.get("condition") or "").strip()
+        if not cat_slug or not cond_code:
+            fallback_cat, fallback_cond = infer_taxonomy_heuristically(
+                f"{product.ai_title} {product.ai_description} {product.raw_note}"
+            )
+            cat_slug = cat_slug or fallback_cat
+            cond_code = cond_code or fallback_cond
+
+        update_fields = ["ai_title", "ai_description", "updated_at"]
+        if cat_slug:
+            matched_cat = Category.objects.filter(slug=cat_slug).first()
+            if matched_cat:
+                product.category = matched_cat
+                update_fields.append("category")
+        if cond_code and cond_code in dict(ProductCondition.choices):
+            product.condition = cond_code
+            update_fields.append("condition")
+
+        product.save(update_fields=update_fields)
 
         messages.success(request, _("AI listing successfully generated from photos and notes!"))
     except AIServiceError as e:

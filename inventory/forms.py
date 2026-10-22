@@ -6,7 +6,15 @@ from django.contrib.admin.forms import AdminAuthenticationForm
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import gettext_lazy as _
 
-from .models import ClarificationCategory, ClarificationStatus, Product, ProductClarification, ProductStatus
+from .models import (
+    Category,
+    ClarificationCategory,
+    ClarificationStatus,
+    Product,
+    ProductClarification,
+    ProductCondition,
+    ProductStatus,
+)
 from .services.turnstile_service import verify_turnstile_token
 
 
@@ -161,16 +169,56 @@ class ProductUpdateForm(forms.ModelForm):
             "class": "w-full sm:w-auto px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
         }),
     )
+    category = forms.ModelChoiceField(
+        queryset=Category.objects.filter(is_active=True),
+        required=False,
+        empty_label=_("— Select Category —"),
+        label=_("Storefront Category"),
+        widget=forms.Select(attrs={
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+        }),
+    )
+    condition = forms.ChoiceField(
+        choices=[("", _("— Select Condition —")), *ProductCondition.choices],
+        required=False,
+        label=_("Condition State"),
+        widget=forms.Select(attrs={
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+        }),
+    )
 
     class Meta:
         model = Product
-        fields = ["ai_title", "ai_description", "sale_price", "status", "is_sold"]
+        fields = [
+            "ai_title",
+            "ai_description",
+            "sale_price",
+            "status",
+            "is_sold",
+            "category",
+            "condition",
+            "is_public",
+            "is_featured",
+            "is_reserved",
+        ]
         labels = {
             "is_sold": _("Mark Product as Sold"),
+            "is_public": _("Visible in Public Storefront"),
+            "is_featured": _("Featured (⭐)"),
+            "is_reserved": _("Reserved (⏳)"),
         }
         widgets = {
             "is_sold": forms.CheckboxInput(attrs={
                 "class": "w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 transition cursor-pointer"
+            }),
+            "is_public": forms.CheckboxInput(attrs={
+                "class": "w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500 transition cursor-pointer"
+            }),
+            "is_featured": forms.CheckboxInput(attrs={
+                "class": "w-5 h-5 text-amber-500 rounded border-slate-300 focus:ring-amber-500 transition cursor-pointer"
+            }),
+            "is_reserved": forms.CheckboxInput(attrs={
+                "class": "w-5 h-5 text-amber-600 rounded border-slate-300 focus:ring-amber-600 transition cursor-pointer"
             }),
         }
 
@@ -178,6 +226,19 @@ class ProductUpdateForm(forms.ModelForm):
         cleaned_data = super().clean()
         status = cleaned_data.get("status")
         is_sold = cleaned_data.get("is_sold")
+        if self.instance and self.instance.pk:
+            has_storefront_flag = "storefront_controls_present" in self.data
+            if not has_storefront_flag:
+                if "is_public" not in self.data:
+                    cleaned_data["is_public"] = self.instance.is_public
+                if "is_featured" not in self.data:
+                    cleaned_data["is_featured"] = self.instance.is_featured
+                if "is_reserved" not in self.data:
+                    cleaned_data["is_reserved"] = self.instance.is_reserved
+                if "category" not in self.data:
+                    cleaned_data["category"] = self.instance.category
+                if "condition" not in self.data:
+                    cleaned_data["condition"] = self.instance.condition
         if self.instance and self.instance.pk and not is_sold and status == ProductStatus.READY:
             if self.instance.clarifications.filter(status=ClarificationStatus.PENDING).exists():
                 self.add_error(
