@@ -659,12 +659,12 @@ class Product(models.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._initial_status = self.status
-        self._initial_is_sold = self.is_sold
-        self._initial_sale_price = self.sale_price
-        self._initial_ai_title = self.ai_title
-        self._initial_ai_description = self.ai_description
-        self._initial_needs_platform_sync = self.needs_platform_sync
+        self._initial_status = self.__dict__.get("status")
+        self._initial_is_sold = self.__dict__.get("is_sold")
+        self._initial_sale_price = self.__dict__.get("sale_price")
+        self._initial_ai_title = self.__dict__.get("ai_title")
+        self._initial_ai_description = self.__dict__.get("ai_description")
+        self._initial_needs_platform_sync = self.__dict__.get("needs_platform_sync")
         self._previous_needs_platform_sync = None
         self._changed_by = None
         self._status_trigger = None

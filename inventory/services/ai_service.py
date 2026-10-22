@@ -119,12 +119,12 @@ _CATEGORY_KEYWORD_MAP: tuple[tuple[str, tuple[str, ...]], ...] = (
 )
 
 
-def infer_taxonomy_heuristically(text: str) -> Tuple[str, str]:
+def infer_taxonomy_heuristically(*texts: str) -> Tuple[str, str]:
     """
     Deterministic keyword heuristic fallback for classifying a product into one of the
     12 official Rápido Pack category slugs and 4 official condition states.
     """
-    lowered = (text or "").lower()
+    lowered = " ".join(t for t in texts if t).lower()
 
     category_slug = "moda-y-accesorios"
     for slug, keywords in _CATEGORY_KEYWORD_MAP:

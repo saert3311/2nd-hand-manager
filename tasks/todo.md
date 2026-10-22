@@ -3160,15 +3160,15 @@ uff.exe check .
 ### Task 132: Bilingual Localization (`es`/`en`), Comprehensive Storefront & Security Firewall Test Suite (`tests/test_storefront.py`) & Full Regression Verification
 **Description:** Add Spanish/English translations in `locale/es/LC_MESSAGES/django.po` and `locale/en/LC_MESSAGES/django.po` and compile with `python manage.py compile_locales`. Write `tests/test_storefront.py` testing: (1) `public_visible()` visibility and 7-day `SOLD` retention; (2) `test_public_storefront_never_leaks_internal_notes_or_clarifications` verifying `raw_note`, `clarifications`, and `created_by` never appear in HTML, OpenGraph, JSON-LD, or sitemap; (3) category, condition, price, search, and sort filtering; (4) `DESTACADO`, `RESERVADO`, and `VENDIDO` rendering; (5) `/go/whatsapp/<pk>/` and `/go/link/<link_pk>/` click counters and redirects; (6) SEO (`sitemap.xml`, `robots.txt`, JSON-LD, OpenGraph) and legal pages; (7) AI taxonomy extraction and `classify_products` command. Update `CHANGELOG.md` and run `ruff check .` and full test suite.
 **Acceptance criteria:**
-- [ ] `tests/test_storefront.py` passes 100% including the mandatory non-leak security test.
-- [ ] All existing tests + new storefront tests pass (`python manage.py test`) with 0 failures.
-- [ ] `ruff check .` passes with 0 warnings.
-- [ ] `CHANGELOG.md` updated.
+- [x] `tests/test_storefront.py` passes 100% including the mandatory non-leak security test.
+- [x] All existing tests + new storefront tests pass (`python manage.py test`) with 0 failures.
+- [x] `ruff check .` passes with 0 warnings.
+- [x] `CHANGELOG.md` updated.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
-- [ ] Command succeeds: `.venv\Scripts\ruff.exe check .`
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py test`
-**Dependencies:** Task 126, Task 127, Task 128, Task 129, Task 130, Task 131
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] Command succeeds: `.venv\Scripts\ruff.exe check .`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py test`
+**Dependencies:** Task 92, Task 93, Task 94, Task 95, Task 96, Task 97
 **Files likely touched:**
 - `tests/test_storefront.py`
 - `locale/es/LC_MESSAGES/django.po`
@@ -3176,10 +3176,19 @@ uff.exe check .
 
 ---
 
-## Checkpoint 36: Public Marketplace Storefront Complete
-- [ ] `Category`, `StorefrontConfiguration`, and `Product` marketplace fields migrated and seeded with the 12 official Rápido Pack categories.
-- [ ] `/` renders the Stitch-designed Rápido Pack marketplace homepage and `/p/<slug>-<pk>/` renders the 60/40 product detail view.
-- [ ] `public_visible()` enforces 7-day `SOLD` social proof retention and strict internal data firewall (`raw_note` and `clarifications` never exposed).
-- [ ] Direct WhatsApp and Wallapop/Vinted click tracking works and displays in Manager staging views.
-- [ ] OpenGraph, Schema.org JSON-LD, `sitemap.xml`, `robots.txt`, and RGPD/LSSI legal pages work cleanly.
-- [ ] All automated tests and `ruff check .` pass with 0 errors.
+## Checkpoint 27: Public Marketplace Storefront Complete
+- [x] `Category`, `StorefrontConfiguration`, and `Product` marketplace fields migrated and seeded with the 12 official Rápido Pack categories.
+- [x] `/` renders the Stitch-designed Rápido Pack marketplace homepage and `/p/<slug>-<pk>/` renders the 60/40 product detail view.
+- [x] `public_visible()` enforces 7-day `SOLD` social proof retention and strict internal data firewall (`raw_note` and `clarifications` never exposed).
+- [x] Direct WhatsApp and Wallapop/Vinted click tracking works and displays in Manager staging views.
+- [x] OpenGraph, Schema.org JSON-LD, `sitemap.xml`, `robots.txt`, and RGPD/LSSI legal pages work cleanly.
+- [x] All automated tests and `ruff check .` pass with 0 errors.
+
+
+
+
+
+
+
+
+

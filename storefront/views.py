@@ -407,7 +407,7 @@ def sitemap_view(request):
     """
     products = (
         Product.objects.public_visible()
-        .only("id", "ai_title", "updated_at")
+        .only("id", "ai_title", "updated_at", "status", "is_sold")
         .order_by("-updated_at")
     )
 
