@@ -554,8 +554,8 @@ class Product(models.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._initial_status = self.status
-        self._initial_is_sold = self.is_sold
+        self._initial_status = self.__dict__.get("status")
+        self._initial_is_sold = self.__dict__.get("is_sold")
         self._changed_by = None
         self._status_trigger = None
         self._status_notes = None
