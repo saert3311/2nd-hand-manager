@@ -34,13 +34,17 @@
   <section class="w-full bg-surface-container-low border-b border-outline-variant/25">
     <div class="max-w-7xl mx-auto px-margin lg:px-margin-desktop py-space-sm flex items-center justify-between text-on-surface-variant font-label-md text-label-md">
       <nav aria-label="Breadcrumb" class="flex items-center gap-space-xs overflow-x-auto whitespace-nowrap">
-        <a class="hover:text-primary transition-colors flex items-center gap-1" href="{% url 'storefront:catalog' %}">
+        <a class="hover:text-primary transition-colors flex items-center gap-1" href="{% url 'storefront:home' %}">
           <span class="material-symbols-outlined text-[16px]">home</span>
+          <span>{% trans "Home" %}</span>
+        </a>
+        <span class="text-outline-variant font-body-sm">/</span>
+        <a class="hover:text-primary transition-colors" href="{% url 'storefront:catalog' %}">
           <span>{% trans "Catalog" %}</span>
         </a>
         {% if product.category %}
         <span class="text-outline-variant font-body-sm">/</span>
-        <a class="hover:text-primary transition-colors" href="{% url 'storefront:catalog' %}?category={{ product.category.slug }}">
+        <a class="hover:text-primary transition-colors" href="{% url 'storefront:category' product.category.slug %}">
           {{ product.category.get_localized_name }}
         </a>
         {% endif %}

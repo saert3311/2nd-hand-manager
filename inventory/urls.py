@@ -24,7 +24,8 @@ from .views import (
 app_name = "inventory"
 
 urlpatterns = [
-    path("staff/", root_redirect_view, name="root"),
+    path("panel/", root_redirect_view, name="root"),
+    path("staff/", root_redirect_view, name="staff_root"),
     path("manifest.json", manifest_view, name="manifest"),
     path("sw.js", service_worker_view, name="service_worker"),
     path("api/push/subscribe/", push_subscribe_view, name="push_subscribe"),

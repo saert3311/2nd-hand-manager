@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-10-22
+
+### Added
+- **Corporate Business Landing Page (`/`), Revised Marketplace URLs (`/tienda/`) & Staff Router (`/panel/`) (Phase 28)**:
+  - **Corporate Business Landing Page (`/`, `storefront:home`)**: Implemented [`storefront/templates/storefront/home.html`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/templates/storefront/home.html) and `home_view` in [`storefront/views.py`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/views.py) based on the Stitch reference screen (`docs/stitch_references/landing_page.html`), featuring:
+    1. Sticky header with corporate navigation (`Paquetería`, `Punto Pack`, `Tienda`, `Sobre nosotros`, `Contacto`) and direct WhatsApp CTA (`/go/whatsapp/`).
+    2. Split Hero section with LCP-prioritized photo (`fetchpriority="high"` on `hero_counter.webp`), live business hours pill, and dual CTAs (`/tienda/`, `/#paqueteria`).
+    3. Official carrier strip (`SEUR`, `GLS`, `InPost`, `Amazon Hub`, `Kanguro`, `DHL`, `Punto Pack Oficial`).
+    4. 4 Parcel & Logistics service cards (`#paqueteria`, `#punto-pack`) + 3-step visual workflow.
+    5. Brand Identity (*"Más que una tienda, tu punto de barrio"*, `#quienes-somos`) with lazy-loaded team photo (`shop_team.webp`) and 4 value pillars.
+    6. Featured Products (*"Recién llegados"*) displaying the 4 newest available products (`is_sold=False, is_reserved=False`) via `_product_card.html` with strict `SAFE_PUBLIC_PRODUCT_FIELDS` projection.
+    7. Trust Stats band, Alfafar Location & Contact card (`#contacto`), Final CTA banner, 4-column Footer, and `Schema.org/LocalBusiness` JSON-LD.
+  - **Revised Public & Staff URL Architecture**:
+    - `/` $\to$ `storefront:home` (Corporate Landing Page)
+    - `/tienda/` $\to$ `storefront:catalog` (Marketplace Catalog, supporting Spanish query parameters `?estado=`, `?precio=`, `?orden=`, `?categoria=` alongside English aliases)
+    - `/tienda/categoria/<slug:category_slug>/` $\to$ `storefront:category` (SEO Category Catalog)
+    - `/tienda/producto/<slug:slug>-<int:pk>/` $\to$ `storefront:product_detail` (with **HTTP 301** permanent redirect on non-canonical slugs and legacy `/p/<slug>-<pk>/` URLs)
+    - `/como-comprar/` $\to$ `storefront:how_to_buy` (Standalone shareable non-JS guide page [`storefront/templates/storefront/how_to_buy.html`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/templates/storefront/how_to_buy.html))
+    - `/go/whatsapp/`, `/go/whatsapp/<int:pk>/`, `/go/link/<int:link_pk>/` $\to$ `storefront:go_whatsapp`, `storefront:go_whatsapp_product`, `storefront:go_listing`
+    - `/aviso-legal/`, `/privacidad/`, `/cookies/` $\to$ `storefront:legal_notice`, `storefront:privacy`, `storefront:cookies`
+    - `/panel/` $\to$ `inventory:root` (Staff entry router preserving `name="root"`)
+    - Updated `/sitemap.xml` and `/robots.txt` (`Allow: /tienda/`, `Disallow: /panel/`).
+
 ## [2.0.0] - 2026-10-22
 
 ### Added

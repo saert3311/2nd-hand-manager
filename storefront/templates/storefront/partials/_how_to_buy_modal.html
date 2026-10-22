@@ -107,6 +107,7 @@
   <div class="px-space-md lg:px-space-lg py-space-sm bg-surface-container flex flex-col sm:flex-row items-center justify-between gap-space-sm">
     <span class="font-body-sm text-body-sm text-on-surface-variant text-center sm:text-left">
       {% trans "Questions about an item or shipping? We reply fast during store hours." %}
+      <a href="{% url 'storefront:how_to_buy' %}" class="text-primary underline ml-1">{% trans "Open full guide" %}</a>
     </span>
     <div class="flex items-center gap-space-xs w-full sm:w-auto">
       <button type="button"

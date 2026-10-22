@@ -6,9 +6,9 @@
 | Module ID | Responsibility | Depends On |
 | :--- | :--- | :--- |
 | `catalog-taxonomy` | `Category` (12 official families), `StorefrontConfiguration` singleton, `Product` marketplace fields (`category`, `condition`, `is_public`, `is_featured`, `is_reserved`, `reserved_until`, `views_count`, `whatsapp_clicks`), `ProductQuerySet.public_visible()`, and Gemini AI taxonomy extraction (`ai_service.py`) + staging UI/Admin controls | — |
-| `storefront-public` | Dedicated `storefront` Django app, public URL routing (`/` catalog, `/p/<slug>-<pk>/` product detail), Stitch-aligned `base_public.html` (`Outfit` + `Hanken Grotesk` + Teal `#005c55`/`#0f766e` palette), search/category/price/condition/sort filters, 2-col mobile / 4-col desktop grid, and decoupled `_purchase_box.html` + *"Saber más"* modal | `catalog-taxonomy` |
-| `conversion-analytics` | First-party click-tracking redirect endpoints (`/go/whatsapp/<int:pk>/`, `/go/link/<int:link_pk>/`), `ProductClickEvent` / counter increments (`whatsapp_clicks`, `listing_links.clicks_count`), and conversion metrics display in the Manager Dashboard & Product Detail staging view | `catalog-taxonomy`, `storefront-public` |
-| `seo-and-legal` | OpenGraph & WhatsApp rich link preview tags (`og:title`, `og:description`, `og:image`, `product:price:amount`), Schema.org `Product` JSON-LD (`InStock` / `SoldOut`, `UsedCondition`), `/sitemap.xml`, `/robots.txt`, and GDPR/LSSI legal pages (`/legal/aviso-legal/`, `/legal/privacidad/`, `/legal/cookies/`) | `storefront-public` |
+| `storefront-public` | Dedicated `storefront` Django app, public URL routing (`/` corporate landing page, `/tienda/` marketplace catalog, `/tienda/categoria/<slug>/` category catalog, `/tienda/producto/<slug>-<pk>/` product detail, `/como-comprar/` how-to-buy page), Stitch-aligned `base_public.html` (`Outfit` + `Hanken Grotesk` + Teal `#005c55`/`#0f766e` palette), search/category/price/condition/sort filters, 2-col mobile / 4-col desktop grid, and decoupled `_purchase_box.html` + *"Saber más"* modal | `catalog-taxonomy` |
+| `conversion-analytics` | First-party click-tracking redirect endpoints (`/go/whatsapp/`, `/go/whatsapp/<int:pk>/`, `/go/link/<int:link_pk>/`), `ProductClickEvent` / counter increments (`whatsapp_clicks`, `listing_links.clicks_count`), and conversion metrics display in the Manager Dashboard & Product Detail staging view | `catalog-taxonomy`, `storefront-public` |
+| `seo-and-legal` | LocalBusiness JSON-LD on `/`, OpenGraph & WhatsApp rich link preview tags (`og:title`, `og:description`, `og:image`, `product:price:amount`), Schema.org `Product` JSON-LD (`InStock` / `SoldOut`, `UsedCondition`), `/sitemap.xml`, `/robots.txt`, and GDPR/LSSI legal pages (`/aviso-legal/`, `/privacidad/`, `/cookies/`) | `storefront-public` |
 
 **Build Order:** `catalog-taxonomy` $\to$ `storefront-public` $\to$ `conversion-analytics`, `seo-and-legal`
 
@@ -23,11 +23,12 @@ Currently, `2ndHand Staging Hub` operates exclusively as a private, staff-only i
 Transform the platform into a **bilingual (ES/EN), mobile-first Public Marketplace Storefront** for **Rápido Pack (`rapidopack.es`)** — *"Tu tienda de segunda mano y oportunidad en Alfafar (Valencia) y online"* — while keeping the internal staff workflow (`/dashboard/`, `/intake/`, `/products/<pk>/`, Web Push, OCI backups) 100% intact.
 
 - **Phase 1 (Current Scope):**
-  1. **Public Catalog Homepage (`/`) & SEO Product Detail (`/p/<slug>-<pk>/`)** faithfully implementing the Google Stitch reference designs ([`docs/stitch_references/`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/stitch_references/)) and the **Rápido Pack Curation System** ([`DESIGN_SYSTEM.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/stitch_references/DESIGN_SYSTEM.md)).
-  2. **12 Official Categories & 4 Official Condition Grades** pre-seeded via migration and automatically classified by **Gemini Multimodal Vision AI** (`ai_service.py`) at zero extra API latency.
-  3. **Public Visibility & 7-Day Sold Social Proof (`Product.objects.public_visible()`):** Automatically displays `READY` and `PUBLISHED` products with `is_public=True`, `sale_price > 0`, and non-empty `ai_title`, plus `SOLD` items from the last **7 days** pinned to the end of the catalog with a **"VENDIDO"** social-proof stamp.
-  4. **Direct WhatsApp Conversion + External Platform Links + "Saber más" Modal:** Configurable WhatsApp number (`StorefrontConfiguration`), pre-filled WhatsApp inquiry message with `Ref. #<id>`, Precio Único policy, free in-store pickup in Alfafar (`Carrer del Comte Ronrée, 8, 46910 Alfafar, Valencia`), and tracked outbound buttons for active Wallapop/Vinted/eBay listings.
-  5. **Strict Internal Data Firewall:** Zero exposure of `raw_note`, `ProductClarification` doubts, `created_by` usernames, or `ProductStatusLog` in any public HTML, JSON-LD, OpenGraph, or sitemap response.
+  1. **Corporate Business Landing Page (`/`), Public Marketplace Catalog (`/tienda/` & `/tienda/categoria/<slug>/`), & SEO Product Detail (`/tienda/producto/<slug>-<pk>/`)** faithfully implementing the Google Stitch reference designs ([`docs/stitch_references/`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/stitch_references/)) and the **Rápido Pack Curation System** ([`DESIGN_SYSTEM.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/stitch_references/DESIGN_SYSTEM.md)).
+  2. **Landing Page Business Showcase (`/`):** Multi-carrier parcel point strip (`SEUR`, `GLS`, `InPost`, `Amazon Hub`, `Kanguro`, `DHL`, `Punto Pack Oficial`), 4 parcel service cards + 3-step workflow, brand story (*"Más que una tienda, tu punto de barrio"* + 4 pillars), 4 newest available products (*"Recién llegados"*), trust stats band, Alfafar location & schedule card, and `Schema.org/LocalBusiness` JSON-LD.
+  3. **12 Official Categories & 4 Official Condition Grades** pre-seeded via migration and automatically classified by **Gemini Multimodal Vision AI** (`ai_service.py`) at zero extra API latency.
+  4. **Public Visibility & 7-Day Sold Social Proof (`Product.objects.public_visible()`):** Automatically displays `READY` and `PUBLISHED` products with `is_public=True`, `sale_price > 0`, and non-empty `ai_title`, plus `SOLD` items from the last **7 days** pinned to the end of the catalog with a **"VENDIDO"** social-proof stamp.
+  5. **Direct WhatsApp Conversion + External Platform Links + "Saber más" Modal & `/como-comprar/` Page:** Configurable WhatsApp number (`StorefrontConfiguration`), pre-filled WhatsApp inquiry message with `Ref. #<id>`, Precio Único policy, free in-store pickup in Alfafar (`Carrer del Comte Ronrée, 8, 46910 Alfafar, Valencia`), and tracked outbound buttons for active Wallapop/Vinted/eBay listings.
+  6. **Strict Internal Data Firewall:** Zero exposure of `raw_note`, `ProductClarification` doubts, `created_by` usernames, or `ProductStatusLog` in any public HTML, JSON-LD, OpenGraph, or sitemap response.
 - **Phase 2 Readiness (Zero-Refactor Bridge):**
   - Include `is_reserved` and `reserved_until` on `Product` for manual 24h holds in Phase 1 and atomic checkout locks in Phase 2.
   - Isolate conversion CTAs into `templates/storefront/partials/_purchase_box.html`.
@@ -41,9 +42,10 @@ Transform the platform into a **bilingual (ES/EN), mobile-first Public Marketpla
 3. **Google Stitch Prompts:** [`docs/questionnaires/google-stitch-prompts.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/questionnaires/google-stitch-prompts.md)
 4. **Google Stitch MCP Reference Screens (`projects/17041960214932697448`):**
    - [`docs/stitch_references/DESIGN_SYSTEM.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/stitch_references/DESIGN_SYSTEM.md) — *Rápido Pack Curation System* (`Outfit` + `Hanken Grotesk`, Primary Teal `#005c55` / `#0f766e`, Secondary Amber `#904d00` / `#fe932c` / `#F59E0B`, WhatsApp `#25D366`, Surface `#faf8ff` / `#ffffff`, On-Surface `#131b2e`)
-   - [`docs/stitch_references/desktop_catalog_homepage.html`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/stitch_references/desktop_catalog_homepage.html) — Desktop Marketplace Catalog (`1280px` max-w, 4-col product grid, sticky announcement & header, compact hero + 4 trust badges, horizontal 12-category rail, price & condition filter bar, Alfafar physical store banner, 3-col commercial footer)
+   - [`docs/stitch_references/landing_page.html`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/stitch_references/landing_page.html) — Corporate Business Landing Page (`/` — Hero split layout, carrier logo strip, 4 parcel service cards + 3-step flow, *Quiénes somos* brand identity, 4 *Recién llegados* product cards, trust stats band, Alfafar map & contact card, final CTA banner, 4-col footer)
+   - [`docs/stitch_references/desktop_catalog_homepage.html`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/stitch_references/desktop_catalog_homepage.html) — Desktop Marketplace Catalog (`/tienda/` — `1280px` max-w, 4-col product grid, sticky announcement & header, compact hero + 4 trust badges, horizontal 12-category rail, price & condition filter bar, Alfafar physical store banner, 3-col commercial footer)
    - [`docs/stitch_references/mobile_catalog_homepage.html`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/stitch_references/mobile_catalog_homepage.html) — Mobile Marketplace Catalog (2-col compact cards, touch-scrollable filter chips, floating WhatsApp CTA, mobile bottom navigation bar)
-   - [`docs/stitch_references/product_detail_and_modal.html`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/stitch_references/product_detail_and_modal.html) & [`docs/stitch_references/product_detail_orbea.html`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/stitch_references/product_detail_orbea.html) — 60%/40% Desktop Product Detail (`lg:col-span-7` gallery + verification box, `lg:col-span-5` sticky purchase box, outbound Wallapop/Vinted tiles, and interactive *"¿Cómo comprar en Rápido Pack Alfafar? (Saber más)"* modal)
+   - [`docs/stitch_references/product_detail_and_modal.html`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/stitch_references/product_detail_and_modal.html) & [`docs/stitch_references/product_detail_orbea.html`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/stitch_references/product_detail_orbea.html) — 60%/40% Desktop Product Detail (`/tienda/producto/<slug>-<pk>/` — `lg:col-span-7` gallery + verification box, `lg:col-span-5` sticky purchase box, outbound Wallapop/Vinted tiles, and interactive *"¿Cómo comprar en Rápido Pack Alfafar? (Saber más)"* modal)
 
 ---
 
@@ -86,22 +88,24 @@ epic-tesla/
 ├── inventory/
 │   ├── models.py                 # Category, StorefrontConfiguration, ProductCondition, Product fields, ProductQuerySet.public_visible()
 │   ├── forms.py                  # Add category, condition, is_public, is_featured, is_reserved to ProductUpdateForm
-│   ├── views.py                  # Preserve /dashboard/, /intake/, /products/<pk>/; move staff root redirect to /staff/ (inventory:root)
+│   ├── views.py                  # Preserve /dashboard/, /intake/, /products/<pk>/; move staff root redirect to /panel/ (inventory:root)
 │   ├── admin.py                  # CategoryAdmin, StorefrontConfigurationAdmin, updated ProductAdmin
 │   └── services/
 │       └── ai_service.py         # Extend ProductListingSchema & IntakePreflightSchema with official category_slug & condition
 ├── storefront/                   # NEW Django App for Public Marketplace Storefront
 │   ├── __init__.py
 │   ├── apps.py
-│   ├── urls.py                   # '/', '/p/<slug>-<pk>/', '/go/whatsapp/<pk>/', '/go/link/<link_pk>/', '/sitemap.xml', '/robots.txt', '/legal/<page>/'
-│   ├── views.py                  # Public catalog, product detail, click redirectors, sitemap, robots, legal views
+│   ├── urls.py                   # '/', '/tienda/', '/tienda/categoria/<slug>/', '/tienda/producto/<slug>-<pk>/', '/como-comprar/', '/go/whatsapp/', '/go/whatsapp/<pk>/', '/go/link/<link_pk>/', '/sitemap.xml', '/robots.txt', '/aviso-legal/', '/privacidad/', '/cookies/'
+│   ├── views.py                  # Public landing, catalog, category, product detail, how_to_buy, click redirectors, sitemap, robots, legal views
 │   ├── context_processors.py     # Injects StorefrontConfiguration singleton into public templates
 │   └── templates/
 │       └── storefront/
 │           ├── base_public.html              # Independent public layout (Stitch theme, Outfit/Hanken Grotesk, staff top bar)
-│           ├── catalog.html                  # Public marketplace homepage & filterable grid
-│           ├── product_detail.html           # Public 60/40 product page, gallery, JSON-LD, OpenGraph
-│           ├── legal_page.html               # Standard RGPD/LSSI legal templates (Aviso Legal, Privacidad, Cookies)
+│           ├── home.html                     # Corporate landing page (hero, parcel carriers, services, quiénes somos, 4 newest items, stats, map/contact)
+│           ├── catalog.html                  # Public marketplace catalog (/tienda/ & /tienda/categoria/<slug>/)
+│           ├── product_detail.html           # Public 60/40 product page (/tienda/producto/<slug>-<pk>/), gallery, JSON-LD, OpenGraph
+│           ├── how_to_buy.html               # Standalone shareable "¿Cómo comprar?" page (/como-comprar/)
+│           ├── legal_page.html               # Standard RGPD/LSSI legal templates (/aviso-legal/, /privacidad/, /cookies/)
 │           └── partials/
 │               ├── _product_card.html        # Responsive card supporting AVAILABLE, DESTACADO, RESERVADO, VENDIDO states
 │               ├── _purchase_box.html        # Decoupled conversion box (Phase 1 WhatsApp + Marketplace links -> Phase 2 Cart)
@@ -113,16 +117,20 @@ epic-tesla/
 ### URL Map (`config/urls.py`, `storefront/urls.py`, `inventory/urls.py`)
 | Path | Name | Access | Behavior |
 | :--- | :--- | :--- | :--- |
-| `/` | `storefront:catalog` | Public (200 OK) | Public Marketplace Homepage. If user is authenticated staff (`Assistant` or `Manager`), renders a top floating staff bar with quick links to `/dashboard/` and `/intake/`. |
-| `/p/<slug:slug>-<int:pk>/` | `storefront:product_detail` | Public (200 OK / 404) | Public Product Detail page for products in `Product.objects.public_visible()`. Canonical slug redirect if slug mismatches. |
-| `/go/whatsapp/<int:pk>/` | `storefront:go_whatsapp` | Public (302 Redirect) | Atomically increments `product.whatsapp_clicks` (`F("whatsapp_clicks") + 1`) and redirects to `https://wa.me/<phone>?text=<encoded_msg>`. |
-| `/go/link/<int:link_pk>/` | `storefront:go_marketplace_link` | Public (302 Redirect) | Atomically increments `link.clicks_count` (`F("clicks_count") + 1`) for active `ProductListingLink` and redirects to `link.url`. |
-| `/legal/aviso-legal/` | `storefront:legal_notice` | Public (200 OK) | Standard LSSI-CE Legal Notice tailored to Rápido Pack (Alfafar, Valencia). |
-| `/legal/privacidad/` | `storefront:privacy_policy` | Public (200 OK) | Standard RGPD Privacy Policy tailored to Rápido Pack. |
-| `/legal/cookies/` | `storefront:cookies_policy` | Public (200 OK) | Technical Cookies Policy (no third-party tracking cookies in Phase 1). |
-| `/sitemap.xml` | `storefront:sitemap` | Public (`application/xml`) | Dynamic XML sitemap listing `/` and all `public_visible()` product URLs. |
-| `/robots.txt` | `storefront:robots` | Public (`text/plain`) | Allows `/`, `/p/`; disallows `/admin/`, `/dashboard/`, `/intake/`, `/products/`, `/login/`, `/go/`. |
-| `/staff/` | `inventory:root` | Public $\to$ 302 Redirect | Role-based staff router: unauthenticated $\to$ `/login/`, Assistant $\to$ `/intake/`, Manager $\to$ `/dashboard/`. |
+| `/` | `storefront:home` | Public (200 OK) | Corporate Business Landing Page: hero, carriers (`SEUR`, `GLS`, `InPost`, `Amazon Hub`, `Kanguro`, `DHL`, `Punto Pack`), parcel services (`#paqueteria`), Punto Pack (`#punto-pack`), brand identity (`#quienes-somos` / `#sobre-nosotros`), 4 newest available products (*"Recién llegados"*), trust stats, location & contact (`#contacto`), and `LocalBusiness` JSON-LD. |
+| `/tienda/` | `storefront:catalog` | Public (200 OK) | Public Marketplace Catalog with search (`?q=`), condition (`?estado=` / `?condition=`), price (`?precio=` / `?price=`), sort (`?orden=` / `?sort=`), category (`?category=`), and pagination (`?page=`). |
+| `/tienda/categoria/<slug:category_slug>/` | `storefront:category` | Public (200 OK / 404) | SEO-indexable category catalog view filtered by one of the 12 official categories; accepts the same query params as `/tienda/`. |
+| `/tienda/producto/<slug:slug>-<int:pk>/` | `storefront:product_detail` | Public (200 OK / 301 / 404) | Public Product Detail page for products in `Product.objects.public_visible()`. Returns a **301 permanent redirect** to the canonical URL if `slug` does not match `product.slug`. |
+| `/como-comprar/` | `storefront:how_to_buy` | Public (200 OK) | Standalone shareable page with the *"Saber más / ¿Cómo comprar?"* guide (WhatsApp 24h reservations, free Alfafar pickup, Wallapop/Vinted shipping, payments). |
+| `/go/whatsapp/` | `storefront:go_whatsapp` | Public (302 Redirect) | Redirects to the general store WhatsApp (`https://wa.me/<phone>?text=...`) for landing page & header CTAs. |
+| `/go/whatsapp/<int:pk>/` | `storefront:go_whatsapp_product` | Public (302 Redirect) | Atomically increments `product.whatsapp_clicks` (`F("whatsapp_clicks") + 1`) and redirects to `https://wa.me/<phone>?text=<encoded_msg>`. |
+| `/go/link/<int:link_pk>/` | `storefront:go_listing` | Public (302 Redirect) | Atomically increments `link.clicks_count` (`F("clicks_count") + 1`) for active `ProductListingLink` and redirects to `link.url`. |
+| `/aviso-legal/` | `storefront:legal_notice` | Public (200 OK) | Standard LSSI-CE Legal Notice tailored to Rápido Pack (Alfafar, Valencia). |
+| `/privacidad/` | `storefront:privacy` | Public (200 OK) | Standard RGPD Privacy Policy tailored to Rápido Pack. |
+| `/cookies/` | `storefront:cookies` | Public (200 OK) | Technical Cookies Policy (no third-party tracking cookies in Phase 1). |
+| `/sitemap.xml` | `storefront:sitemap` | Public (`application/xml`) | Dynamic XML sitemap listing `/`, `/tienda/`, all 12 `/tienda/categoria/<slug>/` URLs, all `public_visible()` `/tienda/producto/<slug>-<pk>/` URLs, `/como-comprar/`, and legal pages. |
+| `/robots.txt` | `storefront:robots` | Public (`text/plain`) | Allows `/`, `/tienda/`; disallows `/admin/`, `/panel/`, `/dashboard/`, `/intake/`, `/products/`, `/login/`, `/api/`, `/go/`. |
+| `/panel/` | `inventory:root` | Public $\to$ 302 Redirect | Role-based staff router (`name="root"` preserved): unauthenticated $\to$ `/login/`, Assistant $\to$ `/intake/`, Manager $\to$ `/dashboard/`. |
 | `/dashboard/`, `/intake/`, `/products/<int:pk>/` | `inventory:*` | `@login_required` | Unchanged internal operations. |
 
 ---

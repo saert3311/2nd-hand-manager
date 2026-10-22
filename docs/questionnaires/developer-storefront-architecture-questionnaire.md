@@ -18,16 +18,44 @@ Actualmente, [`config/urls.py`](file:///C:/Users/Jose/antigravity/epic-tesla/con
 - **Hipótesis / Recomendación (`GUESS`):** **Opción A (`storefront/`).** Separa limpiamente las vistas públicas sin `@login_required` de las vistas internas del staff, evita que un despiste de permisos en `inventory/views.py` exponga acciones de edición, y prepara el terreno para añadir `Cart`, `Order` y `Checkout` en la Fase 2 dentro de `storefront` (o `orders`) sin inflar `inventory`.
 - **Decisión del Desarrollador:** `[x] Opción A Confirmada (App storefront/)   [ ] Opción B (Dentro de inventory/)`
 
-### D1.2. Mapa de URLs públicas vs. URLs internas de gestión
-¿Qué debe responder en la raíz `/` cuando entra un visitante anónimo vs. un empleado logueado?
-- **Opciones:**
-  - **Opción A (Recomendada — Raíz `/` pública para todos + Barra superior de Staff):**
-    - `/` $\to$ Portada del Marketplace Público (`storefront:catalog`). Si el usuario está autenticado como Staff (`Assistant` o `Manager`), ve un banner/botón flotante superior *"Ir al Panel (/dashboard/) / Subir Producto (/intake/)"*.
-    - `/p/<slug:slug>-<int:pk>/` (o `/catalogo/<slug:slug>-<int:pk>/`) $\to$ Ficha pública del producto con URL amigable para SEO.
-    - `/dashboard/`, `/intake/`, `/products/<int:pk>/` $\to$ Permanecen 100% intactas para el flujo interno de trabajo (no se rompe ningún test ni enlace de Web Push existente).
-  - **Opción B:** Redirigir `/` según si está logueado o no (malo para un Manager que quiera ver cómo queda la tienda pública).
-- **Hipótesis / Recomendación (`GUESS`):** **Opción A.** Mantener intactas `/dashboard/`, `/intake/` y `/products/<int:pk>/` garantiza que las **162 pruebas actuales** y las notificaciones Web Push sigan funcionando sin cambios, mientras que `/` y `/p/<slug>-<pk>/` sirven el escaparate público.
-- **Decisión del Desarrollador:** `[x] Opción A Confirmada   [ ] Opción B`
+### D1.2. Mapa de URLs públicas vs. URLs internas de gestión (actualizado: Landing + Tienda)
+
+> **Cambio respecto a la versión anterior:** Rápido Pack no es solo una tienda: también es **punto de paquetería multimarca** (SEUR, GLS, InPost, Amazon, Kanguro, DHL) y **Punto Pack**. Por eso la raíz `/` pasa a ser la **landing corporativa del negocio** y el catálogo marketplace se mueve a **`/tienda/`**.
+
+#### Mapa de URLs públicas (app `storefront`, sin `@login_required`)
+
+| URL | Nombre (`name`) | Contenido |
+| :--- | :--- | :--- |
+| `/` | `storefront:home` | Landing corporativa: hero, agencias, servicios de paquetería, Punto Pack, identidad de marca ("Quiénes somos"), **4 productos más recientes**, ubicación y contacto. |
+| `/#paqueteria`, `/#punto-pack`, `/#quienes-somos`, `/#contacto` | — (anclas) | Secciones de la landing enlazadas desde el menú principal. |
+| `/tienda/` | `storefront:catalog` | Catálogo marketplace con buscador, filtros y ordenación por *query params*: `?q=`, `?estado=` (`nuevo-con-etiquetas`, `muy-bueno`, `buen-estado`, `vintage`), `?precio=` (`0-20`, `20-50`, `50-`), `?orden=` (`recientes`, `destacados`, `precio-asc`, `precio-desc`), `?page=`. |
+| `/tienda/categoria/<slug:category_slug>/` | `storefront:category` | Catálogo filtrado por una de las 12 categorías, con URL indexable para SEO (ej. `/tienda/categoria/bicicletas/`). Acepta los mismos *query params*. |
+| `/tienda/producto/<slug:slug>-<int:pk>/` | `storefront:product_detail` | Ficha pública del producto. Se busca por `pk`; si el `slug` no coincide con el título actual, se devuelve una **redirección 301 a la URL canónica**. |
+| `/como-comprar/` | `storefront:how_to_buy` | Contenido del modal *"Saber más"* también disponible como página (reservas por WhatsApp, recogida gratis en Alfafar, envíos vía Wallapop/Vinted, pagos). Sirve como alternativa sin JavaScript y se puede compartir. |
+| `/go/whatsapp/` | `storefront:go_whatsapp` | Redirección con conteo de clics al WhatsApp general de la tienda (CTA de la landing). |
+| `/go/whatsapp/<int:pk>/` | `storefront:go_whatsapp_product` | Redirección con conteo de clics a `wa.me` con el mensaje del producto pre-rellenado. |
+| `/go/link/<int:link_pk>/` | `storefront:go_listing` | Redirección con conteo de clics a un `ProductListingLink` activo (Wallapop/Vinted/eBay). |
+| `/aviso-legal/`, `/privacidad/`, `/cookies/` | `storefront:legal_notice`, `storefront:privacy`, `storefront:cookies` | Páginas legales con plantillas estándar adaptadas a Rápido Pack. |
+| `/sitemap.xml`, `/robots.txt` | — | Generados por Django (`django.contrib.sitemaps`). |
+
+#### URLs internas (app `inventory`, sin cambios salvo la raíz)
+
+| URL | Cambio |
+| :--- | :--- |
+| `/login/`, `/logout/`, `/dashboard/`, `/intake/`, `/intake/identify/`, `/products/<int:pk>/...` | **Sin cambios.** |
+| `/admin/`, `/i18n/`, `/manifest.json`, `/sw.js`, `/api/push/...` | **Sin cambios.** |
+| Antes `/` → ahora **`/panel/`** | `root_redirect_view` se mueve de `""` a `"panel/"` **conservando `name="root"`**. Así siguen funcionando `{% url 'inventory:root' %}` (logo de `inventory/base.html`) y los 3 tests de [`tests/test_auth.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_auth.py) que usan `reverse("inventory:root")`. |
+
+#### Notas de implementación
+- **Orden en [`config/urls.py`](file:///C:/Users/Jose/antigravity/epic-tesla/config/urls.py):** incluir `storefront.urls` antes que `inventory.urls`, o eliminar la entrada `""` de `inventory/urls.py` (la que se mueve a `panel/`), para que no haya dos vistas compitiendo por `/`.
+- **Login:** `LOGIN_REDIRECT_URL = 'inventory:dashboard'` y `LOGIN_URL = 'inventory:login'` en [`config/settings.py`](file:///C:/Users/Jose/antigravity/epic-tesla/config/settings.py) no cambian. El staff sigue entrando a `/login/` y llega al dashboard.
+- **Barra de staff:** si el visitante está autenticado como `Assistant` o `Manager`, las páginas públicas muestran una barra fina con *"Ir al panel"* (`/panel/`) y *"Subir producto"* (`/intake/`).
+- **Enlaces internos de la landing:** el botón *"Explorar la tienda"* y *"Ver toda la tienda →"* apuntan a `storefront:catalog`; las 4 tarjetas de *"Recién llegados"* apuntan a `storefront:product_detail`.
+- **"Recién llegados" (landing):** `Product.objects.public_visible().filter(is_sold=False, is_reserved=False).order_by("-created_at")[:4]` con `prefetch_related` de la imagen principal.
+- **Service worker:** `/sw.js` tiene scope `/` pero solo lo registra `inventory/base.html`, así que los visitantes públicos no lo instalan. Para el staff que ya lo tiene instalado, el modo *pass-through* no altera las páginas públicas.
+- **Idiomas:** se mantiene `LocaleMiddleware` sin `i18n_patterns` (sin prefijo `/es/` ni `/en/`). El idioma de la interfaz se negocia con `Accept-Language` o con el selector `/i18n/setlang/`, y las URLs públicas son únicas y en español.
+
+- **Decisión del Desarrollador:** `[x] Confirmado: Landing en "/", catálogo en "/tienda/", ficha en "/tienda/producto/<slug>-<pk>/", raíz interna movida a "/panel/" conservando name="root"`
 
 ---
 
@@ -153,7 +181,8 @@ Cuando el cliente o un comprador comparta el enlace de un producto por WhatsApp 
 - **Hipótesis / Recomendación (`GUESS`):** Incluir de serie en la ficha pública:
   1. **Metaetiquetas OpenGraph (`og:title`, `og:description`, `og:image` apuntando a la foto principal, `product:price:amount`, `product:price:currency="EUR"`):** Así, al pegar el link en WhatsApp aparece la foto de la prenda, el título y el precio automáticamente.
   2. **JSON-LD `Schema.org/Product`:** Con `Offer` (`InStock` o `SoldOut` y `itemCondition: UsedCondition`) para aparecer enriquecido en Google.
-  3. **`/sitemap.xml` y `/robots.txt`:** Exponiendo únicamente las URLs del catálogo público y bloqueando `/admin/`, `/dashboard/`, `/intake/` y `/login/` en `robots.txt`.
+  3. **`/sitemap.xml` y `/robots.txt`:** El sitemap incluye solo URLs públicas: `/`, `/tienda/`, `/tienda/categoria/<slug>/` (12), `/tienda/producto/<slug>-<pk>/` (productos de `public_visible()`), `/como-comprar/` y las páginas legales. `robots.txt` bloquea `/admin/`, `/panel/`, `/dashboard/`, `/intake/`, `/products/`, `/login/`, `/api/` y `/go/`.
+  4. **Local SEO de la landing (`/`):** JSON-LD `LocalBusiness` con nombre, dirección de Alfafar, horario (`openingHoursSpecification`), teléfono y servicios (paquetería SEUR/GLS/InPost/Amazon/Kanguro/DHL, Punto Pack, tienda de segunda mano), para aparecer en búsquedas como *"punto de recogida Alfafar"*.
 - **Decisión del Desarrollador:** `[x] Confirmado: Incluir OpenGraph + JSON-LD Product + sitemap.xml / robots.txt`
 
 ### D6.3. Medición de Clics de Conversión (¿Qué canal funciona mejor antes de la Fase 2?)
@@ -169,7 +198,7 @@ Cuando el cliente o un comprador comparta el enlace de un producto por WhatsApp 
 | # | Decisión Arquitectónica | Recomendación por Defecto | Estado |
 | :--- | :--- | :--- | :--- |
 | **1** | Organización del código | Nueva app `storefront/` consumiendo `inventory.models` | `[x] Aceptado` |
-| **2** | URLs públicas | `/` (Catálogo) y `/p/<slug>-<pk>/` (Ficha); mantener `/dashboard/` y `/intake/` | `[x] Aceptado` |
+| **2** | URLs públicas | `/` (Landing de negocio), `/tienda/` (Catálogo), `/tienda/categoria/<slug>/`, `/tienda/producto/<slug>-<pk>/` (Ficha); raíz interna movida a `/panel/` (`name="root"`); `/dashboard/` e `/intake/` sin cambios | `[x] Aceptado (actualizado)` |
 | **3** | Taxonomía e IA | Modelo `Category` (12 categorías) + `StorefrontConfiguration` + `condition` (4 estados) auto-extraídos por Gemini | `[x] Aceptado` |
 | **4** | Puente a Fase 2 (Carrito) | Campos `is_reserved` / `reserved_until` + partial `_purchase_box.html` desacoplado | `[x] Aceptado` |
 | **5** | Seguridad y Privacidad | `public_visible()` QuerySet (7 días para `SOLD`) + prohibición estricta de exponer `raw_note` y `clarifications` | `[x] Aceptado` |

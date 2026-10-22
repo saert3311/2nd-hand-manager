@@ -23,7 +23,10 @@
 
 ### 1.2. Dominio web (Dirección en Internet) — *Disponibilidad verificada en tiempo real*
 Hemos comprobado la disponibilidad actual de dominios para **Rápido Pack** (nota: `rapidopack.com` ya está registrado por un tercero, pero el dominio oficial de España **`.es`** y las mejores variantes **`.com`** están libres):
-- **Recomendación / Hipótesis:** Registrar **`rapidopack.es`** (exacto, corto y de máxima confianza en España) —y opcionalmente acompañarlo de **`rapidopackshop.com`** o **`tiendarapidopack.com`** redirigiendo al mismo sitio—, usando un único dominio donde la portada pública sea `rapidopack.es/` y el acceso privado de empleados siga en `rapidopack.es/dashboard/`.
+- **Recomendación / Hipótesis:** Registrar **`rapidopack.es`** (exacto, corto y de máxima confianza en España) —y opcionalmente acompañarlo de **`rapidopackshop.com`** o **`tiendarapidopack.com`** redirigiendo al mismo sitio—, usando un único dominio con esta estructura:
+  - `rapidopack.es/` → Página principal del negocio (paquetería, Punto Pack, quiénes somos y los 4 productos más nuevos).
+  - `rapidopack.es/tienda/` → Catálogo completo de la tienda de segunda mano.
+  - `rapidopack.es/panel/` y `/dashboard/` → Acceso privado del equipo (sin cambios para los empleados).
 - **Elige tu dominio preferido (todos verificados como DISPONIBLES hoy):**
   - [x] **`rapidopack.es`** *(Confirmado: Nombre exacto de la empresa + extensión oficial de España)*
   - [ ] **`rapidopackshop.com`** *(Opcional / Redirección secundaria: Internacional `.com`, corto y deja claro que es tienda)*

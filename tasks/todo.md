@@ -2273,6 +2273,95 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 - [x] OpenGraph, Schema.org JSON-LD, `sitemap.xml`, `robots.txt`, and RGPD/LSSI legal pages work cleanly.
 - [x] All automated tests and `ruff check .` pass with 0 errors.
 
+---
+
+## Phase 28: Corporate Business Landing Page (`/`), Revised Marketplace URLs (`/tienda/`) & Staff Router (`/panel/`) (Vertical Slice 24)
+
+### Task 99: Revised URL Routing, 301 Canonical Slug Redirect, Spanish Query Param Aliases & Navigation Updates
+**Description:** Update `storefront/urls.py`, `storefront/views.py`, and `inventory/urls.py` to implement the revised URL map: `/` (`storefront:home`), `/tienda/` (`storefront:catalog`), `/tienda/categoria/<slug:category_slug>/` (`storefront:category`), `/tienda/producto/<slug:slug>-<int:pk>/` (`storefront:product_detail` with 301 permanent redirect on slug mismatch), `/como-comprar/` (`storefront:how_to_buy`), `/go/whatsapp/` (`storefront:go_whatsapp`), `/go/whatsapp/<int:pk>/` (`storefront:go_whatsapp_product`), `/go/link/<int:link_pk>/` (`storefront:go_listing`), `/aviso-legal/` (`storefront:legal_notice`), `/privacidad/` (`storefront:privacy`), `/cookies/` (`storefront:cookies`), and `/panel/` (`inventory:root`, preserving `name="root"`). Maintain backwards-compatible redirects/aliases for legacy paths (`/p/<slug>-<pk>/` $\to$ 301, `/legal/<slug>/`, `/staff/`). Support Spanish query parameters (`?estado=`, `?precio=`, `?orden=`) alongside existing internal parameters (`?condition=`, `?price=`, `?sort=`, `?category=`). Update navigation links in `base_public.html`, `catalog.html`, `product_detail.html`, and `inventory/templates/inventory/base.html`.
+**Acceptance criteria:**
+- [x] `/`, `/tienda/`, `/tienda/categoria/<slug>/`, `/tienda/producto/<slug>-<pk>/`, `/como-comprar/`, `/go/whatsapp/`, `/go/whatsapp/<pk>/`, `/go/link/<link_pk>/`, `/aviso-legal/`, `/privacidad/`, `/cookies/`, and `/panel/` resolve and respond with expected HTTP status codes.
+- [x] Requesting `/tienda/producto/wrong-slug-<pk>/` returns HTTP 301 permanent redirect to `/tienda/producto/<canonical-slug>-<pk>/`.
+- [x] `/tienda/` and `/tienda/categoria/<slug>/` filter and sort via both Spanish query params (`estado`, `precio`, `orden`) and English aliases (`condition`, `price`, `sort`).
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Checkpoint 27
+**Files likely touched:**
+- `storefront/urls.py`
+- `storefront/views.py`
+- `inventory/urls.py`
+- `storefront/templates/storefront/base_public.html`
+- `storefront/templates/storefront/catalog.html`
+**Estimated scope:** Medium (5 files)
+
+---
+
+### Task 100: Corporate Business Landing Page (`/` — `home.html`), Local Stitch Assets, Top 4 *"Recién llegados"* & `LocalBusiness` JSON-LD
+**Description:** Download and optimize the Stitch landing page hero and brand identity images into `inventory/static/img/storefront/`. Implement `home_view` in `storefront/views.py` querying the 4 newest available products (`Product.objects.public_visible().filter(is_sold=False, is_reserved=False).order_by("-created_at")[:4]` with `only(*SAFE_PUBLIC_PRODUCT_FIELDS)` and `prefetch_related` of images/links) and building `Schema.org/LocalBusiness` JSON-LD. Create `storefront/templates/storefront/home.html` faithfully implementing the Stitch landing page (`docs/stitch_references/landing_page.html`): split hero (`fetchpriority="high"` on LCP hero image per `modern-web-guidance`), carrier logo strip (`SEUR`, `GLS`, `InPost`, `Amazon Hub`, `Kanguro`, `DHL`, `Punto Pack Oficial`), 4 parcel service cards (`#paqueteria`, `#punto-pack`) + 3-step workflow, brand story (`#quienes-somos` / `#sobre-nosotros`) + 4 value cards, 4-column *"Recién llegados"* grid using `_product_card.html` + *"Ver toda la tienda →"* (`/tienda/`), trust stats band, Alfafar location & contact card (`#contacto`), and final CTA banner.
+**Acceptance criteria:**
+- [x] `GET /` (`storefront:home`) returns HTTP 200 with all 10 Stitch landing sections, `LocalBusiness` JSON-LD, and up to 4 newest available (`is_sold=False, is_reserved=False`) products.
+- [x] Hero LCP image uses `fetchpriority="high"` without `loading="lazy"`; below-the-fold images use `loading="lazy"`.
+- [x] `home_view` strictly enforces `SAFE_PUBLIC_PRODUCT_FIELDS` (never exposing `raw_note` or `clarifications`).
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Task 99
+**Files likely touched:**
+- `storefront/views.py`
+- `storefront/templates/storefront/home.html`
+- `inventory/static/img/storefront/hero_counter.webp`
+- `inventory/static/img/storefront/shop_team.webp`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 101: Standalone *"¿Cómo comprar?"* Page (`/como-comprar/`), Updated `/sitemap.xml` & `/robots.txt`
+**Description:** Create `storefront/templates/storefront/how_to_buy.html` and `how_to_buy_view` in `storefront/views.py` serving `/como-comprar/` as a shareable, non-JS page containing the full *"¿Cómo comprar en Rápido Pack Alfafar?"* guide (24h WhatsApp hold, free in-store pickup at Carrer del Comte Ronrée 8, shipping via Wallapop/Vinted, payment methods, and FAQ). Update `sitemap_view` to include `/`, `/tienda/`, all 12 `/tienda/categoria/<slug>/` URLs, all `public_visible()` `/tienda/producto/<slug>-<pk>/` URLs, `/como-comprar/`, `/aviso-legal/`, `/privacidad/`, and `/cookies/`. Update `robots_view` to allow `/`, `/tienda/` and disallow `/admin/`, `/panel/`, `/dashboard/`, `/intake/`, `/products/`, `/login/`, `/api/`, and `/go/`.
+**Acceptance criteria:**
+- [x] `GET /como-comprar/` returns HTTP 200 with full purchase & pickup instructions and links to `/tienda/` and `/go/whatsapp/`.
+- [x] `/sitemap.xml` includes `/`, `/tienda/`, `/tienda/categoria/<slug>/`, `/tienda/producto/<slug>-<pk>/`, `/como-comprar/`, and legal URLs.
+- [x] `/robots.txt` disallows `/admin/`, `/panel/`, `/dashboard/`, `/intake/`, `/products/`, `/login/`, `/api/`, `/go/`.
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Task 99, Task 100
+**Files likely touched:**
+- `storefront/views.py`
+- `storefront/templates/storefront/how_to_buy.html`
+- `storefront/templates/storefront/partials/_how_to_buy_modal.html`
+**Estimated scope:** Small to Medium (3 files)
+
+---
+
+### Task 102: Bilingual Localization (`es`/`en`), Updated Automated & Browser Test Suites, Linter & Full Regression Verification
+**Description:** Add Spanish and English translations for all new landing page and `/como-comprar/` strings in `locale/es/LC_MESSAGES/django.po` and `locale/en/LC_MESSAGES/django.po` and compile via `python manage.py compile_locales`. Update `tests/test_storefront.py`, `tests/test_auth.py`, and `tests/test_browser_daily_workflow.py` to test the new `/` landing page (including `LocalBusiness` JSON-LD, 4 newest available products, and non-leak security firewall on `/`), `/tienda/`, `/tienda/categoria/<slug>/`, `/tienda/producto/<slug>-<pk>/` (including 301 canonical slug redirect), `/como-comprar/`, `/go/whatsapp/`, `/aviso-legal/`, `/privacidad/`, `/cookies/`, and `/panel/`. Update `CHANGELOG.md`, run `ruff check .`, and run the full test suite (`python manage.py test`).
+**Acceptance criteria:**
+- [x] Translations compiled with `python manage.py compile_locales`.
+- [x] `tests/test_storefront.py`, `tests/test_auth.py`, and `tests/test_browser_daily_workflow.py` pass 100%.
+- [x] Full test suite passes (`python manage.py test`) with 0 failures.
+- [x] `ruff check .` passes with 0 warnings.
+**Verification:**
+- [x] `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] `.venv\Scripts\ruff.exe check .`
+- [x] `.venv\Scripts\python.exe manage.py test`
+**Dependencies:** Task 99, Task 100, Task 101
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/en/LC_MESSAGES/django.po`
+- `tests/test_storefront.py`
+- `tests/test_auth.py`
+- `tests/test_browser_daily_workflow.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (5-6 files)
+
+---
+
+## Checkpoint 28: Corporate Landing Page & Revised URLs Complete
+- [x] `/` renders the Stitch corporate business landing page with parcel carriers, services, brand story, 4 newest products, trust stats, Alfafar map/contact, and `LocalBusiness` JSON-LD.
+- [x] `/tienda/` and `/tienda/categoria/<slug>/` serve the filterable marketplace catalog with Spanish and English query param support.
+- [x] `/tienda/producto/<slug>-<pk>/` renders the 60/40 product detail page and 301 redirects non-canonical slugs.
+- [x] `/como-comprar/` and `/aviso-legal/`, `/privacidad/`, `/cookies/` render cleanly.
+- [x] `/panel/` routes staff (`name="root"` preserved).
+- [x] Full automated test suite and `ruff check .` pass with 0 errors.
+
 
 
 

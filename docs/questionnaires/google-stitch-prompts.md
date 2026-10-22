@@ -5,7 +5,9 @@
 
 ---
 
-## 1. Prompt Maestro para la Portada (Homepage) — *Recomendado para copiar y pegar en Google Stitch*
+## 1. Prompt Maestro para el Catálogo de la Tienda (`/tienda/`) — *Recomendado para copiar y pegar en Google Stitch*
+
+> **Nota (mapa de URLs actualizado):** Este diseño corresponde ahora a **`rapidopack.es/tienda/`**. La raíz `rapidopack.es/` es la **landing corporativa** (ver sección 4). En el diseño de Stitch, el logo debe enlazar a la landing y el menú debe incluir "Paquetería", "Punto Pack", "Tienda" y "Contacto".
 
 ```text
 Design a modern, high-converting, responsive e-commerce marketplace homepage for "Rápido Pack" (rapidopack.es), a curated secondhand, vintage, and opportunity goods store with both an online catalog and a physical pickup store in Alfafar, Valencia (Spain). All visible UI text, labels, and badges MUST be in Spanish.
@@ -149,4 +151,101 @@ Design the Product Detail Page and the "Saber más" (How to Buy) info modal for 
     - "🏪 Recogida GRATIS en tienda: Carrer del Comte Ronrée, 8, 46910 Alfafar, Valencia (L-V 9:30–20:00, Sáb 10:00–15:00). Pagos en tienda o trato directo: Efectivo, Bizum o Transferencia."
     - "📦 Envíos a domicilio: Gestionados con envío seguro a través de nuestras fichas en Wallapop y Vinted."
   - Structured AI Description section with clean bullet points detailing features, measurements, and honest condition notes.
+```
+
+
+---
+
+## 4. Prompt para Landing Page Corporativa (`/` — Negocio completo: Punto Pack + Paquetería + Tienda)
+
+> **Identidad de marca propuesta para Rápido Pack** (usada en el prompt, validar con el cliente):
+> - **Concepto:** Rápido Pack es el *punto de barrio* de Alfafar donde se envía, recibe y devuelve paquetería de las principales agencias, y donde además se descubren artículos de segunda mano y oportunidad revisados. Dos negocios, una misma promesa: **rapidez y confianza a la vuelta de la esquina**.
+> - **Significado del nombre:** *Rápido* = gestiones en minutos, sin colas ni complicaciones. *Pack* = el paquete, tanto el que envías o recoges como el artículo que compras.
+> - **Pilares:** Rapidez · Cercanía (comercio local de Alfafar) · Confianza (artículos revisados, gestión segura del paquete) · Segunda vida (consumo sostenible).
+> - **Tono de voz:** Cercano, directo y resolutivo; tuteo; frases cortas; cero tecnicismos.
+> - **Visual:** Verde esmeralda/teal (confianza y sostenibilidad), ámbar (energía/rapidez), fondo claro y limpio; logo con caja + flecha/rayo de movimiento.
+
+```text
+Design a modern, responsive business landing page for "Rápido Pack" (rapidopack.es), a local neighborhood shop in Alfafar, Valencia (Spain) that combines two services under one brand: (1) a multi-carrier parcel point for sending, receiving and returning packages, and (2) a curated secondhand and opportunity goods store with an online catalog. All visible UI text MUST be in Spanish. Use a friendly, direct tone (informal "tú").
+
+### Brand Identity & Visual Style
+- Brand promise: "Rapidez y confianza a la vuelta de la esquina."
+- Brand pillars: Rapidez, Cercanía, Confianza, Segunda vida.
+- Logo: bold wordmark "Rápido Pack" with a simple parcel box icon combined with a motion arrow/lightning stroke.
+- Colors: light background (#F8FAFC), deep charcoal text (#0F172A), primary Emerald/Teal (#0D9488), energetic Amber accent (#F59E0B) for highlights and "Nuevo" badges, WhatsApp green (#25D366) for contact buttons.
+- Typography: Plus Jakarta Sans or Inter, bold headings, generous whitespace, rounded cards (16px radius), soft shadows, friendly line icons.
+
+### 1. Sticky Header
+- Left: "Rápido Pack" logo.
+- Center nav links: "Paquetería", "Punto Pack", "Tienda", "Sobre nosotros", "Contacto".
+- Right: language pill "ES | EN" and primary button "💬 Escríbenos por WhatsApp".
+
+### 2. Hero Section (split layout)
+- Left:
+  - Small amber eyebrow badge: "📍 Tu punto de confianza en Alfafar"
+  - Headline: "Envía, recibe y descubre. Todo en un mismo sitio."
+  - Subtitle: "Somos punto de paquetería multimarca y Punto Pack, y además tenemos una tienda de segunda mano con artículos revisados. Rápido, cerca y sin complicaciones."
+  - Two CTAs: primary "Ver servicios de paquetería" and secondary outline "Explorar la tienda".
+  - Small info line: "🕒 L–V 9:30–20:00 · Sáb 10:00–15:00"
+- Right: bright, welcoming illustration or photo of a modern local shop counter with neatly stacked parcels on one side and curated secondhand items (bike, retro camera, small appliance) on the other.
+
+### 3. Carrier Logo Strip ("Trabajamos con")
+- Horizontal row of clean, equally sized carrier name chips/logos in grayscale that turn colored on hover: "SEUR", "GLS", "InPost", "Amazon", "Kanguro", "DHL", plus a highlighted chip "Punto Pack".
+- Caption: "Gestionamos tus envíos, recogidas y devoluciones de las principales agencias."
+
+### 4. Parcel Services Section ("Servicios de paquetería")
+- Title: "Tu paquete, en buenas manos"
+- 4 service cards with icons:
+  1. "📦 Envíos" – "Trae tu paquete y lo enviamos con la agencia que necesites."
+  2. "📥 Recepción y recogida" – "Recibe tus pedidos aquí y recógelos cuando te venga bien, sin esperar en casa."
+  3. "↩️ Devoluciones" – "Gestiona tus devoluciones de Amazon y otras tiendas online en minutos."
+  4. "🏪 Punto Pack" – "Somos Punto Pack oficial: deja o recoge tus envíos de forma rápida y segura."
+- Below the cards, a 3-step horizontal "Cómo funciona" strip: "1. Trae tu paquete o código" → "2. Lo gestionamos al momento" → "3. Listo, con seguimiento".
+
+### 5. Brand Identity Section ("Quiénes somos")
+- Split layout: left a warm photo of the shop team/storefront in Alfafar; right text block.
+- Title: "Más que una tienda, tu punto de barrio"
+- Paragraph: "Rápido Pack nace en Alfafar con una idea sencilla: que enviar, recibir o comprar sea rápido y de confianza. 'Rápido' porque valoramos tu tiempo. 'Pack' porque cada paquete, ya sea el que envías o el artículo que te llevas, merece el mismo cuidado."
+- 4 value pills/cards with icons:
+  - "⚡ Rapidez" – "Gestiones en minutos, sin colas."
+  - "🤝 Cercanía" – "Comercio local, trato directo y personal."
+  - "✅ Confianza" – "Artículos revisados y paquetes bien custodiados."
+  - "♻️ Segunda vida" – "Damos una nueva oportunidad a productos con historia."
+
+### 6. Featured Products Section ("Lo último en nuestra tienda")
+- Title: "Recién llegados" with subtitle "Los 4 artículos más nuevos de nuestra tienda. Piezas únicas: cuando se van, no vuelven."
+- Right-aligned link: "Ver toda la tienda →"
+- 4-column product card grid (2 columns on mobile), each card:
+  - 1:1 square product photo with rounded corners.
+  - Top-left amber badge "🆕 NUEVO".
+  - Top-right condition pill (one of: "Nuevo con etiquetas", "Muy bueno", "Buen estado", "Vintage").
+  - Muted category + reference line (e.g., "Bicicletas · Ref. #1051").
+  - 2-line product title, e.g.:
+    - "Bicicleta de Montaña Orbea MX 29 Aluminio" – "185,00 €" – Muy bueno
+    - "Cámara Retro Canon AE-1 Program 50mm" – "120,00 €" – Vintage
+    - "Taladro Percutor Bosch Professional 18V" – "65,00 €" – Buen estado
+    - "Cafetera Superautomática De'Longhi Magnifica" – "149,00 €" – Nuevo con etiquetas
+  - Bold Euro price.
+  - Full-width green button "💬 Consultar por WhatsApp" and small text link "Saber más".
+
+### 7. Why Choose Us / Trust Stats
+- 4 stat blocks in a teal band: "+6 agencias de paquetería", "Punto Pack oficial", "Recogida gratis de compras en tienda", "Artículos 100% revisados".
+
+### 8. Location & Contact Section ("Visítanos")
+- Left: embedded map placeholder pinned at "Carrer del Comte Ronrée, 8, 46910 Alfafar, Valencia".
+- Right card:
+  - "📍 Carrer del Comte Ronrée, 8, 46910 Alfafar, Valencia"
+  - "🕒 Lunes a Viernes: 9:30 – 20:00 h | Sábados: 10:00 – 15:00 h | Domingos: cerrado"
+  - Buttons: "💬 Escríbenos por WhatsApp" and outline "Cómo llegar".
+
+### 9. Final CTA Banner
+- Teal gradient banner: "¿Tienes un paquete o buscas una oportunidad? Te esperamos en Alfafar."
+- Buttons: "Ver la tienda online" and "Escríbenos por WhatsApp".
+
+### 10. Footer
+- Column 1: "Rápido Pack" logo, short tagline "Rapidez y confianza a la vuelta de la esquina.", address and hours.
+- Column 2 "Servicios": Envíos, Recepción de paquetes, Devoluciones, Punto Pack, Tienda de segunda mano.
+- Column 3 "Agencias": SEUR, GLS, InPost, Amazon, Kanguro, DHL.
+- Column 4 "Legal": Aviso Legal, Política de Privacidad, Política de Cookies.
+- Bottom bar: "© 2026 Rápido Pack · rapidopack.es".
 ```
