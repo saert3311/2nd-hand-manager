@@ -11,6 +11,7 @@ from inventory.admin import admin_site
 urlpatterns = [
     path('admin/', admin_site.urls),
     path('i18n/', include('django.conf.urls.i18n')),
+    path('', include('storefront.urls')),
     path('', include('inventory.urls')),
 ]
 

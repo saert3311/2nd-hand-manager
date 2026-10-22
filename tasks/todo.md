@@ -3082,12 +3082,12 @@ uff.exe check .
 ### Task 128: Dedicated `storefront` App Scaffolding, Context Processor, URL Routing (`/` Public Catalog vs `/staff/` Staff Redirect) & Stitch `base_public.html` Layout
 **Description:** Create the `storefront` Django app (`storefront/apps.py`, `storefront/context_processors.py`, `storefront/urls.py`, `storefront/views.py`). Register `storefront.apps.StorefrontConfig` and `storefront.context_processors.storefront_config` in `config/settings.py`. Route `/` to `storefront:catalog` in `config/urls.py` and move `inventory:root` (`root_redirect_view`) to `/staff/` in `inventory/urls.py` (updating `tests/test_auth.py`). Build `storefront/templates/storefront/base_public.html` implementing the Stitch *Rápido Pack Curation System* (`Outfit` + `Hanken Grotesk` + Material Symbols Outlined, Primary Teal `#005c55`/`#0f766e`, Secondary Amber `#904d00`/`#fe932c`/`#F59E0B`, WhatsApp `#25D366`, Surface `#faf8ff`, sticky top announcement bar with Alfafar address/hours, search header, `ES | EN` language switcher, floating staff shortcut bar for logged-in staff, mobile bottom nav, and 3-column commercial footer).
 **Acceptance criteria:**
-- [ ] `storefront` app registered and `storefront_config` context processor provides `store_config` and `nav_categories` to public templates.
-- [ ] `/` resolves to `storefront:catalog` (HTTP 200 for anonymous and authenticated users) and `/staff/` resolves to `inventory:root`.
-- [ ] `base_public.html` renders Stitch typography, color tokens, sticky header, staff bar (when logged in), and Alfafar footer without loading internal `sw.js` push scripts.
+- [x] `storefront` app registered and `storefront_config` context processor provides `store_config` and `nav_categories` to public templates.
+- [x] `/` resolves to `storefront:catalog` (HTTP 200 for anonymous and authenticated users) and `/staff/` resolves to `inventory:root`.
+- [x] `base_public.html` renders Stitch typography, color tokens, sticky header, staff bar (when logged in), and Alfafar footer without loading internal `sw.js` push scripts.
 **Verification:**
-- [ ] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_auth`
-**Dependencies:** Task 126
+- [x] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_auth`
+**Dependencies:** Task 92
 **Files likely touched:**
 - `storefront/apps.py`
 - `storefront/context_processors.py`
@@ -3104,12 +3104,12 @@ uff.exe check .
 ### Task 129: Public Catalog Homepage (`/`), 12-Category Rail, Price & Condition Filter Bar, Sorting, Responsive 4-Col/2-Col Product Grid (`_product_card.html`), Alfafar Store Banner & *"Saber más"* Modal (`_how_to_buy_modal.html`)
 **Description:** Implement `catalog_view` in `storefront/views.py` and `storefront/templates/storefront/catalog.html` + partials `_product_card.html` and `_how_to_buy_modal.html` matching the Stitch desktop and mobile catalog reference designs (`desktop_catalog_homepage.html` & `mobile_catalog_homepage.html`). Include compact hero + 4 trust badges, horizontal scrollable 12-category rail, price range quick pills (`Todos`, `Menos de 20 €`, `20 € – 50 €`, `Más de 50 €`), condition pills (4 official states), results counter, sort dropdown (`newest`, `featured`, `price_asc`, `price_desc`), 4-col desktop / 2-col mobile product grid supporting 4 visual card states (`AVAILABLE`, `⭐ DESTACADO`, `⏳ RESERVADO`, and `VENDIDO` social proof), query-preserving pagination, Alfafar physical store section, and interactive *"¿Cómo comprar en Rápido Pack Alfafar? (Saber más)"* modal.
 **Acceptance criteria:**
-- [ ] `/` filters accurately by `q` (search), `category` (slug), `price` (`lt_20`, `20_50`, `gt_50`), `condition`, and `sort` (`newest`, `featured`, `price_asc`, `price_desc`).
-- [ ] `_product_card.html` renders 1:1 WebP image with lazy loading, `DESTACADO` / `RESERVADO` / `VENDIDO` badges, condition pill, category + `Ref. #<id>`, Euro price, and conversion row.
-- [ ] `_how_to_buy_modal.html` opens/closes cleanly via keyboard (`Escape`), backdrop click, and *"Saber más"* buttons.
+- [x] `/` filters accurately by `q` (search), `category` (slug), `price` (`lt_20`, `20_50`, `gt_50`), `condition`, and `sort` (`newest`, `featured`, `price_asc`, `price_desc`).
+- [x] `_product_card.html` renders 1:1 WebP image with lazy loading, `DESTACADO` / `RESERVADO` / `VENDIDO` badges, condition pill, category + `Ref. #<id>`, Euro price, and conversion row.
+- [x] `_how_to_buy_modal.html` opens/closes cleanly via keyboard (`Escape`), backdrop click, and *"Saber más"* buttons.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
-**Dependencies:** Task 128
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Task 94
 **Files likely touched:**
 - `storefront/views.py`
 - `storefront/templates/storefront/catalog.html`
@@ -3122,13 +3122,13 @@ uff.exe check .
 ### Task 130: Public Product Detail View (`/p/<slug>-<pk>/`), 60/40 Gallery & Lightbox, Verification Certificate Box, Decoupled `_purchase_box.html` & Outbound Click Tracking (`/go/whatsapp/<pk>/`, `/go/link/<link_pk>/`)
 **Description:** Implement `public_product_detail_view`, `go_whatsapp_view`, and `go_marketplace_link_view` in `storefront/views.py` along with `storefront/templates/storefront/product_detail.html` and `storefront/templates/storefront/partials/_purchase_box.html`, matching Stitch `product_detail_and_modal.html`. Support canonical slug redirect (302 to `/p/<product.slug>-<pk>/` if slug differs), atomic `views_count` increment, 60%/40% desktop layout (`lg:col-span-7` main 1:1 image with zoom modal + thumbnail strip + Rápido Pack Verification Certificate box; `lg:col-span-5` sticky `_purchase_box.html` with pre-filled WhatsApp CTA via `/go/whatsapp/<pk>/`, *"Saber más"* modal trigger, active Wallapop/Vinted/eBay tiles via `/go/link/<link_pk>/`, Alfafar pickup assurance card, and structured AI description), plus related products grid.
 **Acceptance criteria:**
-- [ ] `/p/<slug>-<pk>/` returns 200 for `public_visible()` products and 404 for draft/private/expired-sold products.
-- [ ] `_purchase_box.html` adapts to `AVAILABLE`, `RESERVADO` (disabled primary CTA), and `VENDIDO` states.
-- [ ] `/go/whatsapp/<pk>/` atomically increments `whatsapp_clicks` and redirects to `https://wa.me/<phone>?text=...` with product title, `Ref. #<id>`, price, and URL.
-- [ ] `/go/link/<link_pk>/` atomically increments `link.clicks_count` and redirects to the active marketplace listing URL.
+- [x] `/p/<slug>-<pk>/` returns 200 for `public_visible()` products and 404 for draft/private/expired-sold products.
+- [x] `_purchase_box.html` adapts to `AVAILABLE`, `RESERVADO` (disabled primary CTA), and `VENDIDO` states.
+- [x] `/go/whatsapp/<pk>/` atomically increments `whatsapp_clicks` and redirects to `https://wa.me/<phone>?text=...` with product title, `Ref. #<id>`, price, and URL.
+- [x] `/go/link/<link_pk>/` atomically increments `link.clicks_count` and redirects to the active marketplace listing URL.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
-**Dependencies:** Task 129
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Task 95
 **Files likely touched:**
 - `storefront/views.py`
 - `storefront/urls.py`
@@ -3141,13 +3141,13 @@ uff.exe check .
 ### Task 131: SEO & Legal Compliance: OpenGraph + WhatsApp Rich Previews, `Schema.org/Product` JSON-LD, `/sitemap.xml`, `/robots.txt` & RGPD/LSSI Legal Pages
 **Description:** Add OpenGraph meta tags (`og:title`, `og:description`, `og:image`, `og:url`, `og:type="product"`, `product:price:amount`, `product:price:currency="EUR"`) and `Schema.org/Product` JSON-LD (`Offer` with `InStock`/`SoldOut` and `UsedCondition`) to `product_detail.html` and `catalog.html`. Implement `/sitemap.xml` (`sitemap_view`), `/robots.txt` (`robots_view`), and standard RGPD/LSSI legal pages (`/legal/aviso-legal/`, `/legal/privacidad/`, `/legal/cookies/`) using `storefront/templates/storefront/legal_page.html` populated with `StorefrontConfiguration` data (`Carrer del Comte Ronrée, 8, 46910 Alfafar, Valencia`).
 **Acceptance criteria:**
-- [ ] Product detail page includes valid JSON-LD `Product` schema and OpenGraph tags for WhatsApp link previews.
-- [ ] `/sitemap.xml` lists `/` and all `public_visible()` product canonical URLs.
-- [ ] `/robots.txt` allows `/` and `/p/` while disallowing `/admin/`, `/dashboard/`, `/intake/`, `/products/`, `/login/`, `/go/`.
-- [ ] `/legal/aviso-legal/`, `/legal/privacidad/`, and `/legal/cookies/` return HTTP 200 with Rápido Pack legal text.
+- [x] Product detail page includes valid JSON-LD `Product` schema and OpenGraph tags for WhatsApp link previews.
+- [x] `/sitemap.xml` lists `/` and all `public_visible()` product canonical URLs.
+- [x] `/robots.txt` allows `/` and `/p/` while disallowing `/admin/`, `/dashboard/`, `/intake/`, `/products/`, `/login/`, `/go/`.
+- [x] `/legal/aviso-legal/`, `/legal/privacidad/`, and `/legal/cookies/` return HTTP 200 with Rápido Pack legal text.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
-**Dependencies:** Task 130
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Task 96
 **Files likely touched:**
 - `storefront/views.py`
 - `storefront/urls.py`

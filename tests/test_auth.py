@@ -66,6 +66,10 @@ class AuthAndPermissionsTests(TestCase):
         response = self.client.get(reverse("inventory:root"))
         self.assertRedirects(response, reverse("inventory:login"))
 
+    def test_public_catalog_root_accessible_anonymously(self):
+        response = self.client.get(reverse("storefront:catalog"))
+        self.assertEqual(response.status_code, 200)
+
     def test_root_redirect_assistant(self):
         self.client.login(username="assistant_joe", password="password123")
         response = self.client.get(reverse("inventory:root"))

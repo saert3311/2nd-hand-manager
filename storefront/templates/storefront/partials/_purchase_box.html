@@ -1,0 +1,176 @@
+{% load i18n %}
+<!-- Sticky Buy Box Card -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md lg:p-space-lg shadow-sm border border-outline-variant/25">
+  <!-- Badges Bar -->
+  <div class="flex items-center flex-wrap gap-space-xs mb-space-xs">
+    {% if product.is_featured %}
+    <span class="inline-flex items-center gap-1 bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm px-space-sm py-space-xs rounded-full">
+      <span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">star</span>
+      <span>{% trans "FEATURED" %}</span>
+    </span>
+    {% endif %}
+
+    <span class="inline-flex items-center gap-1 bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm px-space-sm py-space-xs rounded-full">
+      <span>{{ product.get_condition_display }}</span>
+    </span>
+
+    {% if product.status == 'sold' %}
+    <span class="inline-flex items-center gap-1 bg-[#475569] text-white font-label-sm text-label-sm px-space-sm py-space-xs rounded-full">
+      <span class="material-symbols-outlined text-[13px]">done</span>
+      <span>{% trans "SOLD" %}</span>
+    </span>
+    {% elif product.is_reserved %}
+    <span class="inline-flex items-center gap-1 bg-[#EA580C] text-white font-label-sm text-label-sm px-space-sm py-space-xs rounded-full">
+      <span class="material-symbols-outlined text-[13px]">schedule</span>
+      <span>{% trans "RESERVED" %}</span>
+    </span>
+    {% else %}
+    <span class="inline-flex items-center gap-1 bg-[#dcfce7] text-[#166534] font-label-sm text-label-sm px-space-sm py-space-xs rounded-full">
+      <span class="w-2 h-2 rounded-full bg-[#16a34a]"></span>
+      <span>{% trans "Available (Single item)" %}</span>
+    </span>
+    {% endif %}
+  </div>
+
+  <!-- Product Title -->
+  <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-space-xs">
+    {{ product.ai_title }}
+  </h1>
+  <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+    {{ product.public_reference }} · {% trans "Inspected at Alfafar store · Real item in stock" %}
+  </p>
+
+  <!-- Price Block -->
+  <div class="mt-space-md p-space-sm bg-surface-container-low rounded-lg flex items-baseline justify-between">
+    <div>
+      {% if product.price %}
+      <span class="font-price-display-lg text-price-display-lg {% if product.status == 'sold' %}text-outline{% else %}text-primary{% endif %}">
+        {{ product.price|floatformat:2 }} €
+      </span>
+      <span class="block font-label-sm text-label-sm text-on-surface-variant">
+        ({% trans "Unified price in-store and online" %})
+      </span>
+      {% else %}
+      <span class="font-headline-lg text-headline-lg text-primary font-bold">
+        {% trans "Ask for price" %}
+      </span>
+      {% endif %}
+    </div>
+    <div class="text-right">
+      <span class="block font-label-sm text-label-sm text-secondary font-bold">
+        {% trans "Opportunity" %}
+      </span>
+      <span class="font-body-sm text-body-sm text-on-surface-variant">
+        {% trans "Free store pickup" %}
+      </span>
+    </div>
+  </div>
+
+  <!-- Primary Conversion Actions (by Status) -->
+  <div class="mt-space-md flex flex-col gap-space-xs">
+    {% if product.status == 'sold' %}
+      <div class="w-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md py-3 px-space-md rounded-lg flex items-center justify-center gap-2 text-center">
+        <span class="material-symbols-outlined text-[20px]">check_circle</span>
+        <span>{% trans "This item has been sold" %}</span>
+      </div>
+      <a href="{% url 'storefront:catalog' %}{% if product.category %}?category={{ product.category.slug }}{% endif %}"
+         class="w-full py-2.5 px-space-md rounded-lg bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center gap-1.5 hover:bg-primary-container transition-colors">
+        <span class="material-symbols-outlined text-[18px]">manage_search</span>
+        <span>{% trans "See similar items in catalog" %}</span>
+      </a>
+    {% elif product.is_reserved %}
+      <button type="button" disabled
+              class="w-full bg-surface-container-high text-on-surface-variant/80 font-label-md text-label-md py-3 px-space-md rounded-lg flex items-center justify-center gap-2 cursor-not-allowed">
+        <span class="material-symbols-outlined text-[20px]">hourglass_top</span>
+        <span>{% trans "Temporarily reserved for in-store check (24h hold)" %}</span>
+      </button>
+      <a href="{% url 'storefront:go_whatsapp' product.pk %}"
+         target="_blank"
+         rel="noopener noreferrer"
+         class="w-full bg-[#25D366] hover:bg-[#20ba5a] text-white font-label-md text-label-md py-2.5 px-space-md rounded-lg flex items-center justify-center gap-2 text-center shadow-sm transition-colors">
+        <span class="material-symbols-outlined text-[18px]">chat</span>
+        <span>{% trans "Join waiting list via WhatsApp" %}</span>
+      </a>
+    {% else %}
+      <a href="{% url 'storefront:go_whatsapp' product.pk %}"
+         target="_blank"
+         rel="noopener noreferrer"
+         class="w-full bg-[#25D366] hover:bg-[#20ba5a] text-white font-label-md text-label-md py-3.5 px-space-md rounded-lg flex flex-col items-center justify-center text-center shadow-sm transition-transform active:scale-[0.99]">
+        <span class="flex items-center gap-2 font-headline-sm text-headline-sm">
+          <span class="material-symbols-outlined text-[20px]">chat</span>
+          <span>{% trans "Buy / Ask via WhatsApp" %}</span>
+        </span>
+        <span class="text-white/90 font-label-sm text-label-sm font-normal mt-0.5">
+          {% blocktrans with ref=product.public_reference %}Automatic message with {{ ref }} ready to send{% endblocktrans %}
+        </span>
+      </a>
+    {% endif %}
+
+    <!-- Secondary Information trigger: Modal launcher -->
+    <button type="button"
+            onclick="openHowToBuyModal()"
+            class="w-full mt-space-xs py-space-xs px-space-sm text-primary hover:text-primary-container font-label-md text-label-md flex items-center justify-center gap-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+      <span class="material-symbols-outlined text-[18px]">info</span>
+      <span>{% trans "Learn more about free pickup in Alfafar & shipping" %}</span>
+    </button>
+  </div>
+
+  <!-- External Marketplace Platforms (Wallapop / Vinted / Milanuncios) -->
+  {% if active_links and product.status != 'sold' %}
+  <div class="mt-space-lg pt-space-md border-t border-outline-variant/25">
+    <span class="font-label-sm text-label-sm text-on-surface-variant block mb-space-sm uppercase tracking-wide">
+      {% trans "Also available with protected shipping on:" %}
+    </span>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+      {% for link in active_links %}
+      <a href="{% url 'storefront:go_marketplace_link' link.pk %}"
+         target="_blank"
+         rel="noopener noreferrer"
+         class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors group border border-outline-variant/25">
+        <div class="flex items-center gap-2">
+          {% if link.platform == 'wallapop' %}
+          <span class="w-7 h-7 rounded-full bg-[#13C1AC] text-white flex items-center justify-center text-[12px] font-bold font-price-display shrink-0">W</span>
+          {% elif link.platform == 'vinted' %}
+          <span class="w-7 h-7 rounded-full bg-[#007782] text-white flex items-center justify-center text-[12px] font-bold font-price-display shrink-0">V</span>
+          {% elif link.platform == 'milanuncios' %}
+          <span class="w-7 h-7 rounded-full bg-[#16a34a] text-white flex items-center justify-center text-[12px] font-bold font-price-display shrink-0">M</span>
+          {% else %}
+          <span class="w-7 h-7 rounded-full bg-primary text-on-primary flex items-center justify-center text-[12px] font-bold font-price-display shrink-0">🔗</span>
+          {% endif %}
+          <div class="flex flex-col">
+            <span class="font-label-md text-label-md text-on-surface leading-tight">{{ link.get_platform_display }}</span>
+            <span class="font-label-sm text-label-sm text-primary">{% trans "Protected shipping" %}</span>
+          </div>
+        </div>
+        <span class="material-symbols-outlined text-outline group-hover:text-on-surface text-[18px]">open_in_new</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- In-Store Assurance & Location Card -->
+  <div class="mt-space-md p-space-md rounded-lg bg-surface-container-low space-y-space-sm">
+    <div class="flex items-start gap-space-sm">
+      <span class="material-symbols-outlined text-primary text-[20px] shrink-0 mt-0.5">storefront</span>
+      <div>
+        <span class="font-label-md text-label-md text-on-surface block">{% trans "FREE pickup at Alfafar store" %}</span>
+        <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+          {{ storefront.address }}. {% trans "Hours:" %} {{ storefront.opening_hours }}.
+        </p>
+        <p class="font-label-sm text-label-sm text-primary mt-1">
+          {% trans "In-store payments: Cash, Bizum, or Card." %}
+        </p>
+      </div>
+    </div>
+    <div class="flex items-start gap-space-sm pt-space-xs">
+      <span class="material-symbols-outlined text-primary text-[20px] shrink-0 mt-0.5">local_shipping</span>
+      <div>
+        <span class="font-label-md text-label-md text-on-surface block">{% trans "Shipping across Spain" %}</span>
+        <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+          {% trans "Managed with buyer protection and tracking via Wallapop and Vinted, or direct contact." %}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

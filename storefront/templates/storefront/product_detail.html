@@ -1,0 +1,290 @@
+{% extends "storefront/base_public.html" %}
+{% load i18n %}
+
+{% block title %}{{ product.ai_title }} ({{ product.public_reference }}) · {{ storefront.store_name }}{% endblock %}
+{% block meta_description %}{{ product.ai_description|truncatechars:160 }}{% endblock %}
+
+{% block meta_seo %}
+<link rel="canonical" href="{{ canonical_url }}">
+<meta property="og:site_name" content="{{ storefront.store_name }} ({{ storefront.domain }})">
+<meta property="og:title" content="{{ product.ai_title }} ({{ product.public_reference }})">
+<meta property="og:description" content="{{ product.ai_description|truncatechars:200 }}">
+<meta property="og:url" content="{{ canonical_url }}">
+<meta property="og:type" content="product">
+{% if primary_image_url %}
+<meta property="og:image" content="{{ primary_image_url }}">
+{% endif %}
+{% if product.price %}
+<meta property="product:price:amount" content="{{ product.price }}">
+<meta property="product:price:currency" content="EUR">
+{% endif %}
+<script type="application/ld+json">{{ schema_json_ld|safe }}</script>
+{% endblock %}
+
+{% block staff_bar_extra %}
+<a href="{% url 'inventory:product_detail' product.pk %}" class="hover:text-white underline font-bold bg-emerald-800 px-2 py-0.5 rounded">
+  ✏️ {% trans "Edit in Staging" %} ({{ product.public_reference }})
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col w-full">
+
+  <!-- Micro Breadcrumb & Catalog Return Bar -->
+  <section class="w-full bg-surface-container-low border-b border-outline-variant/25">
+    <div class="max-w-7xl mx-auto px-margin lg:px-margin-desktop py-space-sm flex items-center justify-between text-on-surface-variant font-label-md text-label-md">
+      <nav aria-label="Breadcrumb" class="flex items-center gap-space-xs overflow-x-auto whitespace-nowrap">
+        <a class="hover:text-primary transition-colors flex items-center gap-1" href="{% url 'storefront:catalog' %}">
+          <span class="material-symbols-outlined text-[16px]">home</span>
+          <span>{% trans "Catalog" %}</span>
+        </a>
+        {% if product.category %}
+        <span class="text-outline-variant font-body-sm">/</span>
+        <a class="hover:text-primary transition-colors" href="{% url 'storefront:catalog' %}?category={{ product.category.slug }}">
+          {{ product.category.get_localized_name }}
+        </a>
+        {% endif %}
+        <span class="text-outline-variant font-body-sm">/</span>
+        <span class="text-primary font-semibold">{{ product.public_reference }}</span>
+      </nav>
+      <div class="hidden sm:flex items-center gap-space-sm text-outline font-body-sm text-body-sm">
+        <span class="inline-flex items-center gap-1 text-primary font-semibold">
+          <span class="material-symbols-outlined text-[16px]">verified</span>
+          <span>{% trans "Verified in Alfafar" %}</span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Product Detail Grid (Desktop 60% / 40%) -->
+  <section class="w-full py-space-md lg:py-space-lg">
+    <div class="max-w-7xl mx-auto px-margin lg:px-margin-desktop">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg xl:gap-space-xl items-start">
+
+        <!-- LEFT COLUMN: Image Gallery, Description & Verification Certificate (7 cols) -->
+        <div class="lg:col-span-7 flex flex-col gap-space-lg">
+          {% with first_image=images.0 %}
+          <!-- Main Image Showcase -->
+          <div class="relative bg-surface-container-lowest rounded-xl p-space-sm shadow-sm border border-outline-variant/25 group">
+            <!-- Badges Overlay -->
+            <div class="absolute top-space-md left-space-md z-10 flex flex-wrap items-center gap-space-xs pointer-events-none">
+              {% if product.is_featured %}
+              <span class="inline-flex items-center gap-1 bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm px-space-sm py-space-xs rounded-full shadow-sm">
+                <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                <span>{% trans "FEATURED" %}</span>
+              </span>
+              {% endif %}
+              <span class="inline-flex items-center gap-1 bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm px-space-sm py-space-xs rounded-full shadow-sm">
+                <span class="material-symbols-outlined text-[14px]">military_tech</span>
+                <span>{{ product.get_condition_display|upper }}</span>
+              </span>
+              {% if product.status == 'published' and not product.is_reserved %}
+              <span class="inline-flex items-center gap-1 bg-surface-container-highest text-on-surface font-label-sm text-label-sm px-space-sm py-space-xs rounded-full shadow-sm">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+                <span>{% trans "SINGLE PIECE AVAILABLE" %}</span>
+              </span>
+              {% endif %}
+            </div>
+
+            {% if first_image %}
+            <!-- Zoom Button Action -->
+            <button type="button"
+                    onclick="openImageLightbox()"
+                    class="absolute top-space-md right-space-md z-10 w-10 h-10 rounded-full bg-surface-container-lowest/90 backdrop-blur-md text-on-surface flex items-center justify-center shadow-md hover:bg-primary hover:text-on-primary transition-colors"
+                    title="{% trans 'Zoom photo' %}"
+                    aria-label="{% trans 'Zoom photo' %}">
+              <span class="material-symbols-outlined text-[20px]">zoom_in</span>
+            </button>
+            {% endif %}
+
+            <!-- Product Main Frame (LCP Image with fetchpriority="high") -->
+            <div class="aspect-square w-full rounded-lg bg-surface-container-low flex items-center justify-center overflow-hidden">
+              {% if first_image %}
+              <img id="mainProductPhoto"
+                   src="{{ first_image.image.url }}"
+                   alt="{{ product.ai_title }}"
+                   fetchpriority="high"
+                   onclick="openImageLightbox()"
+                   class="w-full h-full object-cover cursor-zoom-in transition-transform duration-300 {% if product.status == 'sold' %}grayscale opacity-75{% else %}group-hover:scale-105{% endif %}">
+              {% else %}
+              <div class="w-full h-full flex items-center justify-center text-outline">
+                <span class="material-symbols-outlined text-5xl">photo_camera</span>
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- In-Photo Audit Watermark -->
+            <div class="mt-space-xs px-space-sm py-space-xs flex items-center justify-between text-outline font-label-sm text-label-sm bg-surface-container-low rounded-lg">
+              <span class="flex items-center gap-1">
+                <span class="material-symbols-outlined text-[15px] text-primary">camera</span>
+                <span>{% trans "100% real photograph of the item in stock (Alfafar Studio)" %}</span>
+              </span>
+              <span class="font-mono text-[11px] text-on-surface-variant">{{ product.public_reference }}</span>
+            </div>
+          </div>
+
+          <!-- Thumbnails Strip -->
+          {% if images|length > 1 %}
+          <div class="flex items-center gap-space-sm overflow-x-auto pb-space-xs" id="thumbnailStrip">
+            {% for img in images %}
+            <button type="button"
+                    data-photo-url="{{ img.image.url }}"
+                    onclick="updateMainPhoto(this)"
+                    aria-label="{% trans 'View photo' %} {{ forloop.counter }}"
+                    class="thumbnail-btn w-20 h-20 rounded-lg overflow-hidden shadow-sm shrink-0 p-1 transition-all {% if forloop.first %}bg-primary-fixed ring-2 ring-primary{% else %}bg-surface-container-lowest hover:bg-surface-container-high{% endif %}">
+              <img src="{{ img.image.url }}"
+                   alt="{{ product.ai_title }} - {{ forloop.counter }}"
+                   loading="lazy"
+                   class="w-full h-full object-cover rounded-DEFAULT">
+            </button>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% endwith %}
+
+          <!-- Structured AI Product Description -->
+          <div class="bg-surface-container-lowest rounded-xl p-space-md lg:p-space-lg shadow-sm border border-outline-variant/25 space-y-space-sm">
+            <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-primary text-[20px]">description</span>
+              <span>{% trans "Product Description & Details" %}</span>
+            </h2>
+            <div class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed whitespace-pre-line">{{ product.ai_description }}</div>
+            <div class="pt-space-xs border-t border-outline-variant/20">
+              <button type="button"
+                      onclick="openHowToBuyModal()"
+                      class="w-full py-space-xs text-center text-primary font-label-sm text-label-sm hover:underline flex items-center justify-center gap-1">
+                <span>{% trans "View store pickup, 24h hold & shipping guide" %}</span>
+                <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Technical Verification Certificate Box -->
+          <div class="bg-surface-container-lowest rounded-xl p-space-md lg:p-space-lg shadow-sm border border-outline-variant/25">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-space-sm mb-space-md gap-space-xs border-b border-outline-variant/20">
+              <div class="flex items-center gap-space-sm">
+                <div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary shrink-0">
+                  <span class="material-symbols-outlined text-[24px]">verified_user</span>
+                </div>
+                <div>
+                  <h2 class="font-headline-sm text-headline-sm text-on-surface">{% trans "Rápido Pack Verification Guarantee" %}</h2>
+                  <p class="font-body-sm text-body-sm text-on-surface-variant">{% trans "Visual and functional inspection completed at our Alfafar (Valencia) store" %}</p>
+                </div>
+              </div>
+              <span class="inline-flex items-center gap-1 text-primary font-label-sm text-label-sm bg-surface-container px-space-sm py-space-xs rounded-full self-start sm:self-auto">
+                <span class="material-symbols-outlined text-[14px]">task_alt</span>
+                <span>{% trans "Inspected in Store" %}</span>
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm">
+              <div class="flex items-start gap-space-xs bg-surface-container-low p-space-sm rounded-lg">
+                <span class="material-symbols-outlined text-primary text-[20px] shrink-0">check_circle</span>
+                <div>
+                  <span class="font-label-md text-label-md text-on-surface block">{% trans "Real Studio Photographs" %}</span>
+                  <p class="font-body-sm text-body-sm text-on-surface-variant">{% trans "Every photo corresponds to the exact unit available in our Alfafar store." %}</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-space-xs bg-surface-container-low p-space-sm rounded-lg">
+                <span class="material-symbols-outlined text-primary text-[20px] shrink-0">check_circle</span>
+                <div>
+                  <span class="font-label-md text-label-md text-on-surface block">{% trans "24h Free In-Store Hold" %}</span>
+                  <p class="font-body-sm text-body-sm text-on-surface-variant">{% trans "Reserve via WhatsApp and inspect it in person in Alfafar before paying." %}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Sticky Purchase Box & Trust Modules (5 cols) -->
+        <aside class="lg:col-span-5 flex flex-col gap-space-md lg:sticky lg:top-28">
+          {% include "storefront/partials/_purchase_box.html" %}
+        </aside>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Related Items Section -->
+  {% if related_products %}
+  <section class="w-full bg-surface-container-low py-space-xl border-t border-outline-variant/25">
+    <div class="max-w-7xl mx-auto px-margin lg:px-margin-desktop space-y-space-md">
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="font-label-sm text-label-sm text-primary uppercase font-bold tracking-wider">{% trans "Keep exploring" %}</span>
+          <h2 class="font-headline-lg text-headline-lg text-on-surface font-bold">{% trans "Related Opportunities" %}</h2>
+        </div>
+        <a href="{% url 'storefront:catalog' %}{% if product.category %}?category={{ product.category.slug }}{% endif %}"
+           class="font-label-md text-label-md text-primary hover:underline flex items-center gap-1">
+          <span>{% trans "View full catalog" %}</span>
+          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </a>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+        {% for rel_product in related_products %}
+          {% include "storefront/partials/_product_card.html" with product=rel_product is_lcp=False %}
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+
+<!-- Image Zoom Lightbox Modal (Native <dialog closedby="any"> + fetchpriority="low" loading="lazy") -->
+{% with first_image=images.0 %}
+{% if first_image %}
+<dialog id="image-lightbox-dialog"
+        closedby="any"
+        aria-labelledby="lightbox-title"
+        class="w-full max-w-4xl bg-surface-container-lowest rounded-xl shadow-2xl p-space-sm overflow-hidden">
+  <div class="flex items-center justify-between px-space-sm py-space-xs border-b border-outline-variant/25">
+    <h3 id="lightbox-title" class="font-label-md text-label-md text-on-surface truncate">{{ product.ai_title }} ({{ product.public_reference }})</h3>
+    <button type="button"
+            onclick="document.getElementById('image-lightbox-dialog').close()"
+            class="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-highest text-on-surface flex items-center justify-center"
+            aria-label="{% trans 'Close zoom' %}">
+      <span class="material-symbols-outlined text-[18px]">close</span>
+    </button>
+  </div>
+  <div class="p-space-sm bg-surface-container-low flex items-center justify-center max-h-[80vh]">
+    <img id="lightboxPhoto"
+         src="{{ first_image.image.url }}"
+         alt="{{ product.ai_title }}"
+         loading="lazy"
+         fetchpriority="low"
+         class="max-h-[75vh] w-auto object-contain rounded-lg">
+  </div>
+</dialog>
+{% endif %}
+{% endwith %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function updateMainPhoto(buttonEl) {
+    const newUrl = buttonEl.getAttribute('data-photo-url');
+    const mainPhoto = document.getElementById('mainProductPhoto');
+    const lightboxPhoto = document.getElementById('lightboxPhoto');
+    if (mainPhoto && newUrl) {
+      mainPhoto.src = newUrl;
+    }
+    if (lightboxPhoto && newUrl) {
+      lightboxPhoto.src = newUrl;
+    }
+    document.querySelectorAll('#thumbnailStrip .thumbnail-btn').forEach((btn) => {
+      btn.classList.remove('bg-primary-fixed', 'ring-2', 'ring-primary');
+      btn.classList.add('bg-surface-container-lowest');
+    });
+    buttonEl.classList.remove('bg-surface-container-lowest');
+    buttonEl.classList.add('bg-primary-fixed', 'ring-2', 'ring-primary');
+  }
+
+  function openImageLightbox() {
+    const dialog = document.getElementById('image-lightbox-dialog');
+    if (dialog && typeof dialog.showModal === 'function') {
+      dialog.showModal();
+    }
+  }
+</script>
+{% endblock %}

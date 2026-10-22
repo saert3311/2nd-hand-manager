@@ -1,0 +1,145 @@
+{% load i18n %}
+{% with first_image=product.images.all.0 %}
+<article class="bg-surface-container-lowest rounded-xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden group relative border border-outline-variant/25">
+  <!-- Image Box (1:1 Ratio) -->
+  <a href="{{ product.get_public_url }}" class="relative aspect-square w-full bg-surface-container-low overflow-hidden block">
+    {% if first_image %}
+      <img src="{{ first_image.image.url }}"
+           alt="{{ product.ai_title }}"
+           {% if is_lcp %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
+           class="w-full h-full object-cover {% if product.status == 'sold' %}grayscale opacity-70{% else %}group-hover:scale-105 transition-transform duration-500{% endif %}">
+    {% else %}
+      <div class="w-full h-full flex items-center justify-center text-outline">
+        <span class="material-symbols-outlined text-4xl">photo_camera</span>
+      </div>
+    {% endif %}
+
+    <!-- Top-Left Status Badge (VENDIDO / RESERVADO / DESTACADO) -->
+    <div class="absolute top-space-xs left-space-xs flex flex-col gap-1">
+      {% if product.status == 'sold' %}
+        <span class="inline-flex items-center gap-1 bg-[#475569] text-surface-container-lowest font-label-sm text-label-sm px-2 py-0.5 rounded shadow-sm font-bold">
+          <span class="material-symbols-outlined text-[13px]">done</span>
+          <span>{% trans "SOLD" %}</span>
+        </span>
+      {% elif product.is_reserved %}
+        <span class="inline-flex items-center gap-1 bg-[#EA580C] text-surface-container-lowest font-label-sm text-label-sm px-2 py-0.5 rounded shadow-sm font-bold">
+          <span class="material-symbols-outlined text-[13px]">schedule</span>
+          <span>{% trans "RESERVED" %}</span>
+        </span>
+      {% elif product.is_featured %}
+        <span class="inline-flex items-center gap-1 bg-[#F59E0B] text-surface-container-lowest font-label-sm text-label-sm px-2 py-0.5 rounded shadow-sm font-bold">
+          <span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">star</span>
+          <span>{% trans "FEATURED" %}</span>
+        </span>
+      {% endif %}
+    </div>
+
+    <!-- Top-Right Condition Badge -->
+    <div class="absolute top-space-xs right-space-xs">
+      <span class="bg-surface-container-lowest/90 backdrop-blur-sm {% if product.status == 'sold' %}text-outline{% elif product.condition == 'vintage' %}text-secondary{% else %}text-primary{% endif %} font-label-sm text-label-sm px-2 py-0.5 rounded shadow-sm font-semibold">
+        {{ product.get_condition_display }}
+      </span>
+    </div>
+
+    {% if product.status == 'sold' %}
+    <!-- Center Sold Stamp Overlay -->
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <span class="px-3 py-1 bg-on-surface/80 text-surface-container-lowest font-label-sm text-label-sm uppercase tracking-widest font-bold rounded rotate-[-12deg] shadow">
+        {% trans "Delivered in Alfafar" %}
+      </span>
+    </div>
+    {% endif %}
+  </a>
+
+  <!-- Card Body -->
+  <div class="p-space-md flex-1 flex flex-col justify-between {% if product.status == 'sold' %}opacity-80{% endif %}">
+    <div>
+      <div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm mb-1">
+        <span class="truncate max-w-[65%]">
+          {% if product.category %}
+            {{ product.category.get_localized_name }}
+          {% else %}
+            {% trans "Opportunity" %}
+          {% endif %}
+        </span>
+        <span class="shrink-0">{{ product.public_reference }}</span>
+      </div>
+      <h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold line-clamp-2 group-hover:text-primary transition-colors">
+        <a href="{{ product.get_public_url }}">{{ product.ai_title }}</a>
+      </h3>
+    </div>
+
+    <!-- Price & Availability Row -->
+    <div class="my-space-sm pt-space-xs">
+      <div class="flex items-baseline gap-space-xs">
+        {% if product.price %}
+          <span class="font-price-display text-price-display {% if product.status == 'sold' %}text-outline{% elif product.is_reserved %}text-on-surface-variant{% else %}text-primary{% endif %} font-bold">
+            {{ product.price|floatformat:2 }} €
+          </span>
+        {% else %}
+          <span class="font-headline-sm text-headline-sm text-primary font-bold">
+            {% trans "Ask for price" %}
+          </span>
+        {% endif %}
+      </div>
+
+      {% if product.status == 'sold' %}
+        <div class="text-[11px] text-outline flex items-center gap-1 mt-0.5 font-medium">
+          <span class="material-symbols-outlined text-[14px] text-primary">check_circle</span>
+          <span>{% trans "Recently sold at Alfafar store" %}</span>
+        </div>
+      {% elif product.is_reserved %}
+        <div class="text-[11px] text-[#EA580C] flex items-center gap-1 font-semibold mt-0.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#EA580C] animate-pulse"></span>
+          <span>{% trans "Active 24h hold for in-store check" %}</span>
+        </div>
+      {% else %}
+        <div class="text-[11px] text-primary flex items-center gap-1 font-semibold mt-0.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+          <span>{% trans "In store Alfafar · Available today" %}</span>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Conversion Row -->
+    <div class="space-y-space-xs">
+      {% if product.status == 'sold' %}
+        <a href="{% url 'storefront:catalog' %}{% if product.category %}?category={{ product.category.slug }}{% endif %}"
+           class="w-full bg-surface-container text-primary hover:bg-surface-container-high font-label-md text-label-md py-2 px-space-sm rounded-lg flex items-center justify-center gap-1 font-semibold transition-colors">
+          <span class="material-symbols-outlined text-[16px]">manage_search</span>
+          <span>{% trans "See similar items" %}</span>
+        </a>
+      {% elif product.is_reserved %}
+        <button type="button" disabled
+                class="w-full bg-surface-container-high text-on-surface-variant/70 font-label-md text-label-md py-2 px-space-sm rounded-lg flex items-center justify-center gap-1 font-medium cursor-not-allowed">
+          <span class="material-symbols-outlined text-[16px]">hourglass_top</span>
+          <span>{% trans "Temporarily reserved (In Store)" %}</span>
+        </button>
+        <div class="flex items-center justify-center pt-1">
+          <a href="{% url 'storefront:go_whatsapp' product.pk %}"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="text-[11px] text-primary hover:underline font-semibold flex items-center gap-1">
+            <span>{% trans "Interested? Ask about waiting list" %}</span>
+            <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+          </a>
+        </div>
+      {% else %}
+        <div class="flex items-center gap-space-xs">
+          <a href="{% url 'storefront:go_whatsapp' product.pk %}"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="flex-1 bg-[#25D366] text-white font-label-md text-label-md py-2 px-space-sm rounded-lg flex items-center justify-center gap-1 font-semibold hover:bg-[#20ba5a] transition-colors shadow-sm">
+            <span class="material-symbols-outlined text-[16px]">chat</span>
+            <span>WhatsApp</span>
+          </a>
+          <a href="{{ product.get_public_url }}"
+             class="px-space-sm py-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:text-primary hover:bg-surface-container font-label-md text-label-md transition-colors text-center font-semibold">
+            {% trans "Details" %}
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</article>
+{% endwith %}
