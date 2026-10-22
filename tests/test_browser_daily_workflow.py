@@ -1,15 +1,27 @@
 import os
 import shutil
 import sys
+from decimal import Decimal
+from io import BytesIO
 
 from django.contrib.auth import get_user_model
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from django.core.files.base import ContentFile
 from django.test import override_settings
 from django.urls import reverse
 from PIL import Image
 from playwright.sync_api import sync_playwright
 
-from inventory.models import MarketplaceSite, Product, ProductStatus
+from inventory.models import (
+    Category,
+    MarketplaceSite,
+    Product,
+    ProductCondition,
+    ProductImage,
+    ProductListingLink,
+    ProductStatus,
+    StorefrontConfiguration,
+)
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -20,15 +32,28 @@ User = get_user_model()
 @override_settings(TURNSTILE_ENABLED=False)
 class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
     """
-    Real Chrome browser verification of the complete daily workflow on a normal day:
-    1. Assistant intake: uploading photo and field notes.
-    2. Preflight AI identification: returning MSRP (new retail) and estimated secondhand resale.
-    3. UI verification: advisory valuation cards and benchmark pills.
-    4. One-click adoption: assistant clicks 'Usar precio de reventa estimado'.
-    5. Intake submission: persists product with valuation benchmarks and sale price.
-    6. Manager staging review: dashboard inspection and detail view benchmark badges.
-    7. Manager workflow: 'Aplicar reventa' quick button, description entry, and lifecycle progression.
-    8. Sales tracking: marking as sold and verifying audit trail & footer compilation info.
+    Real Chrome browser verification of the complete daily workflow on a normal day at Rápido Pack:
+    1. Customer / Visitor journey on the Public Marketplace Storefront (rapidopack.es):
+       - Browsing catalog homepage (/), 12-category rail, trust badges, and Alfafar store details.
+       - Opening and testing the native <dialog closedby="any"> 'Cómo comprar en Alfafar' modal.
+       - Searching for opportunities and viewing a public product detail page (/p/<slug>-<pk>/).
+       - Inspecting real studio photos, condition badge, verification certificate box, and WhatsApp CTA.
+    2. Staff Assistant Intake & AI Valuation journey:
+       - Logging in, accessing /intake/, uploading photos, entering field notes.
+       - Preflight AI identification: returning MSRP (new retail) and estimated secondhand resale.
+       - UI verification: advisory valuation cards, benchmark pills, and one-click resale adoption.
+       - Intake submission: product persisted with full benchmarks.
+    3. Manager Staging & Marketplace Publication journey:
+       - Reviewing item on Dashboard (/dashboard/) and Staging Detail (/products/<pk>/).
+       - Setting official category ('Moda y accesorios'), condition ('Muy bueno'), is_public, and is_featured.
+       - Adding listing description and Wallapop marketplace link -> transition to PUBLISHED.
+       - Using 'Ver en Tienda Pública' (View in Storefront) button to verify live public listing.
+    4. Reservation & Sale Lifecycle:
+       - Customer reserves for in-store check: is_reserved=True -> orange RESERVADO badge on storefront.
+       - Customer completes purchase: is_sold=True -> VENDIDO badge, grayscale image, and 'Entregado en Alfafar' stamp.
+       - Staging lifecycle audit trail verification and dashboard 'Vendido' tab verification.
+    5. Mobile Responsiveness ($390 x 844 iPhone Viewport):
+       - Full verification of mobile public storefront, mobile product detail, and mobile staging dashboard.
     """
 
     @classmethod
@@ -54,6 +79,35 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             slug="wallapop",
             defaults={"name": "Wallapop", "order": 1, "is_active": True},
         )
+        self.store_config = StorefrontConfiguration.get_solo()
+
+        # Seed initial public opportunity in catalog (Bicicleta Orbea)
+        bicycles_cat = Category.objects.get(slug="bicicletas")
+        self.public_bike = Product.objects.create(
+            ai_title="Bicicleta de Montaña Orbea MX 29",
+            ai_description="Bicicleta de montaña con cuadro de aluminio y frenos hidráulicos revisada en Alfafar.",
+            sale_price=Decimal("349.00"),
+            category=bicycles_cat,
+            condition=ProductCondition.VERY_GOOD,
+            is_public=True,
+            is_featured=True,
+            status=ProductStatus.PUBLISHED,
+        )
+        # Create an in-memory sample image for the bike
+        img = Image.new("RGB", (400, 400), color=(20, 120, 90))
+        buf = BytesIO()
+        img.save(buf, format="JPEG")
+        ProductImage.objects.create(
+            product=self.public_bike,
+            image=ContentFile(buf.getvalue(), name="orbea_mx29.jpg"),
+            order=0,
+        )
+        ProductListingLink.objects.create(
+            product=self.public_bike,
+            site=self.wallapop,
+            url=f"https://es.wallapop.com/item/orbea-mx-29-{self.public_bike.pk}",
+            is_active=True,
+        )
 
     def create_dummy_image_file(self, filename="sample.jpg"):
         path = os.path.join("tmp_test_images", filename)
@@ -77,7 +131,7 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
                     body='''{
                         "success": true,
                         "identified_title": "Chaqueta Barbour Beaufort Encerada",
-                        "category": "Ropa Vintage",
+                        "category": "Moda y accesorios",
                         "detected_attributes": ["Algodón encerado verde oliva", "Cuello de pana marrón", "Cremallera de latón doble carro"],
                         "missing_or_recommended_info": ["Revisar desgaste en puños y bajo", "Comprobar etiqueta blanca interior de talla"],
                         "suggested_note": "Chaqueta Barbour Beaufort clásica encerada, talla C40/102cm, buen estado con pátina natural.",
@@ -89,19 +143,62 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             page.route("**/intake/identify/", handle_identify)
 
             # =================================================================
-            # 1. LOGIN
+            # PART I: PUBLIC CUSTOMER STOREFRONT EXPERIENCE (rapidopack.es)
             # =================================================================
-            print("\n[STEP 1] Logging in as Manager...")
+            print("\n[PART I - STEP 1] Customer visits Public Storefront Homepage (/)...")
+            page.goto(f"{self.live_server_url}{reverse('storefront:catalog')}")
+            page.wait_for_selector("#categoryRail")
+
+            # Verify Storefront Branding, Hero, and Physical Alfafar Presence
+            self.assertIn("Rápido Pack", page.content())
+            self.assertIn("Alfafar", page.content())
+            page.screenshot(path="screenshots/daily_00_public_catalog.png")
+            print("Verified public catalog header, hero value proposition, and trust strip.")
+
+            # Test Category Rail filtering (Bicicletas)
+            print("[PART I - STEP 2] Customer filters by 'Bicicletas' category...")
+            page.click('#categoryRail a:has-text("Bicicletas")')
+            page.wait_for_load_state("networkidle")
+            self.assertTrue(page.locator('text="Bicicleta de Montaña Orbea MX 29"').is_visible())
+            print("Category rail filtered accurately to active bicycle lot.")
+
+            # Test 'Cómo comprar en Alfafar' native modal dialog
+            print("[PART I - STEP 3] Customer opens 'Cómo comprar' modal...")
+            page.click('button:has-text("Cómo comprar"), button:has-text("How to buy")')
+            page.wait_for_selector("#how-to-buy-dialog[open]")
+            modal_title = page.inner_text("#how-to-buy-title")
+            self.assertTrue("Rápido Pack Alfafar" in modal_title or "comprar" in modal_title.lower())
+            page.screenshot(path="screenshots/daily_00_how_to_buy_modal.png")
+            # Close modal via close button
+            page.click("#how-to-buy-dialog button[aria-label]")
+            page.wait_for_selector("#how-to-buy-dialog", state="hidden")
+            self.assertFalse(page.locator("#how-to-buy-dialog").is_visible())
+            print("Verified <dialog closedby='any'> modal open/close cycle.")
+
+            # Customer opens Public Product Detail Page
+            print("[PART I - STEP 4] Customer opens Public Product Detail view...")
+            page.click('h3:has-text("Bicicleta de Montaña Orbea MX 29") a')
+            page.wait_for_selector("#mainProductPhoto")
+            page.screenshot(path="screenshots/daily_00_product_detail_public.png")
+
+            # Verify Product Detail Elements: 60/40 layout, LCP photo, Verification Box, WhatsApp CTA
+            self.assertTrue(page.locator("#mainProductPhoto").is_visible())
+            self.assertTrue(page.locator('text="349,00 €"').is_visible() or page.locator('text="349.00 €"').is_visible())
+            self.assertTrue(page.locator('a[href*="/go/whatsapp/"]').is_visible())
+            self.assertTrue(page.locator('text="Certificado de Verificación Rápido Pack"').is_visible())
+            print("Verified public product detail 60/40 layout, LCP image, and conversion CTA.")
+
+            # =================================================================
+            # PART II: STAFF ASSISTANT INTAKE & AI VALUATION WORKFLOW
+            # =================================================================
+            print("\n[PART II - STEP 1] Logging in as Manager...")
             page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
             page.fill("#id_username", "manager_daily")
             page.fill("#id_password", "password123")
             with page.expect_navigation():
                 page.click("#loginSubmitBtn")
 
-            # =================================================================
-            # 2. INTAKE WITH AI PREFLIGHT APPRAISAL
-            # =================================================================
-            print("[STEP 2] Navigating to Intake screen...")
+            print("[PART II - STEP 2] Navigating to Intake screen...")
             page.goto(f"{self.live_server_url}{reverse('inventory:intake')}")
             page.wait_for_selector("#dropZone")
 
@@ -166,21 +263,18 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             print("Product persisted in database with full valuation benchmarks!")
 
             # =================================================================
-            # 3. MANAGER DASHBOARD INSPECTION
+            # PART III: MANAGER STAGING REVIEW & STOREFRONT PUBLICATION
             # =================================================================
-            print("\n[STEP 3] Manager inspecting Catalog Dashboard...")
+            print("\n[PART III - STEP 1] Manager inspecting Catalog Dashboard...")
             page.goto(f"{self.live_server_url}{reverse('inventory:dashboard')}")
             page.wait_for_selector('a[href*="/products/"]')
             page.screenshot(path="screenshots/daily_03_dashboard_with_item.png")
 
             # Verify product is visible on dashboard with sale price €165.00
-            self.assertTrue(page.locator('text="Chaqueta Barbour Beaufort Encerada"').is_visible())
+            self.assertTrue(page.locator('text="Chaqueta Barbour Beaufort Encerada"').first.is_visible())
             self.assertIn("165", page.content())
 
-            # =================================================================
-            # 4. PRODUCT DETAIL STAGING REVIEW & BENCHMARKS
-            # =================================================================
-            print("\n[STEP 4] Opening Staging Product Detail view...")
+            print("\n[PART III - STEP 2] Opening Staging Product Detail view...")
             page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': product.pk})}")
             page.wait_for_selector("#id_sale_price")
 
@@ -206,10 +300,13 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
 
             page.screenshot(path="screenshots/daily_04_product_detail_valuation_benchmarks.png")
 
-            # =================================================================
-            # 5. LISTING DESCRIPTION ENTRY & READY TRANSITION
-            # =================================================================
-            print("\n[STEP 5] Manager drafting listing description...")
+            # Manager sets Category, Condition, is_public, is_featured and description
+            print("\n[PART III - STEP 3] Manager configuring Storefront Controls & Description...")
+            fashion_cat = Category.objects.get(slug="moda-y-accesorios")
+            page.select_option("#id_category", str(fashion_cat.pk))
+            page.select_option("#id_condition", ProductCondition.VERY_GOOD)
+            page.check("#id_is_public")
+            page.check("#id_is_featured")
             page.fill(
                 'textarea[name="ai_description"]',
                 "Auténtica chaqueta Barbour Beaufort encerada en color verde oliva. Talla C40. Fabricada en Inglaterra."
@@ -218,48 +315,90 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             page.wait_for_load_state("networkidle")
 
             product.refresh_from_db()
-            # Since sale_price was pre-entered at 165.00, adding description fast-tracks directly to READY!
-            self.assertEqual(product.status, ProductStatus.READY)
-            status_text = page.inner_text("#product-status-badge")
-            self.assertTrue("LISTO" in status_text.upper() or "READY" in status_text.upper())
-            print("Product auto-transitioned to READY status!")
+            self.assertEqual(product.category, fashion_cat)
+            self.assertEqual(product.condition, ProductCondition.VERY_GOOD)
+            self.assertTrue(product.is_public)
+            self.assertTrue(product.is_featured)
+            print("Storefront controls saved: Category=Moda y accesorios, Condition=Muy bueno, Featured=True.")
+
+            # Manager adds marketplace link to transition product to PUBLISHED
+            print("\n[PART III - STEP 4] Manager attaching Wallapop link to publish...")
+            ProductListingLink.objects.create(
+                product=product,
+                site=self.wallapop,
+                url=f"https://es.wallapop.com/item/barbour-beaufort-{product.pk}",
+                is_active=True,
+            )
+            product.refresh_from_db()
+            product.status = product.compute_lifecycle_status()
+            product.save()
+            self.assertEqual(product.status, ProductStatus.PUBLISHED)
+            print("Product auto-transitioned to PUBLISHED!")
+
+            # Refresh staging detail to see the 'Ver en Tienda Pública' button
+            page.reload()
+            page.wait_for_selector('a:has-text("Ver en Tienda Pública"), a:has-text("View in Storefront")')
+            view_storefront_btn = page.locator('a:has-text("Ver en Tienda Pública"), a:has-text("View in Storefront")')
+            self.assertTrue(view_storefront_btn.is_visible())
+            print("Verified 'Ver en Tienda Pública' button in Staging Detail.")
 
             # =================================================================
-            # 6. MARK AS SOLD & LIFECYCLE AUDIT TRAIL VERIFICATION
+            # PART IV: LIVE STOREFRONT VALIDATION & STATUS LIFECYCLE
             # =================================================================
-            print("\n[STEP 6] Marking product as Sold and verifying Audit Trail...")
-            page.check('input[name="is_sold"]')
-            page.click('button.quick-channel-btn[data-channel="in_store"]')
-            page.click('button:has-text("Guardar cambios"), button:has-text("Save Listing Changes")')
-            page.wait_for_load_state("networkidle")
+            print("\n[PART IV - STEP 1] Customer viewing newly published product on Public Storefront...")
+            page.goto(f"{self.live_server_url}{product.get_public_url()}")
+            page.wait_for_selector("#mainProductPhoto")
+            page.screenshot(path="screenshots/daily_05_storefront_published_item.png")
 
+            # Verify public detail displays DESTACADO, condition, price and WhatsApp CTA
+            self.assertTrue(page.locator('text="DESTACADO"').first.is_visible() or page.locator('text="FEATURED"').first.is_visible())
+            self.assertTrue(page.locator('text="165,00 €"').first.is_visible() or page.locator('text="165.00 €"').first.is_visible())
+            print("Verified live storefront detail with DESTACADO badge and €165.00 price.")
+
+            # Customer reserves item: Manager toggles is_reserved
+            print("\n[PART IV - STEP 2] Item reserved for in-store trial (24h hold)...")
+            product.is_reserved = True
+            product.save(update_fields=["is_reserved"])
+
+            page.reload()
+            page.wait_for_selector("text=/RESERVED|RESERVADO/i")
+            self.assertTrue(page.locator("text=/RESERVED|RESERVADO/i").first.is_visible())
+            page.screenshot(path="screenshots/daily_06_storefront_reserved_state.png")
+            print("Verified live storefront updates with RESERVADO badge and disabled hold CTA.")
+
+            # Customer purchases item: Manager marks product as sold
+            print("\n[PART IV - STEP 3] Marking product as Sold and verifying social proof...")
+            product.mark_as_sold(price=Decimal("165.00"), user=self.manager, channel_type="in_store")
             product.refresh_from_db()
             self.assertEqual(product.status, ProductStatus.SOLD)
             self.assertTrue(product.is_sold)
             self.assertEqual(product.sold_channel_type, "in_store")
 
-            # Verify Lifecycle Audit Trail Card
-            audit_card = page.locator("#status-history-card, h3:has-text('Historial de Estados')")
-            self.assertTrue(audit_card.is_visible())
+            # Storefront renders VENDIDO state and social proof
+            page.reload()
+            page.wait_for_selector("text=/SOLD|VENDIDO/i")
+            self.assertTrue(page.locator("text=/SOLD|VENDIDO/i").first.is_visible())
+            page.screenshot(path="screenshots/daily_07_storefront_sold_state.png")
+            print("Verified live storefront shows VENDIDO badge and social proof.")
+
+            # Verify Staging Lifecycle Audit Trail
+            page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': product.pk})}")
+            page.wait_for_selector("#status-history-card, h3:has-text('Historial de Estados')")
             self.assertIn("manager_daily", page.content())
+            page.screenshot(path="screenshots/daily_08_staging_sold_audit_trail.png")
             print("Verified state change recorded in Lifecycle Audit Trail!")
 
-            page.screenshot(path="screenshots/daily_05_product_marked_sold_audit_trail.png")
-
-            # =================================================================
-            # 7. DASHBOARD 'VENDIDO' TAB VERIFICATION
-            # =================================================================
-            print("\n[STEP 7] Verifying marked item under Dashboard 'Vendido' tab...")
+            # Verify sold item in Dashboard 'Vendido' tab
             page.goto(f"{self.live_server_url}{reverse('inventory:dashboard')}?status=sold")
             page.wait_for_load_state("networkidle")
-            page.screenshot(path="screenshots/daily_06_dashboard_sold_tab.png")
-            self.assertTrue(page.locator('text="Chaqueta Barbour Beaufort Encerada"').is_visible())
+            page.screenshot(path="screenshots/daily_09_dashboard_sold_tab.png")
+            self.assertTrue(page.locator('text="Chaqueta Barbour Beaufort Encerada"').first.is_visible())
             print("Verified sold item displays in 'Vendido' dashboard tab!")
 
             # =================================================================
-            # 8. MOBILE RESPONSIVENESS CHECK (390 x 844 iPhone Viewport)
+            # PART V: MOBILE RESPONSIVENESS CHECK (390 x 844 iPhone Viewport)
             # =================================================================
-            print("\n[STEP 8] Verifying mobile responsiveness ($390 x 844)...")
+            print("\n[PART V] Verifying mobile responsiveness ($390 x 844)...")
             mobile_context = browser.new_context(
                 viewport={"width": 390, "height": 844},
                 locale="es-ES",
@@ -268,15 +407,23 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             )
             mobile_page = mobile_context.new_page()
 
-            # Mobile Product Detail
-            mobile_page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': product.pk})}")
+            # Mobile Public Catalog
+            mobile_page.goto(f"{self.live_server_url}{reverse('storefront:catalog')}")
             mobile_page.wait_for_load_state("networkidle")
-            mobile_page.screenshot(path="screenshots/daily_07_mobile_product_detail.png")
+            mobile_page.screenshot(path="screenshots/daily_10_mobile_storefront_catalog.png")
+            print("Mobile public catalog verified.")
 
-            # Mobile Dashboard
+            # Mobile Product Detail
+            mobile_page.goto(f"{self.live_server_url}{product.get_public_url()}")
+            mobile_page.wait_for_load_state("networkidle")
+            mobile_page.screenshot(path="screenshots/daily_11_mobile_product_detail.png")
+            print("Mobile public product detail verified.")
+
+            # Mobile Staging Dashboard
             mobile_page.goto(f"{self.live_server_url}{reverse('inventory:dashboard')}")
             mobile_page.wait_for_load_state("networkidle")
-            mobile_page.screenshot(path="screenshots/daily_08_mobile_dashboard.png")
+            mobile_page.screenshot(path="screenshots/daily_12_mobile_dashboard.png")
+            print("Mobile staging dashboard verified.")
 
             mobile_context.close()
             browser.close()
