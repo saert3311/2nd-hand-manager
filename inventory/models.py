@@ -1,4 +1,5 @@
 from contextvars import ContextVar
+from datetime import timedelta
 from decimal import Decimal
 
 from django.conf import settings
@@ -6,8 +7,10 @@ from django.core.validators import MaxValueValidator, MinValueValidator, URLVali
 from django.db import models
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
+from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 from django.utils.text import slugify
+from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
 
 from .middleware import get_current_user
@@ -57,6 +60,187 @@ class BackupTriggerType(models.TextChoices):
     MANUAL = "manual", _("Manual / Admin")
 
 
+class ProductCondition(models.TextChoices):
+    NEW_WITH_TAGS = "new_with_tags", _("New with tags")
+    VERY_GOOD = "very_good", _("Very good")
+    GOOD = "good", _("Good condition")
+    VINTAGE = "vintage", _("Vintage")
+
+
+OFFICIAL_CATEGORIES = (
+    ("motor-y-accesorios", "Motor y accesorios", "Motors & Accessories", "two_wheeler", 1),
+    ("moda-y-accesorios", "Moda y accesorios", "Fashion & Accessories", "apparel", 2),
+    ("tecnologia-y-electronica", "Tecnología y electrónica", "Tech & Electronics", "devices", 3),
+    ("deporte-y-ocio", "Deporte y ocio", "Sports & Leisure", "fitness_center", 4),
+    ("bicicletas", "Bicicletas", "Bicycles", "pedal_bike", 5),
+    ("hogar-y-jardin", "Hogar y jardín", "Home & Garden", "chair", 6),
+    ("electrodomesticos", "Electrodomésticos", "Appliances", "kitchen", 7),
+    ("cine-libros-y-musica", "Cine, libros y música", "Movies, Books & Music", "menu_book", 8),
+    ("ninos-y-bebes", "Niños y bebés", "Kids & Babies", "child_friendly", 9),
+    ("coleccionismo", "Coleccionismo", "Collectibles", "auto_awesome", 10),
+    ("construccion-y-reformas", "Construcción y reformas", "Construction & DIY", "construction", 11),
+    ("industria-y-agricultura", "Industria y agricultura", "Industry & Agriculture", "agriculture", 12),
+)
+
+
+class Category(models.Model):
+    name = models.CharField(
+        max_length=100,
+        verbose_name=_("Category Name (ES)"),
+        help_text=_("Primary category display name in Spanish"),
+    )
+    name_en = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        verbose_name=_("Category Name (EN)"),
+        help_text=_("Category display name in English"),
+    )
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        verbose_name=_("Slug"),
+        help_text=_("URL-safe category identifier"),
+    )
+    icon = models.CharField(
+        max_length=60,
+        blank=True,
+        default="category",
+        verbose_name=_("Material Icon"),
+        help_text=_("Material Symbols Outlined icon name (e.g. pedal_bike, devices)"),
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("Display Order"),
+        help_text=_("Sorting order in storefront navigation"),
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        verbose_name=_("Is Active"),
+        help_text=_("Whether this category is visible in the public storefront"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["order", "name"]
+        verbose_name = _("Category")
+        verbose_name_plural = _("Categories")
+
+    def __str__(self):
+        return self.localized_name
+
+    @property
+    def localized_name(self) -> str:
+        lang = (get_language() or "es").lower()
+        if lang.startswith("en") and self.name_en:
+            return self.name_en
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug and self.name:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+
+class StorefrontConfiguration(models.Model):
+    store_name = models.CharField(
+        max_length=120,
+        default="Rápido Pack",
+        verbose_name=_("Store Name"),
+    )
+    store_domain = models.CharField(
+        max_length=120,
+        default="rapidopack.es",
+        verbose_name=_("Store Domain"),
+    )
+    tagline_es = models.CharField(
+        max_length=255,
+        default="Tu tienda de segunda mano y oportunidad en Alfafar (Valencia) y online",
+        verbose_name=_("Tagline (ES)"),
+    )
+    tagline_en = models.CharField(
+        max_length=255,
+        default="Your curated secondhand & opportunity store in Alfafar (Valencia) and online",
+        verbose_name=_("Tagline (EN)"),
+    )
+    whatsapp_number = models.CharField(
+        max_length=30,
+        default="34600000000",
+        verbose_name=_("WhatsApp Phone Number"),
+        help_text=_("International format with country code, e.g. 34600000000"),
+    )
+    store_address = models.CharField(
+        max_length=255,
+        default="Carrer del Comte Ronrée, 8, 46910 Alfafar, Valencia",
+        verbose_name=_("Physical Store Address"),
+    )
+    maps_url = models.URLField(
+        max_length=500,
+        default="https://maps.google.com/?q=Carrer+del+Comte+Ronr%C3%A9e+8+Alfafar",
+        validators=[HTTP_URL_VALIDATOR],
+        verbose_name=_("Google Maps URL"),
+    )
+    opening_hours_es = models.CharField(
+        max_length=255,
+        default="Lunes a Viernes de 9:30 a 20:00 h · Sábados de 10:00 a 15:00 h",
+        verbose_name=_("Opening Hours (ES)"),
+    )
+    opening_hours_en = models.CharField(
+        max_length=255,
+        default="Mon–Fri 9:30–20:00 · Sat 10:00–15:00",
+        verbose_name=_("Opening Hours (EN)"),
+    )
+    contact_email = models.EmailField(
+        default="info@rapidopack.es",
+        verbose_name=_("Contact Email"),
+    )
+    company_nif = models.CharField(
+        max_length=40,
+        blank=True,
+        default="",
+        verbose_name=_("Company NIF / CIF"),
+        help_text=_("Tax identification number for legal notice (optional)"),
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Storefront Configuration")
+        verbose_name_plural = _("Storefront Configuration")
+
+    def __str__(self):
+        return f"{self.store_name} ({self.store_domain})"
+
+    @property
+    def clean_whatsapp_number(self) -> str:
+        digits = "".join(ch for ch in (self.whatsapp_number or "") if ch.isdigit())
+        return digits or "34600000000"
+
+    @property
+    def localized_tagline(self) -> str:
+        lang = (get_language() or "es").lower()
+        if lang.startswith("en") and self.tagline_en:
+            return self.tagline_en
+        return self.tagline_es
+
+    @property
+    def localized_opening_hours(self) -> str:
+        lang = (get_language() or "es").lower()
+        if lang.startswith("en") and self.opening_hours_en:
+            return self.opening_hours_en
+        return self.opening_hours_es
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_solo(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
 _deleting_product_pks = ContextVar("deleting_product_pks", default=frozenset())
 
 
@@ -84,6 +268,17 @@ class ProductQuerySet(models.QuerySet):
             return super().delete()
         finally:
             _deleting_product_pks.reset(token)
+
+    def public_visible(self):
+        seven_days_ago = timezone.now() - timedelta(days=7)
+        return (
+            self.filter(is_public=True, sale_price__gt=Decimal("0.00"))
+            .exclude(ai_title="")
+            .filter(
+                models.Q(status__in=[ProductStatus.READY, ProductStatus.PUBLISHED], is_sold=False)
+                | models.Q(status=ProductStatus.SOLD, is_sold=True, sold_at__gte=seven_days_ago)
+            )
+        )
 
 
 class Product(models.Model):
@@ -139,6 +334,58 @@ class Product(models.Model):
         ],
         verbose_name=_("Estimated Resale Price (€)"),
         help_text=_("Estimated secondhand market resale value"),
+    )
+    category = models.ForeignKey(
+        "Category",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="products",
+        verbose_name=_("Category"),
+        help_text=_("Marketplace product category"),
+    )
+    condition = models.CharField(
+        max_length=30,
+        choices=ProductCondition.choices,
+        blank=True,
+        default="",
+        db_index=True,
+        verbose_name=_("Condition"),
+        help_text=_("Physical condition state of the item"),
+    )
+    is_public = models.BooleanField(
+        default=True,
+        db_index=True,
+        verbose_name=_("Visible in Public Storefront"),
+        help_text=_("Whether this item is visible in the public storefront when Ready/Published"),
+    )
+    is_featured = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name=_("Featured (⭐)"),
+        help_text=_("Highlight this item with a Featured badge and priority placement"),
+    )
+    is_reserved = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name=_("Reserved (⏳)"),
+        help_text=_("Temporarily hold this item as Reserved in the public storefront"),
+    )
+    reserved_until = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Reserved Until"),
+        help_text=_("Optional expiration timestamp for reservation hold"),
+    )
+    views_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("Public Views"),
+        help_text=_("Number of public detail page views"),
+    )
+    whatsapp_clicks = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("WhatsApp Clicks"),
+        help_text=_("Number of outbound WhatsApp inquiry clicks"),
     )
     status = models.CharField(
         max_length=20,
@@ -271,6 +518,31 @@ class Product(models.Model):
     @property
     def primary_image(self):
         return self.images.order_by("order", "id").first()
+
+    @property
+    def public_reference(self) -> str:
+        if not self.pk:
+            return "Ref. #0000"
+        return f"Ref. #{self.pk:04d}"
+
+    @property
+    def slug(self) -> str:
+        base = slugify((self.ai_title or "").strip())[:80]
+        return base or f"producto-{self.pk or 0}"
+
+    def get_public_url(self) -> str:
+        if not self.pk:
+            return "/"
+        try:
+            return reverse("storefront:product_detail", kwargs={"slug": self.slug, "pk": self.pk})
+        except NoReverseMatch:
+            return f"/p/{self.slug}-{self.pk}/"
+
+    @property
+    def total_marketplace_clicks(self) -> int:
+        if not self.pk:
+            return 0
+        return sum(link.clicks_count for link in self.listing_links.all())
 
     def compute_lifecycle_status(self) -> str:
         """
@@ -526,6 +798,8 @@ class Product(models.Model):
         self.is_sold = True
         self.status = ProductStatus.SOLD
         self.sold_at = timezone.now()
+        self.is_reserved = False
+        self.reserved_until = None
         if price is not None:
             self.sale_price = price
         if channel_type is not None:
@@ -559,6 +833,8 @@ class Product(models.Model):
                     "status",
                     "sold_at",
                     "sale_price",
+                    "is_reserved",
+                    "reserved_until",
                     "sold_channel_type",
                     "sold_marketplace",
                     "sold_channel_notes",
@@ -822,6 +1098,11 @@ class ProductListingLink(models.Model):
         default=True,
         verbose_name=_("Is Active Listing"),
         help_text=_("Whether this listing is currently live"),
+    )
+    clicks_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("Outbound Clicks"),
+        help_text=_("Number of public clicks to this marketplace listing"),
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))

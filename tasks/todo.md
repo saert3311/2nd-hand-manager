@@ -3041,14 +3041,14 @@ uff.exe check .
 ### Task 126: Domain Models (`Category`, `StorefrontConfiguration`, `ProductCondition`), `Product` & `ProductListingLink` Marketplace Fields, `ProductQuerySet.public_visible()`, Data Seed Migration (`0021_marketplace_storefront.py`), SQLite WAL Mode & Django Admin Registration
 **Description:** Add `ProductCondition` choices (4 official states: `new_with_tags`, `very_good`, `good`, `vintage`), `Category` model (`name`, `name_en`, `slug`, `icon`, `order`, `is_active`), and `StorefrontConfiguration` singleton model (`store_name`, `store_domain`, `tagline_es`, `tagline_en`, `whatsapp_number`, `store_address`, `maps_url`, `opening_hours_es`, `opening_hours_en`, `contact_email`, `company_nif`) to `inventory/models.py`. Extend `Product` with `category`, `condition`, `is_public`, `is_featured`, `is_reserved`, `reserved_until`, `views_count`, `whatsapp_clicks`, plus helper properties `public_reference`, `slug`, and `get_public_url()`. Extend `ProductListingLink` with `clicks_count`. Implement `ProductQuerySet.public_visible()` with the 7-day `SOLD` social proof retention rule. Create migration `0021_marketplace_storefront.py` seeding the 12 official Rápido Pack categories and default `StorefrontConfiguration`. Enable SQLite `journal_mode=WAL` in `config/settings.py` (and `LANGUAGE_CODE = 'es'`) and register `CategoryAdmin`, `StorefrontConfigurationAdmin`, and updated `ProductAdmin` fields in `inventory/admin.py`.
 **Acceptance criteria:**
-- [ ] `Category` model pre-seeded with the 12 official Rápido Pack categories and Material Symbols icons.
-- [ ] `StorefrontConfiguration` singleton model created with `get_solo()` helper and registered in Django Admin.
-- [ ] `Product` has `category`, `condition`, `is_public`, `is_featured`, `is_reserved`, `reserved_until`, `views_count`, `whatsapp_clicks`.
-- [ ] `ProductQuerySet.public_visible()` returns `READY`/`PUBLISHED` active items (`is_public=True`, `sale_price > 0`, non-empty `ai_title`) and `SOLD` items sold within the last 7 days.
-- [ ] Migration applies cleanly and `python manage.py check` succeeds.
+- [x] `Category` model pre-seeded with the 12 official Rápido Pack categories and Material Symbols icons.
+- [x] `StorefrontConfiguration` singleton model created with `get_solo()` helper and registered in Django Admin.
+- [x] `Product` has `category`, `condition`, `is_public`, `is_featured`, `is_reserved`, `reserved_until`, `views_count`, `whatsapp_clicks`.
+- [x] `ProductQuerySet.public_visible()` returns `READY`/`PUBLISHED` active items (`is_public=True`, `sale_price > 0`, non-empty `ai_title`) and `SOLD` items sold within the last 7 days.
+- [x] Migration applies cleanly and `python manage.py check` succeeds.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py migrate`
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py migrate`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
 **Dependencies:** None
 **Files likely touched:**
 - `inventory/models.py`

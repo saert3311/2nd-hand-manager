@@ -18,6 +18,7 @@ from .models import (
     AIPromptConfiguration,
     BackupStatus,
     BackupTriggerType,
+    Category,
     DatabaseBackupLog,
     IntakeBatchSession,
     MarketplaceSite,
@@ -29,6 +30,7 @@ from .models import (
     ProductStatusLog,
     PushSubscription,
     SaleChannelType,
+    StorefrontConfiguration,
 )
 from .permissions import ROLE_ASSISTANT, ROLE_MANAGER, is_assistant, is_manager
 from .services.backup_service import backup_database
@@ -291,8 +293,8 @@ class ProductImageInline(admin.TabularInline):
 class ProductListingLinkInline(admin.TabularInline):
     model = ProductListingLink
     extra = 1
-    fields = ("site", "url", "is_active", "created_at", "updated_at")
-    readonly_fields = ("created_at", "updated_at")
+    fields = ("site", "url", "is_active", "clicks_count", "created_at", "updated_at")
+    readonly_fields = ("clicks_count", "created_at", "updated_at")
 
 
 def format_status_badge(status_val):
@@ -356,24 +358,54 @@ class ProductAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "display_title",
+        "category",
+        "condition",
         "status",
         "needs_platform_sync_col",
         "sale_price_display",
         "estimated_resale_price_display",
         "estimated_retail_price_display",
+        "is_public",
+        "is_featured",
+        "is_reserved",
         "is_sold",
         "sale_channel_col",
         "is_deleted_col",
+        "views_count",
+        "whatsapp_clicks",
         "images_count",
         "created_by",
         "created_at",
     )
-    list_filter = ("status", "needs_platform_sync", "is_deleted", "is_sold", "sold_channel_type", "sold_marketplace", "created_at")
+    list_filter = (
+        "status",
+        "category",
+        "condition",
+        "needs_platform_sync",
+        "is_deleted",
+        "is_public",
+        "is_featured",
+        "is_reserved",
+        "is_sold",
+        "sold_channel_type",
+        "sold_marketplace",
+        "created_at",
+    )
     search_fields = ("ai_title", "raw_note", "ai_description")
     inlines = [ProductImageInline, ProductListingLinkInline, ProductClarificationInline, ProductStatusLogInline]
-    readonly_fields = ("created_at", "updated_at", "sold_at", "last_platform_synced_at", "batch_session", "deleted_at", "deleted_by")
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+        "sold_at",
+        "last_platform_synced_at",
+        "batch_session",
+        "deleted_at",
+        "deleted_by",
+        "views_count",
+        "whatsapp_clicks",
+    )
     actions = ["soft_delete_selected", "restore_selected"]
-    list_select_related = ("created_by", "batch_session", "sold_marketplace")
+    list_select_related = ("category", "created_by", "batch_session", "sold_marketplace")
 
     def has_module_permission(self, request):
         return bool(request.user and request.user.is_active and is_manager(request.user))
@@ -594,10 +626,10 @@ class MarketplaceSiteAdmin(admin.ModelAdmin):
 
 @admin.register(ProductListingLink, site=admin_site)
 class ProductListingLinkAdmin(admin.ModelAdmin):
-    list_display = ("id", "product", "site", "url", "is_active", "created_at")
+    list_display = ("id", "product", "site", "url", "is_active", "clicks_count", "created_at")
     list_filter = ("site", "is_active", "created_at")
     search_fields = ("product__ai_title", "product__raw_note", "url")
-    readonly_fields = ("created_at", "updated_at")
+    readonly_fields = ("clicks_count", "created_at", "updated_at")
 
     def has_module_permission(self, request):
         return bool(request.user and request.user.is_active and is_manager(request.user))
@@ -612,6 +644,66 @@ class ProductListingLinkAdmin(admin.ModelAdmin):
         return bool(request.user and request.user.is_active and is_manager(request.user))
 
     def has_delete_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+
+@admin.register(Category, site=admin_site)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ("name", "name_en", "slug", "icon", "order", "is_active", "products_count")
+    list_editable = ("order", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("name", "name_en", "slug")
+    prepopulated_fields = {"slug": ("name",)}
+    readonly_fields = ("created_at", "updated_at")
+
+    def products_count(self, obj):
+        return obj.products.count()
+
+    products_count.short_description = _("Products")
+
+    def has_module_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_change_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_add_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_delete_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+
+@admin.register(StorefrontConfiguration, site=admin_site)
+class StorefrontConfigurationAdmin(admin.ModelAdmin):
+    list_display = (
+        "store_name",
+        "store_domain",
+        "whatsapp_number",
+        "store_address",
+        "contact_email",
+        "updated_at",
+    )
+    readonly_fields = ("updated_at",)
+
+    def has_add_permission(self, request):
+        if StorefrontConfiguration.objects.exists():
+            return False
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_module_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_change_permission(self, request, obj=None):
         return bool(request.user and request.user.is_active and is_manager(request.user))
 
 

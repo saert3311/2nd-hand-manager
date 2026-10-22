@@ -103,10 +103,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = 'en'
+IS_TESTING = 'test' in sys.argv or os.getenv('TESTING') == 'True'
+LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', 'en' if IS_TESTING else 'es')
 LANGUAGES = [
-    ('en', _('English')),
     ('es', _('Spanish')),
+    ('en', _('English')),
 ]
 
 TIME_ZONE = 'UTC'
@@ -139,8 +140,6 @@ if not OCI_STORAGE_ENDPOINT_URL and OCI_STORAGE_NAMESPACE and OCI_STORAGE_REGION
     OCI_STORAGE_ENDPOINT_URL = (
         f"https://{OCI_STORAGE_NAMESPACE}.compat.objectstorage.{OCI_STORAGE_REGION}.oraclecloud.com"
     )
-
-IS_TESTING = 'test' in sys.argv or os.getenv('TESTING') == 'True'
 
 if IS_TESTING:
     STORAGES = {
