@@ -145,7 +145,18 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             # =================================================================
             # PART I: PUBLIC CUSTOMER STOREFRONT EXPERIENCE (rapidopack.es)
             # =================================================================
-            print("\n[PART I - STEP 1] Customer visits Public Storefront Homepage (/)...")
+            print("\n[PART I - STEP 0] Customer visits Corporate Landing Page (/)...")
+            page.goto(f"{self.live_server_url}{reverse('storefront:home')}")
+            page.wait_for_selector("#paqueteria")
+            self.assertIn("Rápido Pack", page.content())
+            self.assertIn("SEUR", page.content())
+            self.assertIn("GLS", page.content())
+            self.assertIn("InPost", page.content())
+            self.assertTrue(page.locator('text="Bicicleta de Montaña Orbea MX 29"').first.is_visible())
+            page.screenshot(path="screenshots/daily_00_corporate_landing_page.png")
+            print("Verified corporate landing page (/), parcel carrier strip, and 'Recién llegados' section.")
+
+            print("\n[PART I - STEP 1] Customer navigates to Storefront Catalog (/tienda/)...")
             page.goto(f"{self.live_server_url}{reverse('storefront:catalog')}")
             page.wait_for_selector("#categoryRail")
 
@@ -183,9 +194,9 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
 
             # Verify Product Detail Elements: 60/40 layout, LCP photo, Verification Box, WhatsApp CTA
             self.assertTrue(page.locator("#mainProductPhoto").is_visible())
-            self.assertTrue(page.locator('text="349,00 €"').is_visible() or page.locator('text="349.00 €"').is_visible())
-            self.assertTrue(page.locator('a[href*="/go/whatsapp/"]').is_visible())
-            self.assertTrue(page.locator('text="Certificado de Verificación Rápido Pack"').is_visible())
+            self.assertTrue(page.locator('text="349,00 €"').first.is_visible() or page.locator('text="349.00 €"').first.is_visible())
+            self.assertTrue(page.locator(f'a[href*="/go/whatsapp/{self.public_bike.pk}/"]').first.is_visible())
+            self.assertTrue(page.locator('text="Certificado de Verificación Rápido Pack"').first.is_visible())
             print("Verified public product detail 60/40 layout, LCP image, and conversion CTA.")
 
             # =================================================================

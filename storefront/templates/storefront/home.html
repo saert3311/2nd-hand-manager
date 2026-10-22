@@ -1,0 +1,573 @@
+{% extends "storefront/base_public.html" %}
+{% load i18n static %}
+
+{% block title %}{{ storefront.store_name }} · {% trans "Paquetería Multimarca, Punto Pack y Tienda de Segunda Mano en Alfafar" %}{% endblock %}
+{% block meta_description %}{% trans "Somos punto de paquetería multimarca (SEUR, GLS, InPost, Amazon, Kanguro, DHL), Punto Pack oficial y tienda de segunda mano con artículos revisados en Alfafar, Valencia." %}{% endblock %}
+
+{% block meta_seo %}
+<link rel="canonical" href="{{ canonical_url }}">
+<meta property="og:site_name" content="{{ storefront.store_name }} ({{ storefront.domain }})">
+<meta property="og:title" content="{{ storefront.store_name }} · {% trans 'Envía, recibe y descubre en Alfafar' %}">
+<meta property="og:description" content="{% trans 'Punto de paquetería multimarca, Punto Pack oficial y tienda de segunda mano con artículos revisados en Alfafar (Valencia).' %}">
+<meta property="og:url" content="{{ canonical_url }}">
+<meta property="og:type" content="website">
+<script type="application/ld+json">{{ local_business_json_ld|safe }}</script>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col w-full">
+
+  <!-- 1. HERO SECTION (Split Layout) -->
+  <section class="w-full max-w-7xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-space-lg lg:py-space-xl">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg lg:gap-space-xl items-center">
+      <!-- Left Content -->
+      <div class="lg:col-span-7 flex flex-col gap-space-md">
+        <div class="inline-flex items-center gap-space-xs self-start bg-secondary-fixed text-on-secondary-fixed px-3 py-1 rounded-full font-label-md text-label-md shadow-sm">
+          <span>📍</span>
+          <span>{% trans "Tu punto de confianza en Alfafar" %}</span>
+        </div>
+        <h1 class="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl tracking-tight text-on-surface font-extrabold max-w-xl">
+          {% trans "Envía, recibe y descubre. Todo en un mismo sitio." %}
+        </h1>
+        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl leading-relaxed">
+          {% trans "Somos punto de paquetería multimarca y Punto Pack, y además tenemos una tienda de segunda mano con artículos revisados. Rápido, cerca y sin complicaciones." %}
+        </p>
+        <div class="flex flex-wrap items-center gap-space-sm pt-space-xs">
+          <a class="inline-flex items-center justify-center gap-space-xs bg-primary-container text-on-primary font-label-md text-label-md px-6 py-3.5 rounded-xl shadow-md hover:bg-primary transition-all duration-200"
+             href="#paqueteria">
+            <span class="material-symbols-outlined text-[20px]">local_shipping</span>
+            <span>{% trans "Ver servicios de paquetería" %}</span>
+          </a>
+          <a class="inline-flex items-center justify-center gap-space-xs bg-surface-container-lowest text-on-surface font-label-md text-label-md px-6 py-3.5 rounded-xl shadow-sm border border-outline-variant/40 hover:bg-surface-container hover:shadow transition-all duration-200"
+             href="{% url 'storefront:catalog' %}">
+            <span class="material-symbols-outlined text-[20px] text-primary">storefront</span>
+            <span>{% trans "Explorar la tienda" %}</span>
+          </a>
+        </div>
+        <div class="flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md pt-space-xs">
+          <span class="material-symbols-outlined text-primary text-[20px]">schedule</span>
+          <span>{{ storefront.opening_hours }}</span>
+        </div>
+      </div>
+
+      <!-- Right Visual (LCP Hero Image with fetchpriority="high") -->
+      <div class="lg:col-span-5 relative">
+        <div class="relative overflow-hidden rounded-xl shadow-xl bg-surface-container">
+          <img src="{% static 'img/storefront/hero_counter.webp' %}"
+               alt="{% trans 'Mostrador de paquetería y tienda Rápido Pack en Alfafar' %}"
+               width="1200"
+               height="896"
+               fetchpriority="high"
+               class="w-full h-[360px] sm:h-[440px] object-cover">
+          <div class="absolute inset-0 bg-gradient-to-t from-on-surface/40 via-transparent to-transparent"></div>
+          <!-- Floating Badge Top Left -->
+          <div class="absolute top-4 left-4 bg-surface-container-lowest/95 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-lg flex items-center gap-2">
+            <span class="text-secondary text-lg">📦</span>
+            <div class="flex flex-col">
+              <span class="font-headline-sm text-[13px] leading-tight text-on-surface font-bold">{% trans "+6 agencias" %}</span>
+              <span class="font-label-sm text-label-sm text-on-surface-variant">{% trans "Punto Pack oficial" %}</span>
+            </div>
+          </div>
+          <!-- Floating Badge Bottom Right -->
+          <div class="absolute bottom-4 right-4 bg-surface-container-lowest/95 backdrop-blur-md px-3.5 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
+            <span class="text-secondary-container text-lg">⭐</span>
+            <div class="flex flex-col">
+              <span class="font-headline-sm text-[13px] leading-tight text-on-surface font-bold">{% trans "100% Verificados" %}</span>
+              <span class="font-label-sm text-label-sm text-primary font-medium">{% trans "Revisión en tienda" %}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. CARRIER STRIP ("Trabajamos con") -->
+  <section class="w-full bg-surface-container-low py-space-lg">
+    <div class="max-w-7xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop flex flex-col gap-space-md">
+      <p class="text-center font-label-md text-label-md text-on-surface-variant font-medium uppercase tracking-wider">
+        {% trans "Gestionamos tus envíos, recogidas y devoluciones de las principales agencias" %}
+      </p>
+      <div class="flex flex-wrap items-center justify-center gap-space-sm sm:gap-space-md">
+        <!-- SEUR -->
+        <div class="bg-surface-container-lowest px-5 py-2.5 rounded-xl shadow-sm text-on-surface-variant hover:text-on-surface hover:shadow transition-all duration-200 font-headline-sm text-headline-sm font-bold flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-red-600"></span>
+          <span>SEUR</span>
+        </div>
+        <!-- GLS -->
+        <div class="bg-surface-container-lowest px-5 py-2.5 rounded-xl shadow-sm text-on-surface-variant hover:text-on-surface hover:shadow transition-all duration-200 font-headline-sm text-headline-sm font-bold flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-blue-700"></span>
+          <span>GLS</span>
+        </div>
+        <!-- InPost -->
+        <div class="bg-surface-container-lowest px-5 py-2.5 rounded-xl shadow-sm text-on-surface-variant hover:text-on-surface hover:shadow transition-all duration-200 font-headline-sm text-headline-sm font-bold flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+          <span>InPost</span>
+        </div>
+        <!-- Amazon -->
+        <div class="bg-surface-container-lowest px-5 py-2.5 rounded-xl shadow-sm text-on-surface-variant hover:text-on-surface hover:shadow transition-all duration-200 font-headline-sm text-headline-sm font-bold flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
+          <span>Amazon</span>
+        </div>
+        <!-- Kanguro -->
+        <div class="bg-surface-container-lowest px-5 py-2.5 rounded-xl shadow-sm text-on-surface-variant hover:text-on-surface hover:shadow transition-all duration-200 font-headline-sm text-headline-sm font-bold flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span>
+          <span>Kanguro</span>
+        </div>
+        <!-- DHL -->
+        <div class="bg-surface-container-lowest px-5 py-2.5 rounded-xl shadow-sm text-on-surface-variant hover:text-on-surface hover:shadow transition-all duration-200 font-headline-sm text-headline-sm font-bold flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-yellow-600"></span>
+          <span>DHL</span>
+        </div>
+        <!-- Punto Pack Official Pill -->
+        <a href="#punto-pack" class="bg-primary-container text-on-primary px-5 py-2.5 rounded-xl shadow font-headline-sm text-headline-sm font-bold flex items-center gap-2 hover:bg-primary transition-colors">
+          <span class="material-symbols-outlined text-[18px]">verified</span>
+          <span>{% trans "Punto Pack" %}</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. PARCEL SERVICES SECTION ("Servicios de paquetería") -->
+  <section class="w-full max-w-7xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-space-xl scroll-mt-24" id="paqueteria">
+    <div class="flex flex-col items-center text-center gap-space-xs mb-space-lg">
+      <span class="bg-surface-container text-primary font-label-md text-label-md px-3 py-1 rounded-full uppercase tracking-wider font-semibold">
+        {% trans "Servicios de paquetería" %}
+      </span>
+      <h2 class="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl text-on-surface font-bold tracking-tight">
+        {% trans "Tu paquete, en buenas manos" %}
+      </h2>
+      <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+        {% trans "Centraliza todas tus operaciones de paquetería en un solo punto cerca de casa, con horario amplio y atención directa." %}
+      </p>
+    </div>
+
+    <!-- 4 Service Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md">
+      <!-- 1. Envíos -->
+      <div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group border border-outline-variant/20">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-surface-container-low text-primary flex items-center justify-center mb-space-sm group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
+            <span class="material-symbols-outlined text-[28px]">outbox</span>
+          </div>
+          <h3 class="font-headline-md text-headline-md text-on-surface font-bold mb-space-xs">
+            📦 {% trans "Envíos" %}
+          </h3>
+          <p class="font-body-md text-body-md text-on-surface-variant">
+            {% trans "Trae tu paquete y lo enviamos con la agencia que necesites." %}
+          </p>
+        </div>
+        <a href="#contacto" class="mt-space-md pt-space-xs text-primary font-label-md text-label-md flex items-center gap-1 hover:underline">
+          <span>{% trans "Consultar envío" %}</span>
+          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </a>
+      </div>
+
+      <!-- 2. Recepción y recogida -->
+      <div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group border border-outline-variant/20">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-surface-container-low text-primary flex items-center justify-center mb-space-sm group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
+            <span class="material-symbols-outlined text-[28px]">move_to_inbox</span>
+          </div>
+          <h3 class="font-headline-md text-headline-md text-on-surface font-bold mb-space-xs">
+            📥 {% trans "Recepción y recogida" %}
+          </h3>
+          <p class="font-body-md text-body-md text-on-surface-variant">
+            {% trans "Recibe tus pedidos aquí y recógelos cuando te venga bien, sin esperar en casa." %}
+          </p>
+        </div>
+        <a href="#contacto" class="mt-space-md pt-space-xs text-primary font-label-md text-label-md flex items-center gap-1 hover:underline">
+          <span>{% trans "Ver horarios de recogida" %}</span>
+          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </a>
+      </div>
+
+      <!-- 3. Devoluciones -->
+      <div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group border border-outline-variant/20">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-surface-container-low text-primary flex items-center justify-center mb-space-sm group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
+            <span class="material-symbols-outlined text-[28px]">replay</span>
+          </div>
+          <h3 class="font-headline-md text-headline-md text-on-surface font-bold mb-space-xs">
+            ↩️ {% trans "Devoluciones" %}
+          </h3>
+          <p class="font-body-md text-body-md text-on-surface-variant">
+            {% trans "Gestiona tus devoluciones de Amazon y otras tiendas online en minutos." %}
+          </p>
+        </div>
+        <a href="#contacto" class="mt-space-md pt-space-xs text-primary font-label-md text-label-md flex items-center gap-1 hover:underline">
+          <span>{% trans "Devolver paquete" %}</span>
+          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </a>
+      </div>
+
+      <!-- 4. Punto Pack -->
+      <div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group border border-outline-variant/20 scroll-mt-28" id="punto-pack">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-surface-container-low text-primary flex items-center justify-center mb-space-sm group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
+            <span class="material-symbols-outlined text-[28px]">store</span>
+          </div>
+          <h3 class="font-headline-md text-headline-md text-on-surface font-bold mb-space-xs">
+            🏪 {% trans "Punto Pack" %}
+          </h3>
+          <p class="font-body-md text-body-md text-on-surface-variant">
+            {% trans "Somos Punto Pack oficial: deja o recoge tus envíos de forma rápida y segura." %}
+          </p>
+        </div>
+        <div class="mt-space-md pt-space-xs text-primary font-label-md text-label-md flex items-center gap-1">
+          <span>{% trans "Punto Pack oficial" %}</span>
+          <span class="material-symbols-outlined text-[16px]">verified</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3-Step Horizontal "Cómo funciona" Strip -->
+    <div class="mt-space-lg bg-surface-container-low rounded-xl p-space-md sm:p-space-lg">
+      <div class="text-center mb-space-md">
+        <span class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-bold">{% trans "Cómo funciona" %}</span>
+        <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Tus envíos y recogidas en 3 pasos:" %}</h3>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-space-md items-center">
+        <!-- Step 1 -->
+        <div class="bg-surface-container-lowest rounded-xl p-space-md flex items-center gap-space-sm shadow-sm">
+          <div class="w-10 h-10 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center font-bold shrink-0">1</div>
+          <div>
+            <div class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Trae tu paquete o código" %}</div>
+            <div class="font-body-sm text-body-sm text-on-surface-variant">{% trans "Etiqueta digital, QR o paquete listo." %}</div>
+          </div>
+        </div>
+        <!-- Step 2 -->
+        <div class="bg-surface-container-lowest rounded-xl p-space-md flex items-center gap-space-sm shadow-sm">
+          <div class="w-10 h-10 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-bold shrink-0">2</div>
+          <div>
+            <div class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Lo gestionamos al momento" %}</div>
+            <div class="font-body-sm text-body-sm text-on-surface-variant">{% trans "Escaneo inmediato en mostrador." %}</div>
+          </div>
+        </div>
+        <!-- Step 3 -->
+        <div class="bg-surface-container-lowest rounded-xl p-space-md flex items-center gap-space-sm shadow-sm">
+          <div class="w-10 h-10 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center font-bold shrink-0">3</div>
+          <div>
+            <div class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Listo, con seguimiento" %}</div>
+            <div class="font-body-sm text-body-sm text-on-surface-variant">{% trans "Recibo al instante con código de seguimiento." %}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. BRAND IDENTITY SECTION ("Quiénes somos") -->
+  <section class="w-full bg-surface-container-low py-space-xl scroll-mt-24" id="quienes-somos">
+    <div id="sobre-nosotros" class="max-w-7xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-center">
+        <!-- Photo Left (Below the fold -> loading="lazy" alone per optimize-image-priority) -->
+        <div class="lg:col-span-5">
+          <div class="relative rounded-xl overflow-hidden shadow-lg bg-surface-container">
+            <img src="{% static 'img/storefront/shop_team.webp' %}"
+                 alt="{% trans 'Equipo y fachada de Rápido Pack en Alfafar, Valencia' %}"
+                 width="1200"
+                 height="896"
+                 loading="lazy"
+                 class="w-full h-[380px] sm:h-[440px] object-cover">
+            <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-on-surface/75 via-transparent to-transparent p-space-md">
+              <span class="text-on-primary font-headline-sm text-headline-sm font-bold block">{% trans "Comercio de barrio, servicio profesional" %}</span>
+              <span class="text-primary-fixed font-body-sm text-body-sm">{{ storefront.address }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content Right -->
+        <div class="lg:col-span-7 flex flex-col gap-space-md">
+          <div>
+            <span class="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">{% trans "Quiénes somos" %}</span>
+            <h2 class="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl text-on-surface font-bold mt-1">
+              {% trans "Más que una tienda, tu punto de barrio" %}
+            </h2>
+          </div>
+          <p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+            {% trans "Rápido Pack nace en Alfafar con una idea sencilla: que enviar, recibir o comprar sea rápido y de confianza. 'Rápido' porque valoramos tu tiempo. 'Pack' porque cada paquete, ya sea el que envías o el artículo que te llevas, merece el mismo cuidado." %}
+          </p>
+
+          <!-- 2x2 Value Pills Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm pt-space-xs">
+            <!-- Rapidez -->
+            <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-start gap-space-sm">
+              <div class="w-10 h-10 rounded-lg bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[22px]">bolt</span>
+              </div>
+              <div>
+                <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">⚡ {% trans "Rapidez" %}</h3>
+                <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{% trans "Gestiones en minutos, sin colas." %}</p>
+              </div>
+            </div>
+            <!-- Cercanía -->
+            <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-start gap-space-sm">
+              <div class="w-10 h-10 rounded-lg bg-primary-fixed text-on-primary-fixed flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[22px]">handshake</span>
+              </div>
+              <div>
+                <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">🤝 {% trans "Cercanía" %}</h3>
+                <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{% trans "Comercio local, trato directo y personal." %}</p>
+              </div>
+            </div>
+            <!-- Confianza -->
+            <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-start gap-space-sm">
+              <div class="w-10 h-10 rounded-lg bg-surface-container-high text-primary flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[22px]">verified_user</span>
+              </div>
+              <div>
+                <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">✅ {% trans "Confianza" %}</h3>
+                <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{% trans "Artículos revisados y paquetes bien custodiados." %}</p>
+              </div>
+            </div>
+            <!-- Segunda vida -->
+            <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-start gap-space-sm">
+              <div class="w-10 h-10 rounded-lg bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[22px]">recycling</span>
+              </div>
+              <div>
+                <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">♻️ {% trans "Segunda vida" %}</h3>
+                <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{% trans "Damos una nueva oportunidad a productos con historia." %}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. FEATURED PRODUCTS SECTION ("Recién llegados") -->
+  <section class="w-full max-w-7xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-space-xl scroll-mt-24" id="tienda">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-space-sm mb-space-lg">
+      <div>
+        <div class="inline-flex items-center gap-1 text-secondary font-label-md text-label-md font-bold mb-1 uppercase">
+          <span class="material-symbols-outlined text-[16px]">local_fire_department</span>
+          <span>{% trans "Lo último en nuestra tienda" %}</span>
+        </div>
+        <h2 class="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl text-on-surface font-bold tracking-tight">
+          {% trans "Recién llegados" %}
+        </h2>
+        <p class="font-body-md text-body-md text-on-surface-variant mt-1">
+          {% trans "Los 4 artículos más nuevos de nuestra tienda. Piezas únicas: cuando se van, no vuelven." %}
+        </p>
+      </div>
+      <a class="inline-flex items-center gap-1 font-label-md text-label-md text-primary font-bold hover:text-primary-container transition-colors shrink-0"
+         href="{% url 'storefront:catalog' %}">
+        <span>{% trans "Ver toda la tienda" %}</span>
+        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+      </a>
+    </div>
+
+    {% if latest_products %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+      {% for product in latest_products %}
+        {% include "storefront/partials/_product_card.html" with product=product is_lcp=False %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-surface-container-lowest rounded-2xl p-space-xl text-center shadow-sm border border-outline-variant/25 space-y-space-sm">
+      <div class="w-14 h-14 mx-auto rounded-full bg-surface-container flex items-center justify-center text-primary">
+        <span class="material-symbols-outlined text-3xl">storefront</span>
+      </div>
+      <h3 class="font-headline-md text-headline-md text-on-surface font-bold">
+        {% trans "Nuevas oportunidades cada día en nuestra tienda de Alfafar" %}
+      </h3>
+      <p class="font-body-md text-body-md text-on-surface-variant max-w-md mx-auto">
+        {% trans "Estamos preparando nuevos artículos revisados. Explora el catálogo completo o consúltanos directamente por WhatsApp." %}
+      </p>
+      <div class="pt-space-xs flex flex-wrap items-center justify-center gap-space-sm">
+        <a href="{% url 'storefront:catalog' %}"
+           class="px-space-md py-2.5 rounded-xl bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container transition-colors">
+          {% trans "Explorar la tienda" %}
+        </a>
+        <a href="{% url 'storefront:go_whatsapp' %}"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="px-space-md py-2.5 rounded-xl bg-[#25D366] text-white font-label-md text-label-md hover:bg-[#20ba5a] transition-colors inline-flex items-center gap-1">
+          <span class="material-symbols-outlined text-[16px]">chat</span>
+          <span>{% trans "Consultar por WhatsApp" %}</span>
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- 6. WHY CHOOSE US / TRUST STATS BAND -->
+  <section class="w-full bg-primary-container text-on-primary py-space-xl shadow-md">
+    <div class="max-w-7xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-space-lg text-center">
+        <!-- Stat 1 -->
+        <div class="flex flex-col items-center">
+          <div class="w-12 h-12 rounded-xl bg-on-primary/10 flex items-center justify-center mb-space-xs">
+            <span class="material-symbols-outlined text-[28px] text-primary-fixed">local_shipping</span>
+          </div>
+          <span class="font-headline-xl text-headline-xl font-extrabold text-on-primary">+6</span>
+          <span class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider mt-1">{% trans "Agencias de paquetería" %}</span>
+        </div>
+        <!-- Stat 2 -->
+        <div class="flex flex-col items-center">
+          <div class="w-12 h-12 rounded-xl bg-on-primary/10 flex items-center justify-center mb-space-xs">
+            <span class="material-symbols-outlined text-[28px] text-primary-fixed">verified</span>
+          </div>
+          <span class="font-headline-xl text-headline-xl font-extrabold text-on-primary">{% trans "Oficial" %}</span>
+          <span class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider mt-1">{% trans "Punto Pack homologado" %}</span>
+        </div>
+        <!-- Stat 3 -->
+        <div class="flex flex-col items-center">
+          <div class="w-12 h-12 rounded-xl bg-on-primary/10 flex items-center justify-center mb-space-xs">
+            <span class="material-symbols-outlined text-[28px] text-primary-fixed">shopping_bag</span>
+          </div>
+          <span class="font-headline-xl text-headline-xl font-extrabold text-on-primary">{% trans "Gratis" %}</span>
+          <span class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider mt-1">{% trans "Recogida de compras en tienda" %}</span>
+        </div>
+        <!-- Stat 4 -->
+        <div class="flex flex-col items-center">
+          <div class="w-12 h-12 rounded-xl bg-on-primary/10 flex items-center justify-center mb-space-xs">
+            <span class="material-symbols-outlined text-[28px] text-primary-fixed">check_circle</span>
+          </div>
+          <span class="font-headline-xl text-headline-xl font-extrabold text-on-primary">100%</span>
+          <span class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider mt-1">{% trans "Artículos revisados" %}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. LOCATION & CONTACT SECTION ("Visítanos") -->
+  <section class="w-full max-w-7xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-space-xl scroll-mt-24" id="contacto">
+    <div class="flex flex-col items-center text-center gap-space-xs mb-space-lg">
+      <span class="bg-surface-container text-primary font-label-md text-label-md px-3 py-1 rounded-full uppercase tracking-wider font-semibold">
+        {% trans "Ubicación y horarios" %}
+      </span>
+      <h2 class="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl text-on-surface font-bold tracking-tight">
+        {% trans "Visítanos en Alfafar" %}
+      </h2>
+      <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+        {% trans "Estamos en el corazón de Alfafar, muy cerca de la estación de tren y con fácil aparcamiento en la zona." %}
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-stretch">
+      <!-- Left Map Card -->
+      <div class="lg:col-span-7 bg-surface-container-lowest rounded-xl shadow-md overflow-hidden relative flex flex-col border border-outline-variant/25">
+        <div class="w-full flex-1 min-h-[320px] sm:min-h-[380px] bg-surface-variant relative flex items-center justify-center overflow-hidden">
+          <div class="absolute inset-0 opacity-25 bg-[radial-gradient(#005c55_1.5px,transparent_1.5px)] [background-size:20px_20px]"></div>
+          <div class="relative z-10 bg-surface-container-lowest px-5 py-4 rounded-xl shadow-xl flex items-center gap-3 border-2 border-primary-container">
+            <span class="material-symbols-outlined text-primary-container text-[32px]">pin_drop</span>
+            <div class="flex flex-col">
+              <span class="font-headline-sm text-headline-sm text-on-surface font-bold leading-tight">{{ storefront.store_name }} Alfafar</span>
+              <span class="font-body-sm text-body-sm text-on-surface-variant">{{ storefront.address }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="p-space-md bg-surface-container-low flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2 text-on-surface font-body-sm text-body-sm">
+            <span class="material-symbols-outlined text-primary text-[18px]">train</span>
+            <span class="font-medium">{% trans "🚆 Muy cerca de la estación de Alfafar-Benetússer · Fácil aparcamiento" %}</span>
+          </div>
+          <span class="font-label-sm text-label-sm text-primary font-bold bg-surface-container px-2.5 py-1 rounded-full">L'Horta Sud</span>
+        </div>
+      </div>
+
+      <!-- Right Card (Details & Direct Contact) -->
+      <div class="lg:col-span-5 bg-surface-container-lowest rounded-xl shadow-md p-space-md sm:p-space-lg flex flex-col justify-between border border-outline-variant/25">
+        <div class="flex flex-col gap-space-md">
+          <div class="flex items-center gap-space-sm pb-space-sm">
+            <div class="w-12 h-12 rounded-xl bg-primary text-on-primary flex items-center justify-center">
+              <span class="material-symbols-outlined text-[24px]">storefront</span>
+            </div>
+            <div>
+              <h3 class="font-headline-md text-headline-md text-on-surface font-bold">{% trans "Punto de Atención Alfafar" %}</h3>
+              <p class="font-body-sm text-body-sm text-on-surface-variant">{% trans "Paquetería multimarca, Punto Pack y tienda física" %}</p>
+            </div>
+          </div>
+
+          <!-- Address -->
+          <div class="flex items-start gap-space-sm bg-surface-container-low p-space-md rounded-xl">
+            <span class="material-symbols-outlined text-primary text-[24px] mt-0.5">location_on</span>
+            <div>
+              <span class="font-headline-sm text-headline-sm text-on-surface font-bold block">{% trans "Dirección" %}</span>
+              <p class="font-body-md text-body-md text-on-surface-variant mt-0.5">
+                {{ storefront.address }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Hours -->
+          <div class="flex items-start gap-space-sm bg-surface-container-low p-space-md rounded-xl">
+            <span class="material-symbols-outlined text-primary text-[24px] mt-0.5">schedule</span>
+            <div class="w-full">
+              <span class="font-headline-sm text-headline-sm text-on-surface font-bold block">{% trans "Horario de apertura" %}</span>
+              <div class="mt-1 flex flex-col gap-1 font-body-sm text-body-sm text-on-surface-variant">
+                <div class="flex justify-between">
+                  <span class="font-medium text-on-surface">{% trans "Lunes a Viernes:" %}</span>
+                  <span>9:30 – 20:00 h</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="font-medium text-on-surface">{% trans "Sábados:" %}</span>
+                  <span>10:00 – 15:00 h</span>
+                </div>
+                <div class="flex justify-between text-error font-medium">
+                  <span>{% trans "Domingos:" %}</span>
+                  <span>{% trans "Cerrado" %}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col gap-space-xs mt-space-md pt-space-xs">
+          <a class="w-full inline-flex items-center justify-center gap-space-xs bg-[#25D366] hover:bg-[#20ba59] text-on-primary font-headline-sm text-headline-sm font-bold py-3.5 rounded-xl shadow-md transition-colors"
+             href="{% url 'storefront:go_whatsapp' %}"
+             rel="noopener noreferrer"
+             target="_blank">
+            <span class="material-symbols-outlined text-[20px]">chat</span>
+            <span>{% trans "Escríbenos por WhatsApp" %}</span>
+          </a>
+          <a class="w-full inline-flex items-center justify-center gap-space-xs bg-surface-container hover:bg-surface-container-high text-on-surface font-headline-sm text-headline-sm font-semibold py-3.5 rounded-xl transition-colors"
+             href="{{ storefront.map_url }}"
+             rel="noopener noreferrer"
+             target="_blank">
+            <span class="material-symbols-outlined text-[20px] text-primary">navigation</span>
+            <span>{% trans "Cómo llegar" %}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. FINAL CTA BANNER -->
+  <section class="w-full max-w-7xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop pb-space-md">
+    <div class="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary-container via-primary to-primary-container p-space-lg sm:p-space-xl text-on-primary shadow-xl">
+      <div class="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-secondary-container/20 blur-3xl pointer-events-none"></div>
+      <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-space-lg text-center lg:text-left">
+        <div class="max-w-2xl">
+          <span class="inline-block bg-on-primary/15 text-primary-fixed font-label-sm text-label-sm px-3 py-1 rounded-full uppercase tracking-wider font-semibold mb-space-xs">
+            {% trans "Atención inmediata" %}
+          </span>
+          <h2 class="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl font-bold tracking-tight text-on-primary">
+            {% trans "¿Tienes un paquete o buscas una oportunidad? Te esperamos en Alfafar." %}
+          </h2>
+          <p class="font-body-lg text-body-lg text-primary-fixed mt-space-xs">
+            {% trans "Sin citas previas ni trámites complejos. Pásate hoy mismo por la tienda o pregúntanos por WhatsApp." %}
+          </p>
+        </div>
+        <div class="flex flex-col sm:flex-row items-center gap-space-sm shrink-0 w-full lg:w-auto">
+          <a class="w-full sm:w-auto inline-flex items-center justify-center gap-space-xs bg-surface-container-lowest text-on-surface font-label-md text-label-md font-bold px-6 py-3.5 rounded-xl shadow hover:bg-surface-container transition-all"
+             href="{% url 'storefront:catalog' %}">
+            <span class="material-symbols-outlined text-[20px] text-primary">storefront</span>
+            <span>{% trans "Ver la tienda online" %}</span>
+          </a>
+          <a class="w-full sm:w-auto inline-flex items-center justify-center gap-space-xs bg-[#25D366] hover:bg-[#20ba59] text-on-primary font-label-md text-label-md font-bold px-6 py-3.5 rounded-xl shadow transition-all"
+             href="{% url 'storefront:go_whatsapp' %}"
+             rel="noopener noreferrer"
+             target="_blank">
+            <span class="material-symbols-outlined text-[20px]">chat</span>
+            <span>{% trans "Escríbenos por WhatsApp" %}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

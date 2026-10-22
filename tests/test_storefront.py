@@ -182,7 +182,15 @@ class StorefrontMarketplaceTests(TestCase):
             "secret_staff_agent_6644",
         ]
 
-        # 1. Check Catalog Homepage (/)
+        # 0. Check Corporate Landing Page (/)
+        home_resp = self.client.get(reverse("storefront:home"))
+        self.assertEqual(home_resp.status_code, 200)
+        home_html = home_resp.content.decode("utf-8")
+        self.assertIn("Cámara Retro Canon AE-1 Program", home_html)
+        for secret in forbidden_secrets:
+            self.assertNotIn(secret, home_html)
+
+        # 1. Check Store Catalog (/tienda/)
         catalog_resp = self.client.get(reverse("storefront:catalog"))
         self.assertEqual(catalog_resp.status_code, 200)
         catalog_html = catalog_resp.content.decode("utf-8")
@@ -198,7 +206,7 @@ class StorefrontMarketplaceTests(TestCase):
         self.assertEqual(search_resp.status_code, 200)
         self.assertEqual(search_resp.context["total_count"], 0)
 
-        # 3. Check Public Product Detail Page (/p/<slug>-<pk>/) including OG & JSON-LD
+        # 3. Check Public Product Detail Page (/tienda/producto/<slug>-<pk>/) including OG & JSON-LD
         detail_resp = self.client.get(product.get_public_url())
         self.assertEqual(detail_resp.status_code, 200)
         detail_html = detail_resp.content.decode("utf-8")
@@ -213,6 +221,46 @@ class StorefrontMarketplaceTests(TestCase):
         sitemap_xml = sitemap_resp.content.decode("utf-8")
         for secret in forbidden_secrets:
             self.assertNotIn(secret, sitemap_xml)
+
+    def test_corporate_landing_page_carriers_services_and_featured_products(self):
+        # Create 5 available products, 1 reserved, and 1 sold
+        available_products = [
+            self._create_published_product(title=f"Oportunidad Disponible {i}")
+            for i in range(1, 6)
+        ]
+        reserved_prod = self._create_published_product(
+            title="Oportunidad Reservada Oculta en Home",
+            is_reserved=True,
+        )
+        sold_prod = self._create_published_product(title="Oportunidad Vendida Oculta en Home")
+        sold_prod.mark_as_sold(price=Decimal("50.00"))
+
+        resp = self.client.get(reverse("storefront:home"))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode("utf-8")
+
+        # Verify carrier strip networks
+        for carrier in ("SEUR", "GLS", "InPost", "Amazon", "Kanguro", "DHL", "Punto Pack"):
+            self.assertIn(carrier, html)
+
+        # Verify key sections & LocalBusiness JSON-LD
+        self.assertIn('id="paqueteria"', html)
+        self.assertIn('id="punto-pack"', html)
+        self.assertIn('id="quienes-somos"', html)
+        self.assertIn('id="contacto"', html)
+        self.assertIn('"@type": "LocalBusiness"', html)
+
+        # Verify LCP hero image priority and below-the-fold lazy loading
+        self.assertIn('fetchpriority="high"', html)
+        self.assertIn('loading="lazy"', html)
+
+        # Verify only 4 newest available (unreserved, unsold) products appear
+        featured = list(resp.context["featured_products"])
+        self.assertEqual(len(featured), 4)
+        featured_pks = [p.pk for p in featured]
+        self.assertNotIn(reserved_prod.pk, featured_pks)
+        self.assertNotIn(sold_prod.pk, featured_pks)
+        self.assertNotIn(available_products[0].pk, featured_pks)
 
     def test_catalog_filtering_searching_and_sorting(self):
         p_bike = self._create_published_product(
@@ -237,27 +285,40 @@ class StorefrontMarketplaceTests(TestCase):
             is_featured=False,
         )
 
-        # Filter by category
-        resp_cat = self.client.get(reverse("storefront:catalog"), {"category": "bicicletas"})
+        # Filter by SEO category URL (/tienda/categoria/<slug>/)
+        resp_cat_route = self.client.get(
+            reverse("storefront:category", kwargs={"category_slug": "bicicletas"})
+        )
+        self.assertEqual(resp_cat_route.status_code, 200)
+        self.assertEqual([p.pk for p in resp_cat_route.context["products"]], [p_bike.pk])
+
+        # Filter by category query param
+        resp_cat = self.client.get(reverse("storefront:catalog"), {"categoria": "bicicletas"})
         self.assertEqual([p.pk for p in resp_cat.context["products"]], [p_bike.pk])
 
-        # Filter by condition
+        # Filter by condition (Spanish slug ?estado=muy-bueno and enum ?condition=vintage)
+        resp_cond_es = self.client.get(
+            reverse("storefront:catalog"),
+            {"estado": "muy-bueno"},
+        )
+        self.assertEqual([p.pk for p in resp_cond_es.context["products"]], [p_bike.pk])
+
         resp_cond = self.client.get(
             reverse("storefront:catalog"),
             {"condition": ProductCondition.VINTAGE},
         )
         self.assertEqual([p.pk for p in resp_cond.context["products"]], [p_camera.pk])
 
-        # Filter by price range (< 20 €)
-        resp_under_20 = self.client.get(reverse("storefront:catalog"), {"price": "under_20"})
+        # Filter by price range (< 20 € via ?precio=0-20)
+        resp_under_20 = self.client.get(reverse("storefront:catalog"), {"precio": "0-20"})
         self.assertEqual([p.pk for p in resp_under_20.context["products"]], [p_camera.pk])
 
-        # Filter by price range (20 € - 50 €)
-        resp_20_50 = self.client.get(reverse("storefront:catalog"), {"price": "20_50"})
+        # Filter by price range (20 € - 50 € via ?precio=20-50)
+        resp_20_50 = self.client.get(reverse("storefront:catalog"), {"precio": "20-50"})
         self.assertEqual([p.pk for p in resp_20_50.context["products"]], [p_headphones.pk])
 
-        # Filter by price range (> 50 €)
-        resp_over_50 = self.client.get(reverse("storefront:catalog"), {"price": "over_50"})
+        # Filter by price range (> 50 € via ?precio=50+)
+        resp_over_50 = self.client.get(reverse("storefront:catalog"), {"precio": "50+"})
         self.assertEqual([p.pk for p in resp_over_50.context["products"]], [p_bike.pk])
 
         # Search by reference number (e.g. Ref. #0001)
@@ -267,15 +328,15 @@ class StorefrontMarketplaceTests(TestCase):
         )
         self.assertEqual([p.pk for p in resp_ref.context["products"]], [p_headphones.pk])
 
-        # Sort by price ascending
-        resp_asc = self.client.get(reverse("storefront:catalog"), {"sort": "price_asc"})
+        # Sort by price ascending (?orden=precio-asc)
+        resp_asc = self.client.get(reverse("storefront:catalog"), {"orden": "precio-asc"})
         self.assertEqual(
             [p.pk for p in resp_asc.context["products"]],
             [p_camera.pk, p_headphones.pk, p_bike.pk],
         )
 
-        # Sort by price descending
-        resp_desc = self.client.get(reverse("storefront:catalog"), {"sort": "price_desc"})
+        # Sort by price descending (?orden=precio-desc)
+        resp_desc = self.client.get(reverse("storefront:catalog"), {"orden": "precio-desc"})
         self.assertEqual(
             [p.pk for p in resp_desc.context["products"]],
             [p_bike.pk, p_headphones.pk, p_camera.pk],
@@ -291,14 +352,19 @@ class StorefrontMarketplaceTests(TestCase):
         )
         link = product.listing_links.first()
 
-        # Non-canonical slug redirects (302) to canonical URL
+        # Non-canonical slug redirects (301 permanent) to canonical URL
         wrong_url = reverse(
             "storefront:product_detail",
             kwargs={"slug": "wrong-slug-name", "pk": product.pk},
         )
         redirect_resp = self.client.get(wrong_url)
-        self.assertEqual(redirect_resp.status_code, 302)
+        self.assertEqual(redirect_resp.status_code, 301)
         self.assertEqual(redirect_resp["Location"], product.get_public_url())
+
+        # Legacy /p/<slug>-<pk>/ redirects (301 permanent) to /tienda/producto/<slug>-<pk>/
+        legacy_resp = self.client.get(f"/p/{product.slug}-{product.pk}/")
+        self.assertEqual(legacy_resp.status_code, 301)
+        self.assertEqual(legacy_resp["Location"], product.get_public_url())
 
         # Canonical URL returns 200 and increments views_count
         self.assertEqual(product.views_count, 0)
@@ -307,9 +373,16 @@ class StorefrontMarketplaceTests(TestCase):
         product.refresh_from_db()
         self.assertEqual(product.views_count, 1)
 
-        # Outbound WhatsApp redirect (/go/whatsapp/<pk>/) increments whatsapp_clicks
+        # General store WhatsApp redirect (/go/whatsapp/)
+        store_wa_resp = self.client.get(reverse("storefront:go_whatsapp"))
+        self.assertEqual(store_wa_resp.status_code, 302)
+        self.assertTrue(store_wa_resp["Location"].startswith("https://wa.me/"))
+
+        # Outbound Product WhatsApp redirect (/go/whatsapp/<pk>/) increments whatsapp_clicks
         self.assertEqual(product.whatsapp_clicks, 0)
-        wa_resp = self.client.get(reverse("storefront:go_whatsapp", kwargs={"pk": product.pk}))
+        wa_resp = self.client.get(
+            reverse("storefront:go_whatsapp_product", kwargs={"pk": product.pk})
+        )
         self.assertEqual(wa_resp.status_code, 302)
         self.assertTrue(wa_resp["Location"].startswith("https://wa.me/"))
         product.refresh_from_db()
@@ -318,7 +391,7 @@ class StorefrontMarketplaceTests(TestCase):
         # Outbound Marketplace link redirect (/go/link/<link_pk>/) increments clicks_count
         self.assertEqual(link.clicks_count, 0)
         link_resp = self.client.get(
-            reverse("storefront:go_marketplace_link", kwargs={"link_pk": link.pk})
+            reverse("storefront:go_listing", kwargs={"link_pk": link.pk})
         )
         self.assertEqual(link_resp.status_code, 302)
         self.assertEqual(link_resp["Location"], link.url)
@@ -327,7 +400,7 @@ class StorefrontMarketplaceTests(TestCase):
         product.refresh_from_db()
         self.assertEqual(product.total_marketplace_clicks, 1)
 
-    def test_seo_metadata_sitemap_robots_and_legal_pages(self):
+    def test_seo_metadata_sitemap_robots_how_to_buy_and_legal_pages(self):
         product = self._create_published_product(
             title="Cafetera DeLonghi Dedica EC685",
             price=Decimal("75.00"),
@@ -340,21 +413,30 @@ class StorefrontMarketplaceTests(TestCase):
         self.assertIn('type="application/ld+json"', html)
         self.assertIn("https://schema.org/LimitedAvailability", html)
 
+        # Standalone How-to-Buy page (/como-comprar/)
+        how_resp = self.client.get(reverse("storefront:how_to_buy"))
+        self.assertEqual(how_resp.status_code, 200)
+        self.assertIn("Alfafar", how_resp.content.decode("utf-8"))
+
         # Sitemap XML
         sitemap_resp = self.client.get(reverse("storefront:sitemap"))
         self.assertEqual(sitemap_resp.status_code, 200)
-        self.assertIn(product.get_public_url(), sitemap_resp.content.decode("utf-8"))
+        sitemap_xml = sitemap_resp.content.decode("utf-8")
+        self.assertIn(product.get_public_url(), sitemap_xml)
+        self.assertIn(reverse("storefront:catalog"), sitemap_xml)
+        self.assertIn(reverse("storefront:how_to_buy"), sitemap_xml)
 
         # Robots.txt
         robots_resp = self.client.get(reverse("storefront:robots"))
         self.assertEqual(robots_resp.status_code, 200)
         robots_txt = robots_resp.content.decode("utf-8")
-        self.assertIn("Allow: /p/", robots_txt)
+        self.assertIn("Allow: /tienda/", robots_txt)
+        self.assertIn("Disallow: /panel/", robots_txt)
         self.assertIn("Disallow: /dashboard/", robots_txt)
         self.assertIn("Disallow: /intake/", robots_txt)
 
         # Legal pages
-        for route_name in ("legal_notice", "privacy_policy", "cookies_policy"):
+        for route_name in ("legal_notice", "privacy", "cookies"):
             resp = self.client.get(reverse(f"storefront:{route_name}"))
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Carrer del Comte Ronrée, 8", resp.content.decode("utf-8"))

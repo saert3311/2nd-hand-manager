@@ -78,7 +78,7 @@
           <span>{% trans "All Categories" %}</span>
         </a>
         {% for cat in categories %}
-        <a href="{% url 'storefront:catalog' %}?category={{ cat.slug }}{% if active_price %}&price={{ active_price }}{% endif %}{% if active_condition %}&condition={{ active_condition }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}{% if active_sort %}&sort={{ active_sort }}{% endif %}"
+        <a href="{% url 'storefront:category' cat.slug %}{% if active_price or active_condition or search_query or active_sort != 'newest' %}?{% if active_price %}price={{ active_price }}&{% endif %}{% if active_condition %}condition={{ active_condition }}&{% endif %}{% if search_query %}q={{ search_query|urlencode }}&{% endif %}{% if active_sort %}sort={{ active_sort }}{% endif %}{% endif %}"
            class="inline-flex items-center gap-1.5 px-space-md py-space-xs rounded-full font-label-md text-label-md whitespace-nowrap transition-all {% if active_category == cat.slug %}bg-primary text-on-primary shadow-sm{% else %}bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface{% endif %}">
           <span class="material-symbols-outlined text-[16px]">{{ cat.icon }}</span>
           <span>{{ cat.get_localized_name }}</span>

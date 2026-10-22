@@ -570,7 +570,7 @@ class Product(models.Model):
         try:
             return reverse("storefront:product_detail", kwargs={"slug": self.slug, "pk": self.pk})
         except NoReverseMatch:
-            return f"/p/{self.slug}-{self.pk}/"
+            return f"/tienda/producto/{self.slug}-{self.pk}/"
 
     @property
     def total_marketplace_clicks(self) -> int:

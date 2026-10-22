@@ -2239,7 +2239,7 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 - [x] `ruff check .` passes cleanly.
 ---
 
-## Phase 28: Product Soft-Delete, Archival & Erased Trash Category (Vertical Slice 24)
+## Phase 28: Product Soft-Delete, Archival & Erased Trash Category (Vertical Slice 33)
 
 ### Task 97: Domain Model Expansion, Migrations & Admin Registration (`inventory/models.py`, `inventory/migrations/0018_product_soft_delete.py`, `inventory/admin.py`)
 **Description:** Add fields `is_deleted = models.BooleanField(default=False, db_index=True)`, `deleted_at = models.DateTimeField(null=True, blank=True)`, and `deleted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="deleted_products")` to `Product`. Add helper methods `product.soft_delete(user=None, reason="")` and `product.restore(user=None)` maintaining original status and creating audit records in `ProductStatusLog`. Generate and execute migration `0018_product_soft_delete.py`. Register `is_deleted` and `deleted_at` in `ProductAdmin.list_display` and `list_filter`, and add admin actions `soft_delete_selected` and `restore_selected`.
@@ -2278,7 +2278,7 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 
 ---
 
-### Task 99: Product Detail Staging UI Integration with Confirmation Modal, Trash Indicator Banner & Restore Action (`inventory/templates/inventory/product_detail.html`)
+### Task 133: Product Detail Staging UI Integration with Confirmation Modal, Trash Indicator Banner & Restore Action (`inventory/templates/inventory/product_detail.html`)
 **Description:** Update `inventory/templates/inventory/product_detail.html`: (1) For active (non-deleted) products, add an accessible "Mover a papelera" / "Move to Trash" button and an accessible modal dialog `#deleteProductModal` prompting for confirmation and submitting POST to `inventory:product_soft_delete`. (2) For erased (`is_deleted=True`) products, render a prominent warning banner at the top of the detail page indicating the item is in the trash and disabled, accompanied by a 1-click "Restaurar producto" / "Restore Product" button submitting POST to `inventory:product_restore`. (3) Ensure UI buttons and modals are only visible to managers (`can_manage`).
 **Acceptance criteria:**
 - [x] Product detail page displays "Move to Trash" button for active products when viewed by a manager.
@@ -2294,7 +2294,7 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 
 ---
 
-### Task 100: Dashboard Catalog Filtering, Erased Tab Navigation Pill, Aggregate Count Isolation & Search Scoping (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`)
+### Task 134: Dashboard Catalog Filtering, Erased Tab Navigation Pill, Aggregate Count Isolation & Search Scoping (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`)
 **Description:** Update `dashboard_view` in `inventory/views.py` and `inventory/templates/inventory/dashboard.html`: (1) Filter out soft-deleted products (`is_deleted=False`) in all standard tabs (`all`, `active`, `draft`, `price_pending`, `ready`, `published`, `awaiting_info`, `sold`, `blocked`). (2) Calculate all standard status counts over non-deleted products (`is_deleted=False`). (3) Add `erased_count = Count("id", filter=Q(is_deleted=True), distinct=True)` to aggregate counts. (4) Add support for `status=erased` returning exclusively erased products (`is_deleted=True`). (5) Add `🗑️ Eliminados` / `🗑️ Trash` tab pill in `dashboard.html` with `erased_count` badge. (6) Scope multi-field search: global searches never return erased items; searching while on `status=erased` searches within erased items.
 **Acceptance criteria:**
 - [x] Erased items are excluded from `all`, `active`, `draft`, `ready`, `sold`, etc.
@@ -2312,7 +2312,7 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 
 ---
 
-### Task 101: Bilingual Localization, Comprehensive Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_product_soft_delete.py`, `CHANGELOG.md`)
+### Task 135: Bilingual Localization, Comprehensive Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_product_soft_delete.py`, `CHANGELOG.md`)
 **Description:** Add Spanish translation entries in `locale/es/LC_MESSAGES/django.po` for all new strings ("Move to Trash", "Restore Product", "This product is in the trash", "Are you sure you want to move this product to the trash?", "Product successfully moved to trash.", "Product successfully restored to catalog.", "Erased", "Trash", etc.) and compile to `django.mo`. Build a dedicated test suite `tests/test_product_soft_delete.py` validating: (1) model soft-delete and restore methods with audit log logging; (2) delete and restore view endpoints with manager permissions and assistant rejection; (3) dashboard query exclusion in standard tabs and counts; (4) `status=erased` tab filtering and count; (5) search scoping isolation; (6) admin list display and actions. Update `CHANGELOG.md` under `## [Unreleased]`. Run full regression suite and linter.
 **Acceptance criteria:**
 - [x] Spanish translations compiled with 0 errors.
@@ -2351,7 +2351,7 @@ uff.exe check .`
 
 # Phase 29: Product Detail Clarifications Hub (Vertical Slice 25)
 
-### Task 102: Domain Model Expansion (`is_direct_note`), Signal Logic Refactoring, Schema Migration (`0019_clarification_direct_note.py`), and Admin Registration (`inventory/models.py`, `inventory/migrations/0019_clarification_direct_note.py`, `inventory/admin.py`)
+### Task 136: Domain Model Expansion (`is_direct_note`), Signal Logic Refactoring, Schema Migration (`0019_clarification_direct_note.py`), and Admin Registration (`inventory/models.py`, `inventory/migrations/0019_clarification_direct_note.py`, `inventory/admin.py`)
 **Description:** Add `is_direct_note = models.BooleanField(default=False, db_index=True, verbose_name=_("Direct Note"))` to `ProductClarification` in `inventory/models.py`. Update the `sync_product_on_clarification_save` post-save signal: when `instance.is_direct_note=True`, bypass transitioning the product to `AWAITING_INFO` and bypass sending Web Push doubt alerts to assistants. In `inventory/admin.py`, update `ProductClarificationAdmin` to include `is_direct_note` in `list_display` and `list_filter`. Generate database migration `0019_clarification_direct_note.py` via `makemigrations` and apply it with `migrate`.
 **Acceptance criteria:**
 - [x] `ProductClarification` includes `is_direct_note` boolean field with `default=False`.
@@ -3183,6 +3183,95 @@ uff.exe check .
 - [x] Direct WhatsApp and Wallapop/Vinted click tracking works and displays in Manager staging views.
 - [x] OpenGraph, Schema.org JSON-LD, `sitemap.xml`, `robots.txt`, and RGPD/LSSI legal pages work cleanly.
 - [x] All automated tests and `ruff check .` pass with 0 errors.
+
+---
+
+## Phase 37: Corporate Business Landing Page (`/`), Revised Marketplace URLs (`/tienda/`) & Staff Router (`/panel/`) (Vertical Slice 33)
+
+### Task 133: Revised URL Routing, 301 Canonical Slug Redirect, Spanish Query Param Aliases & Navigation Updates
+**Description:** Update `storefront/urls.py`, `storefront/views.py`, and `inventory/urls.py` to implement the revised URL map: `/` (`storefront:home`), `/tienda/` (`storefront:catalog`), `/tienda/categoria/<slug:category_slug>/` (`storefront:category`), `/tienda/producto/<slug:slug>-<int:pk>/` (`storefront:product_detail` with 301 permanent redirect on slug mismatch), `/como-comprar/` (`storefront:how_to_buy`), `/go/whatsapp/` (`storefront:go_whatsapp`), `/go/whatsapp/<int:pk>/` (`storefront:go_whatsapp_product`), `/go/link/<int:link_pk>/` (`storefront:go_listing`), `/aviso-legal/` (`storefront:legal_notice`), `/privacidad/` (`storefront:privacy`), `/cookies/` (`storefront:cookies`), and `/panel/` (`inventory:root`, preserving `name="root"`). Maintain backwards-compatible redirects/aliases for legacy paths (`/p/<slug>-<pk>/` $\to$ 301, `/legal/<slug>/`, `/staff/`). Support Spanish query parameters (`?estado=`, `?precio=`, `?orden=`) alongside existing internal parameters (`?condition=`, `?price=`, `?sort=`, `?category=`). Update navigation links in `base_public.html`, `catalog.html`, `product_detail.html`, and `inventory/templates/inventory/base.html`.
+**Acceptance criteria:**
+- [x] `/`, `/tienda/`, `/tienda/categoria/<slug>/`, `/tienda/producto/<slug>-<pk>/`, `/como-comprar/`, `/go/whatsapp/`, `/go/whatsapp/<pk>/`, `/go/link/<link_pk>/`, `/aviso-legal/`, `/privacidad/`, `/cookies/`, and `/panel/` resolve and respond with expected HTTP status codes.
+- [x] Requesting `/tienda/producto/wrong-slug-<pk>/` returns HTTP 301 permanent redirect to `/tienda/producto/<canonical-slug>-<pk>/`.
+- [x] `/tienda/` and `/tienda/categoria/<slug>/` filter and sort via both Spanish query params (`estado`, `precio`, `orden`) and English aliases (`condition`, `price`, `sort`).
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Checkpoint 36
+**Files likely touched:**
+- `storefront/urls.py`
+- `storefront/views.py`
+- `inventory/urls.py`
+- `storefront/templates/storefront/base_public.html`
+- `storefront/templates/storefront/catalog.html`
+**Estimated scope:** Medium (5 files)
+
+---
+
+### Task 134: Corporate Business Landing Page (`/` — `home.html`), Local Stitch Assets, Top 4 *"Recién llegados"* & `LocalBusiness` JSON-LD
+**Description:** Download and optimize the Stitch landing page hero and brand identity images into `inventory/static/img/storefront/`. Implement `home_view` in `storefront/views.py` querying the 4 newest available products (`Product.objects.public_visible().filter(is_sold=False, is_reserved=False).order_by("-created_at")[:4]` with `only(*SAFE_PUBLIC_PRODUCT_FIELDS)` and `prefetch_related` of images/links) and building `Schema.org/LocalBusiness` JSON-LD. Create `storefront/templates/storefront/home.html` faithfully implementing the Stitch landing page (`docs/stitch_references/landing_page.html`): split hero (`fetchpriority="high"` on LCP hero image per `modern-web-guidance`), carrier logo strip (`SEUR`, `GLS`, `InPost`, `Amazon Hub`, `Kanguro`, `DHL`, `Punto Pack Oficial`), 4 parcel service cards (`#paqueteria`, `#punto-pack`) + 3-step workflow, brand story (`#quienes-somos` / `#sobre-nosotros`) + 4 value cards, 4-column *"Recién llegados"* grid using `_product_card.html` + *"Ver toda la tienda →"* (`/tienda/`), trust stats band, Alfafar location & contact card (`#contacto`), and final CTA banner.
+**Acceptance criteria:**
+- [x] `GET /` (`storefront:home`) returns HTTP 200 with all 10 Stitch landing sections, `LocalBusiness` JSON-LD, and up to 4 newest available (`is_sold=False, is_reserved=False`) products.
+- [x] Hero LCP image uses `fetchpriority="high"` without `loading="lazy"`; below-the-fold images use `loading="lazy"`.
+- [x] `home_view` strictly enforces `SAFE_PUBLIC_PRODUCT_FIELDS` (never exposing `raw_note` or `clarifications`).
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Task 133
+**Files likely touched:**
+- `storefront/views.py`
+- `storefront/templates/storefront/home.html`
+- `inventory/static/img/storefront/hero_counter.webp`
+- `inventory/static/img/storefront/shop_team.webp`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 135: Standalone *"¿Cómo comprar?"* Page (`/como-comprar/`), Updated `/sitemap.xml` & `/robots.txt`
+**Description:** Create `storefront/templates/storefront/how_to_buy.html` and `how_to_buy_view` in `storefront/views.py` serving `/como-comprar/` as a shareable, non-JS page containing the full *"¿Cómo comprar en Rápido Pack Alfafar?"* guide (24h WhatsApp hold, free in-store pickup at Carrer del Comte Ronrée 8, shipping via Wallapop/Vinted, payment methods, and FAQ). Update `sitemap_view` to include `/`, `/tienda/`, all 12 `/tienda/categoria/<slug>/` URLs, all `public_visible()` `/tienda/producto/<slug>-<pk>/` URLs, `/como-comprar/`, `/aviso-legal/`, `/privacidad/`, and `/cookies/`. Update `robots_view` to allow `/`, `/tienda/` and disallow `/admin/`, `/panel/`, `/dashboard/`, `/intake/`, `/products/`, `/login/`, `/api/`, and `/go/`.
+**Acceptance criteria:**
+- [x] `GET /como-comprar/` returns HTTP 200 with full purchase & pickup instructions and links to `/tienda/` and `/go/whatsapp/`.
+- [x] `/sitemap.xml` includes `/`, `/tienda/`, `/tienda/categoria/<slug>/`, `/tienda/producto/<slug>-<pk>/`, `/como-comprar/`, and legal URLs.
+- [x] `/robots.txt` disallows `/admin/`, `/panel/`, `/dashboard/`, `/intake/`, `/products/`, `/login/`, `/api/`, `/go/`.
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Task 133, Task 100
+**Files likely touched:**
+- `storefront/views.py`
+- `storefront/templates/storefront/how_to_buy.html`
+- `storefront/templates/storefront/partials/_how_to_buy_modal.html`
+**Estimated scope:** Small to Medium (3 files)
+
+---
+
+### Task 136: Bilingual Localization (`es`/`en`), Updated Automated & Browser Test Suites, Linter & Full Regression Verification
+**Description:** Add Spanish and English translations for all new landing page and `/como-comprar/` strings in `locale/es/LC_MESSAGES/django.po` and `locale/en/LC_MESSAGES/django.po` and compile via `python manage.py compile_locales`. Update `tests/test_storefront.py`, `tests/test_auth.py`, and `tests/test_browser_daily_workflow.py` to test the new `/` landing page (including `LocalBusiness` JSON-LD, 4 newest available products, and non-leak security firewall on `/`), `/tienda/`, `/tienda/categoria/<slug>/`, `/tienda/producto/<slug>-<pk>/` (including 301 canonical slug redirect), `/como-comprar/`, `/go/whatsapp/`, `/aviso-legal/`, `/privacidad/`, `/cookies/`, and `/panel/`. Update `CHANGELOG.md`, run `ruff check .`, and run the full test suite (`python manage.py test`).
+**Acceptance criteria:**
+- [x] Translations compiled with `python manage.py compile_locales`.
+- [x] `tests/test_storefront.py`, `tests/test_auth.py`, and `tests/test_browser_daily_workflow.py` pass 100%.
+- [x] Full test suite passes (`python manage.py test`) with 0 failures.
+- [x] `ruff check .` passes with 0 warnings.
+**Verification:**
+- [x] `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] `.venv\Scripts\ruff.exe check .`
+- [x] `.venv\Scripts\python.exe manage.py test`
+**Dependencies:** Task 133, Task 100, Task 101
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/en/LC_MESSAGES/django.po`
+- `tests/test_storefront.py`
+- `tests/test_auth.py`
+- `tests/test_browser_daily_workflow.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (5-6 files)
+
+---
+
+## Checkpoint 37: Corporate Landing Page & Revised URLs Complete
+- [x] `/` renders the Stitch corporate business landing page with parcel carriers, services, brand story, 4 newest products, trust stats, Alfafar map/contact, and `LocalBusiness` JSON-LD.
+- [x] `/tienda/` and `/tienda/categoria/<slug>/` serve the filterable marketplace catalog with Spanish and English query param support.
+- [x] `/tienda/producto/<slug>-<pk>/` renders the 60/40 product detail page and 301 redirects non-canonical slugs.
+- [x] `/como-comprar/` and `/aviso-legal/`, `/privacidad/`, `/cookies/` render cleanly.
+- [x] `/panel/` routes staff (`name="root"` preserved).
+- [x] Full automated test suite and `ruff check .` pass with 0 errors.
 
 
 

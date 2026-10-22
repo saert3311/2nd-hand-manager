@@ -84,7 +84,7 @@
         <span class="material-symbols-outlined text-[20px]">hourglass_top</span>
         <span>{% trans "Temporarily reserved for in-store check (24h hold)" %}</span>
       </button>
-      <a href="{% url 'storefront:go_whatsapp' product.pk %}"
+      <a href="{% url 'storefront:go_whatsapp_product' product.pk %}"
          target="_blank"
          rel="noopener noreferrer"
          class="w-full bg-[#25D366] hover:bg-[#20ba5a] text-white font-label-md text-label-md py-2.5 px-space-md rounded-lg flex items-center justify-center gap-2 text-center shadow-sm transition-colors">
@@ -92,7 +92,7 @@
         <span>{% trans "Join waiting list via WhatsApp" %}</span>
       </a>
     {% else %}
-      <a href="{% url 'storefront:go_whatsapp' product.pk %}"
+      <a href="{% url 'storefront:go_whatsapp_product' product.pk %}"
          target="_blank"
          rel="noopener noreferrer"
          class="w-full bg-[#25D366] hover:bg-[#20ba5a] text-white font-label-md text-label-md py-3.5 px-space-md rounded-lg flex flex-col items-center justify-center text-center shadow-sm transition-transform active:scale-[0.99]">
@@ -123,7 +123,7 @@
     </span>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
       {% for link in active_links %}
-      <a href="{% url 'storefront:go_marketplace_link' link.pk %}"
+      <a href="{% url 'storefront:go_listing' link.pk %}"
          target="_blank"
          rel="noopener noreferrer"
          class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors group border border-outline-variant/25">

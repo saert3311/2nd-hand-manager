@@ -338,6 +338,15 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 
 ---
 
+### Phase 37: Corporate Business Landing Page (`/`), Revised Marketplace URLs (`/tienda/`) & Staff Router (`/panel/`) (Vertical Slice 33)
+- [x] **Task 133:** Revised URL Routing (`/`, `/tienda/`, `/tienda/categoria/<slug>/`, `/tienda/producto/<slug>-<pk>/`, `/como-comprar/`, `/go/whatsapp/`, `/go/whatsapp/<pk>/`, `/go/link/<link_pk>/`, `/aviso-legal/`, `/privacidad/`, `/cookies/`, `/panel/`), 301 Canonical Slug Redirect, Spanish Query Param Aliases (`?estado=`, `?precio=`, `?orden=`), & Navigation Updates (`storefront/urls.py`, `storefront/views.py`, `inventory/urls.py`, `storefront/templates/storefront/base_public.html`, `storefront/templates/storefront/catalog.html`).
+- [x] **Task 134:** Corporate Business Landing Page (`storefront/templates/storefront/home.html`), Local Stitch Hero/Brand Assets (`inventory/static/img/storefront/`), `home_view` with Top 4 *"Recién llegados"* & `Schema.org/LocalBusiness` JSON-LD (`storefront/views.py`, `storefront/templates/storefront/home.html`, `inventory/static/img/storefront/`).
+- [x] **Task 135:** Standalone Shareable *"¿Cómo comprar?"* Page (`/como-comprar/` — `storefront/templates/storefront/how_to_buy.html`), Updated `/sitemap.xml` (including `/`, `/tienda/`, 12 categories, products, `/como-comprar/`, and legal pages) & `/robots.txt` (`storefront/views.py`, `storefront/templates/storefront/how_to_buy.html`, `storefront/templates/storefront/partials/_how_to_buy_modal.html`).
+- [x] **Task 136:** Bilingual Localization (`es`/`en`), Updated Automated & Browser Test Suites (`tests/test_storefront.py`, `tests/test_auth.py`, `tests/test_browser_daily_workflow.py`), Linter & Full Regression Verification (`locale/es/LC_MESSAGES/django.po`, `locale/en/LC_MESSAGES/django.po`, `tests/test_storefront.py`, `tests/test_auth.py`, `tests/test_browser_daily_workflow.py`, `CHANGELOG.md`).
+- [x] **Checkpoint 37 (Corporate Landing Page & Revised URLs Complete):** `/` renders the Stitch corporate business landing page with parcel carriers (`SEUR`, `GLS`, `InPost`, `Amazon Hub`, `Kanguro`, `DHL`, `Punto Pack`), 4 parcel services + 3-step workflow, brand identity, 4 newest available products, trust stats, Alfafar map/contact card, and `LocalBusiness` JSON-LD; `/tienda/` and `/tienda/categoria/<slug>/` serve the marketplace catalog; `/tienda/producto/<slug>-<pk>/` serves the product detail with 301 canonical slug redirect; `/como-comprar/` and `/aviso-legal/`, `/privacidad/`, `/cookies/` return HTTP 200; `/panel/` routes staff; all unit and browser tests pass with 0 regressions.
+
+---
+
 ### Phase 29: Product Detail Clarifications Hub (Vertical Slice 25)
 - [x] **Task 102:** Domain Model Expansion (`is_direct_note`), Signal Logic Refactoring, Schema Migration (`0019_clarification_direct_note.py`), and Admin Registration (`inventory/models.py`, `inventory/migrations/0019_clarification_direct_note.py`, `inventory/admin.py`).
 - [x] **Task 103:** Service & Form Layer for Direct Clarifications & AI Copywriting Formatting (`inventory/forms.py`, `inventory/services/ai_service.py`).

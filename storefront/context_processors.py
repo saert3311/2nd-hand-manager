@@ -1,3 +1,5 @@
+from django.urls import reverse
+
 from inventory.models import Category, StorefrontConfiguration
 from inventory.permissions import is_assistant, is_manager
 
@@ -22,10 +24,16 @@ def storefront_config(request):
     manager_flag = bool(authenticated and is_manager(user))
     assistant_flag = bool(authenticated and is_assistant(user))
 
+    try:
+        whatsapp_url = reverse("storefront:go_whatsapp")
+    except Exception:
+        whatsapp_url = f"https://wa.me/{config.clean_whatsapp_number}"
+
     return {
         "storefront": config,
         "store_config": config,
-        "storefront_whatsapp_url": f"https://wa.me/{config.clean_whatsapp_number}",
+        "storefront_whatsapp_url": whatsapp_url,
+        "storefront_direct_wa_url": f"https://wa.me/{config.clean_whatsapp_number}",
         "nav_categories": categories,
         "is_staff_member": manager_flag or assistant_flag,
         "is_manager_user": manager_flag,

@@ -43,6 +43,46 @@ SAFE_PUBLIC_PRODUCT_FIELDS = (
     "updated_at",
 )
 
+CONDITION_PARAM_ALIASES = {
+    "nuevo-con-etiquetas": ProductCondition.NEW_WITH_TAGS,
+    "new_with_tags": ProductCondition.NEW_WITH_TAGS,
+    "muy-bueno": ProductCondition.VERY_GOOD,
+    "very_good": ProductCondition.VERY_GOOD,
+    "buen-estado": ProductCondition.GOOD,
+    "good": ProductCondition.GOOD,
+    "vintage": ProductCondition.VINTAGE,
+}
+
+CONDITION_TO_SPANISH_SLUG = {
+    ProductCondition.NEW_WITH_TAGS: "nuevo-con-etiquetas",
+    ProductCondition.VERY_GOOD: "muy-bueno",
+    ProductCondition.GOOD: "buen-estado",
+    ProductCondition.VINTAGE: "vintage",
+}
+
+PRICE_PARAM_ALIASES = {
+    "0-20": "under_20",
+    "lt_20": "under_20",
+    "under_20": "under_20",
+    "20-50": "20_50",
+    "20_50": "20_50",
+    "50-": "over_50",
+    "50+": "over_50",
+    "gt_50": "over_50",
+    "over_50": "over_50",
+}
+
+SORT_PARAM_ALIASES = {
+    "recientes": "newest",
+    "newest": "newest",
+    "destacados": "featured",
+    "featured": "featured",
+    "precio-asc": "price_asc",
+    "price_asc": "price_asc",
+    "precio-desc": "price_desc",
+    "price_desc": "price_desc",
+}
+
 
 def _sanitize_public_product(product: Product) -> Product:
     """
@@ -89,43 +129,131 @@ def _parse_decimal(val: str):
         return None
 
 
-def catalog_view(request):
+def home_view(request):
     """
-    Public Marketplace Homepage & Filterable Catalog (/).
+    Corporate Business Landing Page (/) for Rápido Pack (rapidopack.es).
+    Showcases parcel point services (SEUR, GLS, InPost, Amazon Hub, Kanguro, DHL),
+    Punto Pack, brand identity ("Quiénes somos"), the 4 newest available products
+    ("Recién llegados"), trust stats, Alfafar location & contact, and LocalBusiness JSON-LD.
+    """
+    latest_products = list(
+        _get_public_queryset()
+        .filter(is_sold=False, is_reserved=False)
+        .order_by("-created_at")[:4]
+    )
+    for prod in latest_products:
+        _sanitize_public_product(prod)
+
+    store_config = StorefrontConfiguration.get_solo()
+    home_url = request.build_absolute_uri(reverse("storefront:home"))
+
+    local_business_schema = {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": store_config.store_name,
+        "description": _(
+            "Punto de paquetería multimarca (SEUR, GLS, InPost, Amazon, Kanguro, DHL), "
+            "Punto Pack oficial y tienda de segunda mano y oportunidad con artículos revisados en Alfafar, Valencia."
+        ),
+        "url": home_url,
+        "telephone": f"+{store_config.clean_whatsapp_number}",
+        "email": store_config.contact_email,
+        "priceRange": "€",
+        "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Carrer del Comte Ronrée, 8",
+            "addressLocality": "Alfafar",
+            "addressRegion": "Valencia",
+            "postalCode": "46910",
+            "addressCountry": "ES",
+        },
+        "openingHoursSpecification": [
+            {
+                "@type": "OpeningHoursSpecification",
+                "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                "opens": "09:30",
+                "closes": "20:00",
+            },
+            {
+                "@type": "OpeningHoursSpecification",
+                "dayOfWeek": ["Saturday"],
+                "opens": "10:00",
+                "closes": "15:00",
+            },
+        ],
+        "hasOfferCatalog": {
+            "@type": "OfferCatalog",
+            "name": _("Servicios de Paquetería, Punto Pack y Tienda de Segunda Mano"),
+            "itemListElement": [
+                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Punto Pack Oficial y Paquetería Multimarca (SEUR, GLS, InPost, Amazon, Kanguro, DHL)"}},
+                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Envíos, recepción y devoluciones de paquetes en Alfafar"}},
+                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Tienda de segunda mano y oportunidad con artículos revisados"}},
+            ],
+        },
+    }
+
+    context = {
+        "latest_products": latest_products,
+        "featured_products": latest_products,
+        "canonical_url": home_url,
+        "local_business_json_ld": json.dumps(local_business_schema, ensure_ascii=False),
+        "is_landing_page": True,
+    }
+    return render(request, "storefront/home.html", context)
+
+
+def category_catalog_view(request, category_slug: str):
+    """
+    Category-filtered Marketplace Catalog (/tienda/categoria/<slug:category_slug>/).
+    Returns 404 if the category slug is not one of the active official categories.
+    """
+    active_category = get_object_or_404(Category, slug=category_slug, is_active=True)
+    return catalog_view(request, category_slug=active_category.slug, resolved_category=active_category)
+
+
+def catalog_view(request, category_slug: str | None = None, resolved_category: Category | None = None):
+    """
+    Public Marketplace Filterable Catalog (/tienda/ and /tienda/categoria/<slug>/).
     Enforces strict public visibility rules and 7-day SOLD social proof ordering.
+    Supports both Spanish query parameters (?estado=, ?precio=, ?orden=, ?categoria=)
+    and English aliases (?condition=, ?price=, ?sort=, ?category=).
     """
     qs = _get_public_queryset()
 
-    category_slug = request.GET.get("category", "").strip().lower()
-    condition_filter = request.GET.get("condition", "").strip().lower()
-    price_range = request.GET.get("price", "").strip().lower()
+    raw_cat = category_slug or request.GET.get("categoria") or request.GET.get("category", "")
+    category_slug_clean = raw_cat.strip().lower()
+
+    raw_cond = (request.GET.get("estado") or request.GET.get("condition", "")).strip().lower()
+    condition_filter = CONDITION_PARAM_ALIASES.get(raw_cond, "")
+
+    raw_price = (request.GET.get("precio") or request.GET.get("price", "")).strip().lower()
+    price_range = PRICE_PARAM_ALIASES.get(raw_price, "")
+
     min_price_raw = request.GET.get("min_price", "").strip()
     max_price_raw = request.GET.get("max_price", "").strip()
     search_query = request.GET.get("q", "").strip()
-    sort_by = request.GET.get("sort", "newest").strip().lower()
 
-    active_category = None
-    if category_slug:
-        active_category = Category.objects.filter(slug=category_slug, is_active=True).first()
+    raw_sort = (request.GET.get("orden") or request.GET.get("sort", "newest")).strip().lower()
+    sort_by = SORT_PARAM_ALIASES.get(raw_sort, "newest")
+
+    active_category = resolved_category
+    if category_slug_clean:
+        if not active_category:
+            active_category = Category.objects.filter(slug=category_slug_clean, is_active=True).first()
         if active_category:
             qs = qs.filter(category=active_category)
         else:
-            qs = qs.filter(category__slug=category_slug)
+            qs = qs.filter(category__slug=category_slug_clean)
 
-    valid_conditions = dict(ProductCondition.choices)
-    if condition_filter in valid_conditions:
+    if condition_filter:
         qs = qs.filter(condition=condition_filter)
-    else:
-        condition_filter = ""
 
-    if price_range in ("lt_20", "under_20"):
+    if price_range == "under_20":
         qs = qs.filter(sale_price__lt=Decimal("20.00"))
     elif price_range == "20_50":
         qs = qs.filter(sale_price__gte=Decimal("20.00"), sale_price__lte=Decimal("50.00"))
-    elif price_range in ("gt_50", "over_50"):
+    elif price_range == "over_50":
         qs = qs.filter(sale_price__gt=Decimal("50.00"))
-    else:
-        price_range = ""
 
     min_price = _parse_decimal(min_price_raw)
     max_price = _parse_decimal(max_price_raw)
@@ -189,6 +317,12 @@ def catalog_view(request):
         .order_by("order", "name")
     )
 
+    base_filter_url = (
+        reverse("storefront:category", kwargs={"category_slug": active_category.slug})
+        if active_category and category_slug
+        else reverse("storefront:catalog")
+    )
+
     context = {
         "page_obj": page_obj,
         "products": page_obj.object_list,
@@ -198,10 +332,12 @@ def catalog_view(request):
         "elided_page_range": elided_page_range,
         "query_string": query_string,
         "categories": categories_with_counts,
-        "active_category": category_slug,
+        "active_category": category_slug_clean,
         "active_category_obj": active_category,
-        "category_filter": category_slug,
+        "category_filter": category_slug_clean,
+        "base_filter_url": base_filter_url,
         "active_condition": condition_filter,
+        "active_estado": CONDITION_TO_SPANISH_SLUG.get(condition_filter, ""),
         "condition_filter": condition_filter,
         "condition_choices": ProductCondition.choices,
         "active_price": price_range,
@@ -212,7 +348,7 @@ def catalog_view(request):
         "active_sort": sort_by,
         "sort_by": sort_by,
         "has_active_filters": bool(
-            category_slug or condition_filter or price_range or min_price_raw or max_price_raw or search_query
+            category_slug_clean or condition_filter or price_range or min_price_raw or max_price_raw or search_query
         ),
     }
     return render(request, "storefront/catalog.html", context)
@@ -246,17 +382,26 @@ def _build_whatsapp_inquiry_url(request, product: Product, store_config: Storefr
     return f"https://wa.me/{store_config.clean_whatsapp_number}?text={quote(text)}"
 
 
+def legacy_product_detail_redirect_view(request, slug: str, pk: int):
+    """
+    Redirects legacy /p/<slug>-<pk>/ URLs permanently (301) to /tienda/producto/<slug>-<pk>/.
+    """
+    product = get_object_or_404(_get_public_queryset(), pk=pk)
+    _sanitize_public_product(product)
+    return redirect(product.get_public_url(), permanent=True)
+
+
 def public_product_detail_view(request, slug: str, pk: int):
     """
-    Public 60/40 Product Detail page (/p/<slug>-<pk>/).
-    Enforces canonical slug redirect, strict non-leak firewall, view counter increment,
+    Public 60/40 Product Detail page (/tienda/producto/<slug>-<pk>/).
+    Enforces 301 canonical slug redirect, strict non-leak firewall, view counter increment,
     OpenGraph metadata, and Schema.org Product JSON-LD.
     """
     product = get_object_or_404(_get_public_queryset(), pk=pk)
     _sanitize_public_product(product)
 
     if slug != product.slug:
-        return redirect(product.get_public_url(), permanent=False)
+        return redirect(product.get_public_url(), permanent=True)
 
     # Atomically increment public views counter
     Product.objects.filter(pk=product.pk).update(views_count=F("views_count") + 1)
@@ -274,11 +419,19 @@ def public_product_detail_view(request, slug: str, pk: int):
     # Related products (same category preferred, excluding current item)
     related_qs = _get_public_queryset().exclude(pk=product.pk)
     if product.category_id:
-        same_cat = list(related_qs.filter(category_id=product.category_id).order_by("is_sold", "-is_featured", "-created_at")[:4])
+        same_cat = list(
+            related_qs.filter(category_id=product.category_id).order_by(
+                "is_sold", "-is_featured", "-created_at"
+            )[:4]
+        )
         if len(same_cat) < 4:
             needed = 4 - len(same_cat)
             existing_ids = [p.pk for p in same_cat]
-            others = list(related_qs.exclude(pk__in=existing_ids).order_by("is_sold", "-is_featured", "-created_at")[:needed])
+            others = list(
+                related_qs.exclude(pk__in=existing_ids).order_by(
+                    "is_sold", "-is_featured", "-created_at"
+                )[:needed]
+            )
             related_products = same_cat + others
         else:
             related_products = same_cat
@@ -334,6 +487,7 @@ def public_product_detail_view(request, slug: str, pk: int):
     description_lines = [
         line.strip().lstrip("•*-").strip()
         for line in (product.ai_description or "").splitlines()
+        for _ in [0]
         if line.strip()
     ]
 
@@ -369,9 +523,35 @@ def public_product_detail_view(request, slug: str, pk: int):
     return render(request, "storefront/product_detail.html", context)
 
 
+def how_to_buy_view(request):
+    """
+    Standalone shareable "¿Cómo comprar en Rápido Pack Alfafar?" page (/como-comprar/).
+    Provides the full guide for non-JS visitors and direct link sharing.
+    """
+    return render(
+        request,
+        "storefront/how_to_buy.html",
+        {
+            "page_title": _("¿Cómo comprar en Rápido Pack Alfafar?"),
+        },
+    )
+
+
+def go_store_whatsapp_view(request):
+    """
+    General store WhatsApp redirector (/go/whatsapp/) used by landing page and header CTAs.
+    """
+    store_config = StorefrontConfiguration.get_solo()
+    text = _(
+        "Hola %(store)s, os escribo desde la web para hacer una consulta sobre paquetería o artículos de la tienda de Alfafar."
+    ) % {"store": store_config.store_name}
+    target_url = f"https://wa.me/{store_config.clean_whatsapp_number}?text={quote(text)}"
+    return HttpResponseRedirect(target_url)
+
+
 def go_whatsapp_view(request, pk: int):
     """
-    First-party outbound click tracker for WhatsApp inquiries (/go/whatsapp/<pk>/).
+    First-party outbound click tracker for product WhatsApp inquiries (/go/whatsapp/<pk>/).
     Atomically increments product.whatsapp_clicks and redirects to wa.me.
     """
     product = get_object_or_404(_get_public_queryset(), pk=pk)
@@ -402,20 +582,33 @@ def go_marketplace_link_view(request, link_pk: int):
 
 def sitemap_view(request):
     """
-    Dynamic XML sitemap (/sitemap.xml) listing the public catalog root, legal pages,
-    and all publicly visible product detail URLs. Never exposes internal routes or notes.
+    Dynamic XML sitemap (/sitemap.xml) listing only public URLs:
+    /, /tienda/, /tienda/categoria/<slug>/ (12), /tienda/producto/<slug>-<pk>/ (public_visible()),
+    /como-comprar/, and legal pages (/aviso-legal/, /privacidad/, /cookies/).
+    Never exposes internal routes or notes.
     """
     products = (
         Product.objects.public_visible()
         .only("id", "ai_title", "updated_at", "status", "is_sold")
         .order_by("-updated_at")
     )
+    categories = Category.objects.filter(is_active=True).order_by("order", "name")
 
     urls = [
         {
-            "loc": request.build_absolute_uri(reverse("storefront:catalog")),
+            "loc": request.build_absolute_uri(reverse("storefront:home")),
             "changefreq": "daily",
             "priority": "1.0",
+        },
+        {
+            "loc": request.build_absolute_uri(reverse("storefront:catalog")),
+            "changefreq": "daily",
+            "priority": "0.9",
+        },
+        {
+            "loc": request.build_absolute_uri(reverse("storefront:how_to_buy")),
+            "changefreq": "monthly",
+            "priority": "0.5",
         },
         {
             "loc": request.build_absolute_uri(reverse("storefront:legal_notice")),
@@ -423,16 +616,27 @@ def sitemap_view(request):
             "priority": "0.3",
         },
         {
-            "loc": request.build_absolute_uri(reverse("storefront:privacy_policy")),
+            "loc": request.build_absolute_uri(reverse("storefront:privacy")),
             "changefreq": "monthly",
             "priority": "0.3",
         },
         {
-            "loc": request.build_absolute_uri(reverse("storefront:cookies_policy")),
+            "loc": request.build_absolute_uri(reverse("storefront:cookies")),
             "changefreq": "monthly",
             "priority": "0.3",
         },
     ]
+
+    for category in categories:
+        urls.append(
+            {
+                "loc": request.build_absolute_uri(
+                    reverse("storefront:category", kwargs={"category_slug": category.slug})
+                ),
+                "changefreq": "daily",
+                "priority": "0.8",
+            }
+        )
 
     for product in products:
         _sanitize_public_product(product)
@@ -465,14 +669,15 @@ def sitemap_view(request):
 def robots_view(request):
     """
     Serves /robots.txt allowing public storefront indexing while disallowing
-    internal staging, intake, admin, and redirect routes.
+    internal staging (/panel/, /dashboard/, /intake/, /products/), admin, API, and redirect routes.
     """
     sitemap_url = request.build_absolute_uri(reverse("storefront:sitemap"))
     lines = [
         "User-agent: *",
         "Allow: /",
-        "Allow: /p/",
+        "Allow: /tienda/",
         "Disallow: /admin/",
+        "Disallow: /panel/",
         "Disallow: /staff/",
         "Disallow: /dashboard/",
         "Disallow: /intake/",
