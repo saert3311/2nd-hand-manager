@@ -106,6 +106,9 @@
             <a href="{% url 'inventory:dashboard' %}" class="px-3 py-1.5 text-sm font-medium text-slate-700 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition">
               {% trans "Dashboard" %}
             </a>
+            <a href="{% url 'storefront:catalog' %}" class="px-3 py-1.5 text-sm font-medium text-slate-700 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition">
+              🏪 {% trans "Storefront" %}
+            </a>
             {% if pending_clarifications_count > 0 %}
             <a href="{% url 'inventory:dashboard' %}?status=awaiting_info"
                id="badge-pending-clarifications"
@@ -254,6 +257,13 @@
            class="flex items-center gap-3 px-3 py-2.5 text-base font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition min-h-[44px]">
           <span class="text-lg">📊</span>
           <span>{% trans "Dashboard" %}</span>
+        </a>
+
+        <a href="{% url 'storefront:catalog' %}"
+           id="mobile-link-storefront"
+           class="flex items-center gap-3 px-3 py-2.5 text-base font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition min-h-[44px]">
+          <span class="text-lg">🏪</span>
+          <span>{% trans "Public Storefront" %}</span>
         </a>
 
         {% if pending_clarifications_count > 0 %}

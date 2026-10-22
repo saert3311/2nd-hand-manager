@@ -1,0 +1,438 @@
+{% load i18n static %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:'es' }}" class="h-full scroll-smooth">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ storefront.store_name }} · {% trans "Second-Hand & Opportunity Store in Valencia & Online" %}{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}{{ storefront.hero_subtitle }}{% endblock %}">
+  <link rel="icon" type="image/png" sizes="192x192" href="{% static 'inventory/icons/icon-192.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'inventory/icons/apple-touch-icon.png' %}">
+
+  {% block meta_seo %}
+  <meta property="og:site_name" content="{{ storefront.store_name }} ({{ storefront.domain }})">
+  <meta property="og:title" content="{{ storefront.store_name }} · {{ storefront.hero_title }}">
+  <meta property="og:description" content="{{ storefront.hero_subtitle }}">
+  <meta property="og:type" content="website">
+  {% endblock %}
+
+  <!-- Google Fonts: Outfit (Headlines & Prices) + Hanken Grotesk (Body & Labels) + Material Symbols Outlined -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS with Rápido Pack Curation System tokens -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container": "#eaedff",
+            "on-surface-variant": "#3e4947",
+            "primary-container": "#0f766e",
+            "on-background": "#131b2e",
+            "on-primary-fixed": "#00201d",
+            "surface-variant": "#dae2fd",
+            "on-primary-container": "#a3faef",
+            "on-tertiary-container": "#97fceb",
+            "on-primary-fixed-variant": "#00504a",
+            "secondary-fixed": "#ffdcc3",
+            "on-tertiary-fixed-variant": "#005047",
+            "on-secondary": "#ffffff",
+            "tertiary-container": "#00776b",
+            "tertiary-fixed-dim": "#72d8c8",
+            "error-container": "#ffdad6",
+            "on-error": "#ffffff",
+            "inverse-surface": "#283044",
+            "on-tertiary": "#ffffff",
+            "error": "#ba1a1a",
+            "inverse-on-surface": "#eef0ff",
+            "surface-tint": "#006a63",
+            "outline-variant": "#bdc9c6",
+            "surface-bright": "#faf8ff",
+            "secondary-container": "#fe932c",
+            "on-primary": "#ffffff",
+            "on-error-container": "#93000a",
+            "tertiary-fixed": "#8ff4e3",
+            "primary-fixed": "#9cf2e8",
+            "on-secondary-fixed": "#2f1500",
+            "on-surface": "#131b2e",
+            "outline": "#6e7977",
+            "surface": "#faf8ff",
+            "secondary-fixed-dim": "#ffb77d",
+            "background": "#faf8ff",
+            "surface-container-low": "#f2f3ff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-high": "#e2e7ff",
+            "on-secondary-fixed-variant": "#6e3900",
+            "tertiary": "#005c52",
+            "surface-container-highest": "#dae2fd",
+            "on-secondary-container": "#663500",
+            "primary": "#005c55",
+            "on-tertiary-fixed": "#00201c",
+            "inverse-primary": "#80d5cb",
+            "primary-fixed-dim": "#80d5cb",
+            "secondary": "#904d00",
+            "surface-dim": "#d2d9f4"
+          },
+          borderRadius: {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "margin-desktop": "2rem",
+            "space-xl": "2.5rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "gutter": "1rem",
+            "margin": "1rem",
+            "space-sm": "0.5rem",
+            "margin-tablet": "1.5rem",
+            "space-xs": "0.25rem",
+            "gutter-desktop": "1.5rem"
+          },
+          fontFamily: {
+            "label-sm": ["Hanken Grotesk", "sans-serif"],
+            "price-display-lg": ["Outfit", "sans-serif"],
+            "body-md": ["Hanken Grotesk", "sans-serif"],
+            "headline-md": ["Outfit", "sans-serif"],
+            "headline-xl-mobile": ["Outfit", "sans-serif"],
+            "body-sm": ["Hanken Grotesk", "sans-serif"],
+            "headline-lg-mobile": ["Outfit", "sans-serif"],
+            "headline-xl": ["Outfit", "sans-serif"],
+            "headline-lg": ["Outfit", "sans-serif"],
+            "body-lg": ["Hanken Grotesk", "sans-serif"],
+            "headline-sm": ["Outfit", "sans-serif"],
+            "price-display": ["Outfit", "sans-serif"],
+            "label-md": ["Hanken Grotesk", "sans-serif"]
+          },
+          fontSize: {
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "price-display-lg": ["36px", { "lineHeight": "40px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "headline-md": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "headline-xl-mobile": ["30px", { "lineHeight": "36px", "letterSpacing": "-0.015em", "fontWeight": "700" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "headline-lg-mobile": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-lg": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "headline-sm": ["16px", { "lineHeight": "22px", "letterSpacing": "0em", "fontWeight": "600" }],
+            "price-display": ["24px", { "lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "label-md": ["13px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    dialog::backdrop {
+      background: rgba(19, 27, 46, 0.65);
+      backdrop-filter: blur(4px);
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased flex flex-col min-h-full">
+
+  {% if user.is_authenticated %}
+  <!-- Staff Quick Bar (Visible only to logged-in staff/assistants) -->
+  <div class="bg-emerald-950 text-emerald-100 text-xs py-1.5 px-margin lg:px-margin-desktop border-b border-emerald-800">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2 font-semibold">
+        <span>🛠️ {% trans "Staff Mode" %} ({{ user.username }})</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="{% url 'inventory:intake' %}" class="hover:text-white underline font-medium">📷 {% trans "New Intake" %}</a>
+        {% if user.is_staff %}
+        <a href="{% url 'inventory:dashboard' %}" class="hover:text-white underline font-medium">📊 {% trans "Staging Dashboard" %}</a>
+        {% endif %}
+        {% block staff_bar_extra %}{% endblock %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Sticky Storefront Header -->
+  <header class="sticky top-0 left-0 right-0 z-40 shadow-[0_1px_8px_rgba(0,0,0,0.04)] bg-surface/95 backdrop-blur-xl">
+    <!-- Top Announcement Bar -->
+    <div class="bg-on-surface text-surface-container-lowest py-space-xs px-margin lg:px-margin-desktop">
+      <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between font-label-sm text-label-sm gap-space-xs">
+        <div class="flex items-center gap-space-sm">
+          <span class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-[15px] text-primary-fixed">storefront</span>
+            <span>{{ storefront.store_name }} · {{ storefront.address }} ({{ storefront.opening_hours }})</span>
+          </span>
+        </div>
+        <div class="hidden sm:flex items-center gap-space-md">
+          <span class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-[15px] text-primary-fixed">inventory_2</span>
+            <span>{% trans "Protected shipping across Spain & Free pickup in Alfafar" %}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Navbar -->
+    <div class="h-20 border-b border-outline-variant/25">
+      <div class="max-w-7xl mx-auto px-margin lg:px-margin-desktop h-full flex items-center justify-between gap-space-md">
+        <!-- Brand Logo -->
+        <div class="flex items-center gap-space-md shrink-0">
+          <a href="{% url 'storefront:catalog' %}" class="flex items-center gap-space-sm group">
+            <div class="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center font-headline-md text-headline-md shadow-sm group-hover:bg-primary-container transition-colors">
+              RP
+            </div>
+            <div class="flex flex-col">
+              <span class="font-headline-sm text-headline-sm text-primary tracking-tight leading-none font-bold">{{ storefront.store_name }}</span>
+              <span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">{{ storefront.domain }} · Alfafar</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- Desktop Global Search Form -->
+        <div class="hidden md:flex flex-1 max-w-xl mx-space-md">
+          <form action="{% url 'storefront:catalog' %}" method="get" class="relative w-full flex items-center">
+            {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
+            <div class="w-full flex items-center bg-surface-container-lowest rounded-full pl-space-md pr-space-xs py-space-xs shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-outline-variant/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+              <span class="material-symbols-outlined text-outline mr-space-xs text-[20px]">search</span>
+              <input type="search"
+                     name="q"
+                     value="{{ search_query|default:'' }}"
+                     placeholder="{% trans 'Search items, brands, categories, Ref #...' %}"
+                     aria-label="{% trans 'Search catalog' %}"
+                     class="w-full bg-transparent font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none">
+              <button type="submit"
+                      class="bg-primary text-on-primary rounded-full px-space-md py-space-xs font-label-md text-label-md flex items-center gap-1 hover:bg-primary-container transition-colors shrink-0">
+                <span>{% trans "Search" %}</span>
+                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Right Actions: Language Switcher + How to Buy + Direct WhatsApp -->
+        <div class="flex items-center gap-space-sm shrink-0">
+          <!-- Language Switcher (ES | EN) -->
+          <form action="{% url 'set_language' %}" method="post" class="inline-flex items-center">
+            {% csrf_token %}
+            <input name="next" type="hidden" value="{{ request.get_full_path }}">
+            {% get_current_language as CURRENT_LANG %}
+            <div class="flex items-center bg-surface-container-low px-space-sm py-space-xs rounded-full font-label-sm text-label-sm text-on-surface-variant gap-1 border border-outline-variant/30">
+              <button type="submit" name="language" value="es"
+                      class="px-1.5 py-0.5 rounded-full transition {% if CURRENT_LANG == 'es' %}font-bold bg-primary text-on-primary{% else %}text-outline hover:text-on-surface{% endif %}"
+                      title="Español">
+                ES
+              </button>
+              <span class="text-outline-variant">|</span>
+              <button type="submit" name="language" value="en"
+                      class="px-1.5 py-0.5 rounded-full transition {% if CURRENT_LANG == 'en' %}font-bold bg-primary text-on-primary{% else %}text-outline hover:text-on-surface{% endif %}"
+                      title="English">
+                EN
+              </button>
+            </div>
+          </form>
+
+          <!-- How to Buy Modal Trigger -->
+          <button type="button"
+                  onclick="openHowToBuyModal()"
+                  class="hidden lg:flex items-center gap-1 px-space-sm py-space-xs rounded-full bg-surface-container-lowest text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors font-label-md text-label-md shadow-[0_1px_3px_rgba(0,0,0,0.03)] border border-outline-variant/30">
+            <span class="material-symbols-outlined text-[17px] text-primary">help_outline</span>
+            <span>{% trans "How to buy" %}</span>
+          </button>
+
+          <!-- Direct Store WhatsApp CTA -->
+          <a href="{{ storefront_whatsapp_url }}"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="flex items-center gap-space-xs px-space-md py-space-xs rounded-full bg-[#25D366] text-white font-label-md text-label-md hover:bg-[#20ba5a] transition-colors shadow-sm shrink-0">
+            <span class="material-symbols-outlined text-[18px]">chat</span>
+            <span class="hidden sm:inline">{% trans "Direct contact" %}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Search Bar (< 768px) -->
+    <div class="md:hidden px-margin py-space-xs bg-surface-container-lowest border-b border-outline-variant/25">
+      <form action="{% url 'storefront:catalog' %}" method="get" class="flex items-center gap-2">
+        {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
+        <div class="flex-1 flex items-center bg-surface-container-low rounded-full px-space-sm py-1.5 border border-outline-variant/30">
+          <span class="material-symbols-outlined text-outline mr-1.5 text-[18px]">search</span>
+          <input type="search"
+                 name="q"
+                 value="{{ search_query|default:'' }}"
+                 placeholder="{% trans 'Search items, categories, Ref #...' %}"
+                 aria-label="{% trans 'Search catalog' %}"
+                 class="w-full bg-transparent font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none">
+        </div>
+        <button type="button"
+                onclick="openHowToBuyModal()"
+                class="px-space-sm py-1.5 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm border border-outline-variant/30 shrink-0 flex items-center gap-1">
+          <span class="material-symbols-outlined text-[16px]">help_outline</span>
+          <span>{% trans "Guide" %}</span>
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 w-full bg-surface">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- 3-Column Storefront Footer (Physical Alfafar Store + Categories + Legal & Shipping) -->
+  <footer class="w-full bg-surface-container-lowest border-t border-outline-variant/30 mt-space-xl">
+    <div class="max-w-7xl mx-auto px-margin lg:px-margin-desktop py-space-xl space-y-space-lg">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-lg">
+
+        <!-- Column 1: Tienda Física Rápido Pack Alfafar -->
+        <div class="space-y-space-sm">
+          <div class="flex items-center gap-space-sm">
+            <div class="w-9 h-9 rounded-xl bg-primary text-on-primary flex items-center justify-center font-headline-sm text-headline-sm font-bold">
+              RP
+            </div>
+            <div>
+              <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold leading-none">{{ storefront.store_name }}</h3>
+              <span class="font-label-sm text-label-sm text-primary">{{ storefront.domain }} · {% trans "Physical Store & Online" %}</span>
+            </div>
+          </div>
+          <p class="font-body-sm text-body-sm text-on-surface-variant">
+            {% trans "Your second-hand, vintage, and opportunity store in Alfafar (Valencia). Every item is inspected and photographed in-house." %}
+          </p>
+          <div class="bg-surface-container-low rounded-xl p-space-sm space-y-1.5 font-body-sm text-body-sm text-on-surface">
+            <div class="flex items-start gap-2">
+              <span class="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5">location_on</span>
+              <span><strong>{% trans "Address:" %}</strong> {{ storefront.address }}</span>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5">schedule</span>
+              <span><strong>{% trans "Hours:" %}</strong> {{ storefront.opening_hours }}</span>
+            </div>
+            <div class="pt-1 flex flex-wrap gap-2">
+              <a href="{{ storefront.map_url }}"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 class="inline-flex items-center gap-1 text-primary font-label-sm text-label-sm hover:underline">
+                <span class="material-symbols-outlined text-[15px]">directions</span>
+                <span>{% trans "Open in Google Maps" %}</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 2: Categorías y Navegación Rápida -->
+        <div class="space-y-space-sm">
+          <h4 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">
+            {% trans "Featured Categories" %}
+          </h4>
+          <ul class="grid grid-cols-2 gap-x-space-sm gap-y-1 font-body-sm text-body-sm text-on-surface-variant">
+            <li><a href="{% url 'storefront:catalog' %}?category=tecnologia-y-electronica" class="hover:text-primary transition-colors flex items-center gap-1"><span class="material-symbols-outlined text-[15px] text-primary">devices</span> {% trans "Tech & Electronics" %}</a></li>
+            <li><a href="{% url 'storefront:catalog' %}?category=hogar-y-jardin" class="hover:text-primary transition-colors flex items-center gap-1"><span class="material-symbols-outlined text-[15px] text-primary">chair</span> {% trans "Home & Garden" %}</a></li>
+            <li><a href="{% url 'storefront:catalog' %}?category=electrodomesticos" class="hover:text-primary transition-colors flex items-center gap-1"><span class="material-symbols-outlined text-[15px] text-primary">kitchen</span> {% trans "Appliances" %}</a></li>
+            <li><a href="{% url 'storefront:catalog' %}?category=bicicletas" class="hover:text-primary transition-colors flex items-center gap-1"><span class="material-symbols-outlined text-[15px] text-primary">pedal_bike</span> {% trans "Bicycles" %}</a></li>
+            <li><a href="{% url 'storefront:catalog' %}?category=coleccionismo" class="hover:text-primary transition-colors flex items-center gap-1"><span class="material-symbols-outlined text-[15px] text-primary">auto_awesome</span> {% trans "Collectibles" %}</a></li>
+            <li><a href="{% url 'storefront:catalog' %}?category=deporte-y-ocio" class="hover:text-primary transition-colors flex items-center gap-1"><span class="material-symbols-outlined text-[15px] text-primary">fitness_center</span> {% trans "Sports & Leisure" %}</a></li>
+            <li><a href="{% url 'storefront:catalog' %}?category=moda-y-accesorios" class="hover:text-primary transition-colors flex items-center gap-1"><span class="material-symbols-outlined text-[15px] text-primary">apparel</span> {% trans "Fashion & Vintage" %}</a></li>
+            <li><a href="{% url 'storefront:catalog' %}?category=cine-libros-y-musica" class="hover:text-primary transition-colors flex items-center gap-1"><span class="material-symbols-outlined text-[15px] text-primary">menu_book</span> {% trans "Books, Film & Music" %}</a></li>
+          </ul>
+          <div class="bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+            <span>{% trans "Have a question about an item?" %}</span>
+            <a href="{{ storefront_whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="text-primary font-bold hover:underline">
+              {% trans "WhatsApp Store →" %}
+            </a>
+          </div>
+        </div>
+
+        <!-- Column 3: Garantía, Envíos y Legal -->
+        <div class="space-y-space-sm">
+          <h4 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">
+            {% trans "How to Buy, Pickup & Guarantee" %}
+          </h4>
+          <div class="space-y-space-xs">
+            <div class="flex items-start gap-space-xs">
+              <span class="material-symbols-outlined text-primary text-[20px] shrink-0">local_shipping</span>
+              <div>
+                <button type="button" onclick="openHowToBuyModal()" class="font-label-md text-label-md text-on-surface font-semibold hover:text-primary text-left">
+                  {% trans "How to buy, reserve & pick up? (Learn more)" %}
+                </button>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">
+                  {% trans "24-hour reservation holds without upfront payment for in-person inspection in Alfafar." %}
+                </p>
+              </div>
+            </div>
+            <div class="flex items-start gap-space-xs">
+              <span class="material-symbols-outlined text-primary text-[20px] shrink-0">shield</span>
+              <div>
+                <span class="font-label-md text-label-md text-on-surface font-semibold">{% trans "Protected national shipping" %}</span>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">
+                  {% trans "Tracked shipments across Spain via Wallapop Envíos, Vinted, and Milanuncios." %}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-space-xs font-label-sm text-label-sm text-outline flex flex-wrap gap-x-space-md gap-y-1">
+            <a href="{% url 'storefront:legal_notice' %}" class="hover:text-on-surface transition-colors">{% trans "Legal Notice" %}</a>
+            <span class="text-outline-variant">•</span>
+            <a href="{% url 'storefront:privacy_policy' %}" class="hover:text-on-surface transition-colors">{% trans "Privacy Policy" %}</a>
+            <span class="text-outline-variant">•</span>
+            <a href="{% url 'storefront:cookies_policy' %}" class="hover:text-on-surface transition-colors">{% trans "Cookies Policy" %}</a>
+            {% if not user.is_authenticated %}
+            <span class="text-outline-variant">•</span>
+            <a href="{% url 'inventory:login' %}" class="hover:text-on-surface transition-colors">{% trans "Staff Access" %}</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Copyright Bar -->
+      <div class="bg-surface-container rounded-xl px-space-md py-space-sm flex flex-col md:flex-row items-center justify-between gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
+        <span>© {% now "Y" %} {{ storefront.store_name }} ({{ storefront.domain }}) · {{ storefront.address }}. {% trans "All rights reserved." %}</span>
+        <span class="flex items-center gap-1 font-semibold text-primary">
+          <span class="material-symbols-outlined text-[16px]">eco</span>
+          <span>{% trans "Circular economy & transparent local commerce" %}</span>
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- How to Buy Modal -->
+  {% include "storefront/partials/_how_to_buy_modal.html" %}
+
+  <script>
+    function openHowToBuyModal() {
+      const dialog = document.getElementById('how-to-buy-dialog');
+      if (dialog && typeof dialog.showModal === 'function') {
+        dialog.showModal();
+      }
+    }
+
+    // Modern Web Guidance: light-dismiss-a-dialog fallback for browsers without native closedBy support
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('dialog[closedby="any"]').forEach((dialog) => {
+        if (!('closedBy' in HTMLDialogElement.prototype)) {
+          dialog.addEventListener('click', (event) => {
+            if (event.target !== dialog) return;
+            const rect = dialog.getBoundingClientRect();
+            const isInDialog =
+              rect.top <= event.clientY &&
+              event.clientY <= rect.top + rect.height &&
+              rect.left <= event.clientX &&
+              event.clientX <= rect.left + rect.width;
+            if (!isInDialog) {
+              dialog.close();
+            }
+          });
+        }
+      });
+    });
+  </script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

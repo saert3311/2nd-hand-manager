@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'storages',
     'inventory.apps.InventoryConfig',
+    'storefront.apps.StorefrontConfig',
 ]
 
 MIDDLEWARE = [
@@ -64,6 +65,7 @@ TEMPLATES = [
                 'inventory.context_processors.turnstile',
                 'inventory.context_processors.pwa_push',
                 'inventory.context_processors.build_info',
+                'storefront.context_processors.storefront_config',
             ],
         },
     },

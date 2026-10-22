@@ -132,6 +132,9 @@ class Category(models.Model):
             return self.name_en
         return self.name
 
+    def get_localized_name(self) -> str:
+        return self.localized_name
+
     def save(self, *args, **kwargs):
         if not self.slug and self.name:
             self.slug = slugify(self.name)
@@ -224,6 +227,33 @@ class StorefrontConfiguration(models.Model):
         if lang.startswith("en") and self.opening_hours_en:
             return self.opening_hours_en
         return self.opening_hours_es
+
+    @property
+    def domain(self) -> str:
+        return self.store_domain
+
+    @property
+    def address(self) -> str:
+        return self.store_address
+
+    @property
+    def map_url(self) -> str:
+        return self.maps_url
+
+    @property
+    def opening_hours(self) -> str:
+        return self.localized_opening_hours
+
+    @property
+    def hero_title(self) -> str:
+        return self.localized_tagline
+
+    @property
+    def hero_subtitle(self) -> str:
+        lang = (get_language() or "es").lower()
+        if lang.startswith("en"):
+            return "Unique items inspected in detail. Free pickup at our Alfafar store or protected shipping via Wallapop and Vinted."
+        return "Artículos únicos revisados al detalle. Recoge gratis en nuestra tienda de Alfafar o compra con envío protegido en Wallapop y Vinted."
 
     def save(self, *args, **kwargs):
         self.pk = 1
@@ -439,6 +469,10 @@ class Product(models.Model):
     @property
     def primary_image(self):
         return self.images.order_by("order", "id").first()
+
+    @property
+    def price(self):
+        return self.sale_price
 
     @property
     def public_reference(self) -> str:
@@ -864,6 +898,13 @@ class ProductListingLink(models.Model):
 
     def __str__(self):
         return f"{self.site.name} - {self.product.display_title}"
+
+    @property
+    def platform(self) -> str:
+        return (self.site.slug if self.site_id else "").lower()
+
+    def get_platform_display(self) -> str:
+        return self.site.name if self.site_id else ""
 
 
 class ProductClarification(models.Model):
