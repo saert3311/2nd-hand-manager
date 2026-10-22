@@ -313,13 +313,13 @@ Automated test suite in [`tests/test_storefront.py`](file:///C:/Users/Jose/antig
 
 ---
 
-## 10. Open Questions & Assumptions for Review
+## 10. Open Questions & Assumptions for Review (Approved)
 
-All client and developer questionnaire items in [`docs/questionnaires/`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/questionnaires/) are 100% answered (`[x]`). Before moving to Phase 2 (Planning & Task Breakdown), please confirm these minor technical assumptions:
+All client and developer questionnaire items in [`docs/questionnaires/`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/questionnaires/) and the three technical decisions below are 100% confirmed:
 
 1. **Staff Root Redirect (`inventory:root`) vs Public Homepage (`/`):**
-   - Since `/` will now serve the public marketplace catalog (`storefront:catalog`, returning `HTTP 200` for everyone and showing a staff shortcut bar when logged in), we propose moving `inventory:root` (`root_redirect_view`) to `/staff/` (and updating `test_root_redirect_*` in `tests/test_auth.py` accordingly).
+   - **Approved:** `/` serves the public marketplace catalog (`storefront:catalog`, returning `HTTP 200` for everyone and showing a staff shortcut bar when logged in); `inventory:root` (`root_redirect_view`) moves to `/staff/` (and `test_root_redirect_*` in `tests/test_auth.py` is updated accordingly).
 2. **Default Language on Public Storefront:**
-   - The client confirmed bilingual UI (ES/EN) with automatic browser detection and header switcher. Should we also set `LANGUAGE_CODE = 'es'` as the default fallback in `config/settings.py` (since Rápido Pack is based in Valencia, Spain), while keeping full `Accept-Language` negotiation and `/i18n/setlang/` support?
+   - **Approved:** Set `LANGUAGE_CODE = 'es'` as the default fallback in `config/settings.py` (since Rápido Pack is based in Valencia, Spain), while keeping full `Accept-Language` negotiation and `/i18n/setlang/` support.
 3. **Backfill Command for Existing Products:**
-   - Should we include a management command `python manage.py classify_products` (with `--use-ai` and heuristic keyword fallback) so existing staged/seeded products immediately get assigned one of the 12 categories and 4 condition states?
+   - **Approved:** Include management command `python manage.py classify_products` (with `--use-ai` and heuristic keyword fallback) so existing staged/seeded products immediately get assigned one of the 12 categories and 4 condition states.

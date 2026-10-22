@@ -2121,6 +2121,159 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 - [x] All unit and regression tests pass with 0 failures.
 - [x] `ruff check .` passes cleanly.
 
+---
+
+## Phase 27: Public Marketplace Storefront Transformation — Rápido Pack (`rapidopack.es`, Vertical Slice 23)
+
+### Task 92: Domain Models (`Category`, `StorefrontConfiguration`, `ProductCondition`), `Product` & `ProductListingLink` Marketplace Fields, `ProductQuerySet.public_visible()`, Data Seed Migration (`0017_marketplace_storefront.py`), SQLite WAL Mode & Django Admin Registration
+**Description:** Add `ProductCondition` choices (4 official states: `new_with_tags`, `very_good`, `good`, `vintage`), `Category` model (`name`, `name_en`, `slug`, `icon`, `order`, `is_active`), and `StorefrontConfiguration` singleton model (`store_name`, `store_domain`, `tagline_es`, `tagline_en`, `whatsapp_number`, `store_address`, `maps_url`, `opening_hours_es`, `opening_hours_en`, `contact_email`, `company_nif`) to `inventory/models.py`. Extend `Product` with `category`, `condition`, `is_public`, `is_featured`, `is_reserved`, `reserved_until`, `views_count`, `whatsapp_clicks`, plus helper properties `public_reference`, `slug`, and `get_public_url()`. Extend `ProductListingLink` with `clicks_count`. Implement `ProductQuerySet.public_visible()` with the 7-day `SOLD` social proof retention rule. Create migration `0017_marketplace_storefront.py` seeding the 12 official Rápido Pack categories and default `StorefrontConfiguration`. Enable SQLite `journal_mode=WAL` in `config/settings.py` (and `LANGUAGE_CODE = 'es'`) and register `CategoryAdmin`, `StorefrontConfigurationAdmin`, and updated `ProductAdmin` fields in `inventory/admin.py`.
+**Acceptance criteria:**
+- [ ] `Category` model pre-seeded with the 12 official Rápido Pack categories and Material Symbols icons.
+- [ ] `StorefrontConfiguration` singleton model created with `get_solo()` helper and registered in Django Admin.
+- [ ] `Product` has `category`, `condition`, `is_public`, `is_featured`, `is_reserved`, `reserved_until`, `views_count`, `whatsapp_clicks`.
+- [ ] `ProductQuerySet.public_visible()` returns `READY`/`PUBLISHED` active items (`is_public=True`, `sale_price > 0`, non-empty `ai_title`) and `SOLD` items sold within the last 7 days.
+- [ ] Migration applies cleanly and `python manage.py check` succeeds.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py migrate`
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** None
+**Files likely touched:**
+- `inventory/models.py`
+- `inventory/migrations/0017_marketplace_storefront.py`
+- `inventory/admin.py`
+- `config/settings.py`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 93: Gemini AI Taxonomy Auto-Classification, Staging Form/View/Template Controls & `classify_products` Backfill Command
+**Description:** Extend `ProductListingSchema` and `IntakePreflightSchema` in `inventory/services/ai_service.py` so Gemini returns `category_slug` (constrained to the 12 official category slugs) and `condition` (constrained to the 4 official condition codes). Update `generate_ai_view` in `inventory/views.py` to auto-assign `product.category` and `product.condition` when generating AI copy. Update `ProductUpdateForm` (`inventory/forms.py`) and `inventory/templates/inventory/product_detail.html` + `dashboard.html` so Managers can view/edit `category`, `condition`, `is_public`, `is_featured`, `is_reserved`, see public view/click metrics (`views_count`, `whatsapp_clicks`, `link.clicks_count`), and open the public storefront page. Create `inventory/management/commands/classify_products.py` supporting heuristic keyword classification and `--use-ai` Gemini classification for existing products.
+**Acceptance criteria:**
+- [ ] `ProductListingSchema` includes `category_slug` and `condition`, and `generate_ai_view` populates `product.category` and `product.condition`.
+- [ ] `ProductUpdateForm` and staging detail view allow editing `category`, `condition`, `is_public`, `is_featured`, `is_reserved` and display conversion click counters.
+- [ ] `python manage.py classify_products` classifies existing uncategorized products cleanly.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py classify_products`
+- [ ] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_ai_service tests.test_views`
+**Dependencies:** Task 92
+**Files likely touched:**
+- `inventory/services/ai_service.py`
+- `inventory/forms.py`
+- `inventory/views.py`
+- `inventory/templates/inventory/product_detail.html`
+- `inventory/management/commands/classify_products.py`
+**Estimated scope:** Medium (5 files)
+
+---
+
+### Task 94: Dedicated `storefront` App Scaffolding, Context Processor, URL Routing (`/` Public Catalog vs `/staff/` Staff Redirect) & Stitch `base_public.html` Layout
+**Description:** Create the `storefront` Django app (`storefront/apps.py`, `storefront/context_processors.py`, `storefront/urls.py`, `storefront/views.py`). Register `storefront.apps.StorefrontConfig` and `storefront.context_processors.storefront_config` in `config/settings.py`. Route `/` to `storefront:catalog` in `config/urls.py` and move `inventory:root` (`root_redirect_view`) to `/staff/` in `inventory/urls.py` (updating `tests/test_auth.py`). Build `storefront/templates/storefront/base_public.html` implementing the Stitch *Rápido Pack Curation System* (`Outfit` + `Hanken Grotesk` + Material Symbols Outlined, Primary Teal `#005c55`/`#0f766e`, Secondary Amber `#904d00`/`#fe932c`/`#F59E0B`, WhatsApp `#25D366`, Surface `#faf8ff`, sticky top announcement bar with Alfafar address/hours, search header, `ES | EN` language switcher, floating staff shortcut bar for logged-in staff, mobile bottom nav, and 3-column commercial footer).
+**Acceptance criteria:**
+- [ ] `storefront` app registered and `storefront_config` context processor provides `store_config` and `nav_categories` to public templates.
+- [ ] `/` resolves to `storefront:catalog` (HTTP 200 for anonymous and authenticated users) and `/staff/` resolves to `inventory:root`.
+- [ ] `base_public.html` renders Stitch typography, color tokens, sticky header, staff bar (when logged in), and Alfafar footer without loading internal `sw.js` push scripts.
+**Verification:**
+- [ ] Tests pass: `.venv\Scripts\python.exe manage.py test tests.test_auth`
+**Dependencies:** Task 92
+**Files likely touched:**
+- `storefront/apps.py`
+- `storefront/context_processors.py`
+- `storefront/urls.py`
+- `storefront/templates/storefront/base_public.html`
+- `config/settings.py`
+- `config/urls.py`
+- `inventory/urls.py`
+- `tests/test_auth.py`
+**Estimated scope:** Medium (5 files)
+
+---
+
+### Task 95: Public Catalog Homepage (`/`), 12-Category Rail, Price & Condition Filter Bar, Sorting, Responsive 4-Col/2-Col Product Grid (`_product_card.html`), Alfafar Store Banner & *"Saber más"* Modal (`_how_to_buy_modal.html`)
+**Description:** Implement `catalog_view` in `storefront/views.py` and `storefront/templates/storefront/catalog.html` + partials `_product_card.html` and `_how_to_buy_modal.html` matching the Stitch desktop and mobile catalog reference designs (`desktop_catalog_homepage.html` & `mobile_catalog_homepage.html`). Include compact hero + 4 trust badges, horizontal scrollable 12-category rail, price range quick pills (`Todos`, `Menos de 20 €`, `20 € – 50 €`, `Más de 50 €`), condition pills (4 official states), results counter, sort dropdown (`newest`, `featured`, `price_asc`, `price_desc`), 4-col desktop / 2-col mobile product grid supporting 4 visual card states (`AVAILABLE`, `⭐ DESTACADO`, `⏳ RESERVADO`, and `VENDIDO` social proof), query-preserving pagination, Alfafar physical store section, and interactive *"¿Cómo comprar en Rápido Pack Alfafar? (Saber más)"* modal.
+**Acceptance criteria:**
+- [ ] `/` filters accurately by `q` (search), `category` (slug), `price` (`lt_20`, `20_50`, `gt_50`), `condition`, and `sort` (`newest`, `featured`, `price_asc`, `price_desc`).
+- [ ] `_product_card.html` renders 1:1 WebP image with lazy loading, `DESTACADO` / `RESERVADO` / `VENDIDO` badges, condition pill, category + `Ref. #<id>`, Euro price, and conversion row.
+- [ ] `_how_to_buy_modal.html` opens/closes cleanly via keyboard (`Escape`), backdrop click, and *"Saber más"* buttons.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Task 94
+**Files likely touched:**
+- `storefront/views.py`
+- `storefront/templates/storefront/catalog.html`
+- `storefront/templates/storefront/partials/_product_card.html`
+- `storefront/templates/storefront/partials/_how_to_buy_modal.html`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 96: Public Product Detail View (`/p/<slug>-<pk>/`), 60/40 Gallery & Lightbox, Verification Certificate Box, Decoupled `_purchase_box.html` & Outbound Click Tracking (`/go/whatsapp/<pk>/`, `/go/link/<link_pk>/`)
+**Description:** Implement `public_product_detail_view`, `go_whatsapp_view`, and `go_marketplace_link_view` in `storefront/views.py` along with `storefront/templates/storefront/product_detail.html` and `storefront/templates/storefront/partials/_purchase_box.html`, matching Stitch `product_detail_and_modal.html`. Support canonical slug redirect (302 to `/p/<product.slug>-<pk>/` if slug differs), atomic `views_count` increment, 60%/40% desktop layout (`lg:col-span-7` main 1:1 image with zoom modal + thumbnail strip + Rápido Pack Verification Certificate box; `lg:col-span-5` sticky `_purchase_box.html` with pre-filled WhatsApp CTA via `/go/whatsapp/<pk>/`, *"Saber más"* modal trigger, active Wallapop/Vinted/eBay tiles via `/go/link/<link_pk>/`, Alfafar pickup assurance card, and structured AI description), plus related products grid.
+**Acceptance criteria:**
+- [ ] `/p/<slug>-<pk>/` returns 200 for `public_visible()` products and 404 for draft/private/expired-sold products.
+- [ ] `_purchase_box.html` adapts to `AVAILABLE`, `RESERVADO` (disabled primary CTA), and `VENDIDO` states.
+- [ ] `/go/whatsapp/<pk>/` atomically increments `whatsapp_clicks` and redirects to `https://wa.me/<phone>?text=...` with product title, `Ref. #<id>`, price, and URL.
+- [ ] `/go/link/<link_pk>/` atomically increments `link.clicks_count` and redirects to the active marketplace listing URL.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Task 95
+**Files likely touched:**
+- `storefront/views.py`
+- `storefront/urls.py`
+- `storefront/templates/storefront/product_detail.html`
+- `storefront/templates/storefront/partials/_purchase_box.html`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 97: SEO & Legal Compliance: OpenGraph + WhatsApp Rich Previews, `Schema.org/Product` JSON-LD, `/sitemap.xml`, `/robots.txt` & RGPD/LSSI Legal Pages
+**Description:** Add OpenGraph meta tags (`og:title`, `og:description`, `og:image`, `og:url`, `og:type="product"`, `product:price:amount`, `product:price:currency="EUR"`) and `Schema.org/Product` JSON-LD (`Offer` with `InStock`/`SoldOut` and `UsedCondition`) to `product_detail.html` and `catalog.html`. Implement `/sitemap.xml` (`sitemap_view`), `/robots.txt` (`robots_view`), and standard RGPD/LSSI legal pages (`/legal/aviso-legal/`, `/legal/privacidad/`, `/legal/cookies/`) using `storefront/templates/storefront/legal_page.html` populated with `StorefrontConfiguration` data (`Carrer del Comte Ronrée, 8, 46910 Alfafar, Valencia`).
+**Acceptance criteria:**
+- [ ] Product detail page includes valid JSON-LD `Product` schema and OpenGraph tags for WhatsApp link previews.
+- [ ] `/sitemap.xml` lists `/` and all `public_visible()` product canonical URLs.
+- [ ] `/robots.txt` allows `/` and `/p/` while disallowing `/admin/`, `/dashboard/`, `/intake/`, `/products/`, `/login/`, `/go/`.
+- [ ] `/legal/aviso-legal/`, `/legal/privacidad/`, and `/legal/cookies/` return HTTP 200 with Rápido Pack legal text.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Task 96
+**Files likely touched:**
+- `storefront/views.py`
+- `storefront/urls.py`
+- `storefront/templates/storefront/legal_page.html`
+- `storefront/templates/storefront/product_detail.html`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 98: Bilingual Localization (`es`/`en`), Comprehensive Storefront & Security Firewall Test Suite (`tests/test_storefront.py`) & Full Regression Verification
+**Description:** Add Spanish/English translations in `locale/es/LC_MESSAGES/django.po` and `locale/en/LC_MESSAGES/django.po` and compile with `python manage.py compile_locales`. Write `tests/test_storefront.py` testing: (1) `public_visible()` visibility and 7-day `SOLD` retention; (2) `test_public_storefront_never_leaks_internal_notes_or_clarifications` verifying `raw_note`, `clarifications`, and `created_by` never appear in HTML, OpenGraph, JSON-LD, or sitemap; (3) category, condition, price, search, and sort filtering; (4) `DESTACADO`, `RESERVADO`, and `VENDIDO` rendering; (5) `/go/whatsapp/<pk>/` and `/go/link/<link_pk>/` click counters and redirects; (6) SEO (`sitemap.xml`, `robots.txt`, JSON-LD, OpenGraph) and legal pages; (7) AI taxonomy extraction and `classify_products` command. Update `CHANGELOG.md` and run `ruff check .` and full test suite.
+**Acceptance criteria:**
+- [ ] `tests/test_storefront.py` passes 100% including the mandatory non-leak security test.
+- [ ] All existing tests + new storefront tests pass (`python manage.py test`) with 0 failures.
+- [ ] `ruff check .` passes with 0 warnings.
+- [ ] `CHANGELOG.md` updated.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [ ] Command succeeds: `.venv\Scripts\ruff.exe check .`
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py test`
+**Dependencies:** Task 92, Task 93, Task 94, Task 95, Task 96, Task 97
+**Files likely touched:**
+- `tests/test_storefront.py`
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/en/LC_MESSAGES/django.po`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (4 files)
+
+---
+
+## Checkpoint 27: Public Marketplace Storefront Complete
+- [ ] `Category`, `StorefrontConfiguration`, and `Product` marketplace fields migrated and seeded with the 12 official Rápido Pack categories.
+- [ ] `/` renders the Stitch-designed Rápido Pack marketplace homepage and `/p/<slug>-<pk>/` renders the 60/40 product detail view.
+- [ ] `public_visible()` enforces 7-day `SOLD` social proof retention and strict internal data firewall (`raw_note` and `clarifications` never exposed).
+- [ ] Direct WhatsApp and Wallapop/Vinted click tracking works and displays in Manager staging views.
+- [ ] OpenGraph, Schema.org JSON-LD, `sitemap.xml`, `robots.txt`, and RGPD/LSSI legal pages work cleanly.
+- [ ] All automated tests and `ruff check .` pass with 0 errors.
+
+
 
 
 
