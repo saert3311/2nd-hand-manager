@@ -340,6 +340,16 @@
           </span>
           {% endif %}
           {% endfor %}
+          {% if product.is_featured %}
+          <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-400 text-slate-900 shadow-xs">
+            ⭐ {% trans "Featured" %}
+          </span>
+          {% endif %}
+          {% if product.is_reserved %}
+          <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
+            ⏳ {% trans "Reserved" %}
+          </span>
+          {% endif %}
         </div>
 
         <div class="absolute bottom-2.5 right-2.5 bg-black/60 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-xs flex items-center gap-1.5">
