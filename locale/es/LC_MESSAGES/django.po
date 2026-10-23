@@ -186,6 +186,24 @@ msgstr "Toca para tomar fotos o subir archivos"
 msgid "Select up to %(max)s images (max 10MB each)"
 msgstr "Selecciona hasta %(max)s imágenes (máx. 10MB cada una)"
 
+msgid "Select up to %(max)s photos (auto-optimized to WebP 2560px)"
+msgstr "Selecciona hasta %(max)s fotos (auto-optimizadas a WebP 2560px)"
+
+msgid "Take Photo"
+msgstr "Tomar foto"
+
+msgid "Choose from Gallery"
+msgstr "Elegir de la galería"
+
+msgid "Or drop photos anywhere in this box"
+msgstr "O arrastra fotos en cualquier parte de este recuadro"
+
+msgid "Optimizing photos to WebP (2560px)..."
+msgstr "Optimizando fotos a WebP (2560px)..."
+
+msgid "Optimizing photo"
+msgstr "Optimizando foto"
+
 msgid "Selected Photos Preview:"
 msgstr "Vista previa de fotos seleccionadas:"
 
