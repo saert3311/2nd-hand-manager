@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-10-23
+
+### Fixed
+- **Mobile Intake Photo Capture & Low-Memory Out-of-Memory Crashes**:
+  - **Decoupled Camera and Gallery Inputs**: Removed contradictory `capture="environment"` attribute from the multi-photo input in `inventory/templates/inventory/intake.html`, preventing Android's Low Memory Killer (LMK) from terminating background Chrome sessions during native camera execution (*"Unable to complete previous operation due to low memory"*).
+  - **Dedicated Mobile Capture Buttons**: Added "📸 Tomar foto" (dedicated single-shot camera capture) and "🖼️ Elegir de la galería" (multi-photo selection) in the intake dropzone.
+  - **Client-Side Canvas WebP Downscaling (2560px)**: Implemented on-device proportional resizing to max 2560px and WebP encoding (`image/webp` quality 0.82 with JPEG fallback), reducing decoded raster RAM from ~200MB down to ~3MB and file payload from ~15MB to ~400KB-700KB. Added inline spinner optimization indicator.
+  - **Server-Side Decompression Safety**: Raised backend `MAX_DIMENSION` to 2560px and `Image.MAX_IMAGE_PIXELS` to 100,000,000 (100MP) in `inventory/services/image_service.py` to support modern 48MP/50MP mobile cameras without false-positive decompression bomb rejections.
+
 ## [1.3.0] - 2026-10-21
 
 ### Added

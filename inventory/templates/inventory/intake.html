@@ -79,18 +79,44 @@
           <span class="text-slate-500 font-normal lowercase text-xs sm:text-sm" id="photoCount">0 / {{ max_images }} {% trans "selected" %}</span>
         </label>
         
-        <div class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl p-6 text-center bg-slate-50 hover:bg-emerald-50/40 transition cursor-pointer relative group" id="dropZone">
-          <input type="file" name="images" id="imageInput" multiple accept="image/*" capture="environment"
-                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-          <div class="space-y-2 pointer-events-none">
-            <div class="w-12 h-12 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl group-hover:scale-110 transition duration-150">
+        <div class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl p-5 sm:p-6 text-center bg-slate-50 hover:bg-emerald-50/40 transition cursor-pointer relative group" id="dropZone">
+          <input type="file" name="images" id="imageInput" multiple accept="image/*"
+                 class="sr-only">
+          <input type="file" id="cameraInput" accept="image/*" capture="environment"
+                 class="sr-only">
+          <div class="space-y-3">
+            <div class="w-12 h-12 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl group-hover:scale-105 transition duration-150">
               📷
             </div>
             <div>
               <p class="text-base sm:text-lg font-bold text-slate-800">{% trans "Tap to take photos or upload" %}</p>
-              <p class="text-xs sm:text-sm text-slate-500 mt-1">{% blocktrans with max=max_images %}Select up to {{ max }} images (max 10MB each){% endblocktrans %}</p>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1">{% blocktrans with max=max_images %}Select up to {{ max }} photos (auto-optimized to WebP 2560px){% endblocktrans %}</p>
             </div>
+            <!-- Dual Action Buttons: Dedicated Camera & Multi-file Gallery -->
+            <div class="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+              <button type="button" id="btnTriggerCamera"
+                      class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl shadow-sm text-xs sm:text-sm transition cursor-pointer min-h-[40px]">
+                <span class="text-base leading-none">📸</span>
+                <span>{% trans "Take Photo" %}</span>
+              </button>
+              <button type="button" id="btnTriggerGallery"
+                      class="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 font-bold rounded-xl border border-slate-300 shadow-sm text-xs sm:text-sm transition cursor-pointer min-h-[40px]">
+                <span class="text-base leading-none">🖼️</span>
+                <span>{% trans "Choose from Gallery" %}</span>
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-400 hidden sm:block">{% trans "Or drop photos anywhere in this box" %}</p>
           </div>
+        </div>
+
+        <!-- Inline Compression / Optimization Indicator -->
+        <div id="compressionIndicator" role="status" aria-live="polite"
+             class="hidden mt-2 p-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition-all duration-200">
+          <svg class="animate-spin h-4 w-4 text-emerald-600 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          <span id="compressionIndicatorText">{% trans "Optimizing photos to WebP (2560px)..." %}</span>
         </div>
 
         <!-- Live Thumbnail Previews Grid -->
@@ -255,6 +281,11 @@
   const intakeForm = document.getElementById('intakeForm');
   const dropZone = document.getElementById('dropZone');
   const imageInput = document.getElementById('imageInput');
+  const cameraInput = document.getElementById('cameraInput');
+  const btnTriggerCamera = document.getElementById('btnTriggerCamera');
+  const btnTriggerGallery = document.getElementById('btnTriggerGallery');
+  const compressionIndicator = document.getElementById('compressionIndicator');
+  const compressionIndicatorText = document.getElementById('compressionIndicatorText');
   const previewContainer = document.getElementById('previewContainer');
   const previewGrid = document.getElementById('previewGrid');
   const photoCount = document.getElementById('photoCount');
@@ -449,6 +480,14 @@
       submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
       submitBtn.setAttribute('title', "{% trans 'Please wait for AI analysis to finish...' %}");
       dropZone.classList.add('pointer-events-none', 'opacity-70');
+      if (btnTriggerCamera) {
+        btnTriggerCamera.disabled = true;
+        btnTriggerCamera.classList.add('opacity-50', 'pointer-events-none');
+      }
+      if (btnTriggerGallery) {
+        btnTriggerGallery.disabled = true;
+        btnTriggerGallery.classList.add('opacity-50', 'pointer-events-none');
+      }
       deleteButtons.forEach(btn => {
         btn.disabled = true;
         btn.classList.add('pointer-events-none', 'opacity-50');
@@ -466,6 +505,14 @@
 
       // Lock interactions inside form & delete buttons
       intakeForm.classList.add('pointer-events-none');
+      if (btnTriggerCamera) {
+        btnTriggerCamera.disabled = true;
+        btnTriggerCamera.classList.add('opacity-50', 'pointer-events-none');
+      }
+      if (btnTriggerGallery) {
+        btnTriggerGallery.disabled = true;
+        btnTriggerGallery.classList.add('opacity-50', 'pointer-events-none');
+      }
       deleteButtons.forEach(btn => {
         btn.disabled = true;
         btn.classList.add('pointer-events-none', 'opacity-50');
@@ -481,6 +528,14 @@
 
       dropZone.classList.remove('pointer-events-none', 'opacity-70');
       intakeForm.classList.remove('pointer-events-none');
+      if (btnTriggerCamera) {
+        btnTriggerCamera.disabled = false;
+        btnTriggerCamera.classList.remove('opacity-50', 'pointer-events-none');
+      }
+      if (btnTriggerGallery) {
+        btnTriggerGallery.disabled = false;
+        btnTriggerGallery.classList.remove('opacity-50', 'pointer-events-none');
+      }
       deleteButtons.forEach(btn => {
         btn.disabled = false;
         btn.classList.remove('pointer-events-none', 'opacity-50');
@@ -492,56 +547,262 @@
     }
   }
 
-  imageInput.addEventListener('change', function(e) {
+  function showCompressionIndicator(show, text) {
+    if (!compressionIndicator) return;
+    if (show) {
+      if (text && compressionIndicatorText) compressionIndicatorText.textContent = text;
+      compressionIndicator.classList.remove('hidden');
+      if (btnTriggerCamera) btnTriggerCamera.classList.add('opacity-50', 'pointer-events-none');
+      if (btnTriggerGallery) btnTriggerGallery.classList.add('opacity-50', 'pointer-events-none');
+      if (submitBtn) submitBtn.disabled = true;
+      if (identifyBtn) identifyBtn.disabled = true;
+    } else {
+      compressionIndicator.classList.add('hidden');
+      if (compressionIndicatorText) compressionIndicatorText.textContent = "{% trans 'Optimizing photos to WebP (2560px)...' %}";
+      if (btnTriggerCamera) btnTriggerCamera.classList.remove('opacity-50', 'pointer-events-none');
+      if (btnTriggerGallery) btnTriggerGallery.classList.remove('opacity-50', 'pointer-events-none');
+      if (formState === 'idle') {
+        if (submitBtn) submitBtn.disabled = false;
+        setIdentifyButtonState(selectedFiles.length > 0);
+      }
+    }
+  }
+
+  async function compressImageFile(file, maxDimension = 2560, quality = 0.82) {
+    if (!file || !file.type.startsWith('image/')) {
+      return file;
+    }
+    if (file.type === 'image/svg+xml' || file.type === 'image/gif') {
+      return file;
+    }
+
+    try {
+      let imageSource = null;
+      let width = 0;
+      let height = 0;
+      let closeSource = () => {};
+
+      // Strategy 1: createImageBitmap with hardware EXIF orientation handling
+      if (typeof createImageBitmap === 'function') {
+        try {
+          imageSource = await createImageBitmap(file, { imageOrientation: 'from-image' });
+          width = imageSource.width;
+          height = imageSource.height;
+          closeSource = () => { if (imageSource.close) imageSource.close(); };
+        } catch (bitmapErr) {
+          imageSource = null;
+        }
+      }
+
+      // Strategy 2: HTMLImageElement fallback
+      if (!imageSource) {
+        imageSource = await new Promise((resolve, reject) => {
+          const img = new Image();
+          const objUrl = URL.createObjectURL(file);
+          img.onload = () => {
+            URL.revokeObjectURL(objUrl);
+            resolve(img);
+          };
+          img.onerror = (err) => {
+            URL.revokeObjectURL(objUrl);
+            reject(err);
+          };
+          img.src = objUrl;
+        });
+        width = imageSource.naturalWidth || imageSource.width;
+        height = imageSource.naturalHeight || imageSource.height;
+      }
+
+      // Proportional downscale if dimensions exceed maxDimension
+      let targetWidth = width;
+      let targetHeight = height;
+      if (width > maxDimension || height > maxDimension) {
+        if (width >= height) {
+          targetWidth = maxDimension;
+          targetHeight = Math.round((height * maxDimension) / width);
+        } else {
+          targetHeight = maxDimension;
+          targetWidth = Math.round((width * maxDimension) / height);
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(imageSource, 0, 0, targetWidth, targetHeight);
+      closeSource();
+
+      // Export as WebP with quality 0.82; fallback to JPEG if WebP canvas export is unsupported
+      const blob = await new Promise((resolve) => {
+        canvas.toBlob((b) => {
+          if (b && b.type === 'image/webp' && b.size > 0) {
+            resolve(b);
+          } else {
+            canvas.toBlob((fallbackBlob) => {
+              resolve(fallbackBlob || null);
+            }, 'image/jpeg', 0.85);
+          }
+        }, 'image/webp', quality);
+      });
+
+      if (!blob) {
+        return file;
+      }
+
+      const originalName = file.name || 'photo.webp';
+      const cleanStem = originalName.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_\-]/g, "_") || "photo";
+      const ext = (blob.type === 'image/webp') ? '.webp' : '.jpg';
+      const finalName = `${cleanStem}_opt${ext}`;
+
+      return new File([blob], finalName, {
+        type: blob.type,
+        lastModified: Date.now()
+      });
+    } catch (err) {
+      console.warn("Client-side image optimization error, using original file:", err);
+      return file;
+    }
+  }
+
+  async function handleIncomingFiles(filesList) {
     if (formState === 'identifying' || formState === 'submitting') return;
 
-    const incoming = Array.from(e.target.files || []);
+    const incoming = Array.from(filesList || []);
     if (incoming.length === 0) return;
 
-    // 1. Individual file size check (10MB limit)
-    const MAX_FILE_SIZE = 10 * 1024 * 1024;
-    const oversized = incoming.find(f => f.size > MAX_FILE_SIZE);
-    if (oversized) {
-      const sizeMb = (oversized.size / (1024 * 1024)).toFixed(1);
-      const template = "{% blocktrans %}The file '%(name)s' exceeds the 10MB limit (%(size)s MB). Please select photos under 10MB.{% endblocktrans %}";
-      const errorMsg = template.replace('%(name)s', oversized.name).replace('%(size)s', sizeMb);
-      showClientAlert(errorMsg, false);
+    showCompressionIndicator(true);
+
+    try {
+      const optimizedFiles = [];
+      for (let i = 0; i < incoming.length; i++) {
+        const f = incoming[i];
+        if (!f.type.startsWith('image/')) continue;
+        if (incoming.length > 1) {
+          showCompressionIndicator(true, `{% trans "Optimizing photo" %} ${i + 1} / ${incoming.length}...`);
+        }
+        const optimized = await compressImageFile(f, 2560, 0.82);
+        optimizedFiles.push(optimized);
+      }
+
+      if (optimizedFiles.length === 0) {
+        syncFileInput();
+        return;
+      }
+
+      // 1. Individual file size check (10MB limit)
+      const MAX_FILE_SIZE = 10 * 1024 * 1024;
+      const oversized = optimizedFiles.find(f => f.size > MAX_FILE_SIZE);
+      if (oversized) {
+        const sizeMb = (oversized.size / (1024 * 1024)).toFixed(1);
+        const template = "{% blocktrans %}The file '%(name)s' exceeds the 10MB limit (%(size)s MB). Please select photos under 10MB.{% endblocktrans %}";
+        const errorMsg = template.replace('%(name)s', oversized.name).replace('%(size)s', sizeMb);
+        showClientAlert(errorMsg, false);
+        syncFileInput();
+        return;
+      }
+
+      // 2. Filter images and eliminate exact duplicate re-selections
+      const validIncoming = optimizedFiles.filter(f => {
+        const isDuplicate = selectedFiles.some(existing => 
+          existing.name === f.name && existing.size === f.size
+        );
+        return !isDuplicate;
+      });
+
+      if (validIncoming.length === 0) {
+        syncFileInput();
+        return;
+      }
+
+      // 3. Max images check (cumulative up to maxImages)
+      const availableSlots = maxImages - selectedFiles.length;
+      if (availableSlots <= 0) {
+        showClientAlert("{% trans 'Please select a maximum of 10 photos.' %}", true);
+        syncFileInput();
+        return;
+      }
+
+      if (validIncoming.length > availableSlots) {
+        showClientAlert("{% trans 'Please select a maximum of 10 photos.' %}", true);
+        selectedFiles.push(...validIncoming.slice(0, availableSlots));
+      } else {
+        clearDropZoneHighlight();
+        selectedFiles.push(...validIncoming);
+      }
+
       syncFileInput();
+      renderPreviews();
+    } finally {
+      showCompressionIndicator(false);
+    }
+  }
+
+  // Desktop drag and drop on dropZone
+  dropZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (formState !== 'idle') return;
+    dropZone.classList.add('border-emerald-500', 'bg-emerald-50/60');
+  });
+
+  dropZone.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('border-emerald-500', 'bg-emerald-50/60');
+  });
+
+  dropZone.addEventListener('drop', async function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('border-emerald-500', 'bg-emerald-50/60');
+    if (formState !== 'idle') return;
+    const dt = e.dataTransfer;
+    if (dt && dt.files && dt.files.length > 0) {
+      await handleIncomingFiles(dt.files);
+    }
+  });
+
+  // Clicking dropZone outside buttons triggers gallery input
+  dropZone.addEventListener('click', function(e) {
+    if (e.target.closest('#btnTriggerCamera') || e.target.closest('#btnTriggerGallery')) {
       return;
     }
+    imageInput.click();
+  });
 
-    // 2. Filter images and eliminate exact duplicate re-selections
-    const validIncoming = incoming.filter(f => {
-      if (!f.type.startsWith('image/')) return false;
-      const isDuplicate = selectedFiles.some(existing => 
-        existing.name === f.name && existing.size === f.size && existing.lastModified === f.lastModified
-      );
-      return !isDuplicate;
+  if (btnTriggerCamera) {
+    btnTriggerCamera.addEventListener('click', function(e) {
+      e.stopPropagation();
+      cameraInput.click();
     });
+  }
 
-    if (validIncoming.length === 0) {
-      syncFileInput();
-      return;
+  if (btnTriggerGallery) {
+    btnTriggerGallery.addEventListener('click', function(e) {
+      e.stopPropagation();
+      imageInput.click();
+    });
+  }
+
+  if (cameraInput) {
+    cameraInput.addEventListener('change', async function(e) {
+      if (formState !== 'idle') return;
+      const files = Array.from(e.target.files || []);
+      if (files.length > 0) {
+        await handleIncomingFiles(files);
+      }
+      cameraInput.value = '';
+    });
+  }
+
+  imageInput.addEventListener('change', async function(e) {
+    if (formState !== 'idle') return;
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      await handleIncomingFiles(files);
     }
-
-    // 3. Max images check (cumulative up to maxImages)
-    const availableSlots = maxImages - selectedFiles.length;
-    if (availableSlots <= 0) {
-      showClientAlert("{% trans 'Please select a maximum of 10 photos.' %}", true);
-      syncFileInput();
-      return;
-    }
-
-    if (validIncoming.length > availableSlots) {
-      showClientAlert("{% trans 'Please select a maximum of 10 photos.' %}", true);
-      selectedFiles.push(...validIncoming.slice(0, availableSlots));
-    } else {
-      clearDropZoneHighlight();
-      selectedFiles.push(...validIncoming);
-    }
-
-    syncFileInput();
-    renderPreviews();
+    imageInput.value = '';
   });
 
   identifyBtn.addEventListener('click', async function() {
