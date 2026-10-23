@@ -10,11 +10,11 @@ from PIL import Image, ImageOps
 MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 MAX_IMAGES_PER_PRODUCT = 10
 DEFAULT_WEBP_QUALITY = 82
-MAX_DIMENSION = 2048
+MAX_DIMENSION = 2560
 ALLOWED_IMAGE_FORMATS = {"JPEG", "PNG", "WEBP", "GIF", "TIFF", "BMP", "MPO"}
 
-# Protect against decompression bomb (pixel flood) DoS attacks
-Image.MAX_IMAGE_PIXELS = 25_000_000
+# Protect against decompression bomb (pixel flood) DoS attacks while supporting high-res 50MP mobile cameras
+Image.MAX_IMAGE_PIXELS = 100_000_000
 
 
 def validate_image_file(uploaded_file):
