@@ -67,3 +67,31 @@ class ImageServiceTests(TestCase):
         invalid_list = [f"file{i}.jpg" for i in range(11)]
         with self.assertRaises(ValidationError):
             validate_images_count(invalid_list)
+
+    def test_downscales_images_exceeding_2560px(self):
+        uploaded = self.create_test_image_file(filename="huge_landscape.jpg", format="JPEG", size=(3000, 1500))
+        webp_file = process_and_convert_to_webp(uploaded)
+
+        with Image.open(webp_file) as img:
+            self.assertEqual(img.format, "WEBP")
+            self.assertEqual(img.size, (2560, 1280))
+
+    def test_supports_high_megapixels_mobile_camera_without_bomb_error(self):
+        # 30 Megapixels image (6000 x 5000) simulates modern 48MP/50MP smartphone camera output
+        # Previously failed when Image.MAX_IMAGE_PIXELS was 25_000_000
+        uploaded = self.create_test_image_file(filename="phone_camera_50mp.jpg", format="JPEG", size=(6000, 5000))
+        validate_image_file(uploaded)
+        webp_file = process_and_convert_to_webp(uploaded)
+
+        with Image.open(webp_file) as img:
+            self.assertEqual(img.format, "WEBP")
+            self.assertEqual(img.size[0], 2560)
+            self.assertEqual(img.size[1], round(5000 * 2560 / 6000))
+
+    def test_convert_webp_input_to_webp_output_success(self):
+        uploaded = self.create_test_image_file(filename="client_compressed.webp", format="WEBP", size=(800, 600))
+        webp_file = process_and_convert_to_webp(uploaded)
+
+        with Image.open(webp_file) as img:
+            self.assertEqual(img.format, "WEBP")
+            self.assertEqual(img.size, (800, 600))
