@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-10-24
+
+### Fixed
+- **Android Intake Native Camera Trigger Activation**:
+  - **Native Label Element Activation**: Replaced synthetic JavaScript button click triggers with semantic `<label for="cameraInput">` and `<label for="imageInput">` elements. In Android Chrome and modern mobile browsers, user activation contexts are strictly enforced; native `<label>` binding initiates the OS camera capture intent (`MediaStore.ACTION_IMAGE_CAPTURE`) without programmatic click restrictions.
+  - **Eliminated Event Bubbling to Gallery Trigger**: Bound `stopPropagation()` on `cameraInput` and `imageInput` click events and guarded the `#dropZone` click delegation handler against any child label, button, or input. Previously, clicking the camera button caused event bubbling up to `#dropZone`, which mistakenly fired the gallery `imageInput.click()` on top of the camera intent, opening the gallery instead of the camera.
+  - **Keyboard Accessibility**: Implemented `role="button"`, `tabindex="0"`, and keydown listeners for `Space` and `Enter` on the dual action labels to maintain full accessibility.
+
 ## [1.3.1] - 2026-10-23
 
 ### Fixed

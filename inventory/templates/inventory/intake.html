@@ -94,16 +94,16 @@
             </div>
             <!-- Dual Action Buttons: Dedicated Camera & Multi-file Gallery -->
             <div class="flex flex-wrap items-center justify-center gap-2.5 pt-1">
-              <button type="button" id="btnTriggerCamera"
-                      class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl shadow-sm text-xs sm:text-sm transition cursor-pointer min-h-[40px]">
+              <label for="cameraInput" id="btnTriggerCamera" role="button" tabindex="0"
+                     class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl shadow-sm text-xs sm:text-sm transition cursor-pointer min-h-[40px] select-none">
                 <span class="text-base leading-none">📸</span>
                 <span>{% trans "Take Photo" %}</span>
-              </button>
-              <button type="button" id="btnTriggerGallery"
-                      class="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 font-bold rounded-xl border border-slate-300 shadow-sm text-xs sm:text-sm transition cursor-pointer min-h-[40px]">
+              </label>
+              <label for="imageInput" id="btnTriggerGallery" role="button" tabindex="0"
+                     class="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 font-bold rounded-xl border border-slate-300 shadow-sm text-xs sm:text-sm transition cursor-pointer min-h-[40px] select-none">
                 <span class="text-base leading-none">🖼️</span>
                 <span>{% trans "Choose from Gallery" %}</span>
-              </button>
+              </label>
             </div>
             <p class="text-[11px] text-slate-400 hidden sm:block">{% trans "Or drop photos anywhere in this box" %}</p>
           </div>
@@ -481,12 +481,10 @@
       submitBtn.setAttribute('title', "{% trans 'Please wait for AI analysis to finish...' %}");
       dropZone.classList.add('pointer-events-none', 'opacity-70');
       if (btnTriggerCamera) {
-        btnTriggerCamera.disabled = true;
-        btnTriggerCamera.classList.add('opacity-50', 'pointer-events-none');
+                btnTriggerCamera.classList.add('opacity-50', 'pointer-events-none');
       }
       if (btnTriggerGallery) {
-        btnTriggerGallery.disabled = true;
-        btnTriggerGallery.classList.add('opacity-50', 'pointer-events-none');
+                btnTriggerGallery.classList.add('opacity-50', 'pointer-events-none');
       }
       deleteButtons.forEach(btn => {
         btn.disabled = true;
@@ -506,12 +504,10 @@
       // Lock interactions inside form & delete buttons
       intakeForm.classList.add('pointer-events-none');
       if (btnTriggerCamera) {
-        btnTriggerCamera.disabled = true;
-        btnTriggerCamera.classList.add('opacity-50', 'pointer-events-none');
+                btnTriggerCamera.classList.add('opacity-50', 'pointer-events-none');
       }
       if (btnTriggerGallery) {
-        btnTriggerGallery.disabled = true;
-        btnTriggerGallery.classList.add('opacity-50', 'pointer-events-none');
+                btnTriggerGallery.classList.add('opacity-50', 'pointer-events-none');
       }
       deleteButtons.forEach(btn => {
         btn.disabled = true;
@@ -529,12 +525,10 @@
       dropZone.classList.remove('pointer-events-none', 'opacity-70');
       intakeForm.classList.remove('pointer-events-none');
       if (btnTriggerCamera) {
-        btnTriggerCamera.disabled = false;
-        btnTriggerCamera.classList.remove('opacity-50', 'pointer-events-none');
+                btnTriggerCamera.classList.remove('opacity-50', 'pointer-events-none');
       }
       if (btnTriggerGallery) {
-        btnTriggerGallery.disabled = false;
-        btnTriggerGallery.classList.remove('opacity-50', 'pointer-events-none');
+                btnTriggerGallery.classList.remove('opacity-50', 'pointer-events-none');
       }
       deleteButtons.forEach(btn => {
         btn.disabled = false;
@@ -763,27 +757,37 @@
     }
   });
 
-  // Clicking dropZone outside buttons triggers gallery input
+  // Clicking dropZone outside buttons/labels/inputs triggers gallery input
   dropZone.addEventListener('click', function(e) {
-    if (e.target.closest('#btnTriggerCamera') || e.target.closest('#btnTriggerGallery')) {
+    if (e.target.closest('#btnTriggerCamera') || e.target.closest('#btnTriggerGallery') || e.target.closest('label') || e.target.closest('button') || e.target.closest('input')) {
       return;
     }
     imageInput.click();
   });
 
-  if (btnTriggerCamera) {
-    btnTriggerCamera.addEventListener('click', function(e) {
+  // Prevent input click events from bubbling to dropZone
+  if (cameraInput) {
+    cameraInput.addEventListener('click', function(e) {
       e.stopPropagation();
-      cameraInput.click();
     });
   }
 
-  if (btnTriggerGallery) {
-    btnTriggerGallery.addEventListener('click', function(e) {
+  if (imageInput) {
+    imageInput.addEventListener('click', function(e) {
       e.stopPropagation();
-      imageInput.click();
     });
   }
+
+  // Keyboard accessibility for label buttons (Enter / Space)
+  [btnTriggerCamera, btnTriggerGallery].forEach(label => {
+    if (!label) return;
+    label.addEventListener('keydown', function(e) {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        label.click();
+      }
+    });
+  });
 
   if (cameraInput) {
     cameraInput.addEventListener('change', async function(e) {
