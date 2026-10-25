@@ -35,6 +35,7 @@ from .models import (
     ProductStatus,
     ProductStatusLog,
     PushSubscription,
+    SaleChannelType,
 )
 from .permissions import is_assistant, is_manager, manager_required
 from .services.ai_service import identify_intake_product
@@ -186,6 +187,7 @@ def dashboard_view(request):
     status_filter = request.GET.get("status", "all").strip().lower()
     search_query = request.GET.get("q", "").strip()
     platform_filter = request.GET.get("platform", "").strip().lower()
+    channel_filter = request.GET.get("channel", "").strip().lower()
 
     # Query only marketplace sites that have at least one active published product
     available_platforms = (
@@ -201,7 +203,7 @@ def dashboard_view(request):
         .order_by("order", "name")
     )
 
-    products = Product.objects.prefetch_related("images", "listing_links__site").all()
+    products = Product.objects.prefetch_related("images", "listing_links__site").select_related("sold_marketplace").all()
 
     if platform_filter:
         products = products.filter(
@@ -213,6 +215,14 @@ def dashboard_view(request):
         products = products.filter(is_sold=False)
     elif status_filter == "sold":
         products = products.filter(is_sold=True)
+        if channel_filter == "in_store":
+            products = products.filter(sold_channel_type=SaleChannelType.IN_STORE)
+        elif channel_filter == "marketplace":
+            products = products.filter(sold_channel_type=SaleChannelType.MARKETPLACE)
+            if platform_filter:
+                products = products.filter(sold_marketplace__slug=platform_filter)
+        elif channel_filter == "other":
+            products = products.filter(sold_channel_type=SaleChannelType.OTHER)
     elif status_filter == "awaiting_info":
         products = products.filter(
             Q(status=ProductStatus.AWAITING_INFO) | Q(clarifications__status=ClarificationStatus.PENDING, is_sold=False)
@@ -249,6 +259,21 @@ def dashboard_view(request):
             distinct=True,
         ),
         sold_count=Count("id", filter=Q(status=ProductStatus.SOLD), distinct=True),
+        sold_in_store_count=Count(
+            "id",
+            filter=Q(status=ProductStatus.SOLD, sold_channel_type=SaleChannelType.IN_STORE),
+            distinct=True,
+        ),
+        sold_marketplace_count=Count(
+            "id",
+            filter=Q(status=ProductStatus.SOLD, sold_channel_type=SaleChannelType.MARKETPLACE),
+            distinct=True,
+        ),
+        sold_other_count=Count(
+            "id",
+            filter=Q(status=ProductStatus.SOLD, sold_channel_type=SaleChannelType.OTHER),
+            distinct=True,
+        ),
         blocked_count=Count("id", filter=Q(status=ProductStatus.BLOCKED), distinct=True),
     )
 
@@ -284,6 +309,10 @@ def dashboard_view(request):
         "price_pending_count": counts["price_pending_count"] or 0,
         "awaiting_info_count": counts["awaiting_info_count"] or 0,
         "sold_count": counts["sold_count"] or 0,
+        "sold_in_store_count": counts["sold_in_store_count"] or 0,
+        "sold_marketplace_count": counts["sold_marketplace_count"] or 0,
+        "sold_other_count": counts["sold_other_count"] or 0,
+        "channel_filter": channel_filter,
         "blocked_count": counts["blocked_count"] or 0,
         "can_manage": is_manager(request.user),
     }

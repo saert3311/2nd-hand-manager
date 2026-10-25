@@ -2183,12 +2183,12 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 95: Dashboard Catalog Filtering & Product Card Channel Badges (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`)
 **Description:** Update `dashboard_view` in `inventory/views.py` to support channel sub-filtering when viewing the sold tab (`?status=sold&channel=in_store`, `?status=sold&channel=marketplace`, `?status=sold&channel=marketplace&platform=<slug>`). Calculate counts for channels (`in_store_count`, `marketplace_count`). In `inventory/templates/inventory/dashboard.html`, display sub-filter navigation pills and render channel badges on each sold product card (e.g. `🏪 Tienda`, `🌐 Wallapop`). Preserve search and pagination state across filters.
 **Acceptance criteria:**
-- [ ] Sold product cards in dashboard display channel badge next to sold badge.
-- [ ] Sub-filter buttons/dropdown allow filtering sold products by In-Store, Marketplaces, or All Channels.
-- [ ] Counts accurately reflect total items per channel.
-- [ ] Pagination and search queries are preserved.
+- [x] Sold product cards in dashboard display channel badge next to sold badge.
+- [x] Sub-filter buttons/dropdown allow filtering sold products by In-Store, Marketplaces, or All Channels.
+- [x] Counts accurately reflect total items per channel.
+- [x] Pagination and search queries are preserved.
 **Verification:**
-- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_views`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_views`
 **Dependencies:** Task 92, Task 94
 **Files likely touched:**
 - `inventory/views.py`
