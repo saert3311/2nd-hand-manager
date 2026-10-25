@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-25
+
 ### Added
 - **Sale Channel Tracking & Multi-Channel Attribution (Phase 27)**:
   - **Domain Model Tracking**: Added `SaleChannelType` choices (`in_store`, `marketplace`, `other`), `sold_channel_type`, `sold_marketplace` (ForeignKey to `MarketplaceSite` with `SET_NULL` deletion protection), `sold_channel_notes` (`CharField(max_length=255)`), and computed property `sale_channel_display` to `Product` in `inventory/models.py`. Generated and applied database migration `0017_product_sale_channel.py`. Updated `mark_as_sold()` and `mark_as_unsold()` to manage channel state and audit logging in `ProductStatusLog`.
