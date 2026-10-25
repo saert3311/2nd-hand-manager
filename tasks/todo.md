@@ -2150,12 +2150,12 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 93: Form Validation & Lifecycle Channel Logic (`inventory/forms.py`)
 **Description:** Update `ProductUpdateForm` in `inventory/forms.py` to include `sold_channel_type`, `sold_marketplace`, and `sold_channel_notes`. Implement conditional validation in `clean()`: when `is_sold=True` or `status=ProductStatus.SOLD`, `sold_channel_type` is required; when `sold_channel_type == 'marketplace'`, `sold_marketplace` is required; when `is_sold=False` and status is not `sold`, reset channel fields to blank/null.
 **Acceptance criteria:**
-- [ ] Form fields `sold_channel_type`, `sold_marketplace`, and `sold_channel_notes` defined on `ProductUpdateForm`.
-- [ ] Marking product as sold without `sold_channel_type` raises validation error.
-- [ ] Choosing `marketplace` without `sold_marketplace` raises validation error on `sold_marketplace`.
-- [ ] Unchecking `is_sold` resets channel fields cleanly.
+- [x] Form fields `sold_channel_type`, `sold_marketplace`, and `sold_channel_notes` defined on `ProductUpdateForm`.
+- [x] Marking product as sold without `sold_channel_type` raises validation error.
+- [x] Choosing `marketplace` without `sold_marketplace` raises validation error on `sold_marketplace`.
+- [x] Unchecking `is_sold` resets channel fields cleanly.
 **Verification:**
-- [ ] Unit tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake`
+- [x] Unit tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake`
 **Dependencies:** Task 92
 **Files likely touched:**
 - `inventory/forms.py`

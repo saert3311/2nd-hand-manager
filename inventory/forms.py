@@ -6,7 +6,15 @@ from django.contrib.admin.forms import AdminAuthenticationForm
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import gettext_lazy as _
 
-from .models import ClarificationCategory, ClarificationStatus, Product, ProductClarification, ProductStatus
+from .models import (
+    ClarificationCategory,
+    ClarificationStatus,
+    MarketplaceSite,
+    Product,
+    ProductClarification,
+    ProductStatus,
+    SaleChannelType,
+)
 from .services.turnstile_service import verify_turnstile_token
 
 
@@ -161,10 +169,46 @@ class ProductUpdateForm(forms.ModelForm):
             "class": "w-full sm:w-auto px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
         }),
     )
+    sold_channel_type = forms.ChoiceField(
+        choices=[("", "---------")] + list(SaleChannelType.choices),
+        required=False,
+        label=_("Sale Channel"),
+        widget=forms.Select(attrs={
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+        }),
+    )
+    sold_marketplace = forms.ModelChoiceField(
+        queryset=MarketplaceSite.objects.filter(is_active=True).order_by("order", "name"),
+        required=False,
+        label=_("Marketplace Platform"),
+        empty_label=_("---------"),
+        widget=forms.Select(attrs={
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+        }),
+    )
+    sold_channel_notes = forms.CharField(
+        max_length=255,
+        required=False,
+        label=_("Sale Reference / Notes"),
+        widget=forms.TextInput(attrs={
+            "maxlength": "255",
+            "placeholder": _("Ticket #, order ID, buyer username (optional)"),
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+        }),
+    )
 
     class Meta:
         model = Product
-        fields = ["ai_title", "ai_description", "sale_price", "status", "is_sold"]
+        fields = [
+            "ai_title",
+            "ai_description",
+            "sale_price",
+            "status",
+            "is_sold",
+            "sold_channel_type",
+            "sold_marketplace",
+            "sold_channel_notes",
+        ]
         labels = {
             "is_sold": _("Mark Product as Sold"),
         }
@@ -174,16 +218,45 @@ class ProductUpdateForm(forms.ModelForm):
             }),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from django.db.models import Q
+        if self.instance and self.instance.sold_marketplace_id:
+            self.fields["sold_marketplace"].queryset = MarketplaceSite.objects.filter(
+                Q(is_active=True) | Q(id=self.instance.sold_marketplace_id)
+            ).order_by("order", "name")
+
     def clean(self):
         cleaned_data = super().clean()
         status = cleaned_data.get("status")
         is_sold = cleaned_data.get("is_sold")
+        sold_channel_type = cleaned_data.get("sold_channel_type")
+        sold_marketplace = cleaned_data.get("sold_marketplace")
+
         if self.instance and self.instance.pk and not is_sold and status == ProductStatus.READY:
             if self.instance.clarifications.filter(status=ClarificationStatus.PENDING).exists():
                 self.add_error(
                     "status",
                     _("Cannot mark product as Ready to Publish while pending clarifications remain unresolved.")
                 )
+
+        is_marking_sold = bool(is_sold or status == ProductStatus.SOLD)
+        if is_marking_sold:
+            if not sold_channel_type:
+                self.add_error(
+                    "sold_channel_type",
+                    _("Please select where this product was sold (In-Store, Marketplace, or Other).")
+                )
+            elif sold_channel_type == SaleChannelType.MARKETPLACE and not sold_marketplace:
+                self.add_error(
+                    "sold_marketplace",
+                    _("Please select the marketplace platform where the product was sold.")
+                )
+        else:
+            cleaned_data["sold_channel_type"] = ""
+            cleaned_data["sold_marketplace"] = None
+            cleaned_data["sold_channel_notes"] = ""
+
         return cleaned_data
 
 
