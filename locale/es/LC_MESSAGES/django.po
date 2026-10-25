@@ -1227,13 +1227,18 @@ msgid "Changed By"
 msgstr "Modificado por"
 
 msgid "User who initiated the change (null if automated system event)"
-msgstr "Usuario que inició el cambio (nulo si es evento automático del sistema)"
+msgstr ""
+"Usuario que inició el cambio (nulo si es evento automático del sistema)"
 
 msgid "Trigger / Reason"
 msgstr "Motivo / Desencadenante"
 
-msgid "Machine code for event trigger (e.g. intake, staging_update, clarification_opened, etc.)"
-msgstr "Código del desencadenante (ej. intake, staging_update, clarification_opened, etc.)"
+msgid ""
+"Machine code for event trigger (e.g. intake, staging_update, "
+"clarification_opened, etc.)"
+msgstr ""
+"Código del desencadenante (ej. intake, staging_update, clarification_opened,"
+" etc.)"
 
 msgid "Notes / Description"
 msgstr "Notas / Descripción"
@@ -1279,8 +1284,6 @@ msgstr "Producción"
 
 msgid "Staging"
 msgstr "Staging"
-
-
 
 msgid "Estimated Retail Price (€)"
 msgstr "PVP nuevo estimado (€)"
@@ -1375,3 +1378,79 @@ msgstr "Toca para revisar las prendas en el panel de staging."
 msgid "Push Status"
 msgstr "Estado push"
 
+msgid "Sale Channel"
+msgstr "Canal de venta"
+
+msgid "Sale Channel Type"
+msgstr "Tipo de canal de venta"
+
+msgid "In-Store / Physical Store"
+msgstr "Tienda física"
+
+msgid "In-Store"
+msgstr "Tienda física"
+
+msgid "In-Store (Tienda física)"
+msgstr "Tienda física"
+
+msgid "Online Marketplace"
+msgstr "Marketplace online"
+
+msgid "Other / Direct Sale"
+msgstr "Otro / Venta directa"
+
+msgid "Other"
+msgstr "Otro"
+
+msgid "Sold Marketplace"
+msgstr "Marketplace de venta"
+
+msgid "Marketplace Platform"
+msgstr "Plataforma de marketplace"
+
+msgid "Marketplaces"
+msgstr "Marketplaces"
+
+msgid "Commercial channel through which the product was sold"
+msgstr "Canal comercial a través del cual se vendió el producto"
+
+msgid "Marketplace platform where the sale occurred"
+msgstr "Plataforma de marketplace donde se produjo la venta"
+
+msgid "Sale Reference / Notes"
+msgstr "Referencia / Notas de venta"
+
+msgid "Optional ticket number, order ID, or buyer reference"
+msgstr "Número de ticket, ID de pedido o referencia del comprador (opcional)"
+
+msgid "Ticket #, order ID, buyer username (optional)"
+msgstr "Nº de ticket, ID de pedido, usuario comprador (opcional)"
+
+msgid ""
+"Please select where this product was sold (In-Store, Marketplace, or Other)."
+msgstr ""
+"Por favor, selecciona dónde se vendió este producto (Tienda física, "
+"Marketplace u Otro)."
+
+msgid "Please select the marketplace platform where the product was sold."
+msgstr ""
+"Por favor, selecciona la plataforma de marketplace donde se vendió el "
+"producto."
+
+msgid "Sold: In-Store"
+msgstr "Vendido: Tienda física"
+
+msgid "Sold: Other"
+msgstr "Vendido: Otro"
+
+msgid "Where was it sold?"
+msgstr "¿Dónde se vendió?"
+
+msgid "Quick picks:"
+msgstr "Selección rápida:"
+
+msgid "Channel:"
+msgstr "Canal:"
+
+msgid "All Channels"
+msgstr "Todos los canales"

@@ -324,8 +324,8 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - [x] **Task 93:** Form Validation & Lifecycle Channel Logic (`inventory/forms.py`).
 - [x] **Task 94:** Staging Product Detail UI Integration with Dynamic Selector & Quick-Picks (`inventory/views.py`, `inventory/templates/inventory/product_detail.html`).
 - [x] **Task 95:** Dashboard Catalog Filtering & Product Card Channel Badges (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`).
-- [ ] **Task 96:** Bilingual Localization, Comprehensive Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_sale_channel.py`, `CHANGELOG.md`).
-- [ ] **Checkpoint 27 (Sale Channel Tracking Complete):** Marking a product as sold requires explicit channel attribution (in-store or marketplace); marketplace sales link to configured `MarketplaceSite` with `SET_NULL` cascade safety; product detail staging page provides progressive channel selector with 1-click published platform shortcuts; catalog dashboard displays channel badges and sub-filters sold items by channel; all automated tests pass with 0 failures and 0 linter errors.
+- [x] **Task 96:** Bilingual Localization, Comprehensive Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_sale_channel.py`, `CHANGELOG.md`).
+- [x] **Checkpoint 27 (Sale Channel Tracking Complete):** Marking a product as sold requires explicit channel attribution (in-store or marketplace); marketplace sales link to configured `MarketplaceSite` with `SET_NULL` cascade safety; product detail staging page provides progressive channel selector with 1-click published platform shortcuts; catalog dashboard displays channel badges and sub-filters sold items by channel; all automated tests pass with 0 failures and 0 linter errors.
 
 
 

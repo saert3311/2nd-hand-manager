@@ -205,6 +205,7 @@ class BrowserRefinedLifecycleTests(StaticLiveServerTestCase):
 
             # 10. Mark as Sold -> SOLD
             page.check('input[name="is_sold"]')
+            page.click('button.quick-channel-btn[data-channel="in_store"]')
             page.click('button:has-text("Guardar cambios"), button:has-text("Save Listing Changes")')
             page.wait_for_load_state("networkidle")
 

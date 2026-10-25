@@ -2200,16 +2200,16 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 96: Bilingual Localization, Comprehensive Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_sale_channel.py`, `CHANGELOG.md`)
 **Description:** Add Spanish translation entries in `locale/es/LC_MESSAGES/django.po` for all new tokens ("In-Store / Physical Store", "Online Marketplace", "Other / Direct Sale", "Sale Channel Type", "Sold Marketplace", "Sale Reference / Notes", "Please select where this product was sold.", "Please select the marketplace platform where the product was sold.", "Sold in-store", "Sold on %(marketplace)s", etc.) and compile to `django.mo`. Build a dedicated test suite `tests/test_sale_channel.py` validating: (1) model choices and `sale_channel_display`; (2) `mark_as_sold` and `mark_as_unsold`; (3) foreign key `SET_NULL` cascade safety; (4) form conditional validation errors and successes; (5) view POST execution and audit log creation; (6) dashboard filtering by channel with counts; (7) admin display and permissions. Update `CHANGELOG.md` under `## [Unreleased]`. Run full regression suite and linter.
 **Acceptance criteria:**
-- [ ] Spanish translations compiled with 0 errors.
-- [ ] Test suite in `tests/test_sale_channel.py` passes 100%.
-- [ ] Full regression suite (349+ tests) passes with 0 failures and 0 errors.
-- [ ] `ruff check .` passes with 0 warnings.
-- [ ] `CHANGELOG.md` updated with Phase 27 entries.
+- [x] Spanish translations compiled with 0 errors.
+- [x] Test suite in `tests/test_sale_channel.py` passes 100%.
+- [x] Full regression suite (349+ tests) passes with 0 failures and 0 errors.
+- [x] `ruff check .` passes with 0 warnings.
+- [x] `CHANGELOG.md` updated with Phase 27 entries.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
-- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_sale_channel`
-- [ ] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
-- [ ] Linter passes: `.venv\Scripts\ruff.exe check .`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_sale_channel`
+- [x] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check .`
 **Dependencies:** Task 92, Task 93, Task 94, Task 95
 **Files likely touched:**
 - `locale/es/LC_MESSAGES/django.po`
@@ -2221,14 +2221,14 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ---
 
 ## Checkpoint 27: Sale Channel Tracking Complete
-- [ ] `SaleChannelType` and sale channel fields on `Product` with migration `0017_product_sale_channel.py` applied cleanly.
-- [ ] Form validation strictly requires channel selection when marking products as sold.
-- [ ] Marketplace sales link to `MarketplaceSite` with `SET_NULL` protection.
-- [ ] Product detail staging view features dynamic channel selector with 1-click published platform shortcuts.
-- [ ] Catalog dashboard displays channel badges on cards and supports sub-filtering sold inventory by channel.
-- [ ] Spanish localization compiled and verified.
-- [ ] All unit and regression tests pass with 0 failures.
-- [ ] `ruff check .` passes cleanly.
+- [x] `SaleChannelType` and sale channel fields on `Product` with migration `0017_product_sale_channel.py` applied cleanly.
+- [x] Form validation strictly requires channel selection when marking products as sold.
+- [x] Marketplace sales link to `MarketplaceSite` with `SET_NULL` protection.
+- [x] Product detail staging view features dynamic channel selector with 1-click published platform shortcuts.
+- [x] Catalog dashboard displays channel badges on cards and supports sub-filtering sold inventory by channel.
+- [x] Spanish localization compiled and verified.
+- [x] All unit and regression tests pass with 0 failures.
+- [x] `ruff check .` passes cleanly.
 - [x] `IntakeBatchSession` model and migration `0016_intake_batch_session.py` applied cleanly and registered in admin.
 - [x] Uploading consecutive products during intake groups them under one `IntakeBatchSession` without sending individual push alerts.
 - [x] After 15 minutes of inactivity, a single consolidated push alert is dispatched to store managers with the accurate batch count.

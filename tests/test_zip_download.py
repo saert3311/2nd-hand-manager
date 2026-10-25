@@ -65,6 +65,7 @@ class ProductDetailAndZipDownloadTests(TestCase):
                 "ai_description": "Clean vintage leather belt in great shape.",
                 "sale_price": "29.99",
                 "is_sold": "on",
+                "sold_channel_type": "in_store",
             }
         )
         self.assertRedirects(resp, url)
@@ -72,6 +73,7 @@ class ProductDetailAndZipDownloadTests(TestCase):
         self.assertEqual(self.product.ai_title, "Genuine Brown Leather Belt")
         self.assertEqual(self.product.sale_price, Decimal("29.99"))
         self.assertTrue(self.product.is_sold)
+        self.assertEqual(self.product.sold_channel_type, "in_store")
         self.assertIsNotNone(self.product.sold_at)
 
     def test_assistant_cannot_update_product(self):

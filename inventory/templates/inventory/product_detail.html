@@ -549,8 +549,8 @@
                   <!-- 1-Click Quick Picks -->
                   <div class="flex flex-wrap items-center gap-2 mb-2">
                     <span class="text-xs text-slate-500 font-medium">{% trans "Quick picks:" %}</span>
-                    <button type="button" onclick="selectSaleChannel('in_store')"
-                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-300 hover:border-emerald-300 transition shadow-xs cursor-pointer">
+                    <button type="button" id="btnQuickInStore" data-channel="in_store" onclick="selectSaleChannel('in_store')"
+                            class="quick-channel-btn inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-300 hover:border-emerald-300 transition shadow-xs cursor-pointer">
                       🏪 {% trans "In-Store (Tienda física)" %}
                     </button>
                     {% for item in site_links_data %}
