@@ -392,6 +392,20 @@ class Product(models.Model):
                 or getattr(self, "_status_notes", None)
                 or ""
             )
+            if not effective_notes and to_status == ProductStatus.SOLD:
+                note_parts = []
+                if self.sold_channel_type:
+                    note_parts.append(f"Sold via {self.sale_channel_display}")
+                else:
+                    note_parts.append("Marked sold")
+                if self.sale_price is not None:
+                    try:
+                        note_parts.append(f"for €{Decimal(str(self.sale_price)):.2f}")
+                    except Exception:
+                        note_parts.append(f"for €{self.sale_price}")
+                if self.sold_channel_notes:
+                    note_parts.append(f"({self.sold_channel_notes})")
+                effective_notes = " ".join(note_parts)
             try:
                 log_status_change(
                     product=self,

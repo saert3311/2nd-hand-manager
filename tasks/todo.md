@@ -2166,12 +2166,12 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 94: Staging Product Detail UI Integration with Dynamic Selector & Quick-Picks (`inventory/views.py`, `inventory/templates/inventory/product_detail.html`)
 **Description:** Update `product_detail_view` in `inventory/views.py` and template `inventory/templates/inventory/product_detail.html` to integrate the sale channel selector into the staging detail view. Progressive disclosure: when `#id_is_sold` checkbox is checked, display `#soldChannelContainer`. Provide 1-click quick-pick buttons for "🏪 Tienda física" and active published marketplace links (`product.listing_links.filter(is_active=True)`). When viewing an already sold product, render a prominent status badge displaying the channel, sale price, date, and notes. Update `ProductStatusLog` audit trail logging to incorporate sales channel info.
 **Acceptance criteria:**
-- [ ] Checkbox `#id_is_sold` progressively shows/hides the sale channel inputs.
-- [ ] Quick-picker pills enable 1-click selection of In-Store and active published platforms.
-- [ ] Prominent badge displayed for sold products with channel, price, and timestamp.
-- [ ] Updating sold product through `product_detail_view` persists channel and creates informative `ProductStatusLog` entry.
+- [x] Checkbox `#id_is_sold` progressively shows/hides the sale channel inputs.
+- [x] Quick-picker pills enable 1-click selection of In-Store and active published platforms.
+- [x] Prominent badge displayed for sold products with channel, price, and timestamp.
+- [x] Updating sold product through `product_detail_view` persists channel and creates informative `ProductStatusLog` entry.
 **Verification:**
-- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_views`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_views`
 **Dependencies:** Task 92, Task 93
 **Files likely touched:**
 - `inventory/views.py`
