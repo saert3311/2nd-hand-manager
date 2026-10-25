@@ -2128,16 +2128,16 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 92: Domain Model Expansion, Migrations & Admin Registration (`inventory/models.py`, `inventory/migrations/0017_product_sale_channel.py`, `inventory/admin.py`)
 **Description:** Implement `SaleChannelType` text choices (`in_store`, `marketplace`, `other`) in `inventory/models.py`. Extend `Product` with `sold_channel_type` (CharField, choices, blank=True, db_index=True), `sold_marketplace` (ForeignKey to `MarketplaceSite`, null=True, blank=True, on_delete=models.SET_NULL, related_name="sold_products"), and `sold_channel_notes` (CharField, max_length=255, blank=True). Add `sale_channel_display` property/method. Update `mark_as_sold(self, price=None, user=None, channel_type=None, marketplace=None, notes=None, commit=True)` and `mark_as_unsold(self, user=None, commit=True)`. Generate and apply database migration `0017_product_sale_channel.py`. Register `sale_channel_display_col` in `ProductAdmin.list_display`, add `sold_channel_type` and `sold_marketplace` to `list_filter`, and add a dedicated fieldset for sale details in `inventory/admin.py`.
 **Acceptance criteria:**
-- [ ] `SaleChannelType` choices defined in `inventory/models.py`.
-- [ ] `sold_channel_type`, `sold_marketplace`, and `sold_channel_notes` added to `Product` model.
-- [ ] `sale_channel_display` returns localized string for in-store, marketplace, and other.
-- [ ] `mark_as_sold` and `mark_as_unsold` methods handle channel fields.
-- [ ] Migration `0017_product_sale_channel.py` created and applied cleanly.
-- [ ] `ProductAdmin` renders sale channel columns, filters, and fieldset.
+- [x] `SaleChannelType` choices defined in `inventory/models.py`.
+- [x] `sold_channel_type`, `sold_marketplace`, and `sold_channel_notes` added to `Product` model.
+- [x] `sale_channel_display` returns localized string for in-store, marketplace, and other.
+- [x] `mark_as_sold` and `mark_as_unsold` methods handle channel fields.
+- [x] Migration `0017_product_sale_channel.py` created and applied cleanly.
+- [x] `ProductAdmin` renders sale channel columns, filters, and fieldset.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py makemigrations inventory --check --dry-run`
-- [ ] Migration applied: `.venv\Scripts\python.exe manage.py migrate`
-- [ ] Unit tests pass: `.venv\Scripts\python.exe manage.py test tests.test_models`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py makemigrations inventory --check --dry-run`
+- [x] Migration applied: `.venv\Scripts\python.exe manage.py migrate`
+- [x] Unit tests pass: `.venv\Scripts\python.exe manage.py test tests.test_models`
 **Dependencies:** None
 **Files likely touched:**
 - `inventory/models.py`

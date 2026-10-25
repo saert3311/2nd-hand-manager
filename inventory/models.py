@@ -28,6 +28,12 @@ class ProductStatus(models.TextChoices):
     BLOCKED = "blocked", _("Blocked")
 
 
+class SaleChannelType(models.TextChoices):
+    IN_STORE = "in_store", _("In-Store / Physical Store")
+    MARKETPLACE = "marketplace", _("Online Marketplace")
+    OTHER = "other", _("Other / Direct Sale")
+
+
 class ClarificationCategory(models.TextChoices):
     MEASUREMENTS = "measurements", _("Measurements / Sizing")
     TAG_COMPOSITION = "tag_composition", _("Tag / Brand / Composition")
@@ -152,6 +158,31 @@ class Product(models.Model):
         blank=True,
         help_text=_("Timestamp when marked as sold")
     )
+    sold_channel_type = models.CharField(
+        max_length=20,
+        choices=SaleChannelType.choices,
+        blank=True,
+        default="",
+        db_index=True,
+        verbose_name=_("Sale Channel Type"),
+        help_text=_("Commercial channel through which the product was sold"),
+    )
+    sold_marketplace = models.ForeignKey(
+        "MarketplaceSite",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="sold_products",
+        verbose_name=_("Sold Marketplace"),
+        help_text=_("Marketplace platform where the sale occurred"),
+    )
+    sold_channel_notes = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name=_("Sale Reference / Notes"),
+        help_text=_("Optional ticket number, order ID, or buyer reference"),
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -188,6 +219,21 @@ class Product(models.Model):
         if raw_n:
             return raw_n[:40] + ("..." if len(raw_n) > 40 else "")
         return f"{_('Product')} #{self.pk or _('New')}"
+
+    @property
+    def sale_channel_display(self) -> str:
+        """Return human-readable, localized representation of where the item was sold."""
+        if not self.is_sold and self.status != ProductStatus.SOLD:
+            return ""
+        if self.sold_channel_type == SaleChannelType.IN_STORE:
+            return str(_("In-Store"))
+        if self.sold_channel_type == SaleChannelType.MARKETPLACE:
+            if self.sold_marketplace:
+                return self.sold_marketplace.name
+            return str(_("Marketplace"))
+        if self.sold_channel_type == SaleChannelType.OTHER:
+            return str(_("Other"))
+        return "-"
 
     @property
     def primary_image(self):
@@ -364,29 +410,79 @@ class Product(models.Model):
         self._status_trigger = None
         self._status_notes = None
 
-    def mark_as_sold(self, price=None, user=None, commit=True):
+    def mark_as_sold(
+        self,
+        price=None,
+        user=None,
+        channel_type=None,
+        marketplace=None,
+        notes=None,
+        commit=True,
+    ):
         self.is_sold = True
         self.status = ProductStatus.SOLD
         self.sold_at = timezone.now()
         if price is not None:
             self.sale_price = price
+        if channel_type is not None:
+            self.sold_channel_type = channel_type
+        if marketplace is not None:
+            self.sold_marketplace = marketplace
+        if notes is not None:
+            self.sold_channel_notes = notes
         if user is not None:
             self._changed_by = user
         self._status_trigger = "marked_sold"
-        if price is not None:
-            self._status_notes = f"Sold for €{Decimal(str(price)):.2f}"
-        if commit:
-            self.save(update_fields=["is_sold", "status", "sold_at", "sale_price", "updated_at"])
 
+        status_note_parts = []
+        if self.sold_channel_type:
+            status_note_parts.append(f"Sold via {self.sale_channel_display}")
+        else:
+            status_note_parts.append("Marked sold")
+        if self.sale_price is not None:
+            try:
+                status_note_parts.append(f"for €{Decimal(str(self.sale_price)):.2f}")
+            except Exception:
+                status_note_parts.append(f"for €{self.sale_price}")
+        if self.sold_channel_notes:
+            status_note_parts.append(f"({self.sold_channel_notes})")
+        self._status_notes = " ".join(status_note_parts)
+
+        if commit:
+            self.save(
+                update_fields=[
+                    "is_sold",
+                    "status",
+                    "sold_at",
+                    "sale_price",
+                    "sold_channel_type",
+                    "sold_marketplace",
+                    "sold_channel_notes",
+                    "updated_at",
+                ]
+            )
     def mark_as_unsold(self, user=None, commit=True):
         self.is_sold = False
         self.status = self.compute_lifecycle_status()
         self.sold_at = None
+        self.sold_channel_type = ""
+        self.sold_marketplace = None
+        self.sold_channel_notes = ""
         if user is not None:
             self._changed_by = user
         self._status_trigger = "reverted_unsold"
         if commit:
-            self.save(update_fields=["is_sold", "status", "sold_at", "updated_at"])
+            self.save(
+                update_fields=[
+                    "is_sold",
+                    "status",
+                    "sold_at",
+                    "sold_channel_type",
+                    "sold_marketplace",
+                    "sold_channel_notes",
+                    "updated_at",
+                ]
+            )
 
     def delete(self, *args, **kwargs):
         token = None

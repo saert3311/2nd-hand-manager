@@ -320,7 +320,7 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 ---
 
 ### Phase 27: Sale Channel Tracking on Sold Products (Vertical Slice 23)
-- [ ] **Task 92:** Domain Model Expansion, Migrations & Admin Registration (`inventory/models.py`, `inventory/migrations/0017_product_sale_channel.py`, `inventory/admin.py`).
+- [x] **Task 92:** Domain Model Expansion, Migrations & Admin Registration (`inventory/models.py`, `inventory/migrations/0017_product_sale_channel.py`, `inventory/admin.py`).
 - [ ] **Task 93:** Form Validation & Lifecycle Channel Logic (`inventory/forms.py`).
 - [ ] **Task 94:** Staging Product Detail UI Integration with Dynamic Selector & Quick-Picks (`inventory/views.py`, `inventory/templates/inventory/product_detail.html`).
 - [ ] **Task 95:** Dashboard Catalog Filtering & Product Card Channel Badges (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`).
