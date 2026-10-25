@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-25
+
+### Added
+- **Sale Channel Tracking & Multi-Channel Attribution (Phase 27)**:
+  - **Domain Model Tracking**: Added `SaleChannelType` choices (`in_store`, `marketplace`, `other`), `sold_channel_type`, `sold_marketplace` (ForeignKey to `MarketplaceSite` with `SET_NULL` deletion protection), `sold_channel_notes` (`CharField(max_length=255)`), and computed property `sale_channel_display` to `Product` in `inventory/models.py`. Generated and applied database migration `0017_product_sale_channel.py`. Updated `mark_as_sold()` and `mark_as_unsold()` to manage channel state and audit logging in `ProductStatusLog`.
+  - **Conditional Form Validation**: Updated `ProductUpdateForm` in `inventory/forms.py` with `sold_channel_type`, `sold_marketplace`, and `sold_channel_notes`. Implemented conditional business rules in `clean()`: channel type is mandatory whenever marked as sold; marketplace selection is mandatory when `sold_channel_type="marketplace"`; channel fields are cleanly reset to empty/null if reverted to an unsold status.
+  - **Interactive Detail Staging UI**: Enhanced `inventory/templates/inventory/product_detail.html` with progressive disclosure `#soldChannelContainer` triggered automatically when status is set to Sold. Included 1-click quick-pick buttons for "In-Store / Tienda física" and active published marketplace links (e.g., Wallapop, Vinted), along with responsive status badge in the header displaying the sale channel.
+  - **Dashboard Sub-Filtering & Channel Badges**: Updated `dashboard_view` in `inventory/views.py` with `channel` query filtering (`?status=sold&channel=in_store|marketplace|other`), live count aggregates (`channel_counts`), and `select_related("sold_marketplace")` to eliminate N+1 queries. Added tertiary filter navigation bar and card badges in `inventory/templates/inventory/dashboard.html`.
+  - **Django Admin Integration**: Added `sale_channel_col` to `ProductAdmin.list_display` with status-aware color badges and registered `sold_channel_type` and `sold_marketplace` in `list_filter`.
+  - **Bilingual Localization & Automated Test Suite**: Added Spanish translations to `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`. Authored 16 automated tests in `tests/test_sale_channel.py` covering model lifecycle methods, SET_NULL referential safety, form validation invariants, detail view quick-picks, dashboard sub-filtering, admin columns, and localization.
+
 ## [1.3.2] - 2026-10-24
 
 ### Fixed

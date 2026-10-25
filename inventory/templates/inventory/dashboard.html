@@ -114,6 +114,9 @@
         {% if platform_filter %}
         <input type="hidden" name="platform" value="{{ platform_filter }}">
         {% endif %}
+        {% if channel_filter %}
+        <input type="hidden" name="channel" value="{{ channel_filter }}">
+        {% endif %}
         <div class="relative w-full">
           <input type="text" name="q" value="{{ search_query }}"
                  placeholder="{% trans 'Search title, note, or date (e.g. 2026-10-10)...' %}"
@@ -138,6 +141,9 @@
         {% if search_query %}
         <input type="hidden" name="q" value="{{ search_query }}">
         {% endif %}
+        {% if channel_filter %}
+        <input type="hidden" name="channel" value="{{ channel_filter }}">
+        {% endif %}
         <div class="relative w-full">
           <select name="platform" onchange="this.form.submit()"
                   aria-label="{% trans 'Filter by marketplace platform' %}"
@@ -156,7 +162,7 @@
       {% endif %}
 
       <!-- Active Filters Reset / Clear Button -->
-      {% if search_query or platform_filter %}
+      {% if search_query or platform_filter or channel_filter %}
       <div class="shrink-0 flex items-center">
         <a href="?status={{ status_filter }}"
            class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-transparent hover:border-rose-100 transition"
@@ -169,6 +175,33 @@
       {% endif %}
 
     </div>
+
+    <!-- Tertiary Filter Bar: Sale Channels (When viewing Sold tab) -->
+    {% if status_filter == 'sold' %}
+    <div class="flex items-center gap-2 pt-2.5 border-t border-slate-100 overflow-x-auto no-scrollbar py-1">
+      <span class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">
+        {% trans "Channel:" %}
+      </span>
+      <a href="?status=sold{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+         class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition {% if not channel_filter %}bg-slate-800 text-white shadow-xs{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+        {% trans "All Channels" %} ({{ sold_count }})
+      </a>
+      <a href="?status=sold&channel=in_store{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+         class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition inline-flex items-center gap-1 {% if channel_filter == 'in_store' %}bg-emerald-700 text-white shadow-xs{% else %}bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200{% endif %}">
+        <span>🏪</span> {% trans "In-Store" %} ({{ sold_in_store_count }})
+      </a>
+      <a href="?status=sold&channel=marketplace{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+         class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition inline-flex items-center gap-1 {% if channel_filter == 'marketplace' and not platform_filter %}bg-blue-700 text-white shadow-xs{% else %}bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200{% endif %}">
+        <span>🌐</span> {% trans "Marketplaces" %} ({{ sold_marketplace_count }})
+      </a>
+      {% if sold_other_count > 0 %}
+      <a href="?status=sold&channel=other{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+         class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition inline-flex items-center gap-1 {% if channel_filter == 'other' %}bg-purple-700 text-white shadow-xs{% else %}bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200{% endif %}">
+        <span>📦</span> {% trans "Other" %} ({{ sold_other_count }})
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
 
   </div>
 
@@ -217,9 +250,20 @@
             📝 {% trans "Draft" %}
           </span>
           {% elif product.is_sold %}
-          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-slate-900/80 text-white">
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-purple-900/90 text-white">
             {% trans "Sold" %}
           </span>
+          {% if product.sold_channel_type %}
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-white/95 text-slate-800 backdrop-blur-xs flex items-center gap-1">
+            {% if product.sold_channel_type == 'in_store' %}
+              🏪 {{ product.sale_channel_display }}
+            {% elif product.sold_channel_type == 'marketplace' %}
+              🌐 {{ product.sale_channel_display }}
+            {% else %}
+              📦 {{ product.sale_channel_display }}
+            {% endif %}
+          </span>
+          {% endif %}
           {% else %}
           <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-emerald-600/90 text-white">
             {% trans "Active" %}
@@ -259,6 +303,11 @@
             <span class="font-extrabold text-slate-900 text-base sm:text-lg">€{{ product.sale_price|floatformat:2 }}</span>
             {% else %}
             <span class="text-slate-400 italic text-sm">{% trans "No price set" %}</span>
+            {% endif %}
+            {% if product.is_sold and product.sold_channel_type %}
+            <span class="block text-[11px] font-semibold text-slate-500 mt-0.5">
+              {% if product.sold_channel_type == 'in_store' %}🏪 {{ product.sale_channel_display }}{% elif product.sold_channel_type == 'marketplace' %}🌐 {{ product.sale_channel_display }}{% else %}📦 {{ product.sale_channel_display }}{% endif %}
+            </span>
             {% endif %}
           </div>
           <span class="text-slate-400 text-xs font-medium">{{ product.created_at|date:"M d" }}</span>

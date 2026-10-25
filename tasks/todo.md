@@ -2121,6 +2121,123 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 - [x] All unit and regression tests pass with 0 failures.
 - [x] `ruff check .` passes cleanly.
 
+---
+
+## Phase 27: Sale Channel Tracking on Sold Products (Vertical Slice 23)
+
+### Task 92: Domain Model Expansion, Migrations & Admin Registration (`inventory/models.py`, `inventory/migrations/0017_product_sale_channel.py`, `inventory/admin.py`)
+**Description:** Implement `SaleChannelType` text choices (`in_store`, `marketplace`, `other`) in `inventory/models.py`. Extend `Product` with `sold_channel_type` (CharField, choices, blank=True, db_index=True), `sold_marketplace` (ForeignKey to `MarketplaceSite`, null=True, blank=True, on_delete=models.SET_NULL, related_name="sold_products"), and `sold_channel_notes` (CharField, max_length=255, blank=True). Add `sale_channel_display` property/method. Update `mark_as_sold(self, price=None, user=None, channel_type=None, marketplace=None, notes=None, commit=True)` and `mark_as_unsold(self, user=None, commit=True)`. Generate and apply database migration `0017_product_sale_channel.py`. Register `sale_channel_display_col` in `ProductAdmin.list_display`, add `sold_channel_type` and `sold_marketplace` to `list_filter`, and add a dedicated fieldset for sale details in `inventory/admin.py`.
+**Acceptance criteria:**
+- [x] `SaleChannelType` choices defined in `inventory/models.py`.
+- [x] `sold_channel_type`, `sold_marketplace`, and `sold_channel_notes` added to `Product` model.
+- [x] `sale_channel_display` returns localized string for in-store, marketplace, and other.
+- [x] `mark_as_sold` and `mark_as_unsold` methods handle channel fields.
+- [x] Migration `0017_product_sale_channel.py` created and applied cleanly.
+- [x] `ProductAdmin` renders sale channel columns, filters, and fieldset.
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py makemigrations inventory --check --dry-run`
+- [x] Migration applied: `.venv\Scripts\python.exe manage.py migrate`
+- [x] Unit tests pass: `.venv\Scripts\python.exe manage.py test tests.test_models`
+**Dependencies:** None
+**Files likely touched:**
+- `inventory/models.py`
+- `inventory/admin.py`
+- `inventory/migrations/0017_product_sale_channel.py`
+**Estimated scope:** Medium (3 files)
+
+---
+
+### Task 93: Form Validation & Lifecycle Channel Logic (`inventory/forms.py`)
+**Description:** Update `ProductUpdateForm` in `inventory/forms.py` to include `sold_channel_type`, `sold_marketplace`, and `sold_channel_notes`. Implement conditional validation in `clean()`: when `is_sold=True` or `status=ProductStatus.SOLD`, `sold_channel_type` is required; when `sold_channel_type == 'marketplace'`, `sold_marketplace` is required; when `is_sold=False` and status is not `sold`, reset channel fields to blank/null.
+**Acceptance criteria:**
+- [x] Form fields `sold_channel_type`, `sold_marketplace`, and `sold_channel_notes` defined on `ProductUpdateForm`.
+- [x] Marking product as sold without `sold_channel_type` raises validation error.
+- [x] Choosing `marketplace` without `sold_marketplace` raises validation error on `sold_marketplace`.
+- [x] Unchecking `is_sold` resets channel fields cleanly.
+**Verification:**
+- [x] Unit tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake`
+**Dependencies:** Task 92
+**Files likely touched:**
+- `inventory/forms.py`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 94: Staging Product Detail UI Integration with Dynamic Selector & Quick-Picks (`inventory/views.py`, `inventory/templates/inventory/product_detail.html`)
+**Description:** Update `product_detail_view` in `inventory/views.py` and template `inventory/templates/inventory/product_detail.html` to integrate the sale channel selector into the staging detail view. Progressive disclosure: when `#id_is_sold` checkbox is checked, display `#soldChannelContainer`. Provide 1-click quick-pick buttons for "🏪 Tienda física" and active published marketplace links (`product.listing_links.filter(is_active=True)`). When viewing an already sold product, render a prominent status badge displaying the channel, sale price, date, and notes. Update `ProductStatusLog` audit trail logging to incorporate sales channel info.
+**Acceptance criteria:**
+- [x] Checkbox `#id_is_sold` progressively shows/hides the sale channel inputs.
+- [x] Quick-picker pills enable 1-click selection of In-Store and active published platforms.
+- [x] Prominent badge displayed for sold products with channel, price, and timestamp.
+- [x] Updating sold product through `product_detail_view` persists channel and creates informative `ProductStatusLog` entry.
+**Verification:**
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_views`
+**Dependencies:** Task 92, Task 93
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/templates/inventory/product_detail.html`
+**Estimated scope:** Medium (2 files)
+
+---
+
+### Task 95: Dashboard Catalog Filtering & Product Card Channel Badges (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`)
+**Description:** Update `dashboard_view` in `inventory/views.py` to support channel sub-filtering when viewing the sold tab (`?status=sold&channel=in_store`, `?status=sold&channel=marketplace`, `?status=sold&channel=marketplace&platform=<slug>`). Calculate counts for channels (`in_store_count`, `marketplace_count`). In `inventory/templates/inventory/dashboard.html`, display sub-filter navigation pills and render channel badges on each sold product card (e.g. `🏪 Tienda`, `🌐 Wallapop`). Preserve search and pagination state across filters.
+**Acceptance criteria:**
+- [x] Sold product cards in dashboard display channel badge next to sold badge.
+- [x] Sub-filter buttons/dropdown allow filtering sold products by In-Store, Marketplaces, or All Channels.
+- [x] Counts accurately reflect total items per channel.
+- [x] Pagination and search queries are preserved.
+**Verification:**
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_views`
+**Dependencies:** Task 92, Task 94
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/templates/inventory/dashboard.html`
+**Estimated scope:** Medium (2 files)
+
+---
+
+### Task 96: Bilingual Localization, Comprehensive Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_sale_channel.py`, `CHANGELOG.md`)
+**Description:** Add Spanish translation entries in `locale/es/LC_MESSAGES/django.po` for all new tokens ("In-Store / Physical Store", "Online Marketplace", "Other / Direct Sale", "Sale Channel Type", "Sold Marketplace", "Sale Reference / Notes", "Please select where this product was sold.", "Please select the marketplace platform where the product was sold.", "Sold in-store", "Sold on %(marketplace)s", etc.) and compile to `django.mo`. Build a dedicated test suite `tests/test_sale_channel.py` validating: (1) model choices and `sale_channel_display`; (2) `mark_as_sold` and `mark_as_unsold`; (3) foreign key `SET_NULL` cascade safety; (4) form conditional validation errors and successes; (5) view POST execution and audit log creation; (6) dashboard filtering by channel with counts; (7) admin display and permissions. Update `CHANGELOG.md` under `## [Unreleased]`. Run full regression suite and linter.
+**Acceptance criteria:**
+- [x] Spanish translations compiled with 0 errors.
+- [x] Test suite in `tests/test_sale_channel.py` passes 100%.
+- [x] Full regression suite (349+ tests) passes with 0 failures and 0 errors.
+- [x] `ruff check .` passes with 0 warnings.
+- [x] `CHANGELOG.md` updated with Phase 27 entries.
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_sale_channel`
+- [x] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check .`
+**Dependencies:** Task 92, Task 93, Task 94, Task 95
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_sale_channel.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (4 files)
+
+---
+
+## Checkpoint 27: Sale Channel Tracking Complete
+- [x] `SaleChannelType` and sale channel fields on `Product` with migration `0017_product_sale_channel.py` applied cleanly.
+- [x] Form validation strictly requires channel selection when marking products as sold.
+- [x] Marketplace sales link to `MarketplaceSite` with `SET_NULL` protection.
+- [x] Product detail staging view features dynamic channel selector with 1-click published platform shortcuts.
+- [x] Catalog dashboard displays channel badges on cards and supports sub-filtering sold inventory by channel.
+- [x] Spanish localization compiled and verified.
+- [x] All unit and regression tests pass with 0 failures.
+- [x] `ruff check .` passes cleanly.
+- [x] `IntakeBatchSession` model and migration `0016_intake_batch_session.py` applied cleanly and registered in admin.
+- [x] Uploading consecutive products during intake groups them under one `IntakeBatchSession` without sending individual push alerts.
+- [x] After 15 minutes of inactivity, a single consolidated push alert is dispatched to store managers with the accurate batch count.
+- [x] Management command `process_intake_batches` operates reliably in live and dry-run modes.
+- [x] Urgent clarification questions and price pending notifications continue to notify immediately without debouncing.
+- [x] Bilingual localization compiled and verified.
+- [x] All unit and regression tests pass with 0 failures.
+- [x] `ruff check .` passes cleanly.
+
 
 
 

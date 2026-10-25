@@ -24,6 +24,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 20. **Compilation & Docker Image Build Timestamp Display ("Which Compilation Are We Using?"):** Operational traceability across environments (development, staging, production) displaying the build date, time, commit hash, and environment badge in the bottom application footer ([`docs/prds/PRD-docker-build-info-and-compilation-timestamp.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-docker-build-info-and-compilation-timestamp.md)).
 21. **Intake AI Valuation & Reference Pricing ("New Retail Value & Used Resale Value"):** AI appraisal benchmarks estimating both the original new retail value (MSRP) and realistic secondhand market resale value during intake identification, persisted to the `Product` model and displayed near the sale price in both the intake form and product staging detail view ([`docs/prds/PRD-intake-ai-valuation-reference-prices.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-intake-ai-valuation-reference-prices.md)).
 22. **Consolidated Intake Session Notifications ("Debounced Manager Push Alerts"):** Database-backed debounced sourcing session engine (`IntakeBatchSession`) bundling consecutive product uploads by an assistant within a 15-minute sliding inactivity window into a single consolidated Web Push alert to store managers (`📦 Lote completado: [X] nuevos productos`), eliminating notification spam while keeping urgent clarification doubts instant ([`docs/prds/PRD-consolidated-intake-session-notifications.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-consolidated-intake-session-notifications.md)).
+23. **Sale Channel Tracking & Commercial Sales Attribution ("Where Was It Sold?"):** Comprehensive commercial sales channel recording on sold items (`sold_channel_type`, `sold_marketplace`, `sold_channel_notes`). Differentiates sales between physical in-store walk-ins (`in_store`), dynamic online marketplace platforms (`marketplace` linked to `MarketplaceSite`), and direct sales (`other`), backed by conditional form validation, detail view quick-pickers, dashboard sub-filtering (`?status=sold&channel=in_store`), and `ProductStatusLog` audit records ([`docs/prds/PRD-sale-channel-tracking.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-sale-channel-tracking.md)).
 
 ---
 
@@ -226,6 +227,9 @@ class MarketplaceSite(models.Model):
 | `status` | CharField | max_length=20, default='draft', db_index=True | Lifecycle state: `draft`, `awaiting_info`, `ready`, `sold`, `blocked` |
 | `is_sold` | BooleanField | default=False | Status indicating if item has been sold (synchronized with status='sold') |
 | `sold_at` | DateTimeField | null=True, blank=True | Timestamp when marked as sold |
+| `sold_channel_type` | CharField | max_length=20, blank=True, default="", choices=[in_store, marketplace, other], db_index=True | Channel through which product was sold |
+| `sold_marketplace` | ForeignKey(MarketplaceSite) | null=True, blank=True, on_delete=SET_NULL, related_name='sold_products' | Marketplace platform where the sale occurred (if sold on marketplace) |
+| `sold_channel_notes` | CharField | max_length=255, blank=True, default="" | Optional sale ticket #, buyer reference, or order notes |
 | `created_by` | ForeignKey(User) | null=True, on_delete=SET_NULL | User who cataloged the item |
 | `created_at` | DateTimeField | auto_now_add=True | Creation timestamp |
 | `updated_at` | DateTimeField | auto_now=True | Last modification timestamp |
@@ -660,6 +664,24 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
 - **Urgent Notification Isolation:**
   - Urgent clarification questions and answers (`ProductClarification`) and price pending transitions (`PRICE_PENDING`) bypass debouncing and remain instant real-time alerts.
 
+### 6.17 Sale Channel Tracking & Commercial Attribution on Sold Products
+- **Context & Operational Need:**
+  - When marking products as sold, the business must record commercial attribution to know whether the transaction occurred physically in-store or online via a specific marketplace platform (e.g. Wallapop, Vinted, eBay).
+- **Domain Modeling & Referential Safety:**
+  - `Product` records `sold_channel_type` (`in_store`, `marketplace`, `other`), `sold_marketplace` (`ForeignKey(MarketplaceSite, on_delete=SET_NULL)`), and optional `sold_channel_notes`.
+  - Referential safety: Deleting a `MarketplaceSite` never deletes associated products or sales history; foreign keys cascade to `NULL` (`SET_NULL`).
+- **Interactive Staging Detail UI (`/products/<pk>/`):**
+  - Checking "Mark Product as Sold" progressively reveals channel controls.
+  - Quick-selection chips automatically highlight any marketplace where the product had active published listing links (`ProductListingLink`).
+  - Displays prominent sold badge with channel, selling price, and date when viewing already-sold inventory.
+- **Conditional Form Validation:**
+  - `ProductUpdateForm` enforces channel selection when a product is marked sold. If `marketplace` is selected, an active marketplace platform is mandatory.
+- **Dashboard Visibility & Multi-Channel Filtering (`/dashboard/`):**
+  - Product cards in `?status=sold` render channel badges (e.g. `🏪 Tienda`, `🌐 Wallapop`).
+  - Catalog dashboard provides sub-filtering by channel (`?status=sold&channel=in_store` vs `?status=sold&channel=marketplace`).
+- **Audit Logging Synchronization:**
+  - `ProductStatusLog` captures sales channel and selling price in historical timeline entries.
+
 ---
 
 ## 7. AI Service Contract (`ai_service.py`)
@@ -1069,6 +1091,11 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
     - **Option B (Manual "Finish Batch" Button on Mobile):** Assistant must remember to tap a "Finish Sourcing Session" button after uploading their items.
     *Which session completion pattern do you prefer?*
     - **Decision:** Option A approved — Database-backed 15-minute sliding inactivity debounce window.
+30. **Sale Channel Selection UX & Legacy Product Handling:**
+    - When a manager marks a product as sold on `/products/<pk>/`:
+    - **Option A (Recommended — Explicit Selection with Quick-Picks):** The channel dropdown defaults to an unselected placeholder (`--- Seleccionar canal ---`) requiring deliberate choice. If the product was previously published to one or more marketplace links (e.g. Wallapop, Vinted), one-click shortcut pills are rendered above the dropdown alongside a quick "Tienda física" button. Legacy sold products with no recorded channel display `-` and are not broken.
+    - **Option B (Auto-Default to In-Store):** The channel dropdown automatically selects "Tienda física / In-Store" by default unless changed.
+    *Which sale channel interaction pattern do you prefer?*
 
 
 

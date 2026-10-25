@@ -28,6 +28,7 @@ from .models import (
     ProductStatus,
     ProductStatusLog,
     PushSubscription,
+    SaleChannelType,
 )
 from .permissions import ROLE_ASSISTANT, ROLE_MANAGER, is_assistant, is_manager
 from .services.backup_service import backup_database
@@ -360,15 +361,16 @@ class ProductAdmin(admin.ModelAdmin):
         "estimated_resale_price_display",
         "estimated_retail_price_display",
         "is_sold",
+        "sale_channel_col",
         "images_count",
         "created_by",
         "created_at",
     )
-    list_filter = ("status", "is_sold", "created_at")
+    list_filter = ("status", "is_sold", "sold_channel_type", "sold_marketplace", "created_at")
     search_fields = ("ai_title", "raw_note", "ai_description")
     inlines = [ProductImageInline, ProductListingLinkInline, ProductClarificationInline, ProductStatusLogInline]
     readonly_fields = ("created_at", "updated_at", "sold_at", "batch_session")
-    list_select_related = ("created_by", "batch_session")
+    list_select_related = ("created_by", "batch_session", "sold_marketplace")
 
     def has_module_permission(self, request):
         return bool(request.user and request.user.is_active and is_manager(request.user))
@@ -410,6 +412,18 @@ class ProductAdmin(admin.ModelAdmin):
         return obj.images.count()
 
     images_count.short_description = _("Images")
+
+    def sale_channel_col(self, obj):
+        display = obj.sale_channel_display
+        if not display or display == "-":
+            return "-"
+        if obj.sold_channel_type == SaleChannelType.IN_STORE:
+            return format_html('<span style="color:#047857; font-weight:600;">🏪 {}</span>', display)
+        if obj.sold_channel_type == SaleChannelType.MARKETPLACE:
+            return format_html('<span style="color:#2563eb; font-weight:600;">🌐 {}</span>', display)
+        return format_html('<span style="color:#475569; font-weight:600;">📦 {}</span>', display)
+
+    sale_channel_col.short_description = _("Sale Channel")
 
 
 @admin.register(ProductImage, site=admin_site)

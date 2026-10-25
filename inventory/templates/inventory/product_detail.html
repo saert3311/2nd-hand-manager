@@ -416,8 +416,20 @@
               €{{ product.sale_price|floatformat:2 }}
             </span>
             {% endif %}
-            <span class="text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-full {% if product.is_sold %}bg-slate-100 text-slate-700{% else %}bg-emerald-100 text-emerald-800{% endif %}">
-              {% if product.is_sold %}{% trans "Status: Sold" %}{% else %}{% trans "Status: Available for Sale" %}{% endif %}
+            <span class="text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-full {% if product.is_sold %}bg-purple-100 text-purple-900 border border-purple-200{% else %}bg-emerald-100 text-emerald-800{% endif %}">
+              {% if product.is_sold %}
+                {% if product.sold_channel_type == 'in_store' %}
+                  🏪 {% trans "Sold: In-Store" %}
+                {% elif product.sold_channel_type == 'marketplace' and product.sold_marketplace %}
+                  🌐 {% trans "Sold on" %} {{ product.sold_marketplace.name }}
+                {% elif product.sold_channel_type == 'other' %}
+                  📦 {% trans "Sold: Other" %}
+                {% else %}
+                  🏷️ {% trans "Status: Sold" %}
+                {% endif %}
+              {% else %}
+                {% trans "Status: Available for Sale" %}
+              {% endif %}
             </span>
           </div>
         </div>
@@ -501,17 +513,82 @@
               {{ form.status }}
             </div>
 
-            <div>
-              <label class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                {% trans "Sold Status" %}
-              </label>
-              <label class="flex items-center gap-2.5 cursor-pointer select-none py-1">
-                {{ form.is_sold }}
-                <span class="text-sm font-semibold text-slate-700">{% trans "Mark Product as Sold" %}</span>
-              </label>
-              {% if product.sold_at %}
-              <p class="text-xs text-slate-400 mt-0.5">{% trans "Sold on" %} {{ product.sold_at|date:"M d, Y H:i" }}</p>
-              {% endif %}
+            <div class="sm:col-span-2 rounded-xl p-4 bg-slate-50 border border-slate-200 space-y-3">
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-0.5">
+                    {% trans "Sold Status" %}
+                  </label>
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none py-1">
+                    {{ form.is_sold }}
+                    <span class="text-sm font-semibold text-slate-800">{% trans "Mark Product as Sold" %}</span>
+                  </label>
+                </div>
+                {% if product.is_sold %}
+                <div class="text-right">
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold {% if product.sold_channel_type == 'in_store' %}bg-emerald-100 text-emerald-800 border border-emerald-300{% elif product.sold_channel_type == 'marketplace' %}bg-blue-100 text-blue-800 border border-blue-300{% else %}bg-purple-100 text-purple-800 border border-purple-300{% endif %}">
+                    {% if product.sold_channel_type == 'in_store' %}🏪 {{ product.sale_channel_display }}{% elif product.sold_channel_type == 'marketplace' %}🌐 {{ product.sale_channel_display }}{% else %}📦 {{ product.sale_channel_display }}{% endif %}
+                  </span>
+                  {% if product.sold_at %}
+                  <p class="text-[11px] text-slate-500 mt-1">{% trans "Sold on" %} {{ product.sold_at|date:"M d, Y H:i" }}</p>
+                  {% endif %}
+                  {% if product.sold_channel_notes %}
+                  <p class="text-[11px] text-slate-600 font-medium italic mt-0.5">"{{ product.sold_channel_notes }}"</p>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
+
+              <!-- Collapsible Channel Controls (Visible when #id_is_sold is checked) -->
+              <div id="soldChannelContainer" class="pt-2 border-t border-slate-200 space-y-3 {% if not form.is_sold.value and not product.is_sold %}hidden{% endif %}">
+                <div>
+                  <label for="id_sold_channel_type" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    {% trans "Where was it sold?" %} <span class="text-rose-500">*</span>
+                  </label>
+
+                  <!-- 1-Click Quick Picks -->
+                  <div class="flex flex-wrap items-center gap-2 mb-2">
+                    <span class="text-xs text-slate-500 font-medium">{% trans "Quick picks:" %}</span>
+                    <button type="button" id="btnQuickInStore" data-channel="in_store" onclick="selectSaleChannel('in_store')"
+                            class="quick-channel-btn inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-300 hover:border-emerald-300 transition shadow-xs cursor-pointer">
+                      🏪 {% trans "In-Store (Tienda física)" %}
+                    </button>
+                    {% for item in site_links_data %}
+                      {% if item.link and item.link.is_active %}
+                      <button type="button" onclick="selectSaleMarketplace('{{ item.site.id }}')"
+                              class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-300 hover:border-blue-300 transition shadow-xs cursor-pointer">
+                        🌐 {{ item.site.name }}
+                      </button>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      {{ form.sold_channel_type }}
+                      {% if form.sold_channel_type.errors %}
+                      <p class="text-xs text-rose-600 font-semibold mt-1">{{ form.sold_channel_type.errors.0 }}</p>
+                      {% endif %}
+                    </div>
+                    <div id="soldMarketplaceWrapper" class="{% if form.sold_channel_type.value != 'marketplace' and product.sold_channel_type != 'marketplace' %}hidden{% endif %}">
+                      {{ form.sold_marketplace }}
+                      {% if form.sold_marketplace.errors %}
+                      <p class="text-xs text-rose-600 font-semibold mt-1">{{ form.sold_marketplace.errors.0 }}</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label for="id_sold_channel_notes" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    {% trans "Sale Reference / Notes" %} <span class="text-slate-400 font-normal">({% trans "Optional" %})</span>
+                  </label>
+                  {{ form.sold_channel_notes }}
+                  {% if form.sold_channel_notes.errors %}
+                  <p class="text-xs text-rose-600 font-semibold mt-1">{{ form.sold_channel_notes.errors.0 }}</p>
+                  {% endif %}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -766,6 +843,62 @@
         setTimeout(() => saleInput.classList.remove('ring-2', 'ring-emerald-500'), 1200);
       }
     });
+  }
+  // Sale Channel Dynamic Selectors & Quick-Picks
+  const isSoldCheckbox = document.getElementById("id_is_sold");
+  const soldChannelContainer = document.getElementById("soldChannelContainer");
+  const soldChannelTypeSelect = document.getElementById("id_sold_channel_type");
+  const soldMarketplaceWrapper = document.getElementById("soldMarketplaceWrapper");
+  const soldMarketplaceSelect = document.getElementById("id_sold_marketplace");
+
+  function toggleSoldChannelVisibility() {
+    if (!isSoldCheckbox || !soldChannelContainer) return;
+    if (isSoldCheckbox.checked) {
+      soldChannelContainer.classList.remove("hidden");
+    } else {
+      soldChannelContainer.classList.add("hidden");
+    }
+  }
+
+  function toggleMarketplaceSelect() {
+    if (!soldChannelTypeSelect || !soldMarketplaceWrapper) return;
+    if (soldChannelTypeSelect.value === "marketplace") {
+      soldMarketplaceWrapper.classList.remove("hidden");
+    } else {
+      soldMarketplaceWrapper.classList.add("hidden");
+    }
+  }
+
+  function selectSaleChannel(channelType) {
+    if (isSoldCheckbox && !isSoldCheckbox.checked) {
+      isSoldCheckbox.checked = true;
+      toggleSoldChannelVisibility();
+    }
+    if (soldChannelTypeSelect) {
+      soldChannelTypeSelect.value = channelType;
+      toggleMarketplaceSelect();
+    }
+  }
+
+  function selectSaleMarketplace(siteId) {
+    if (isSoldCheckbox && !isSoldCheckbox.checked) {
+      isSoldCheckbox.checked = true;
+      toggleSoldChannelVisibility();
+    }
+    if (soldChannelTypeSelect) {
+      soldChannelTypeSelect.value = "marketplace";
+      toggleMarketplaceSelect();
+    }
+    if (soldMarketplaceSelect) {
+      soldMarketplaceSelect.value = siteId;
+    }
+  }
+
+  if (isSoldCheckbox) {
+    isSoldCheckbox.addEventListener("change", toggleSoldChannelVisibility);
+  }
+  if (soldChannelTypeSelect) {
+    soldChannelTypeSelect.addEventListener("change", toggleMarketplaceSelect);
   }
 </script>
 {% endblock %}

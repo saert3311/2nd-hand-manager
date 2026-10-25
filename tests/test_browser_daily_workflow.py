@@ -229,12 +229,14 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             # =================================================================
             print("\n[STEP 6] Marking product as Sold and verifying Audit Trail...")
             page.check('input[name="is_sold"]')
+            page.click('button.quick-channel-btn[data-channel="in_store"]')
             page.click('button:has-text("Guardar cambios"), button:has-text("Save Listing Changes")')
             page.wait_for_load_state("networkidle")
 
             product.refresh_from_db()
             self.assertEqual(product.status, ProductStatus.SOLD)
             self.assertTrue(product.is_sold)
+            self.assertEqual(product.sold_channel_type, "in_store")
 
             # Verify Lifecycle Audit Trail Card
             audit_card = page.locator("#status-history-card, h3:has-text('Historial de Estados')")
