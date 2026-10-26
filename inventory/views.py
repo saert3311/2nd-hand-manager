@@ -422,10 +422,13 @@ def product_detail_view(request, pk):
     resolved_clarifications = product.clarifications.filter(status=ClarificationStatus.RESOLVED)
     has_unapplied_clarifications = resolved_clarifications.exists()
 
+    available_slots = max(0, 10 - product.images.count())
+
     context = {
         "product": product,
         "form": form,
         "can_manage": can_manage,
+        "available_slots": available_slots,
         "site_links_data": site_links_data,
         "extra_inactive_links": extra_inactive_links,
         "pending_clarifications": pending_clarifications,

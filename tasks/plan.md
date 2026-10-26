@@ -382,7 +382,7 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 ---
 
 ### Phase 34: Detail View Photo Upload Component System (Vertical Slice 30)
-- [ ] **Task 120:** Detail View Photo Upload Component UI, Dropzone & Dual Capture Controls (`inventory/templates/inventory/product_detail.html`).
-- [ ] **Task 121:** Client-Side WebP Compression Engine & Pre-Upload Thumbnail Queue (`inventory/templates/inventory/product_detail.html`).
-- [ ] **Task 122:** Bilingual Localization, Comprehensive Automated Test Suite, Verification & Changelog (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_detail_photo_upload_component.py`, `CHANGELOG.md`).
-- [ ] **Checkpoint 34 (Detail View Photo Upload Component Complete):** The photo upload UI in `/products/<pk>/` achieves full parity with `/intake/`: dashed dropzone with drag-and-drop feedback, dual camera ('📸 Tomar foto') and gallery ('🖼️ Seleccionar de la galería') buttons, client-side Canvas downscaling to max 2560px WebP, pending thumbnail queue with individual deletion, capacity-aware counter (10 - N_existing), full bilingual localization, and 100% test suite pass rate.
+- [x] **Task 120:** Detail View Photo Upload Component UI, Dropzone & Dual Capture Controls (`inventory/templates/inventory/product_detail.html`).
+- [x] **Task 121:** Client-Side WebP Compression Engine & Pre-Upload Thumbnail Queue (`inventory/templates/inventory/product_detail.html`).
+- [x] **Task 122:** Bilingual Localization, Comprehensive Automated Test Suite, Verification & Changelog (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_detail_photo_upload_component.py`, `CHANGELOG.md`).
+- [x] **Checkpoint 34 (Detail View Photo Upload Component Complete):** The photo upload UI in `/products/<pk>/` achieves full parity with `/intake/`: dashed dropzone with drag-and-drop feedback, dual camera ('📸 Tomar foto') and gallery ('🖼️ Seleccionar de la galería') buttons, client-side Canvas downscaling to max 2560px WebP, pending thumbnail queue with individual deletion, capacity-aware counter (10 - N_existing), full bilingual localization, and 100% test suite pass rate.
