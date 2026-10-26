@@ -2524,3 +2524,114 @@ uff.exe check .`
 - [x] Spanish localization compiled and verified.
 - [x] All unit and regression tests pass with 0 failures.
 - [x] `ruff check .` passes cleanly.
+
+
+---
+
+# Phase 31: Photo Reordering in Intake and Detail Workspaces (Vertical Slice 27)
+
+### Task 109: Backend Image Reordering API Endpoint & Permission Security (`inventory/views.py`, `inventory/urls.py`, `tests/test_photo_reordering.py`)
+**Description:** Implement `product_reorder_images_view` at `POST /products/<pk>/images/reorder/`.
+1. Protect with `@login_required`, `@manager_required`, and `@require_POST`.
+2. Parse JSON payload `{ "image_ids": [id1, id2, ...] }`.
+3. Validate that all IDs belong to `product.images` and length matches `product.images.count()`.
+4. Update `ProductImage.order = idx` inside `transaction.atomic()`.
+5. Return JSON `{ "success": True, "reordered_ids": [...] }`.
+6. Write unit tests covering manager access, assistant 403 denial, unauthenticated redirects, invalid payload validation, and atomic database persistence.
+**Acceptance criteria:**
+- [ ] Store managers can reorder existing product images via POST endpoint.
+- [ ] Assistants are blocked with HTTP 403 Forbidden.
+- [ ] Cross-product image ID injection is rejected with HTTP 400.
+- [ ] Incomplete ID lists are rejected with HTTP 400.
+- [ ] `ProductImage.order` is updated atomically.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py test tests.test_photo_reordering`
+**Dependencies:** None
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/urls.py`
+- `tests/test_photo_reordering.py`
+**Estimated scope:** Small/Medium (3 files)
+
+---
+
+### Task 110: Intake Form Hybrid Photo Reordering (Buttons + Drag & Drop) (`inventory/templates/inventory/intake.html`)
+**Description:** Enhance `/intake/` photo preview cards with mobile-first reordering controls and HTML5 drag-and-drop.
+1. Render Move Left (`◀`), Move Right (`▶`), and "Set as Cover" (`⭐`) buttons on each preview card in `#previewGrid`.
+2. Add HTML5 drag-and-drop handles and drop-zone indicators on desktop.
+3. Add helper functions `reorderFile(fromIdx, toIdx)` and `setCoverPhoto(idx)`.
+4. Call `syncFileInput()` on every reorder to synchronize `imageInput.files` via `DataTransfer`.
+5. Render `#1` badge with special styling `⭐ #1 Portada` / `⭐ #1 Cover`.
+6. Ensure identification gate status (`hasIdentified`) is preserved across reordering operations.
+7. Include accessible ARIA labels on all reorder buttons.
+**Acceptance criteria:**
+- [ ] Preview thumbnails can be moved left and right with tap/click buttons.
+- [ ] Any photo can be promoted to cover (#1) with a single click.
+- [ ] Desktop drag-and-drop reorders cards smoothly.
+- [ ] `imageInput.files` maintains the exact reordered sequence for form submit.
+- [ ] Identification gate remains unlocked if already run.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** None
+**Files likely touched:**
+- `inventory/templates/inventory/intake.html`
+**Estimated scope:** Medium (1 file)
+
+---
+
+### Task 111: Product Detail Gallery Reordering UI & Live Cover Preview (`inventory/templates/inventory/product_detail.html`)
+**Description:** Add photo reordering capabilities to the Photo Gallery Card on `/products/<pk>/` for managers.
+1. For `can_manage=True`, render reordering controls (Move Left, Move Right, "Set as Cover", drag-and-drop handles) on thumbnails.
+2. Provide a clean Reorder mode toggle button or intuitive inline buttons on thumbnails.
+3. Connect controls to asynchronous `POST /products/<pk>/images/reorder/` using CSRF token.
+4. On success, update `#mainImage` to display the new `#1` image and display an accessible toast notice.
+5. On failure, revert DOM order to prior state and show accessible error message.
+**Acceptance criteria:**
+- [ ] Store managers can reorder photos directly in the product detail view.
+- [ ] Promoting a photo to cover immediately updates the main featured photo preview.
+- [ ] Reordering persists to the database asynchronously.
+- [ ] Sourcing assistants see read-only gallery without reordering controls.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Task 109
+**Files likely touched:**
+- `inventory/templates/inventory/product_detail.html`
+**Estimated scope:** Medium (1 file)
+
+---
+
+### Task 112: Bilingual Localization, Automated Test Suite, E2E Verification & Changelog (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_photo_reordering.py`, `CHANGELOG.md`)
+**Description:** Add Spanish translation catalogs, expand automated tests, verify with linter, and document in `CHANGELOG.md`.
+1. Add Spanish translations for new strings ("Move photo left", "Move photo right", "Set as cover photo", "Reorder photos", "Photo order saved successfully", etc.) in `django.po` and compile to `django.mo`.
+2. Expand `tests/test_photo_reordering.py` to cover intake reordering attributes, detail view controls, permission gating, and localization.
+3. Run full automated test suite (398+ tests) and `ruff check .`.
+4. Update `CHANGELOG.md` under `## [Unreleased]`.
+**Acceptance criteria:**
+- [ ] Translations compiled with 0 errors.
+- [ ] Full automated test suite passes 100%.
+- [ ] `ruff check .` passes with 0 warnings.
+- [ ] `CHANGELOG.md` updated with Phase 31 entries.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_photo_reordering`
+- [ ] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [ ] Linter passes: `.venv\Scripts\ruff.exe check .`
+**Dependencies:** Tasks 109, 110, 111
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_photo_reordering.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (4 files)
+
+---
+
+## Checkpoint 31: Photo Reordering Complete
+- [ ] Hybrid reordering (buttons + drag & drop) functional on `/intake/`.
+- [ ] Form submit persists images in the reordered order (`order=0, 1, 2...`).
+- [ ] Manager reordering functional on `/products/<pk>/` with instant persistence.
+- [ ] Main featured image dynamically updates to reflect new cover photo.
+- [ ] Assistant access is strictly read-only on detail page.
+- [ ] Spanish translations compiled and verified.
+- [ ] 100% test pass rate with 0 regressions.
+- [ ] `ruff check .` passes cleanly.
