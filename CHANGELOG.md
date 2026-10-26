@@ -7,14 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-10-26
+
 ### Added
 - **Out-of-Sync Product Web Push Notifications (Phase 35)**:
-  - **Real-Time Manager Alerts (inventory/services/push_service.py)**: Implemented send_out_of_sync_notification(product) dispatching encrypted Web Push notifications to active Store Managers (ROLE_MANAGER + active staff/superusers) via VAPID and pywebpush whenever published items undergo post-publication modifications.
-  - **Edge-Transition State Guard (inventory/models.py)**: Instrumented Product.__init__ and Product.save() with _initial_needs_platform_sync and _previous_needs_platform_sync to detect state transitions. Signal receiver 
-otify_managers_on_product_lifecycle_save triggers strictly on False -> True edge transitions, preventing repetitive notification spam on subsequent edits.
-  - **Notification Suppression Invariants**: Automatically suppresses notifications when platform sync is cleared via product.mark_platform_synced(), when editing draft/unpublished products, or when products are soft-deleted (is_deleted=True). A subsequent modification after clearance properly triggers a fresh alert.
-  - **Actionable Deep-Linking & Tag Collapsing**: Formats notifications with direct URL /products/<pk>/ leading directly to the workspace warning banner and 1-click clearance action, tagged with product-out-of-sync-<pk> to collapse repeated alerts in OS notification drawers.
-  - **Bilingual Localization & Comprehensive Test Suite**: Added Spanish translations in locale/es/LC_MESSAGES/django.po and compiled to django.mo. Authored 16 automated tests in 	ests/test_out_of_sync_notifications.py with 100% pass rate.
+  - **Real-Time Manager Alerts (`inventory/services/push_service.py`)**: Implemented `send_out_of_sync_notification(product)` dispatching encrypted Web Push notifications to active Store Managers (`ROLE_MANAGER` + active staff/superusers) via VAPID and `pywebpush` whenever published items undergo post-publication modifications.
+  - **Edge-Transition State Guard (`inventory/models.py`)**: Instrumented `Product.__init__` and `Product.save()` with `_initial_needs_platform_sync` and `_previous_needs_platform_sync` to detect state transitions. Signal receiver `notify_managers_on_product_lifecycle_save` triggers strictly on `False -> True` edge transitions, preventing repetitive notification spam on subsequent edits.
+  - **Notification Suppression Invariants**: Automatically suppresses notifications when platform sync is cleared via `product.mark_platform_synced()`, when editing draft/unpublished products, or when products are soft-deleted (`is_deleted=True`). A subsequent modification after clearance properly triggers a fresh alert.
+  - **Actionable Deep-Linking & Tag Collapsing**: Formats notifications with direct URL `/products/<pk>/` leading directly to the workspace warning banner and 1-click clearance action, tagged with `product-out-of-sync-<pk>` to collapse repeated alerts in OS notification drawers.
+  - **Bilingual Localization & Comprehensive Test Suite**: Added Spanish translations in `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`. Authored 16 automated tests in `tests/test_out_of_sync_notifications.py` with 100% pass rate.
 
 ## [1.10.0] - 2026-10-26
 
