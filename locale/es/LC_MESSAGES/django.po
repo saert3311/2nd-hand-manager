@@ -1816,3 +1816,43 @@ msgstr "Desincronizado con plataformas externas"
 
 msgid "Platforms synced:"
 msgstr "Plataformas sincronizadas:"
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "New Photos to Upload"
+msgstr "Nuevas fotos para subir"
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "Clear All"
+msgstr "Limpiar todo"
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "Upload Selected Photos"
+msgstr "Subir fotos seleccionadas"
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "Upload 1 Selected Photo"
+msgstr "Subir 1 foto seleccionada"
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "Uploading photos..."
+msgstr "Subiendo fotos..."
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "Maximum photo limit (10) reached for this product."
+msgstr "Has alcanzado el límite máximo de 10 fotos para este producto."
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "Some photos were skipped because the maximum limit is 10 photos."
+msgstr "Se omitieron algunas fotos porque el límite máximo es de 10 fotos."
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "Remove from upload queue"
+msgstr "Quitar de la cola de subida"
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "Remove photo from upload queue"
+msgstr "Quitar foto de la cola de subida"
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "%(available)s available (%(count)s/10)"
+msgstr "%(available)s disponibles (%(count)s/10)"

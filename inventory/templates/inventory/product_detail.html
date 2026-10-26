@@ -210,26 +210,90 @@
         </div>
 
         {% if can_manage and product.images.count < 10 %}
-        <!-- Add More Photos Section -->
-        <div class="pt-3 border-t border-slate-100">
-          <form method="post" action="{% url 'inventory:product_upload_images' product.pk %}" enctype="multipart/form-data" class="space-y-2">
-            {% csrf_token %}
-            <div class="flex items-center justify-between">
-              <label for="detailPhotoInput" class="text-xs font-bold text-slate-700 uppercase tracking-wider cursor-pointer">
-                {% trans "Add More Photos" %}
-              </label>
-              <span class="text-xs text-slate-400">
-                {% trans "Max 10 total" %} ({{ product.images.count }}/10)
-              </span>
+        <!-- Enhanced Add More Photos Component (Phase 34 Parity with Intake) -->
+        <div id="detailPhotoUploadContainer" class="pt-4 border-t border-slate-100 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <span>📷</span> {% trans "Add More Photos" %}
+            </span>
+            <span id="detailUploadSlotCount" class="text-xs font-semibold text-slate-500" data-existing="{{ product.images.count }}" data-max="10">
+              {% blocktrans with available=available_slots count=product.images.count %}
+                {{ available }} available ({{ count }}/10)
+              {% endblocktrans %}
+            </span>
+          </div>
+
+          <!-- Interactive Dashed Dropzone -->
+          <div id="detailDropZone" class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl p-4 sm:p-5 text-center bg-slate-50 hover:bg-emerald-50/40 transition cursor-pointer relative group">
+            <input type="file" id="detailImageInput" multiple accept="image/*" class="sr-only">
+            <input type="file" id="detailCameraInput" accept="image/*" capture="environment" class="sr-only">
+
+            <div class="space-y-2.5">
+              <div class="w-10 h-10 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl group-hover:scale-105 transition duration-150 shadow-xs">
+                📷
+              </div>
+              <div>
+                <p class="text-sm sm:text-base font-bold text-slate-800">{% trans "Tap to take photos or upload" %}</p>
+                <p class="text-xs text-slate-500 mt-0.5">
+                  {% blocktrans with max=available_slots %}Select up to {{ max }} photos (auto-optimized to WebP 2560px){% endblocktrans %}
+                </p>
+              </div>
+
+              <!-- Dual Action Triggers -->
+              <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
+                <label for="detailCameraInput" id="btnTriggerDetailCamera" role="button" tabindex="0"
+                       class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl shadow-sm text-xs sm:text-sm transition cursor-pointer min-h-[38px] select-none">
+                  <span class="text-base leading-none">📸</span>
+                  <span>{% trans "Take Photo" %}</span>
+                </label>
+                <label for="detailImageInput" id="btnTriggerDetailGallery" role="button" tabindex="0"
+                       class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 font-bold rounded-xl border border-slate-300 shadow-sm text-xs sm:text-sm transition cursor-pointer min-h-[38px] select-none">
+                  <span class="text-base leading-none">🖼️</span>
+                  <span>{% trans "Choose from Gallery" %}</span>
+                </label>
+              </div>
+              <p class="text-[11px] text-slate-400 hidden sm:block">{% trans "Or drop photos anywhere in this box" %}</p>
             </div>
-            <div class="flex items-center gap-2">
-              <input type="file" name="images" id="detailPhotoInput" multiple accept="image/*"
-                     class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-200 rounded-lg p-1 bg-slate-50 cursor-pointer">
-              <button type="submit" id="btnUploadDetailPhotos"
-                      class="shrink-0 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm transition flex items-center gap-1 active:scale-95 cursor-pointer">
-                <span>⬆️</span> {% trans "Upload" %}
+          </div>
+
+          <!-- Client-side Alert / Validation Banner -->
+          <div id="detailUploadAlert" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-medium flex items-center justify-between gap-2" role="alert">
+            <span id="detailUploadAlertText"></span>
+            <button type="button" id="btnDismissDetailUploadAlert" class="text-rose-500 hover:text-rose-700 text-sm font-bold p-1 cursor-pointer" title="{% trans 'Dismiss' %}">✕</button>
+          </div>
+
+          <!-- Inline Compression Indicator -->
+          <div id="detailCompressionIndicator" role="status" aria-live="polite"
+               class="hidden p-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition-all duration-200">
+            <svg class="animate-spin h-4 w-4 text-emerald-600 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <span id="detailCompressionIndicatorText">{% trans "Optimizing photos to WebP (2560px)..." %}</span>
+          </div>
+
+          <!-- Pending Thumbnails Preview Grid -->
+          <div id="detailPendingContainer" class="hidden space-y-2">
+            <div class="flex items-center justify-between">
+              <p class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <span>✨</span> {% trans "New Photos to Upload" %} (<span id="detailPendingCount">0</span>)
+              </p>
+              <button type="button" id="btnClearDetailPending" class="text-xs text-rose-600 hover:text-rose-800 font-semibold transition cursor-pointer">
+                {% trans "Clear All" %}
               </button>
             </div>
+            <div id="detailPendingGrid" class="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-48 overflow-y-auto p-1.5 bg-slate-50/80 rounded-xl border border-slate-200"></div>
+          </div>
+
+          <!-- Upload Action Form -->
+          <form id="detailUploadForm" method="post" action="{% url 'inventory:product_upload_images' product.pk %}" enctype="multipart/form-data" class="pt-1">
+            {% csrf_token %}
+            <input type="file" name="images" id="detailFormImages" multiple class="hidden">
+            <button type="submit" id="btnUploadDetailPhotos" disabled
+                    class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 active:scale-95 cursor-pointer">
+              <span>⬆️</span>
+              <span id="btnUploadDetailPhotosText">{% trans "Upload Selected Photos" %}</span>
+            </button>
           </form>
         </div>
         {% endif %}
@@ -1445,6 +1509,353 @@
       panelDoubt.classList.remove("hidden");
       panelDirect.classList.add("hidden");
     }
+  }
+
+
+  // =========================================================================
+  // Enhanced Detail View Photo Upload Component Engine (Phase 34)
+  // =========================================================================
+  const detailDropZone = document.getElementById('detailDropZone');
+  const detailImageInput = document.getElementById('detailImageInput');
+  const detailCameraInput = document.getElementById('detailCameraInput');
+  const detailFormImages = document.getElementById('detailFormImages');
+  const detailUploadForm = document.getElementById('detailUploadForm');
+  const btnUploadDetailPhotos = document.getElementById('btnUploadDetailPhotos');
+  const btnUploadDetailPhotosText = document.getElementById('btnUploadDetailPhotosText');
+  const detailCompressionIndicator = document.getElementById('detailCompressionIndicator');
+  const detailCompressionIndicatorText = document.getElementById('detailCompressionIndicatorText');
+  const detailPendingContainer = document.getElementById('detailPendingContainer');
+  const detailPendingGrid = document.getElementById('detailPendingGrid');
+  const detailPendingCount = document.getElementById('detailPendingCount');
+  const btnClearDetailPending = document.getElementById('btnClearDetailPending');
+  const detailUploadAlert = document.getElementById('detailUploadAlert');
+  const detailUploadAlertText = document.getElementById('detailUploadAlertText');
+  const btnDismissDetailUploadAlert = document.getElementById('btnDismissDetailUploadAlert');
+
+  let detailPendingFiles = [];
+  const detailMaxImages = 10;
+  const detailSlotCountEl = document.getElementById('detailUploadSlotCount');
+  const detailExistingCount = detailSlotCountEl ? parseInt(detailSlotCountEl.dataset.existing || '0', 10) : 0;
+  const detailAvailableSlots = Math.max(0, detailMaxImages - detailExistingCount);
+
+  function showDetailUploadAlert(msg) {
+    if (!detailUploadAlert || !detailUploadAlertText) return;
+    detailUploadAlertText.textContent = msg;
+    detailUploadAlert.classList.remove('hidden');
+  }
+
+  function hideDetailUploadAlert() {
+    if (detailUploadAlert) {
+      detailUploadAlert.classList.add('hidden');
+    }
+  }
+
+  if (btnDismissDetailUploadAlert) {
+    btnDismissDetailUploadAlert.addEventListener('click', hideDetailUploadAlert);
+  }
+
+  function showDetailCompression(show, text) {
+    if (!detailCompressionIndicator) return;
+    if (show) {
+      if (text && detailCompressionIndicatorText) {
+        detailCompressionIndicatorText.textContent = text;
+      }
+      detailCompressionIndicator.classList.remove('hidden');
+    } else {
+      detailCompressionIndicator.classList.add('hidden');
+    }
+  }
+
+  async function compressDetailImageFile(file, maxDimension = 2560, quality = 0.82) {
+    if (!file || !file.type.startsWith('image/')) return file;
+    if (file.type === 'image/svg+xml' || file.type === 'image/gif') return file;
+
+    try {
+      let imageSource = null;
+      let width = 0;
+      let height = 0;
+      let closeSource = () => {};
+
+      if (typeof createImageBitmap === 'function') {
+        try {
+          imageSource = await createImageBitmap(file, { imageOrientation: 'from-image' });
+          width = imageSource.width;
+          height = imageSource.height;
+          closeSource = () => { if (imageSource.close) imageSource.close(); };
+        } catch (bitmapErr) {
+          imageSource = null;
+        }
+      }
+
+      if (!imageSource) {
+        imageSource = await new Promise((resolve, reject) => {
+          const img = new Image();
+          const objUrl = URL.createObjectURL(file);
+          img.onload = () => {
+            URL.revokeObjectURL(objUrl);
+            resolve(img);
+          };
+          img.onerror = (err) => {
+            URL.revokeObjectURL(objUrl);
+            reject(err);
+          };
+          img.src = objUrl;
+        });
+        width = imageSource.naturalWidth || imageSource.width;
+        height = imageSource.naturalHeight || imageSource.height;
+      }
+
+      let targetWidth = width;
+      let targetHeight = height;
+      if (width > maxDimension || height > maxDimension) {
+        if (width >= height) {
+          targetWidth = maxDimension;
+          targetHeight = Math.round((height * maxDimension) / width);
+        } else {
+          targetHeight = maxDimension;
+          targetWidth = Math.round((width * maxDimension) / height);
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(imageSource, 0, 0, targetWidth, targetHeight);
+      closeSource();
+
+      const blob = await new Promise((resolve) => {
+        canvas.toBlob((b) => {
+          if (b && b.type === 'image/webp' && b.size > 0) {
+            resolve(b);
+          } else {
+            canvas.toBlob((fallbackBlob) => {
+              resolve(fallbackBlob || null);
+            }, 'image/jpeg', 0.85);
+          }
+        }, 'image/webp', quality);
+      });
+
+      if (!blob) return file;
+
+      const originalName = file.name || 'photo.webp';
+      const cleanStem = originalName.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_\-]/g, "_") || "photo";
+      const ext = (blob.type === 'image/webp') ? '.webp' : '.jpg';
+      const finalName = `${cleanStem}_opt${ext}`;
+
+      return new File([blob], finalName, {
+        type: blob.type,
+        lastModified: Date.now()
+      });
+    } catch (err) {
+      console.warn("Client-side image optimization fallback to original:", err);
+      return file;
+    }
+  }
+
+  async function handleIncomingDetailFiles(filesList) {
+    const incoming = Array.from(filesList || []);
+    if (incoming.length === 0) return;
+
+    hideDetailUploadAlert();
+    showDetailCompression(true, "{% trans 'Optimizing photos to WebP (2560px)...' %}");
+
+    try {
+      const optimizedFiles = [];
+      for (let i = 0; i < incoming.length; i++) {
+        const f = incoming[i];
+        if (!f.type.startsWith('image/')) continue;
+        if (incoming.length > 1) {
+          showDetailCompression(true, `{% trans 'Optimizing photo' %} ${i + 1} / ${incoming.length}...`);
+        }
+        const opt = await compressDetailImageFile(f, 2560, 0.82);
+        optimizedFiles.push(opt);
+      }
+
+      if (optimizedFiles.length === 0) return;
+
+      const MAX_FILE_SIZE = 10 * 1024 * 1024;
+      const oversized = optimizedFiles.find(f => f.size > MAX_FILE_SIZE);
+      if (oversized) {
+        const sizeMb = (oversized.size / (1024 * 1024)).toFixed(1);
+        const template = "{% blocktrans %}The file '%(name)s' exceeds the 10MB limit (%(size)s MB). Please select photos under 10MB.{% endblocktrans %}";
+        showDetailUploadAlert(template.replace('%(name)s', oversized.name).replace('%(size)s', sizeMb));
+        return;
+      }
+
+      const validIncoming = optimizedFiles.filter(f => {
+        return !detailPendingFiles.some(existing => existing.name === f.name && existing.size === f.size);
+      });
+
+      if (validIncoming.length === 0) return;
+
+      const remainingSlots = detailAvailableSlots - detailPendingFiles.length;
+      if (remainingSlots <= 0) {
+        showDetailUploadAlert("{% trans 'Maximum photo limit (10) reached for this product.' %}");
+        return;
+      }
+
+      if (validIncoming.length > remainingSlots) {
+        showDetailUploadAlert("{% trans 'Some photos were skipped because the maximum limit is 10 photos.' %}");
+        detailPendingFiles.push(...validIncoming.slice(0, remainingSlots));
+      } else {
+        detailPendingFiles.push(...validIncoming);
+      }
+
+      syncDetailFileInput();
+      renderDetailPendingPreviews();
+    } finally {
+      showDetailCompression(false);
+    }
+  }
+
+  function renderDetailPendingPreviews() {
+    if (!detailPendingGrid || !detailPendingContainer) return;
+
+    if (detailPendingFiles.length === 0) {
+      detailPendingContainer.classList.add('hidden');
+      if (detailPendingCount) detailPendingCount.textContent = '0';
+      detailPendingGrid.innerHTML = '';
+      return;
+    }
+
+    detailPendingContainer.classList.remove('hidden');
+    if (detailPendingCount) detailPendingCount.textContent = detailPendingFiles.length.toString();
+    detailPendingGrid.innerHTML = '';
+
+    detailPendingFiles.forEach((file, index) => {
+      const card = document.createElement('div');
+      card.className = 'relative aspect-square rounded-xl overflow-hidden border-2 border-emerald-400 bg-slate-100 shadow-xs group';
+
+      const img = document.createElement('img');
+      img.className = 'w-full h-full object-cover select-none';
+      img.alt = `pending ${index + 1}`;
+      img.src = URL.createObjectURL(file);
+      card.appendChild(img);
+
+      const badge = document.createElement('span');
+      badge.className = 'absolute top-1 left-1 bg-emerald-600 font-bold text-white text-[10px] px-1.5 py-0.5 rounded-md shadow-xs pointer-events-none select-none';
+      badge.textContent = `+${index + 1}`;
+      card.appendChild(badge);
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center text-xs font-black shadow-sm transition active:scale-90 cursor-pointer';
+      delBtn.title = "{% trans 'Remove from upload queue' %}";
+      delBtn.setAttribute('aria-label', "{% trans 'Remove photo from upload queue' %}");
+      delBtn.textContent = '✕';
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        URL.revokeObjectURL(img.src);
+        detailPendingFiles.splice(index, 1);
+        syncDetailFileInput();
+        renderDetailPendingPreviews();
+      });
+      card.appendChild(delBtn);
+
+      detailPendingGrid.appendChild(card);
+    });
+  }
+
+  function syncDetailFileInput() {
+    if (!detailFormImages || !btnUploadDetailPhotos) return;
+
+    const dt = new DataTransfer();
+    detailPendingFiles.forEach(f => dt.items.add(f));
+    detailFormImages.files = dt.files;
+
+    if (detailPendingFiles.length > 0) {
+      btnUploadDetailPhotos.disabled = false;
+      if (btnUploadDetailPhotosText) {
+        if (detailPendingFiles.length === 1) {
+          btnUploadDetailPhotosText.textContent = "{% trans 'Upload 1 Selected Photo' %}";
+        } else {
+          btnUploadDetailPhotosText.textContent = "{% trans 'Upload Selected Photos' %} (" + detailPendingFiles.length + ")";
+        }
+      }
+    } else {
+      btnUploadDetailPhotos.disabled = true;
+      if (btnUploadDetailPhotosText) {
+        btnUploadDetailPhotosText.textContent = "{% trans 'Upload Selected Photos' %}";
+      }
+    }
+  }
+
+  if (btnClearDetailPending) {
+    btnClearDetailPending.addEventListener('click', function() {
+      detailPendingFiles = [];
+      syncDetailFileInput();
+      renderDetailPendingPreviews();
+      hideDetailUploadAlert();
+    });
+  }
+
+  if (detailDropZone) {
+    detailDropZone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      detailDropZone.classList.add('border-emerald-500', 'bg-emerald-50/60');
+    });
+
+    detailDropZone.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      detailDropZone.classList.remove('border-emerald-500', 'bg-emerald-50/60');
+    });
+
+    detailDropZone.addEventListener('drop', async function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      detailDropZone.classList.remove('border-emerald-500', 'bg-emerald-50/60');
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length > 0) {
+        await handleIncomingDetailFiles(dt.files);
+      }
+    });
+
+    detailDropZone.addEventListener('click', function(e) {
+      if (e.target.closest('#btnTriggerDetailCamera') || e.target.closest('#btnTriggerDetailGallery') || e.target.closest('label') || e.target.closest('button') || e.target.closest('input')) {
+        return;
+      }
+      if (detailImageInput) detailImageInput.click();
+    });
+  }
+
+  if (detailCameraInput) {
+    detailCameraInput.addEventListener('click', function(e) {
+      e.stopPropagation();
+    });
+    detailCameraInput.addEventListener('change', async function(e) {
+      const files = Array.from(e.target.files || []);
+      if (files.length > 0) {
+        await handleIncomingDetailFiles(files);
+      }
+      detailCameraInput.value = '';
+    });
+  }
+
+  if (detailImageInput) {
+    detailImageInput.addEventListener('click', function(e) {
+      e.stopPropagation();
+    });
+    detailImageInput.addEventListener('change', async function(e) {
+      const files = Array.from(e.target.files || []);
+      if (files.length > 0) {
+        await handleIncomingDetailFiles(files);
+      }
+      detailImageInput.value = '';
+    });
+  }
+
+  if (detailUploadForm) {
+    detailUploadForm.addEventListener('submit', function() {
+      if (btnUploadDetailPhotos) {
+        btnUploadDetailPhotos.disabled = true;
+        if (btnUploadDetailPhotosText) {
+          btnUploadDetailPhotosText.textContent = "{% trans 'Uploading photos...' %}";
+        }
+      }
+    });
   }
 
 </script>

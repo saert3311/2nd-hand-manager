@@ -2821,3 +2821,107 @@ uff.exe check .`
 - [x] Full bilingual Spanish/English localization compiled.
 - [x] 100% test pass rate with 0 regressions.
 - [x] `ruff check .` passes cleanly.
+
+
+---
+
+## Phase 34: Detail View Photo Upload Component System (Vertical Slice 30)
+
+### Task 120: Detail View Photo Upload Component UI, Dropzone & Dual Capture Controls (`inventory/templates/inventory/product_detail.html`)
+**Description:** Replace the rudimentary `<input type="file">` in `inventory/templates/inventory/product_detail.html` with a modern, mobile-first photo upload component modeled after `/intake/`:
+1. Implement dashed drag-and-drop container (`#detailDropZone`) with active dragover styling and click delegation to the multi-file gallery input.
+2. Provide high-contrast, touch-friendly dual action buttons:
+   - Dedicated Camera trigger: `#btnTriggerDetailCamera` targeting `#detailCameraInput` (`accept="image/*" capture="environment"`).
+   - Gallery picker trigger: `#btnTriggerDetailGallery` targeting `#detailImageInput` (`accept="image/*" multiple`).
+3. Add event `stopPropagation()` to file inputs and label buttons to prevent double-invoking file choosers on Android and iOS.
+4. Render live slot capacity indicator `#detailUploadSlotCount` showing available slots ($10 - N_{existing}$) and maximum total limit.
+5. Include accessible inline compression indicator `#detailCompressionIndicator` (`aria-live="polite"`).
+6. Scaffold pending thumbnail container `#detailPendingContainer` and grid `#detailPendingGrid`.
+7. Configure upload form `#detailUploadForm` with hidden multi-file input `#detailFormImages` and upload submit button `#btnUploadDetailPhotos` (disabled when pending queue is empty).
+**Acceptance criteria:**
+- [x] Dropzone renders with dashed border, upload icon, and clear instructions when `can_manage = True` and existing photos $< 10$.
+- [x] Dual action buttons render with 44px minimum tap targets.
+- [x] Camera input has `capture="environment"` attribute.
+- [x] Slot count accurately displays remaining slots ($10 - N_{existing}$).
+- [x] Component is cleanly hidden when product already has 10 photos or for assistant users.
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Phase 33 complete
+**Files likely touched:**
+- `inventory/templates/inventory/product_detail.html`
+**Estimated scope:** Medium (1 template file)
+
+---
+
+### Task 121: Client-Side WebP Compression Engine & Pre-Upload Thumbnail Queue (`inventory/templates/inventory/product_detail.html`)
+**Description:** Author the client-side JavaScript engine for the detail view photo upload component:
+1. Implement `compressImageFile(file, maxDimension=2560, quality=0.82)` with hardware EXIF orientation handling via `createImageBitmap` and `HTMLImageElement` fallback, exporting to `.webp` blob.
+2. Implement `handleIncomingDetailFiles(filesList)`:
+   - Validate individual 10MB file size limit.
+   - Filter exact duplicate re-selections (`name` + `size`).
+   - Dynamically compute remaining capacity ($10 - N_{existing} - N_{pending}$) and truncate excess files with user alert.
+   - Update compression indicator during processing.
+3. Render interactive pending thumbnail previews in `#detailPendingGrid`:
+   - Thumbnail preview image with cover ratio.
+   - Slot order badge (`+#`).
+   - High-contrast delete button (✕) to remove individual photos from pending queue before upload.
+   - Clear all button (`#btnClearDetailPending`).
+4. Implement `syncDetailFileInput()` using `DataTransfer` to populate `#detailFormImages.files` and toggle `#btnUploadDetailPhotos` disabled state.
+**Acceptance criteria:**
+- [x] Dragging and dropping files onto `#detailDropZone` processes and adds them to pending queue.
+- [x] Camera and gallery selections process and append to pending queue.
+- [x] Client-side Canvas downscales files exceeding 2560px into WebP format.
+- [x] Individual pending photos can be removed by tapping '✕' without losing other queued photos.
+- [x] Submitting `#detailUploadForm` sends the processed WebP files to `product_upload_images_view`.
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Task 120
+**Files likely touched:**
+- `inventory/templates/inventory/product_detail.html`
+**Estimated scope:** Medium (1 template file)
+
+---
+
+### Task 122: Bilingual Localization, Comprehensive Automated Test Suite, Verification & Changelog (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_detail_photo_upload_component.py`, `CHANGELOG.md`)
+**Description:** Add Spanish translations, author test suite, verify full regression, and update changelog:
+1. Translate all new template strings into `locale/es/LC_MESSAGES/django.po` and compile to `django.mo` via `python manage.py compile_locales`.
+2. Author `tests/test_detail_photo_upload_component.py` covering:
+   - Component visibility: displayed for manager with $<10$ photos, hidden for assistants, hidden when 10 photos attached.
+   - DOM attributes: `#detailCameraInput` has `capture="environment"`, `#detailImageInput` has `multiple` and `accept="image/*"`.
+   - Remaining capacity calculation in template context and rendered text.
+   - Form submission integration: uploading additional photos through `product_upload_images_view`.
+   - Max 10 enforcement: attempting upload that exceeds capacity is rejected.
+   - Platform sync trigger: uploading to published product sets `needs_platform_sync = True`.
+   - Localization: verify Spanish and English rendered strings.
+3. Run full automated test suite and Ruff linter.
+4. Update `CHANGELOG.md` under `## [Unreleased]`.
+**Acceptance criteria:**
+- [x] Catalogs compiled with 0 errors via `compile_locales`.
+- [x] Targeted tests in `test_detail_photo_upload_component.py` pass 100%.
+- [x] Full test suite passes 100% with 0 regressions.
+- [x] `ruff check .` passes with 0 warnings.
+- [x] `CHANGELOG.md` updated with Phase 34 documentation.
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_detail_photo_upload_component`
+- [x] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check .`
+**Dependencies:** Tasks 120, 121
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_detail_photo_upload_component.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (4 files)
+
+---
+
+## Checkpoint 34: Detail View Photo Upload Component Complete
+- [x] Photo upload UI on `/products/<pk>/` matches the high-polish design of `/intake/`.
+- [x] Desktop drag-and-drop on dashed dropzone works smoothly.
+- [x] Dual mobile buttons trigger camera capture and multi-file gallery cleanly.
+- [x] Client-side Canvas WebP compression (2560px) prevents memory crashes.
+- [x] Pending thumbnail preview grid enables pre-upload photo inspection and removal.
+- [x] Dynamic capacity counter enforces the 10-photo maximum ceiling.
+- [x] Uploading photos to published products preserves `needs_platform_sync = True` tracking.
+- [x] 100% automated test pass rate with 0 regressions and clean linter.

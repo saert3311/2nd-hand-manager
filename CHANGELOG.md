@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-10-26
+
+### Added
+- **Detail View Photo Upload Component System (Phase 34)**:
+  - **Component Parity with Intake Flow (`inventory/templates/inventory/product_detail.html`)**: Upgraded the 'Add More Photos' section in the Product Detail workspace from a raw file input into the full, mobile-first photo upload component system from `/intake/`.
+  - **Interactive Dashed Dropzone (`#detailDropZone`)**: Desktop drag-and-drop file upload zone with visual dragover emerald highlights and click delegation to multi-file selector.
+  - **Dual Mobile Action Triggers**: High-contrast, touch-friendly buttons for dedicated rear camera shooting (`#btnTriggerDetailCamera` triggering `#detailCameraInput` with `capture="environment"`) and multi-file gallery selection (`#btnTriggerDetailGallery` triggering `#detailImageInput`). Includes `stopPropagation()` handlers to prevent accidental double-invoking of file choosers on iOS and Android.
+  - **Client-Side Canvas WebP Compression**: Automatic in-browser downscaling to max 2560px WebP (quality 0.82) with hardware EXIF orientation handling via `createImageBitmap` and `HTMLImageElement` fallback, eliminating mobile browser memory exhaustion (Android LMK crashes) and reducing network upload bandwidth by ~80-90%.
+  - **Pre-Upload Queue & Interactive Preview Grid (`#detailPendingGrid`)**: Live thumbnail preview of newly selected photos prior to submission, with index badges (`+#`), individual photo discard buttons (✕), and a "Clear All" action (`#btnClearDetailPending`).
+  - **Dynamic Slot Capacity Guardrail**: Automatically calculates remaining photo capacity (10 - N_existing), renders a live slot counter (`#detailUploadSlotCount`), and alerts managers when selection attempts exceed the 10-photo maximum ceiling.
+  - **Context & Backend Synchronization (`inventory/views.py`)**: Enhanced `product_detail_view` to compute and expose `available_slots = max(0, 10 - product.images.count())` in template context, maintaining server-side 10-photo enforcement and `needs_platform_sync = True` triggering upon upload.
+  - **Bilingual Localization & Automated Tests**: Added 10 Spanish translations in `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`. Authored 10 automated unit, view, permission, capacity, and localization tests in `tests/test_detail_photo_upload_component.py`.
+
+
 ## [1.9.0] - 2026-10-26
 
 ### Added

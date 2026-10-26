@@ -1211,3 +1211,18 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
     - **Option B (New Primary State `UPDATE_PENDING`):**
       - Transition the product out of `PUBLISHED` into a separate state, hiding it from published listings until verified. Risk of broken external ad tracking and incorrect inventory counts.
     *Decision:* Option A approved — Orthogonal sync state with detail photo management, 1-click clearance, and dashboard sub-filter.
+
+
+37. **Detail View Photo Upload Component System Architecture:**
+    - How should the photo upload interface in `/products/<pk>/` be structured to achieve parity with the Intake flow?
+    - **Option A (Recommended & Selected — Unified Mobile-First Intake Component Parity):**
+      - Implement the exact Intake upload architecture in `/products/<pk>/`:
+        - Dashed drag-and-drop dropzone (`#detailDropZone`) with desktop dragover feedback.
+        - Dual mobile-first action buttons: dedicated camera capture (`#detailCameraInput` with `capture="environment"`) and multi-file gallery selection (`#detailImageInput`).
+        - Client-side Canvas downscaling to max 2560px WebP (quality 0.82) with hardware EXIF orientation handling, preventing Android LMK memory crashes and speeding up uploads.
+        - Live thumbnail preview queue (`#detailPendingGrid`) with index badges, remove buttons (✕), and clear-all action before submitting.
+        - Dynamic capacity counter (`X available / max 10`) dynamically respecting already-attached photos ($10 - N_{existing}$).
+        - Submission via `DataTransfer` form integration into existing `product_upload_images_view` with defense-in-depth server validation.
+    - **Option B (Maintain Minimal Native File Input):**
+      - Keep the simple `<input type="file">` selector. Lacks mobile camera shortcut, client-side compression, drag-and-drop, and preview queue.
+    *Decision:* Option A approved — Unified mobile-first photo upload component system with drag-and-drop, dual camera/gallery actions, client-side WebP compression, and pre-upload preview queue.
