@@ -2237,11 +2237,110 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 - [x] Bilingual localization compiled and verified.
 - [x] All unit and regression tests pass with 0 failures.
 - [x] `ruff check .` passes cleanly.
+---
 
+## Phase 28: Product Soft-Delete, Archival & Erased Trash Category (Vertical Slice 24)
 
+### Task 97: Domain Model Expansion, Migrations & Admin Registration (`inventory/models.py`, `inventory/migrations/0018_product_soft_delete.py`, `inventory/admin.py`)
+**Description:** Add fields `is_deleted = models.BooleanField(default=False, db_index=True)`, `deleted_at = models.DateTimeField(null=True, blank=True)`, and `deleted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="deleted_products")` to `Product`. Add helper methods `product.soft_delete(user=None, reason="")` and `product.restore(user=None)` maintaining original status and creating audit records in `ProductStatusLog`. Generate and execute migration `0018_product_soft_delete.py`. Register `is_deleted` and `deleted_at` in `ProductAdmin.list_display` and `list_filter`, and add admin actions `soft_delete_selected` and `restore_selected`.
+**Acceptance criteria:**
+- [ ] `Product` has `is_deleted`, `deleted_at`, and `deleted_by` fields.
+- [ ] `product.soft_delete()` marks `is_deleted=True`, timestamps `deleted_at`, sets `deleted_by`, and writes a `ProductStatusLog` record.
+- [ ] `product.restore()` clears `is_deleted`, `deleted_at`, `deleted_by`, and writes a `ProductStatusLog` record.
+- [ ] Migration `0018_product_soft_delete.py` generated and applied cleanly.
+- [ ] `ProductAdmin` displays `is_deleted` and provides bulk soft-delete and restore actions.
+**Verification:**
+- [ ] Migration applies: `.venv\Scripts\python.exe manage.py migrate`
+- [ ] Model tests pass: `.venv\Scripts\python.exe manage.py test tests.test_models`
+**Dependencies:** None
+**Files likely touched:**
+- `inventory/models.py`
+- `inventory/admin.py`
+- `inventory/migrations/0018_product_soft_delete.py`
+**Estimated scope:** Small-Medium (3 files)
 
+---
 
+### Task 98: Dedicated Action Views & URL Routing with Manager Role Protection (`inventory/views.py`, `inventory/urls.py`)
+**Description:** Create `product_soft_delete_view(request, pk)` and `product_restore_view(request, pk)` in `inventory/views.py`. Restrict both views strictly to POST requests and store managers (`@manager_required`, `@login_required`). `product_soft_delete_view` soft-deletes the product, adds a success flash message, and redirects to the dashboard erased tab (`inventory:dashboard` with `?status=erased`). `product_restore_view` restores the product, adds a success flash message, and redirects to the product detail page (`inventory:product_detail`, pk=pk). Register routes `/products/<pk>/delete/` and `/products/<pk>/restore/` in `inventory/urls.py`.
+**Acceptance criteria:**
+- [ ] `POST /products/<pk>/delete/` soft-deletes the product and redirects to `/dashboard/?status=erased`.
+- [ ] `POST /products/<pk>/restore/` restores the product and redirects to `/products/<pk>/`.
+- [ ] Non-POST requests return 405 Method Not Allowed.
+- [ ] Non-managers (assistants or unauthenticated users) are denied access (403 or redirect to login).
+**Verification:**
+- [ ] Targeted view test passes.
+**Dependencies:** Task 97
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/urls.py`
+**Estimated scope:** Small (2 files)
 
+---
 
+### Task 99: Product Detail Staging UI Integration with Confirmation Modal, Trash Indicator Banner & Restore Action (`inventory/templates/inventory/product_detail.html`)
+**Description:** Update `inventory/templates/inventory/product_detail.html`: (1) For active (non-deleted) products, add an accessible "Mover a papelera" / "Move to Trash" button and an accessible modal dialog `#deleteProductModal` prompting for confirmation and submitting POST to `inventory:product_soft_delete`. (2) For erased (`is_deleted=True`) products, render a prominent warning banner at the top of the detail page indicating the item is in the trash and disabled, accompanied by a 1-click "Restaurar producto" / "Restore Product" button submitting POST to `inventory:product_restore`. (3) Ensure UI buttons and modals are only visible to managers (`can_manage`).
+**Acceptance criteria:**
+- [ ] Product detail page displays "Move to Trash" button for active products when viewed by a manager.
+- [ ] Confirmation modal prompts user with cancel and confirm options.
+- [ ] Erased products show prominent warning banner and "Restore Product" button.
+- [ ] All elements conform to responsive styling and WCAG accessibility standards.
+**Verification:**
+- [ ] Visual inspection and template rendering check.
+**Dependencies:** Task 98
+**Files likely touched:**
+- `inventory/templates/inventory/product_detail.html`
+**Estimated scope:** Medium (1 file)
 
+---
 
+### Task 100: Dashboard Catalog Filtering, Erased Tab Navigation Pill, Aggregate Count Isolation & Search Scoping (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`)
+**Description:** Update `dashboard_view` in `inventory/views.py` and `inventory/templates/inventory/dashboard.html`: (1) Filter out soft-deleted products (`is_deleted=False`) in all standard tabs (`all`, `active`, `draft`, `price_pending`, `ready`, `published`, `awaiting_info`, `sold`, `blocked`). (2) Calculate all standard status counts over non-deleted products (`is_deleted=False`). (3) Add `erased_count = Count("id", filter=Q(is_deleted=True), distinct=True)` to aggregate counts. (4) Add support for `status=erased` returning exclusively erased products (`is_deleted=True`). (5) Add `🗑️ Eliminados` / `🗑️ Trash` tab pill in `dashboard.html` with `erased_count` badge. (6) Scope multi-field search: global searches never return erased items; searching while on `status=erased` searches within erased items.
+**Acceptance criteria:**
+- [ ] Erased items are excluded from `all`, `active`, `draft`, `ready`, `sold`, etc.
+- [ ] Standard count badges do not count erased items.
+- [ ] `?status=erased` displays only erased products.
+- [ ] `🗑️ Eliminados (N)` tab pill renders on the dashboard with live count.
+- [ ] Search isolates active vs. erased products appropriately.
+**Verification:**
+- [ ] Targeted tests pass.
+**Dependencies:** Task 97
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/templates/inventory/dashboard.html`
+**Estimated scope:** Medium (2 files)
+
+---
+
+### Task 101: Bilingual Localization, Comprehensive Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_product_soft_delete.py`, `CHANGELOG.md`)
+**Description:** Add Spanish translation entries in `locale/es/LC_MESSAGES/django.po` for all new strings ("Move to Trash", "Restore Product", "This product is in the trash", "Are you sure you want to move this product to the trash?", "Product successfully moved to trash.", "Product successfully restored to catalog.", "Erased", "Trash", etc.) and compile to `django.mo`. Build a dedicated test suite `tests/test_product_soft_delete.py` validating: (1) model soft-delete and restore methods with audit log logging; (2) delete and restore view endpoints with manager permissions and assistant rejection; (3) dashboard query exclusion in standard tabs and counts; (4) `status=erased` tab filtering and count; (5) search scoping isolation; (6) admin list display and actions. Update `CHANGELOG.md` under `## [Unreleased]`. Run full regression suite and linter.
+**Acceptance criteria:**
+- [ ] Spanish translations compiled with 0 errors.
+- [ ] Test suite in `tests/test_product_soft_delete.py` passes 100%.
+- [ ] Full regression suite (368+ tests) passes with 0 failures and 0 errors.
+- [ ] `ruff check .` passes with 0 warnings.
+- [ ] `CHANGELOG.md` updated with Phase 28 entries.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_product_soft_delete`
+- [ ] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [ ] Linter passes: `.venv\Scriptsuff.exe check .`
+**Dependencies:** Task 97, Task 98, Task 99, Task 100
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_product_soft_delete.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (4 files)
+
+---
+
+## Checkpoint 28: Product Soft-Delete Complete
+- [ ] `is_deleted`, `deleted_at`, `deleted_by` fields on `Product` with migration `0018_product_soft_delete.py` applied cleanly.
+- [ ] Dedicated delete and restore POST endpoints protected with manager permissions.
+- [ ] Product detail page provides accessible confirmation modal to trash items, and warning banner with 1-click restore for erased items.
+- [ ] Dashboard excludes erased items from all standard tabs and status counters.
+- [ ] Dedicated `?status=erased` tab displays soft-deleted items with live count badge.
+- [ ] Spanish localization compiled and verified.
+- [ ] All unit and regression tests pass with 0 failures.
+- [ ] `ruff check .` passes cleanly.

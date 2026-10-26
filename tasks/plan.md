@@ -326,14 +326,12 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - [x] **Task 95:** Dashboard Catalog Filtering & Product Card Channel Badges (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`).
 - [x] **Task 96:** Bilingual Localization, Comprehensive Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_sale_channel.py`, `CHANGELOG.md`).
 - [x] **Checkpoint 27 (Sale Channel Tracking Complete):** Marking a product as sold requires explicit channel attribution (in-store or marketplace); marketplace sales link to configured `MarketplaceSite` with `SET_NULL` cascade safety; product detail staging page provides progressive channel selector with 1-click published platform shortcuts; catalog dashboard displays channel badges and sub-filters sold items by channel; all automated tests pass with 0 failures and 0 linter errors.
+---
 
-
-
-
-
-
-
-
-
-
-
+### Phase 28: Product Soft-Delete, Archival & Erased Trash Category (Vertical Slice 24)
+- [ ] **Task 97:** Domain Model Fields (`is_deleted`, `deleted_at`, `deleted_by`), Methods (`soft_delete`, `restore`), Schema Migration (`0018_product_soft_delete.py`), and Admin Registration (`inventory/models.py`, `inventory/migrations/0018_product_soft_delete.py`, `inventory/admin.py`).
+- [ ] **Task 98:** Dedicated Action Views (`product_soft_delete_view`, `product_restore_view`) & URL Routing with Manager Role Protection (`inventory/views.py`, `inventory/urls.py`).
+- [ ] **Task 99:** Product Detail Staging UI Integration with Confirmation Modal, Trash Indicator Banner & Restore Action (`inventory/templates/inventory/product_detail.html`).
+- [ ] **Task 100:** Dashboard Catalog Filtering, Erased Tab Navigation Pill, Aggregate Count Isolation & Search Scoping (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`).
+- [ ] **Task 101:** Bilingual Localization, Comprehensive Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_product_soft_delete.py`, `CHANGELOG.md`).
+- [ ] **Checkpoint 28 (Product Soft-Delete Complete):** Managers can move items to trash via confirmation modal; erased items are isolated into `?status=erased` with dedicated count and excluded from active catalog tabs/counters; erased items can be inspected and restored back to their prior lifecycle status; all tests pass 100% and linter passes with 0 warnings.
