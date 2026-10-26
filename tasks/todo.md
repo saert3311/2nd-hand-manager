@@ -2462,3 +2462,65 @@ uff.exe check .`
 - [x] Spanish localization compiled and verified.
 - [x] All unit and regression tests pass with 0 failures.
 - [x] `ruff check .` passes cleanly.
+
+
+---
+
+# Phase 30: Intake Mandatory Pre-flight Identification Gate (Vertical Slice 26)
+
+### Task 107: Frontend UI State Machine, Save Button Gating & Reset Logic (`inventory/templates/inventory/intake.html`)
+**Description:** Modify `/intake/` in `inventory/templates/inventory/intake.html` to enforce AI identification before saving.
+1. Initialize `#submitBtn` with `disabled` attribute and disabled visual styles (`opacity-50 cursor-not-allowed bg-slate-300 text-slate-500 shadow-none hover:bg-slate-300`).
+2. Add a dynamic helper paragraph `#submitHelpText` beneath the Save button informing the assistant: *"Identifica el producto con IA para habilitar el guardado"* / *"Identify product with AI first to enable saving"*.
+3. Add client state variable `let hasIdentified = false;`.
+4. In `setFormState('idle')`: check `hasIdentified` — if false, keep `#submitBtn` disabled; if true, enable `#submitBtn` with full emerald styling.
+5. In `identifyBtn` click handler: upon response completion (both `data.success === true` and error/timeout fallback), set `hasIdentified = true` and transition `#submitBtn` to enabled with confirmation in `#submitHelpText`.
+6. In photo preview deletion: if all photos are deleted (`selectedFiles.length === 0`), reset `hasIdentified = false`, hide the advisory banner, and disable `#submitBtn`.
+7. In form `submit` event handler: verify `hasIdentified === true`; if false, prevent submission and render inline alert banner.
+**Acceptance criteria:**
+- [x] `#submitBtn` is disabled on page load and when photos are first selected.
+- [x] `#submitHelpText` renders below the Save button explaining the requirement.
+- [x] Triggering identification (success or error fallback) unlocks `#submitBtn`.
+- [x] Deleting all photos resets `hasIdentified` to false and re-disables `#submitBtn`.
+- [x] Form submit is intercepted and blocked if identification has not been run.
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+- [x] Live DOM / template verification of button states and event handlers.
+**Dependencies:** None
+**Files likely touched:**
+- `inventory/templates/inventory/intake.html`
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 108: Bilingual Localization, Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_intake_identification_gate.py`, `CHANGELOG.md`)
+**Description:** Add Spanish translation entries in `locale/es/LC_MESSAGES/django.po` for new strings ("Identify product with AI first to enable saving", "Product identified — ready to save", "Please identify the product with AI before saving.", etc.) and compile to `django.mo`. Build a dedicated test suite `tests/test_intake_identification_gate.py` validating: (1) intake screen renders `#submitBtn` with `disabled` attribute initially; (2) `#submitHelpText` is present with localized text; (3) identify button has proper attributes and triggers; (4) submission with valid data persists; (5) regression check across all 392+ automated tests. Update `CHANGELOG.md` under `## [Unreleased]`.
+**Acceptance criteria:**
+- [x] Spanish translations compiled with 0 errors.
+- [x] Test suite in `tests/test_intake_identification_gate.py` passes 100%.
+- [x] Full regression suite (398 tests) passes with 0 failures and 0 errors.
+- [x] `ruff check .` passes with 0 warnings.
+- [x] `CHANGELOG.md` updated with Phase 30 entries.
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake_identification_gate`
+- [x] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check .`
+**Dependencies:** Task 107
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_intake_identification_gate.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (4 files)
+
+---
+
+## Checkpoint 30: Intake Mandatory Identification Gate Complete
+- [x] `#submitBtn` on `/intake/` initialized as disabled with guidance hint.
+- [x] Identification required before `#submitBtn` becomes enabled.
+- [x] Identification completion (or error fallback) unlocks `#submitBtn`.
+- [x] Photo clearing resets gate state.
+- [x] Spanish localization compiled and verified.
+- [x] All unit and regression tests pass with 0 failures.
+- [x] `ruff check .` passes cleanly.

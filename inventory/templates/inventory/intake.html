@@ -237,11 +237,14 @@
 
       <!-- Submit Button -->
       <div class="pt-2">
-        <button type="submit" id="submitBtn"
-                class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 text-base sm:text-lg">
+        <button type="submit" id="submitBtn" disabled aria-disabled="true" aria-describedby="submitHelpText"
+                class="w-full py-3.5 px-4 bg-slate-300 text-slate-500 font-bold rounded-xl shadow-none cursor-not-allowed opacity-60 transition flex items-center justify-center gap-2 text-base sm:text-lg">
           <span id="submitBtnIcon">💾</span>
           <span id="submitBtnText">{% trans "Save & Catalog Next Item" %}</span>
         </button>
+        <p id="submitHelpText" class="text-xs sm:text-sm text-slate-500 text-center mt-2">
+          {% trans "Identify product with AI first to enable saving" %}
+        </p>
       </div>
     </form>
   </div>
@@ -321,6 +324,7 @@
   const submitBtn = document.getElementById('submitBtn');
   const submitBtnIcon = document.getElementById('submitBtnIcon');
   const submitBtnText = document.getElementById('submitBtnText');
+  const submitHelpText = document.getElementById('submitHelpText');
   const intakeClientAlert = document.getElementById('intakeClientAlert');
   const clientAlertText = document.getElementById('clientAlertText');
   const dismissClientAlertBtn = document.getElementById('dismissClientAlertBtn');
@@ -333,6 +337,7 @@
   let lastSuggestedNote = "";
   let formState = 'idle'; // 'idle' | 'identifying' | 'submitting'
   let isSubmitting = false;
+  let hasIdentified = false;
   let currentEstimatedResale = null;
 
   function showClientAlert(message, isWarning = true) {
@@ -379,6 +384,51 @@
     }
   }
 
+  function updateSubmitButtonState() {
+    if (!submitBtn) return;
+
+    if (formState === 'submitting') {
+      submitBtn.disabled = true;
+      submitBtn.setAttribute('aria-disabled', 'true');
+      submitBtn.className = 'w-full py-3.5 px-4 bg-emerald-600 text-white font-bold rounded-xl shadow-md cursor-not-allowed opacity-75 transition flex items-center justify-center gap-2 text-base sm:text-lg';
+      if (submitHelpText) {
+        submitHelpText.textContent = '';
+      }
+      return;
+    }
+
+    if (formState === 'identifying') {
+      submitBtn.disabled = true;
+      submitBtn.setAttribute('aria-disabled', 'true');
+      submitBtn.className = 'w-full py-3.5 px-4 bg-emerald-600 text-white font-bold rounded-xl shadow-md cursor-not-allowed opacity-60 transition flex items-center justify-center gap-2 text-base sm:text-lg';
+      if (submitHelpText) {
+        submitHelpText.textContent = "{% trans 'Please wait for AI analysis to finish...' %}";
+        submitHelpText.className = 'text-xs sm:text-sm text-indigo-600 font-medium text-center mt-2';
+      }
+      return;
+    }
+
+    if (hasIdentified) {
+      submitBtn.disabled = false;
+      submitBtn.removeAttribute('aria-disabled');
+      submitBtn.className = 'w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 text-base sm:text-lg cursor-pointer';
+      submitBtn.removeAttribute('title');
+      if (submitHelpText) {
+        submitHelpText.textContent = "{% trans 'Product identified — ready to save' %}";
+        submitHelpText.className = 'text-xs sm:text-sm text-emerald-600 font-medium text-center mt-2';
+      }
+    } else {
+      submitBtn.disabled = true;
+      submitBtn.setAttribute('aria-disabled', 'true');
+      submitBtn.className = 'w-full py-3.5 px-4 bg-slate-300 text-slate-500 font-bold rounded-xl shadow-none cursor-not-allowed opacity-60 transition flex items-center justify-center gap-2 text-base sm:text-lg';
+      submitBtn.setAttribute('title', "{% trans 'Identify product with AI first to enable saving' %}");
+      if (submitHelpText) {
+        submitHelpText.textContent = "{% trans 'Identify product with AI first to enable saving' %}";
+        submitHelpText.className = 'text-xs sm:text-sm text-slate-500 text-center mt-2';
+      }
+    }
+  }
+
   function syncFileInput() {
     if (typeof DataTransfer === 'undefined') return;
     try {
@@ -400,6 +450,8 @@
       imageInput.value = '';
       const aiTitleInput = document.getElementById('id_ai_title');
       if (aiTitleInput) aiTitleInput.value = '';
+      hasIdentified = false;
+      updateSubmitButtonState();
       return;
     }
 
@@ -454,6 +506,8 @@
           if (intakePriceBenchmarks) intakePriceBenchmarks.classList.add('hidden');
           if (advisoryValuationContainer) advisoryValuationContainer.classList.add('hidden');
           currentEstimatedResale = null;
+          hasIdentified = false;
+          updateSubmitButtonState();
         }
       });
 
@@ -476,9 +530,7 @@
       identifyHelpText.textContent = "{% trans 'Checking brand, tags & condition...' %}";
 
       // Disable submit button and lock dropZone & delete buttons
-      submitBtn.disabled = true;
-      submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
-      submitBtn.setAttribute('title', "{% trans 'Please wait for AI analysis to finish...' %}");
+      updateSubmitButtonState();
       dropZone.classList.add('pointer-events-none', 'opacity-70');
       if (btnTriggerCamera) {
                 btnTriggerCamera.classList.add('opacity-50', 'pointer-events-none');
@@ -492,9 +544,7 @@
       });
     } else if (newState === 'submitting') {
       // Disable submit button with spinner
-      submitBtn.disabled = true;
-      submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
-      submitBtn.classList.remove('hover:bg-emerald-700', 'active:bg-emerald-800');
+      updateSubmitButtonState();
       submitBtnIcon.innerHTML = `<svg class="animate-spin h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>`;
       submitBtnText.textContent = "{% trans 'Saving product...' %}";
 
@@ -515,12 +565,9 @@
       });
     } else {
       // 'idle'
-      submitBtn.disabled = false;
-      submitBtn.classList.remove('opacity-60', 'opacity-75', 'cursor-not-allowed');
-      submitBtn.classList.add('hover:bg-emerald-700', 'active:bg-emerald-800');
-      submitBtn.removeAttribute('title');
       submitBtnIcon.textContent = "💾";
       submitBtnText.textContent = "{% trans 'Save & Catalog Next Item' %}";
+      updateSubmitButtonState();
 
       dropZone.classList.remove('pointer-events-none', 'opacity-70');
       intakeForm.classList.remove('pointer-events-none');
@@ -556,7 +603,7 @@
       if (btnTriggerCamera) btnTriggerCamera.classList.remove('opacity-50', 'pointer-events-none');
       if (btnTriggerGallery) btnTriggerGallery.classList.remove('opacity-50', 'pointer-events-none');
       if (formState === 'idle') {
-        if (submitBtn) submitBtn.disabled = false;
+        updateSubmitButtonState();
         setIdentifyButtonState(selectedFiles.length > 0);
       }
     }
@@ -967,6 +1014,7 @@
       identifyHelpText.textContent = "{% trans 'Network error' %}";
     } finally {
       // Re-enable form interactions and return to idle
+      hasIdentified = true;
       setFormState('idle');
     }
   });
@@ -1004,6 +1052,18 @@
   intakeForm.addEventListener('submit', function(e) {
     if (isSubmitting || formState === 'submitting' || formState === 'identifying') {
       e.preventDefault();
+      return false;
+    }
+
+    // Check pre-flight identification gate
+    if (!hasIdentified) {
+      e.preventDefault();
+      showClientAlert("{% trans 'Please identify the product with AI before saving.' %}", false);
+      if (identifyBtn && !identifyBtn.disabled) {
+        identifyBtn.focus();
+        identifyBtn.classList.add('ring-2', 'ring-indigo-500');
+        setTimeout(() => identifyBtn.classList.remove('ring-2', 'ring-indigo-500'), 1500);
+      }
       return false;
     }
 
