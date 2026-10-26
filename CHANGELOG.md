@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-10-26
+
 ### Added
 - **Photo Reordering in Intake and Detail Workspaces (Phase 31)**:
   - **Backend Image Reordering API Endpoint**: Implemented `product_reorder_images_view` at `POST /products/<pk>/images/reorder/` in `inventory/views.py`. Strictly restricted to Store Managers (`@manager_required`, `@login_required`, `@require_POST`). Validates JSON payload, verifies all image IDs belong to the product, updates `ProductImage.order` atomically inside a single database transaction, and returns the updated primary cover image URL. Blocks assistants with HTTP 403 and rejects malformed or cross-product payloads with HTTP 400.
