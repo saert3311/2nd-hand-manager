@@ -372,9 +372,17 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 ---
 
 ### Phase 33: Published Product Modifications & Platform Sync Tracking (Vertical Slice 29)
-- [ ] **Task 115:** Domain Model Expansion, Change-Detection Triggers, Schema Migration & Admin (`inventory/models.py`, `inventory/migrations/0020_product_platform_sync.py`, `inventory/admin.py`).
-- [ ] **Task 116:** Product Detail Photo Management: Upload Additional Photos & Individual Photo Deletion (`inventory/views.py`, `inventory/forms.py`, `inventory/urls.py`).
-- [ ] **Task 117:** 1-Click Platform Sync Clearance Action & Staging Workspace UI (`inventory/views.py`, `inventory/urls.py`, `inventory/templates/inventory/product_detail.html`).
-- [ ] **Task 118:** Dashboard Catalog Sub-Filtering & Product Card Sync Badges (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`).
-- [ ] **Task 119:** Bilingual Localization, Comprehensive Automated Test Suite, Full Regression & Changelog (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_published_platform_sync.py`, `CHANGELOG.md`).
-- [ ] **Checkpoint 33 (Published Product Modifications & Platform Sync Complete):** Published products remain in `PUBLISHED` status while automatically tracking `needs_platform_sync = True` upon price changes, copy edits, photo updates, or new clarifications; managers can upload new photos and delete photos directly in the detail workspace; workspace renders prominent out-of-sync banner with 1-click clearance button; dashboard sub-filters out-of-sync listings with live counter badges; 100% test pass rate and clean linter.
+- [x] **Task 115:** Domain Model Expansion, Change-Detection Triggers, Schema Migration & Admin (`inventory/models.py`, `inventory/migrations/0020_product_platform_sync.py`, `inventory/admin.py`).
+- [x] **Task 116:** Product Detail Photo Management: Upload Additional Photos & Individual Photo Deletion (`inventory/views.py`, `inventory/forms.py`, `inventory/urls.py`).
+- [x] **Task 117:** 1-Click Platform Sync Clearance Action & Staging Workspace UI (`inventory/views.py`, `inventory/urls.py`, `inventory/templates/inventory/product_detail.html`).
+- [x] **Task 118:** Dashboard Catalog Sub-Filtering & Product Card Sync Badges (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`).
+- [x] **Task 119:** Bilingual Localization, Comprehensive Automated Test Suite, Full Regression & Changelog (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_published_platform_sync.py`, `CHANGELOG.md`).
+- [x] **Checkpoint 33 (Published Product Modifications & Platform Sync Complete):** Published products remain in `PUBLISHED` status while automatically tracking `needs_platform_sync = True` upon price changes, copy edits, photo updates, or new clarifications; managers can upload new photos and delete photos directly in the detail workspace; workspace renders prominent out-of-sync banner with 1-click clearance button; dashboard sub-filters out-of-sync listings with live counter badges; 100% test pass rate and clean linter.
+
+---
+
+### Phase 34: Detail View Photo Upload Component System (Vertical Slice 30)
+- [ ] **Task 120:** Detail View Photo Upload Component UI, Dropzone & Dual Capture Controls (`inventory/templates/inventory/product_detail.html`).
+- [ ] **Task 121:** Client-Side WebP Compression Engine & Pre-Upload Thumbnail Queue (`inventory/templates/inventory/product_detail.html`).
+- [ ] **Task 122:** Bilingual Localization, Comprehensive Automated Test Suite, Verification & Changelog (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_detail_photo_upload_component.py`, `CHANGELOG.md`).
+- [ ] **Checkpoint 34 (Detail View Photo Upload Component Complete):** The photo upload UI in `/products/<pk>/` achieves full parity with `/intake/`: dashed dropzone with drag-and-drop feedback, dual camera ('📸 Tomar foto') and gallery ('🖼️ Seleccionar de la galería') buttons, client-side Canvas downscaling to max 2560px WebP, pending thumbnail queue with individual deletion, capacity-aware counter (10 - N_existing), full bilingual localization, and 100% test suite pass rate.
