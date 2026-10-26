@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-10-26
+
 ### Added
 - **Intake Mandatory Pre-flight Identification Gate (Phase 30)**:
   - **Save Button Gating & Initial State**: Modified `/intake/` in `inventory/templates/inventory/intake.html` so `#submitBtn` is initialized with `disabled` attribute, `aria-disabled="true"`, and disabled styling (`bg-slate-300 text-slate-500 cursor-not-allowed opacity-60`). Renders an accessible dynamic guidance hint `#submitHelpText` beneath the Save button informing the assistant: *"Identifica primero el producto con IA para habilitar el guardado"* / *"Identify product with AI first to enable saving"*.
