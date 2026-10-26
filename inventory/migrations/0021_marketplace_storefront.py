@@ -64,7 +64,7 @@ def reverse_seed_marketplace_storefront(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("inventory", "0016_intake_batch_session"),
+        ("inventory", "0020_product_platform_sync"),
     ]
 
     operations = [
