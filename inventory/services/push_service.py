@@ -4,6 +4,7 @@ import logging
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Q
+from django.utils.translation import gettext as _
 from pywebpush import WebPushException, webpush
 
 from inventory.models import ClarificationStatus, ProductClarification, ProductStatus, PushSubscription
@@ -179,3 +180,28 @@ def send_push_to_group(
         ):
             sent_count += 1
     return sent_count
+
+
+def send_out_of_sync_notification(product, trigger_reason: str | None = None) -> int:
+    """
+    Send Web Push notification to all active Store Managers when a published product
+    transitions to out of sync with external platforms.
+    """
+    if not getattr(settings, "PUSH_NOTIFICATIONS_LIVE_SIGNALS", False):
+        return 0
+    if not is_push_configured():
+        return 0
+
+    title = str(_("⚠️ Product Out of Sync: %(title)s") % {"title": product.display_title})
+    body = str(_("Modifications detected on published item. External platform listings require updating."))
+    url = f"/products/{product.pk}/"
+    tag = f"product-out-of-sync-{product.pk}"
+
+    return send_push_to_group(
+        group_name=ROLE_MANAGER,
+        title=title,
+        body=body,
+        url=url,
+        tag=tag,
+    )
+

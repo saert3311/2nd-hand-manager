@@ -386,3 +386,12 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - [x] **Task 121:** Client-Side WebP Compression Engine & Pre-Upload Thumbnail Queue (`inventory/templates/inventory/product_detail.html`).
 - [x] **Task 122:** Bilingual Localization, Comprehensive Automated Test Suite, Verification & Changelog (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_detail_photo_upload_component.py`, `CHANGELOG.md`).
 - [x] **Checkpoint 34 (Detail View Photo Upload Component Complete):** The photo upload UI in `/products/<pk>/` achieves full parity with `/intake/`: dashed dropzone with drag-and-drop feedback, dual camera ('📸 Tomar foto') and gallery ('🖼️ Seleccionar de la galería') buttons, client-side Canvas downscaling to max 2560px WebP, pending thumbnail queue with individual deletion, capacity-aware counter (10 - N_existing), full bilingual localization, and 100% test suite pass rate.
+
+---
+
+### Phase 35: Out-of-Sync Product Web Push Notifications (Vertical Slice 31)
+- [x] **Task 123:** Push Service Dispatcher & Notification Formatting (inventory/services/push_service.py).
+- [x] **Task 124:** Domain Model Edge-Transition Detection & Signal Receiver Integration (inventory/models.py).
+- [x] **Task 125:** Bilingual Localization, Comprehensive Automated Test Suite, Full Regression & Changelog (locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.mo, 	ests/test_out_of_sync_notifications.py, CHANGELOG.md).
+- [x] **Checkpoint 35 (Out-of-Sync Product Web Push Notifications Complete):** Store managers receive immediate, deep-linked Web Push notifications when published items become out of sync, edge-transition logic prevents duplicate notification spam, clearance suppressions work cleanly, 100% test suite passes, and linter is clean.
+

@@ -2925,3 +2925,112 @@ uff.exe check .`
 - [x] Dynamic capacity counter enforces the 10-photo maximum ceiling.
 - [x] Uploading photos to published products preserves `needs_platform_sync = True` tracking.
 - [x] 100% automated test pass rate with 0 regressions and clean linter.
+
+---
+
+## Phase 35: Out-of-Sync Product Web Push Notifications (Vertical Slice 31)
+
+### Task 123: Push Service Dispatcher & Notification Formatting (inventory/services/push_service.py)
+**Description:** Implement send_out_of_sync_notification(product, trigger_reason=None) -> int in inventory/services/push_service.py. The function must:
+1. Verify PUSH_NOTIFICATIONS_LIVE_SIGNALS is enabled (returning 0 if disabled).
+2. Format localized title: _('⚠️ Product Out of Sync: %(title)s') % {'title': product.display_title}.
+3. Format localized body: _('Modifications detected on published item. External platform listings require updating.').
+4. Target ROLE_MANAGER via send_push_to_group().
+5. Deep-link directly to /products/<pk>/.
+6. Collapse repeated notifications per product with tag 'product-out-of-sync-{product.pk}'.
+**Acceptance criteria:**
+- [x] send_out_of_sync_notification defined with type annotations and docstring.
+- [x] Returns 0 if PUSH_NOTIFICATIONS_LIVE_SIGNALS is False.
+- [x] Targets ROLE_MANAGER (including staff and superusers).
+- [x] Formats localized title, body, deep link, and tag.
+**Verification:**
+- [x] Command succeeds: .venv\Scripts\python.exe manage.py check
+**Dependencies:** Checkpoint 34
+**Files likely touched:**
+- inventory/services/push_service.py
+**Estimated scope:** Small (1 file)
+
+---
+
+### Task 124: Domain Model Edge-Transition Detection & Signal Receiver Integration (inventory/models.py)
+**Description:** Implement state edge transition tracking on Product to detect when a published item becomes out of sync:
+1. In Product.__init__: initialize self._initial_needs_platform_sync = self.needs_platform_sync.
+2. In Product.save(): record self._previous_needs_platform_sync = getattr(self, '_initial_needs_platform_sync', False) before refreshing self._initial_needs_platform_sync = self.needs_platform_sync.
+3. In 
+otify_managers_on_product_lifecycle_save (post_save receiver for Product):
+   - Check if instance.needs_platform_sync and not getattr(instance, '_previous_needs_platform_sync', False) and not instance.is_deleted.
+   - Dispatch send_out_of_sync_notification(instance).
+4. Ensure mark_platform_synced() clearing 
+eeds_platform_sync to False does not dispatch out-of-sync push.
+5. Ensure subsequent edits while 
+eeds_platform_sync is already True do not send duplicate push notifications.
+**Acceptance criteria:**
+- [x] _initial_needs_platform_sync tracked on Product instance creation/fetch.
+- [x] _previous_needs_platform_sync recorded during Product.save().
+- [x] 
+otify_managers_on_product_lifecycle_save sends out-of-sync notification strictly on False -> True transitions.
+- [x] No notification sent when 
+eeds_platform_sync is cleared (mark_platform_synced).
+- [x] No notification sent on successive edits while 
+eeds_platform_sync remains True.
+- [x] No notification sent on unpublished or draft items.
+- [x] No notification sent on soft-deleted items.
+**Verification:**
+- [x] Command succeeds: .venv\Scripts\python.exe manage.py check
+**Dependencies:** Task 123
+**Files likely touched:**
+- inventory/models.py
+**Estimated scope:** Small-Medium (1 file)
+
+---
+
+### Task 125: Bilingual Localization, Comprehensive Automated Test Suite, Full Regression & Changelog (locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.mo, 	ests/test_out_of_sync_notifications.py, CHANGELOG.md)
+**Description:** Add Spanish translations, author targeted automated tests, execute regression suite, and document in changelog:
+1. Add Spanish translations for new push notification strings in django.po and compile to django.mo via python manage.py compile_locales.
+2. Author 	ests/test_out_of_sync_notifications.py covering:
+   - Direct service unit tests: send_out_of_sync_notification targets ROLE_MANAGER, formats payload, respects PUSH_NOTIFICATIONS_LIVE_SIGNALS.
+   - Price change on published product (False -> True) dispatches notification.
+   - Copy change (title or description) on published product (False -> True) dispatches notification.
+   - Adding photo to published product (False -> True) dispatches notification.
+   - Deleting photo from published product (False -> True) dispatches notification.
+   - Reordering cover photo on published product (False -> True) dispatches notification.
+   - Adding direct clarification note to published product (False -> True) dispatches notification.
+   - Anti-spam: subsequent edit on already out-of-sync product (True -> True) does not re-dispatch.
+   - Clearance: mark_platform_synced does not dispatch notification.
+   - Re-sync cycle: edits after clearance trigger a fresh notification.
+   - Gating: draft or unpublished items do not trigger notification.
+   - Soft-delete: soft-deleted items do not trigger notification.
+   - Bilingual localization tests: verify English and Spanish push messages.
+3. Verify full automated test suite passes 100% and Ruff linter passes cleanly.
+4. Document Phase 35 changes in CHANGELOG.md under ## [Unreleased].
+**Acceptance criteria:**
+- [x] Translations compiled with 0 errors via compile_locales.
+- [x] Targeted tests in 	est_out_of_sync_notifications.py pass 100%.
+- [x] Full test suite passes 100% with 0 regressions.
+- [x] 
+uff check . passes with 0 warnings.
+- [x] CHANGELOG.md updated under ## [Unreleased].
+**Verification:**
+- [x] Command succeeds: .venv\Scripts\python.exe manage.py compile_locales
+- [x] Targeted tests pass: .venv\Scripts\python.exe manage.py test tests.test_out_of_sync_notifications
+- [x] Full test suite passes: .venv\Scripts\python.exe manage.py test
+- [x] Linter passes: .venv\Scripts
+uff.exe check .
+**Dependencies:** Tasks 123, 124
+**Files likely touched:**
+- locale/es/LC_MESSAGES/django.po
+- locale/es/LC_MESSAGES/django.mo
+- 	ests/test_out_of_sync_notifications.py
+- CHANGELOG.md
+**Estimated scope:** Medium (4 files)
+
+---
+
+## Checkpoint 35: Out-of-Sync Product Web Push Notifications Complete
+- [x] Store managers receive instant Web Push notifications when published items become out of sync.
+- [x] Push payload includes localized title, informative body, deep link to /products/<pk>/, and collapsing tag.
+- [x] Edge-transition detection fires strictly on False -> True transitions, preventing notification spam.
+- [x] Platform sync clearance (mark_platform_synced) suppresses notifications.
+- [x] Full bilingual localization in Spanish and English.
+- [x] 100% automated test pass rate with 0 regressions and clean linter.
+

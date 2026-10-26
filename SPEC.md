@@ -1226,3 +1226,25 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
     - **Option B (Maintain Minimal Native File Input):**
       - Keep the simple `<input type="file">` selector. Lacks mobile camera shortcut, client-side compression, drag-and-drop, and preview queue.
     *Decision:* Option A approved — Unified mobile-first photo upload component system with drag-and-drop, dual camera/gallery actions, client-side WebP compression, and pre-upload preview queue.
+
+38. **Out-of-Sync Product Web Push Notification Architecture:**
+    - How should store managers be alerted when a published product undergoes post-publication modifications and becomes out of sync?
+    - **Option A (Recommended & Selected — Real-Time Web Push to Managers with Edge-Transition Guard):**
+      - Track _initial_needs_platform_sync in Product.__init__ and compute _previous_needs_platform_sync in Product.save().
+      - Hook into the post_save lifecycle signal receiver (notify_managers_on_product_lifecycle_save).
+      - Fire strictly on edge transition (False -> True) on non-deleted products:
+        - Dispatch encrypted Web Push via VAPID and pywebpush to all active Store Managers (ROLE_MANAGER + active staff/superusers).
+        - Payload:
+          - Title: _('⚠️ Product Out of Sync: %(title)s') % {'title': product.display_title}
+          - Body: _('Modifications detected on published item. External platform listings require updating.')
+          - URL: /products/<pk>/ (deep link straight to product detail with warning banner and 1-click clearance button).
+          - Tag: product-out-of-sync-<pk> (collapses successive notifications for the same product in OS drawer).
+      - Suppress notification on subsequent edits while needs_platform_sync is already True (anti-spam).
+      - Suppress notification on platform sync clearance (mark_platform_synced()).
+      - Gate with PUSH_NOTIFICATIONS_LIVE_SIGNALS for environment and test isolation.
+    - **Option B (Poll-Based Periodic Batch Notification):**
+      - Debounce out-of-sync products into a cron batch similar to intake sessions. Delays critical pricing/photo discrepancy alerts by 15+ minutes.
+    - **Option C (Email Notification Only):**
+      - Send emails instead of Web Push. Higher latency, lower mobile immediacy.
+    *Decision:* Option A approved — Real-time Web Push notification to Store Managers on False -> True edge transitions with anti-spam suppression, deep-linking, and PUSH_NOTIFICATIONS_LIVE_SIGNALS gating.
+
