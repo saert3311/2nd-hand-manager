@@ -2478,14 +2478,14 @@ uff.exe check .`
 6. In photo preview deletion: if all photos are deleted (`selectedFiles.length === 0`), reset `hasIdentified = false`, hide the advisory banner, and disable `#submitBtn`.
 7. In form `submit` event handler: verify `hasIdentified === true`; if false, prevent submission and render inline alert banner.
 **Acceptance criteria:**
-- [ ] `#submitBtn` is disabled on page load and when photos are first selected.
-- [ ] `#submitHelpText` renders below the Save button explaining the requirement.
-- [ ] Triggering identification (success or error fallback) unlocks `#submitBtn`.
-- [ ] Deleting all photos resets `hasIdentified` to false and re-disables `#submitBtn`.
-- [ ] Form submit is intercepted and blocked if identification has not been run.
+- [x] `#submitBtn` is disabled on page load and when photos are first selected.
+- [x] `#submitHelpText` renders below the Save button explaining the requirement.
+- [x] Triggering identification (success or error fallback) unlocks `#submitBtn`.
+- [x] Deleting all photos resets `hasIdentified` to false and re-disables `#submitBtn`.
+- [x] Form submit is intercepted and blocked if identification has not been run.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
-- [ ] Live DOM / template verification of button states and event handlers.
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+- [x] Live DOM / template verification of button states and event handlers.
 **Dependencies:** None
 **Files likely touched:**
 - `inventory/templates/inventory/intake.html`
