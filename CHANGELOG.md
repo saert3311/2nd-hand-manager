@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-10-26
+
 ### Added
 - **Low-DPI Intake Photo Miniatures & Delete Controls Optimization (Phase 32)**:
   - **High-Density Responsive Miniature Grid (`inventory/templates/inventory/intake.html`)**: Upgraded `#previewGrid` from `grid-cols-2` to `grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-2.5`. Compacts thumbnail cards to ~90px–115px square on viewports < 640px and low-DPI (1x) handheld warehouse scanners, eliminating vertical page hijacking and allowing assistants to view photo collections without displacing intake form controls.
