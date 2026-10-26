@@ -100,6 +100,21 @@
         </a>
         {% endif %}
 
+        <!-- Erased / Trash Category -->
+        {% if can_manage or erased_count > 0 or status_filter == 'erased' %}
+        <a href="?status=erased{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+           role="tab"
+           id="tab-erased"
+           aria-selected="{% if status_filter == 'erased' %}true{% else %}false{% endif %}"
+           class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'erased' %}bg-white text-rose-900 shadow-xs ring-1 ring-rose-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
+          <span aria-hidden="true">🗑️</span>
+          <span>{% trans "Trash" %}</span>
+          <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs {% if status_filter == 'erased' %}bg-rose-100 text-rose-800 font-bold{% elif erased_count > 0 %}bg-rose-100 text-rose-700 font-bold{% else %}bg-slate-200/80 text-slate-600{% endif %}">
+            ({{ erased_count }})
+          </span>
+        </a>
+        {% endif %}
+
       </nav>
     </div>
 
@@ -225,7 +240,11 @@
 
         <!-- Badges on Photo -->
         <div class="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1.5 max-w-[80%]">
-          {% if product.status == 'awaiting_info' %}
+          {% if product.is_deleted %}
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-rose-700 text-white flex items-center gap-1">
+            🗑️ {% trans "Erased" %}
+          </span>
+          {% elif product.status == 'awaiting_info' %}
           <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-amber-500 text-white">
             ❓ {% trans "Doubts" %}
           </span>

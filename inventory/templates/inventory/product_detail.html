@@ -16,14 +16,16 @@
       <span class="text-slate-800">{% trans "Product" %} #{{ product.id }}</span>
       <span>&bull;</span>
       <span id="product-status-badge" class="product-status-badge text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider
-        {% if product.status == 'awaiting_info' %}bg-amber-100 text-amber-800 border border-amber-300
+        {% if product.is_deleted %}bg-rose-100 text-rose-800 border border-rose-300
+        {% elif product.status == 'awaiting_info' %}bg-amber-100 text-amber-800 border border-amber-300
         {% elif product.status == 'ready' %}bg-emerald-100 text-emerald-800 border border-emerald-300
         {% elif product.status == 'price_pending' %}bg-amber-100 text-amber-900 border border-amber-300
         {% elif product.status == 'published' %}bg-blue-100 text-blue-900 border border-blue-300
         {% elif product.status == 'blocked' %}bg-rose-100 text-rose-800 border border-rose-300
         {% elif product.status == 'sold' %}bg-purple-100 text-purple-800 border border-purple-300
         {% else %}bg-slate-100 text-slate-700 border border-slate-300{% endif %}">
-        {% if product.status == 'awaiting_info' %}❓ {% trans "Awaiting Info" %}
+        {% if product.is_deleted %}🗑️ {% trans "Erased" %}
+        {% elif product.status == 'awaiting_info' %}❓ {% trans "Awaiting Info" %}
         {% elif product.status == 'ready' %}✅ {% trans "Ready" %}
         {% elif product.status == 'price_pending' %}🏷️ {% trans "Price Pending" %}
         {% elif product.status == 'published' %}🚀 {% trans "Published" %}
@@ -39,7 +41,7 @@
       {% endif %}
     </div>
 
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2">
       <!-- ZIP Download Button -->
       {% if product.images.exists %}
       <a href="{% url 'inventory:download_zip' product.pk %}"
@@ -47,8 +49,50 @@
         <span>💾</span> {% trans "Download All Photos (.ZIP)" %}
       </a>
       {% endif %}
+
+      {% if can_manage %}
+        {% if product.is_deleted %}
+        <form method="post" action="{% url 'inventory:product_restore' product.pk %}" class="inline">
+          {% csrf_token %}
+          <button type="submit" id="btnRestoreProductTop"
+                  class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer">
+            <span>♻️</span> {% trans "Restore Product" %}
+          </button>
+        </form>
+        {% else %}
+        <button type="button" id="btnOpenDeleteModal" onclick="openDeleteModal()"
+                class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer">
+          <span>🗑️</span> {% trans "Move to Trash" %}
+        </button>
+        {% endif %}
+      {% endif %}
     </div>
   </div>
+
+  <!-- Trash Warning Banner if Soft-Deleted -->
+  {% if product.is_deleted %}
+  <div id="erasedProductBanner" class="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-2xl shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" role="alert">
+    <div class="flex items-start sm:items-center gap-3">
+      <span class="text-3xl" aria-hidden="true">🗑️</span>
+      <div>
+        <h3 class="text-sm font-bold text-amber-900">{% trans "This product is in the trash" %}</h3>
+        <p class="text-xs text-amber-700 mt-0.5">{% trans "It is currently hidden from the active catalog. You can restore it anytime to resume staging." %}</p>
+        {% if product.deleted_at %}
+        <p class="text-[11px] text-amber-600 mt-0.5">{% trans "Deleted on" %}: {{ product.deleted_at|date:"Y-m-d H:i" }}{% if product.deleted_by %} {% trans "by" %} {{ product.deleted_by.get_full_name|default:product.deleted_by.username }}{% endif %}</p>
+        {% endif %}
+      </div>
+    </div>
+    {% if can_manage %}
+    <form method="post" action="{% url 'inventory:product_restore' product.pk %}" class="shrink-0">
+      {% csrf_token %}
+      <button type="submit" id="btnRestoreProductBanner"
+              class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition cursor-pointer">
+        ♻️ {% trans "Restore Product" %}
+      </button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
 
   <!-- Main Staging Grid -->
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -900,6 +944,49 @@
   if (soldChannelTypeSelect) {
     soldChannelTypeSelect.addEventListener("change", toggleMarketplaceSelect);
   }
-</script>
-{% endblock %}
 
+  // Soft-Delete Confirmation Modal Helpers
+  function openDeleteModal() {
+    const modal = document.getElementById("deleteProductModal");
+    if (modal) modal.classList.remove("hidden");
+  }
+  function closeDeleteModal() {
+    const modal = document.getElementById("deleteProductModal");
+    if (modal) modal.classList.add("hidden");
+  }
+
+</script>
+
+{% if can_manage and not product.is_deleted %}
+<!-- Soft-Delete Confirmation Modal -->
+<div id="deleteProductModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+  <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+    <div class="flex items-start gap-3">
+      <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0 text-xl text-rose-600">
+        🗑️
+      </div>
+      <div>
+        <h3 id="deleteModalTitle" class="text-base font-bold text-slate-900">{% trans "Move Product to Trash?" %}</h3>
+        <p class="text-xs text-slate-600 mt-1">
+          {% trans "This product will be hidden from the active catalog and all standard categories. You can restore it at any time from the 'Erased' category." %}
+        </p>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+      <button type="button" onclick="closeDeleteModal()"
+              class="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer">
+        {% trans "Cancel" %}
+      </button>
+      <form method="post" action="{% url 'inventory:product_soft_delete' product.pk %}">
+        {% csrf_token %}
+        <button type="submit" id="btnConfirmDeleteProduct"
+                class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-xs cursor-pointer">
+          {% trans "Yes, Move to Trash" %}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

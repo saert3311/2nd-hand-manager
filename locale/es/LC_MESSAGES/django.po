@@ -1454,3 +1454,77 @@ msgstr "Canal:"
 
 msgid "All Channels"
 msgstr "Todos los canales"
+msgid "Erased / Deleted"
+msgstr "Eliminado / En papelera"
+
+msgid "Whether the product is disabled and moved to the erased trash category"
+msgstr "Indica si el producto está deshabilitado y movido a la papelera de eliminados"
+
+msgid "Deleted At"
+msgstr "Fecha de eliminación"
+
+msgid "Deleted By"
+msgstr "Eliminado por"
+
+msgid "Product moved to trash / erased"
+msgstr "Producto movido a la papelera"
+
+msgid "Product restored from trash back to active catalog"
+msgstr "Producto restaurado de la papelera al catálogo activo"
+
+msgid "Move to Trash"
+msgstr "Mover a papelera"
+
+msgid "Restore Product"
+msgstr "Restaurar producto"
+
+msgid "This product is in the trash"
+msgstr "Este producto está en la papelera"
+
+msgid "It is currently hidden from the active catalog. You can restore it anytime to resume staging."
+msgstr "Actualmente está oculto del catálogo activo. Puedes restaurarlo en cualquier momento para reanudar su edición."
+
+msgid "Deleted on"
+msgstr "Eliminado el"
+
+msgid "by"
+msgstr "por"
+
+msgid "Move Product to Trash?"
+msgstr "¿Mover producto a la papelera?"
+
+msgid "This product will be hidden from the active catalog and all standard categories. You can restore it at any time from the 'Erased' category."
+msgstr "Este producto se ocultará del catálogo activo y de todas las categorías estándar. Podrás restaurarlo en cualquier momento desde la categoría 'Eliminados'."
+
+msgid "Yes, Move to Trash"
+msgstr "Sí, mover a papelera"
+
+msgid "Product successfully moved to trash."
+msgstr "Producto movido a la papelera correctamente."
+
+msgid "Product successfully restored to catalog."
+msgstr "Producto restaurado al catálogo activo correctamente."
+
+msgid "This product has been moved to trash and is not accessible."
+msgstr "Este producto ha sido movido a la papelera y no está accesible."
+
+msgid "Erased"
+msgstr "Eliminado"
+
+msgid "Trash"
+msgstr "Papelera"
+
+msgid "Catalog State"
+msgstr "Estado en catálogo"
+
+msgid "Move selected products to trash"
+msgstr "Mover productos seleccionados a la papelera"
+
+msgid "Restore selected products from trash"
+msgstr "Restaurar productos seleccionados de la papelera"
+
+msgid "Moved %(count)d product(s) to trash."
+msgstr "%(count)d producto(s) movido(s) a la papelera."
+
+msgid "Restored %(count)d product(s) from trash."
+msgstr "%(count)d producto(s) restaurado(s) de la papelera."
