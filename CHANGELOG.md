@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Product Soft-Delete, Archival & Erased Trash Category (Phase 28)**:
+  - **Domain Model Soft-Delete**: Added `is_deleted` (`BooleanField`, indexed, default `False`), `deleted_at` (`DateTimeField`), and `deleted_by` (`ForeignKey(User, null=True, on_delete=SET_NULL)`) to `Product` in `inventory/models.py`. Generated and applied database migration `0018_product_soft_delete.py`. Added helper methods `soft_delete()` and `restore()` which preserve original lifecycle status and append audit trail logs in `ProductStatusLog`.
+  - **Protected Action Endpoints**: Implemented `product_soft_delete_view` and `product_restore_view` in `inventory/views.py` restricted to POST requests and store managers (`@manager_required`), registered at `/products/<pk>/delete/` and `/products/<pk>/restore/`. Non-managers attempting access are denied (HTTP 403), and assistants viewing soft-deleted products are safely redirected to the catalog.
+  - **Product Detail Staging View UI**: Added an accessible "Move to Trash" trigger and `#deleteProductModal` confirmation dialog on `product_detail.html` for active items. For erased items, renders a prominent warning banner with an immediate 1-click "Restore Product" action.
+  - **Dashboard Trash Category & Scoped Counters**: Added dedicated `?status=erased` ("🗑️ Eliminados" / "🗑️ Trash") tab pill on `dashboard.html` with an isolated `erased_count` badge. Excluded soft-deleted products from all default catalog views (`all`, `active`, `draft`, `ready`, `sold`, etc.) and standard status counter aggregations. Scoped multi-field search so global searches never return erased products, and searching within `status=erased` queries only erased inventory.
+  - **Django Admin Integration**: Added `is_deleted_col` and `is_deleted` filter to `ProductAdmin`, with bulk admin actions `soft_delete_selected` and `restore_selected`.
+  - **Bilingual Localization & Comprehensive Test Suite**: Updated Spanish translation catalogs in `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`. Authored 10 automated unit, view, admin, and localization tests in `tests/test_product_soft_delete.py`.
+
 ## [1.4.0] - 2026-10-25
 
 ### Added

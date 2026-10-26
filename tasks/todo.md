@@ -2315,17 +2315,16 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 101: Bilingual Localization, Comprehensive Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_product_soft_delete.py`, `CHANGELOG.md`)
 **Description:** Add Spanish translation entries in `locale/es/LC_MESSAGES/django.po` for all new strings ("Move to Trash", "Restore Product", "This product is in the trash", "Are you sure you want to move this product to the trash?", "Product successfully moved to trash.", "Product successfully restored to catalog.", "Erased", "Trash", etc.) and compile to `django.mo`. Build a dedicated test suite `tests/test_product_soft_delete.py` validating: (1) model soft-delete and restore methods with audit log logging; (2) delete and restore view endpoints with manager permissions and assistant rejection; (3) dashboard query exclusion in standard tabs and counts; (4) `status=erased` tab filtering and count; (5) search scoping isolation; (6) admin list display and actions. Update `CHANGELOG.md` under `## [Unreleased]`. Run full regression suite and linter.
 **Acceptance criteria:**
-- [ ] Spanish translations compiled with 0 errors.
-- [ ] Test suite in `tests/test_product_soft_delete.py` passes 100%.
-- [ ] Full regression suite (368+ tests) passes with 0 failures and 0 errors.
-- [ ] `ruff check .` passes with 0 warnings.
-- [ ] `CHANGELOG.md` updated with Phase 28 entries.
+- [x] Spanish translations compiled with 0 errors.
+- [x] Test suite in `tests/test_product_soft_delete.py` passes 100%.
+- [x] Full regression suite (368+ tests) passes with 0 failures and 0 errors.
+- [x] `ruff check .` passes with 0 warnings.
+- [x] `CHANGELOG.md` updated with Phase 28 entries.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
-- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_product_soft_delete`
-- [ ] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
-- [ ] Linter passes: `.venv\Scripts
-uff.exe check .`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_product_soft_delete`
+- [x] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [x] Linter passes: `.venv\Scriptsuff.exe check .`
 **Dependencies:** Task 97, Task 98, Task 99, Task 100
 **Files likely touched:**
 - `locale/es/LC_MESSAGES/django.po`
@@ -2337,11 +2336,11 @@ uff.exe check .`
 ---
 
 ## Checkpoint 28: Product Soft-Delete Complete
-- [ ] `is_deleted`, `deleted_at`, `deleted_by` fields on `Product` with migration `0018_product_soft_delete.py` applied cleanly.
-- [ ] Dedicated delete and restore POST endpoints protected with manager permissions.
-- [ ] Product detail page provides accessible confirmation modal to trash items, and warning banner with 1-click restore for erased items.
-- [ ] Dashboard excludes erased items from all standard tabs and status counters.
-- [ ] Dedicated `?status=erased` tab displays soft-deleted items with live count badge.
-- [ ] Spanish localization compiled and verified.
-- [ ] All unit and regression tests pass with 0 failures.
-- [ ] `ruff check .` passes cleanly.
+- [x] `is_deleted`, `deleted_at`, `deleted_by` fields on `Product` with migration `0018_product_soft_delete.py` applied cleanly.
+- [x] Dedicated delete and restore POST endpoints protected with manager permissions.
+- [x] Product detail page provides accessible confirmation modal to trash items, and warning banner with 1-click restore for erased items.
+- [x] Dashboard excludes erased items from all standard tabs and status counters.
+- [x] Dedicated `?status=erased` tab displays soft-deleted items with live count badge.
+- [x] Spanish localization compiled and verified.
+- [x] All unit and regression tests pass with 0 failures.
+- [x] `ruff check .` passes cleanly.
