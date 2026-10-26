@@ -220,6 +220,18 @@ class Product(models.Model):
         verbose_name=_("Deleted By"),
         help_text=_("User who moved the product to trash"),
     )
+    needs_platform_sync = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name=_("Needs Platform Sync"),
+        help_text=_("Whether edits were made after publication that need updating on external platforms"),
+    )
+    last_platform_synced_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Last Platform Synced At"),
+        help_text=_("Timestamp when external platform listings were last marked as synchronized"),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -313,10 +325,39 @@ class Product(models.Model):
                 self.save(update_fields=["status", "is_sold"])
         return self.status
 
+    def mark_platform_synced(self, user=None, commit=True):
+        """
+        Clears the needs_platform_sync flag, sets last_platform_synced_at, and records an audit log entry.
+        """
+        self.needs_platform_sync = False
+        self.last_platform_synced_at = timezone.now()
+        self._clearing_platform_sync = True
+        acting_user = user if (user and getattr(user, "is_authenticated", False)) else None
+        if commit:
+            self.save(
+                update_fields=["needs_platform_sync", "last_platform_synced_at"],
+                changed_by=acting_user,
+            )
+        self._clearing_platform_sync = False
+        try:
+            log_status_change(
+                product=self,
+                from_status=self.status,
+                to_status=self.status,
+                user=acting_user,
+                trigger="platform_sync_cleared",
+                notes="Marketplace listings verified as synchronized",
+            )
+        except Exception:
+            pass
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._initial_status = self.status
         self._initial_is_sold = self.is_sold
+        self._initial_sale_price = self.sale_price
+        self._initial_ai_title = self.ai_title
+        self._initial_ai_description = self.ai_description
         self._changed_by = None
         self._status_trigger = None
         self._status_notes = None
@@ -366,6 +407,23 @@ class Product(models.Model):
             status_changed = self.status != initial_status
             is_sold_changed = self.is_sold != initial_is_sold
 
+            is_published = (
+                initial_status == ProductStatus.PUBLISHED
+                or self.status == ProductStatus.PUBLISHED
+                or (self.pk and self.listing_links.filter(is_active=True).exists())
+            )
+            if (
+                is_published
+                and not self.is_sold
+                and self.status != ProductStatus.SOLD
+                and not getattr(self, "_clearing_platform_sync", False)
+            ):
+                price_changed = self.sale_price != getattr(self, "_initial_sale_price", None)
+                title_changed = (self.ai_title or "") != (getattr(self, "_initial_ai_title", None) or "")
+                desc_changed = (self.ai_description or "") != (getattr(self, "_initial_ai_description", None) or "")
+                if price_changed or title_changed or desc_changed:
+                    self.needs_platform_sync = True
+
             if status_changed:
                 if self.status == ProductStatus.SOLD:
                     self.is_sold = True
@@ -388,6 +446,10 @@ class Product(models.Model):
             fields = set(kwargs["update_fields"])
             fields.add("is_sold")
             fields.add("status")
+            if getattr(self, "needs_platform_sync", False):
+                fields.add("needs_platform_sync")
+            if "last_platform_synced_at" in fields:
+                fields.add("last_platform_synced_at")
             kwargs["update_fields"] = list(fields)
 
         self._previous_status = initial_status
@@ -441,6 +503,9 @@ class Product(models.Model):
 
         self._initial_status = self.status
         self._initial_is_sold = self.is_sold
+        self._initial_sale_price = self.sale_price
+        self._initial_ai_title = self.ai_title
+        self._initial_ai_description = self.ai_description
         self._changed_by = None
         self._status_trigger = None
         self._status_notes = None
@@ -863,18 +928,32 @@ def sync_product_on_clarification_save(sender, instance, created=False, **kwargs
     product = instance.product
     if product.is_sold or product.status == ProductStatus.SOLD:
         return
+    is_published = (
+        product.status == ProductStatus.PUBLISHED
+        or product.listing_links.filter(is_active=True).exists()
+    )
     if instance.is_direct_note:
+        if is_published and not product.needs_platform_sync:
+            product.needs_platform_sync = True
+            product.save(update_fields=["needs_platform_sync"])
         return
     if instance.status == ClarificationStatus.PENDING:
+        if is_published:
+            product.needs_platform_sync = True
         if product.status != ProductStatus.AWAITING_INFO:
             product.status = ProductStatus.AWAITING_INFO
             notes = f"Clarification opened: {instance.question[:60]}" if instance.question else ""
+            update_fields = ["status"]
+            if is_published:
+                update_fields.append("needs_platform_sync")
             product.save(
-                update_fields=["status"],
+                update_fields=update_fields,
                 changed_by=instance.asked_by,
                 trigger="clarification_opened",
                 notes=notes,
             )
+        elif is_published and not product.needs_platform_sync:
+            product.save(update_fields=["needs_platform_sync"])
         if created and getattr(settings, "PUSH_NOTIFICATIONS_LIVE_SIGNALS", False):
             try:
                 from .permissions import ROLE_ASSISTANT
@@ -890,16 +969,23 @@ def sync_product_on_clarification_save(sender, instance, created=False, **kwargs
             except Exception:
                 pass
     elif instance.status == ClarificationStatus.RESOLVED:
+        if is_published:
+            product.needs_platform_sync = True
         has_pending = product.clarifications.filter(status=ClarificationStatus.PENDING).exists()
         if not has_pending and product.status == ProductStatus.AWAITING_INFO:
             product.status = product.compute_lifecycle_status()
             notes = f"Clarification resolved: {instance.question[:60]}" if instance.question else ""
+            update_fields = ["status", "is_sold"]
+            if is_published:
+                update_fields.append("needs_platform_sync")
             product.save(
-                update_fields=["status", "is_sold"],
+                update_fields=update_fields,
                 changed_by=instance.answered_by,
                 trigger="clarification_resolved",
                 notes=notes,
             )
+        elif is_published:
+            product.save(update_fields=["needs_platform_sync"])
         was_pending = getattr(instance, "_previous_status", None) == ClarificationStatus.PENDING
         if (created or was_pending) and getattr(settings, "PUSH_NOTIFICATIONS_LIVE_SIGNALS", False):
             try:
@@ -1204,7 +1290,7 @@ def log_status_change(product, from_status, to_status, user=None, trigger="", no
     Creates an immutable audit log entry for a product lifecycle status change.
     Ignores no-op transitions where from_status == to_status on existing products.
     """
-    if product.pk and from_status == to_status:
+    if product.pk and from_status == to_status and not trigger:
         return None
     acting_user = user if (user and getattr(user, "is_authenticated", False)) else None
     return ProductStatusLog.objects.create(

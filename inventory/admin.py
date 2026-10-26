@@ -357,6 +357,7 @@ class ProductAdmin(admin.ModelAdmin):
         "id",
         "display_title",
         "status",
+        "needs_platform_sync_col",
         "sale_price_display",
         "estimated_resale_price_display",
         "estimated_retail_price_display",
@@ -367,10 +368,10 @@ class ProductAdmin(admin.ModelAdmin):
         "created_by",
         "created_at",
     )
-    list_filter = ("status", "is_deleted", "is_sold", "sold_channel_type", "sold_marketplace", "created_at")
+    list_filter = ("status", "needs_platform_sync", "is_deleted", "is_sold", "sold_channel_type", "sold_marketplace", "created_at")
     search_fields = ("ai_title", "raw_note", "ai_description")
     inlines = [ProductImageInline, ProductListingLinkInline, ProductClarificationInline, ProductStatusLogInline]
-    readonly_fields = ("created_at", "updated_at", "sold_at", "batch_session", "deleted_at", "deleted_by")
+    readonly_fields = ("created_at", "updated_at", "sold_at", "last_platform_synced_at", "batch_session", "deleted_at", "deleted_by")
     actions = ["soft_delete_selected", "restore_selected"]
     list_select_related = ("created_by", "batch_session", "sold_marketplace")
 
@@ -388,6 +389,14 @@ class ProductAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def needs_platform_sync_col(self, obj):
+        if obj.needs_platform_sync:
+            return format_html('<span style="color:#d97706; font-weight:700;">⚠️ {}</span>', _("Out of Sync"))
+        return format_html('<span style="color:#16a34a; font-weight:600;">✓ {}</span>', _("Synced"))
+
+    needs_platform_sync_col.short_description = _("Sync")
+    needs_platform_sync_col.admin_order_field = "needs_platform_sync"
 
     def sale_price_display(self, obj):
         if obj.sale_price is not None:

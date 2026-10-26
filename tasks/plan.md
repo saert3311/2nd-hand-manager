@@ -368,3 +368,13 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - [x] **Task 113:** Intake Form High-Density Miniature Grid, Enhanced Delete Controls & Lightbox Modal (`inventory/templates/inventory/intake.html`).
 - [x] **Task 114:** Bilingual Localization, Automated Test Suite, Simulation Verification & Changelog (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_intake_low_dpi.py`, `CHANGELOG.md`).
 - [x] **Checkpoint 32 (Low-DPI Intake Photo Miniatures & Delete Controls Complete):** Preview grid adapts responsively to a high-density 3-column layout (`grid-cols-3 sm:grid-cols-4 md:grid-cols-5`) on mobile devices; thumbnails render at compact ~90px–115px square preventing page scroll disruption; delete ('X') button is rendered with high-contrast styling and isolation ring eliminating subpixel blur on 1x DPI screens; tapping a miniature opens an accessible full-screen image inspection modal; all automated tests pass 100% and linter passes cleanly.
+
+---
+
+### Phase 33: Published Product Modifications & Platform Sync Tracking (Vertical Slice 29)
+- [ ] **Task 115:** Domain Model Expansion, Change-Detection Triggers, Schema Migration & Admin (`inventory/models.py`, `inventory/migrations/0020_product_platform_sync.py`, `inventory/admin.py`).
+- [ ] **Task 116:** Product Detail Photo Management: Upload Additional Photos & Individual Photo Deletion (`inventory/views.py`, `inventory/forms.py`, `inventory/urls.py`).
+- [ ] **Task 117:** 1-Click Platform Sync Clearance Action & Staging Workspace UI (`inventory/views.py`, `inventory/urls.py`, `inventory/templates/inventory/product_detail.html`).
+- [ ] **Task 118:** Dashboard Catalog Sub-Filtering & Product Card Sync Badges (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`).
+- [ ] **Task 119:** Bilingual Localization, Comprehensive Automated Test Suite, Full Regression & Changelog (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_published_platform_sync.py`, `CHANGELOG.md`).
+- [ ] **Checkpoint 33 (Published Product Modifications & Platform Sync Complete):** Published products remain in `PUBLISHED` status while automatically tracking `needs_platform_sync = True` upon price changes, copy edits, photo updates, or new clarifications; managers can upload new photos and delete photos directly in the detail workspace; workspace renders prominent out-of-sync banner with 1-click clearance button; dashboard sub-filters out-of-sync listings with live counter badges; 100% test pass rate and clean linter.

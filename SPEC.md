@@ -30,6 +30,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 26. **Intake Mandatory Pre-flight Identification Gate ("Identify Before Save"):** Client-side workflow gate on `/intake/` disabling the primary Save button (`#submitBtn`) by default until pre-flight AI identification (`#identifyBtn`) has been executed. Enforces appraisal benchmark and spec extraction while providing resilient fallback unlocking on network/timeout blips ([`docs/prds/PRD-intake-mandatory-identification-gate.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-intake-mandatory-identification-gate.md)).
 27. **Photo Reordering in Intake and Detail Workspaces:** Intuitive, mobile-first photo reordering across both `/intake/` (hybrid button controls, cover promotion, and desktop HTML5 drag-and-drop with `DataTransfer` synchronization) and `/products/<pk>/` (manager-only asynchronous reorder endpoint with atomic DB ordering and live cover photo preview) ([`docs/prds/PRD-photo-reordering.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-photo-reordering.md)).
 28. **Low-DPI Intake Photo Miniatures & Delete Controls Optimization:** High-density 3-column mobile preview grid (`grid-cols-3 sm:grid-cols-4 md:grid-cols-5`), high-contrast unambiguous delete buttons with white isolation ring, streamlined non-obstructive sequence badges, and a tap-to-inspect full-size lightbox modal tailored for low-DPI (1x) handheld warehouse scanners and compact smartphones ([`docs/prds/PRD-intake-low-dpi-miniatures.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-intake-low-dpi-miniatures.md)).
+29. **Published Product Modifications & Platform Sync Tracking:** Full editing of published products (copywriting, price adjustments, supplemental clarifications, and staging photo upload/delete/reorder) coupled with an orthogonal synchronization engine (`needs_platform_sync`, `last_platform_synced_at`), workspace warning banners, 1-click sync clearance (`POST /products/<pk>/mark-synced/`), and dashboard sub-filtering (`?status=published&sync=out_of_sync`) ([`docs/prds/PRD-published-product-modifications-and-platform-sync.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-published-product-modifications-and-platform-sync.md)).
 
 ---
 
@@ -1197,3 +1198,16 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
       - Inspection: Full-screen lightbox modal (`#imagePreviewModal`) accessible on thumbnail click to verify sharpness and item details before saving.
     - **Option B (Maintain 2-Column Grid with Larger Text):** Retain `grid-cols-2`, continuing to take up most of the mobile viewport with large thumbnail cards.
     *Decision:* Option A approved — High-density 3-column mobile grid with high-contrast delete button and tap-to-inspect lightbox modal.
+
+36. **Published Product Modifications & Platform Synchronization Architecture:**
+    - How should modifications to already-published products be handled across the state machine, photo pipeline, and external marketplace listings?
+    - **Option A (Recommended & Selected — Orthogonal Sync State + Detail Photo Management + 1-Click Clearance):**
+      - Retain primary lifecycle status `PUBLISHED` (`🚀 Publicado`) so items remain active in catalog statistics, external URL navigation, and sales attribution.
+      - Add orthogonal boolean `needs_platform_sync` (indexed) and `last_platform_synced_at` to `Product`.
+      - Automatically flag `needs_platform_sync = True` whenever price, title, description, photos, or clarifications change on a published product.
+      - Enable full photo management (uploading new photos with Pillow WebP compression up to 10 photos, deleting photos, and reordering) in `/products/<pk>/`.
+      - Render workspace alert banner and 1-click clearance button (`POST /products/<pk>/mark-synced/`) with audit trail logging.
+      - Add dashboard sub-filter `?status=published&sync=out_of_sync` with live badge count.
+    - **Option B (New Primary State `UPDATE_PENDING`):**
+      - Transition the product out of `PUBLISHED` into a separate state, hiding it from published listings until verified. Risk of broken external ad tracking and incorrect inventory counts.
+    *Decision:* Option A approved — Orthogonal sync state with detail photo management, 1-click clearance, and dashboard sub-filter.

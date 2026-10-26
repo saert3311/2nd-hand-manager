@@ -2696,3 +2696,128 @@ uff.exe check .`
 - [x] Spanish translations compiled and verified.
 - [x] 100% test pass rate with 0 regressions.
 - [x] `ruff check .` passes cleanly.
+
+---
+
+## Phase 33: Published Product Modifications & Platform Sync Tracking
+
+### Task 115: Domain Model Expansion, Change-Detection Triggers, Schema Migration & Admin (`inventory/models.py`, `inventory/migrations/0020_product_platform_sync.py`, `inventory/admin.py`)
+**Description:** Implement the orthogonal platform sync fields, automated change-detection hooks, helper methods, database migration, and Django admin visibility.
+1. Add `needs_platform_sync` (BooleanField, default False, db_index=True) and `last_platform_synced_at` (DateTimeField, null=True, blank=True) to `Product`.
+2. Implement `mark_platform_synced(user)` method on `Product`, appending a `ProductStatusLog` entry (`trigger="platform_sync_cleared"`).
+3. Implement change-detection logic: in `Product.save()`, if the product is published (or has active marketplace links) and `sale_price`, `ai_title`, or `ai_description` changed, automatically set `needs_platform_sync = True`.
+4. Trigger `needs_platform_sync = True` when new clarifications are recorded or answered on a published item.
+5. Create and apply database migration `0020_product_platform_sync.py`.
+6. Register `needs_platform_sync` in `ProductAdmin` list display and filters in `inventory/admin.py`.
+**Acceptance criteria:**
+- [x] Model fields created with indexes and bilingual labels.
+- [x] Schema migration applies cleanly with backward compatibility.
+- [x] Changes to published product attributes flag `needs_platform_sync = True`.
+- [x] `mark_platform_synced()` clears flag and records audit trail.
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** None
+**Files likely touched:**
+- `inventory/models.py`
+- `inventory/admin.py`
+- `inventory/migrations/0020_product_platform_sync.py`
+**Estimated scope:** Medium (3 files)
+
+---
+
+### Task 116: Product Detail Photo Management: Upload Additional Photos & Individual Photo Deletion (`inventory/views.py`, `inventory/forms.py`, `inventory/urls.py`)
+**Description:** Enable store managers to upload additional photos and delete individual photos directly from the Product Detail workspace (`/products/<pk>/`).
+1. Support multi-photo upload in `product_detail_view` with Pillow WebP compression, enforcing total $\le 10$ photos and memory bounds.
+2. Implement `product_delete_image_view` at `POST /products/<pk>/images/<image_id>/delete/` strictly restricted to managers, ensuring at least 1 image is retained.
+3. Automatically set `needs_platform_sync = True` if the product is published when photos are added or deleted.
+**Acceptance criteria:**
+- [x] Managers can attach new photos to existing products in `/products/<pk>/`.
+- [x] Uploaded photos are compressed to WebP and appended sequentially.
+- [x] Managers can delete photos while preserving at least 1 photo.
+- [x] Sourcing assistants cannot delete or upload photos in `/products/<pk>/`.
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Task 115
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/urls.py`
+- `inventory/forms.py`
+**Estimated scope:** Medium (3 files)
+
+---
+
+### Task 117: 1-Click Platform Sync Clearance Action & Staging Workspace UI (`inventory/views.py`, `inventory/urls.py`, `inventory/templates/inventory/product_detail.html`)
+**Description:** Implement the 1-click sync clearance action endpoint and integrate the alert banner and photo management controls in the Product Detail template.
+1. Implement `product_mark_platform_synced_view` at `POST /products/<pk>/mark-synced/` with `@manager_required`, `@login_required`, `@require_POST`.
+2. Add an accessible, high-contrast warning banner at the top of `/products/<pk>/` when `needs_platform_sync=True`, featuring the "Marcar plataformas como actualizadas" action button.
+3. Add a photo upload dropzone and delete buttons on thumbnails in the Photo Gallery card for managers.
+**Acceptance criteria:**
+- [x] Prominent workspace banner renders when published product has pending updates.
+- [x] Tapping "Marcar plataformas como actualizadas" clears the flag and displays a success notice.
+- [x] Photo Gallery card provides upload dropzone and thumbnail delete controls for managers.
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Tasks 115, 116
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/urls.py`
+- `inventory/templates/inventory/product_detail.html`
+**Estimated scope:** Medium (3 files)
+
+---
+
+### Task 118: Dashboard Catalog Sub-Filtering & Product Card Sync Badges (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`)
+**Description:** Implement sub-filter navigation under the "Publicados" dashboard tab and display visual sync badges on product cards.
+1. Under `status=published`, render sub-filter navigation pills: "Todos" vs "⚠️ Desincronizados" (`?status=published&sync=out_of_sync`).
+2. Compute `out_of_sync_count` efficiently in the main dashboard aggregate query.
+3. Render an amber `⚠️ Actualizar plataformas` badge on product cards when `needs_platform_sync=True`.
+**Acceptance criteria:**
+- [x] Dashboard displays `?status=published&sync=out_of_sync` sub-filter with accurate count.
+- [x] Only out-of-sync published products are returned when filter is active.
+- [x] Product cards render visible amber indicators.
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Task 115
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/templates/inventory/dashboard.html`
+**Estimated scope:** Medium (2 files)
+
+---
+
+### Task 119: Bilingual Localization, Comprehensive Automated Test Suite, Full Regression & Changelog (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_published_platform_sync.py`, `CHANGELOG.md`)
+**Description:** Add Spanish translations, write comprehensive automated test suite, verify full regression and linter, and update `CHANGELOG.md`.
+1. Add Spanish translations for all new strings in `django.po` and compile to `django.mo`.
+2. Author `tests/test_published_platform_sync.py` covering model triggers, photo upload/delete, sync clearance, permissions, dashboard filtering, and localization.
+3. Run full automated test suite (424+ tests) and `ruff check .`.
+4. Update `CHANGELOG.md` under `## [Unreleased]`.
+**Acceptance criteria:**
+- [x] Translations compiled with 0 errors.
+- [x] New automated tests pass 100%.
+- [x] Full test suite passes with zero regressions.
+- [x] `ruff check .` passes with 0 warnings.
+- [x] `CHANGELOG.md` updated with Phase 33 entries.
+**Verification:**
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_published_platform_sync`
+- [x] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check .`
+**Dependencies:** Tasks 115, 116, 117, 118
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_published_platform_sync.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (4 files)
+
+---
+
+## Checkpoint 33: Published Product Modifications & Platform Sync Complete
+- [x] `needs_platform_sync` automatically triggers upon price, copy, photo, or clarification changes on published products.
+- [x] Managers can upload additional photos and delete photos directly in `/products/<pk>/`.
+- [x] Workspace renders prominent out-of-sync banner with 1-click sync clearance.
+- [x] Dashboard provides `?status=published&sync=out_of_sync` sub-filtering with live counter.
+- [x] Full bilingual Spanish/English localization compiled.
+- [x] 100% test pass rate with 0 regressions.
+- [x] `ruff check .` passes cleanly.
