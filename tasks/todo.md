@@ -2604,18 +2604,18 @@ uff.exe check .`
 **Description:** Add Spanish translation catalogs, expand automated tests, verify with linter, and document in `CHANGELOG.md`.
 1. Add Spanish translations for new strings ("Move photo left", "Move photo right", "Set as cover photo", "Reorder photos", "Photo order saved successfully", etc.) in `django.po` and compile to `django.mo`.
 2. Expand `tests/test_photo_reordering.py` to cover intake reordering attributes, detail view controls, permission gating, and localization.
-3. Run full automated test suite (398+ tests) and `ruff check .`.
+3. Run full automated test suite (415 tests) and `ruff check .`.
 4. Update `CHANGELOG.md` under `## [Unreleased]`.
 **Acceptance criteria:**
-- [ ] Translations compiled with 0 errors.
-- [ ] Full automated test suite passes 100%.
-- [ ] `ruff check .` passes with 0 warnings.
-- [ ] `CHANGELOG.md` updated with Phase 31 entries.
+- [x] Translations compiled with 0 errors.
+- [x] Full automated test suite passes 100% (415 tests green).
+- [x] `ruff check .` passes with 0 warnings.
+- [x] `CHANGELOG.md` updated with Phase 31 entries.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
-- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_photo_reordering`
-- [ ] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
-- [ ] Linter passes: `.venv\Scripts\ruff.exe check .`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_photo_reordering`
+- [x] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check .`
 **Dependencies:** Tasks 109, 110, 111
 **Files likely touched:**
 - `locale/es/LC_MESSAGES/django.po`
@@ -2627,11 +2627,11 @@ uff.exe check .`
 ---
 
 ## Checkpoint 31: Photo Reordering Complete
-- [ ] Hybrid reordering (buttons + drag & drop) functional on `/intake/`.
-- [ ] Form submit persists images in the reordered order (`order=0, 1, 2...`).
-- [ ] Manager reordering functional on `/products/<pk>/` with instant persistence.
-- [ ] Main featured image dynamically updates to reflect new cover photo.
-- [ ] Assistant access is strictly read-only on detail page.
-- [ ] Spanish translations compiled and verified.
-- [ ] 100% test pass rate with 0 regressions.
-- [ ] `ruff check .` passes cleanly.
+- [x] Hybrid reordering (buttons + drag & drop) functional on `/intake/`.
+- [x] Form submit persists images in the reordered order (`order=0, 1, 2...`).
+- [x] Manager reordering functional on `/products/<pk>/` with instant persistence.
+- [x] Main featured image dynamically updates to reflect new cover photo.
+- [x] Assistant access is strictly read-only on detail page.
+- [x] Spanish translations compiled and verified.
+- [x] 100% test pass rate with 0 regressions.
+- [x] `ruff check .` passes cleanly.

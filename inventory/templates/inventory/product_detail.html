@@ -973,6 +973,7 @@
     });
   });
 
+  {% if can_manage %}
   // Reorder mode & async persistence logic
   const reorderUrl = "{% url 'inventory:product_reorder_images' product.pk %}";
   const toggleReorderBtn = document.getElementById('toggleReorderModeBtn');
@@ -1197,6 +1198,7 @@
       });
     }
   });
+  {% endif %}
 
   function copyToClipboard(elementId, btn) {
     const input = document.getElementById(elementId);

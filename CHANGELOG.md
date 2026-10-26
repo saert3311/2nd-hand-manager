@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Photo Reordering in Intake and Detail Workspaces (Phase 31)**:
+  - **Backend Image Reordering API Endpoint**: Implemented `product_reorder_images_view` at `POST /products/<pk>/images/reorder/` in `inventory/views.py`. Strictly restricted to Store Managers (`@manager_required`, `@login_required`, `@require_POST`). Validates JSON payload, verifies all image IDs belong to the product, updates `ProductImage.order` atomically inside a single database transaction, and returns the updated primary cover image URL. Blocks assistants with HTTP 403 and rejects malformed or cross-product payloads with HTTP 400.
+  - **Intake Form Hybrid Reordering (`inventory/templates/inventory/intake.html`)**: Added intuitive, touch-friendly tap controls (Move Left `◀`, Move Right `▶`, and 1-click "Set as Cover" `⭐`) on preview thumbnail cards alongside desktop HTML5 drag-and-drop handles. The #1 photo receives a prominent badge (`⭐ #1 Portada` / `⭐ #1 Cover`). Calling `syncFileInput()` on every reorder updates `imageInput.files` via `DataTransfer` so `request.FILES.getlist('images')` arrives pre-sorted for database persistence. Preserves pre-flight AI identification gate status if already run.
+  - **Product Detail Staging Workspace Reordering (`inventory/templates/inventory/product_detail.html`)**: Added interactive photo reordering to the Photo Gallery Card for store managers. Features an accessible "Reorganizar fotos / Reorder" toggle, move left/right controls, 1-click "Set as Cover" button, and drag-and-drop handles. Saves changes asynchronously to the backend, updates the featured `#mainImage` preview dynamically, and renders accessible status notices. Sourcing assistants see a clean read-only gallery.
+  - **Bilingual Localization & Comprehensive Test Suite**: Added Spanish translations in `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`. Authored 17 automated tests in `tests/test_photo_reordering.py` covering backend API authentication, assistant permission denial, atomic DB ordering, payload validation, intake UI elements, detail UI controls, and Spanish localization.
+
 ## [1.7.0] - 2026-10-26
 
 ### Added
