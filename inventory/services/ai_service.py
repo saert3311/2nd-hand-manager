@@ -158,10 +158,16 @@ def generate_product_listing(
         clarif_lines = []
         for c in resolved_clarifications:
             cat_display = c.get_category_display()
-            if is_es:
-                clarif_lines.append(f"- [{cat_display}] Pregunta: {c.question} -> Respuesta: {c.answer}")
+            if getattr(c, "is_direct_note", False):
+                if is_es:
+                    clarif_lines.append(f"- [{cat_display}] Nota: {c.answer}")
+                else:
+                    clarif_lines.append(f"- [{cat_display}] Note: {c.answer}")
             else:
-                clarif_lines.append(f"- [{cat_display}] Question: {c.question} -> Answer: {c.answer}")
+                if is_es:
+                    clarif_lines.append(f"- [{cat_display}] Pregunta: {c.question} -> Respuesta: {c.answer}")
+                else:
+                    clarif_lines.append(f"- [{cat_display}] Question: {c.question} -> Answer: {c.answer}")
 
         clarifications_text = clarifications_header + "\n" + "\n".join(clarif_lines)
 

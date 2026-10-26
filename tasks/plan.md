@@ -335,3 +335,13 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - [x] **Task 100:** Dashboard Catalog Filtering, Erased Tab Navigation Pill, Aggregate Count Isolation & Search Scoping (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`).
 - [x] **Task 101:** Bilingual Localization, Comprehensive Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_product_soft_delete.py`, `CHANGELOG.md`).
 - [x] **Checkpoint 28 (Product Soft-Delete Complete):** Managers can move items to trash via confirmation modal; erased items are isolated into `?status=erased` with dedicated count and excluded from active catalog tabs/counters; erased items can be inspected and restored back to their prior lifecycle status; all tests pass 100% and linter passes with 0 warnings.
+
+---
+
+### Phase 29: Product Detail Clarifications Hub (Vertical Slice 25)
+- [x] **Task 102:** Domain Model Expansion (`is_direct_note`), Signal Logic Refactoring, Schema Migration (`0019_clarification_direct_note.py`), and Admin Registration (`inventory/models.py`, `inventory/migrations/0019_clarification_direct_note.py`, `inventory/admin.py`).
+- [x] **Task 103:** Service & Form Layer for Direct Clarifications & AI Copywriting Formatting (`inventory/forms.py`, `inventory/services/ai_service.py`).
+- [x] **Task 104:** Dedicated Action View (`product_add_direct_clarification_view`) & URL Routing with Multi-Role Permissions (`inventory/views.py`, `inventory/urls.py`).
+- [x] **Task 105:** Product Detail Clarifications Hub UI with Dual-Mode Tabs, Responsive Styling & Accessibility (`inventory/templates/inventory/product_detail.html`).
+- [x] **Task 106:** Bilingual Localization, Comprehensive Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_clarifications_hub.py`, `CHANGELOG.md`).
+- [x] **Checkpoint 29 (Product Detail Clarifications Hub Complete):** Sourcing assistants and store managers can post direct clarification notes post-intake directly in the left column under intake notes; store managers can toggle between direct notes and Q&A doubts; direct notes save in resolved status without blocking the item in `AWAITING_INFO`; Gemini AI copywriting prompt incorporates both direct notes and resolved Q&A items; all tests pass 100% and linter passes with 0 warnings.

@@ -786,6 +786,12 @@ class ProductClarification(models.Model):
         verbose_name=_("Category"),
         help_text=_("Area of clarification"),
     )
+    is_direct_note = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name=_("Direct Note"),
+        help_text=_("Indicates a direct clarification note rather than a pending manager doubt"),
+    )
     question = models.TextField(
         max_length=2000,
         verbose_name=_("Question"),
@@ -856,6 +862,8 @@ def sync_product_on_clarification_save(sender, instance, created=False, **kwargs
         return
     product = instance.product
     if product.is_sold or product.status == ProductStatus.SOLD:
+        return
+    if instance.is_direct_note:
         return
     if instance.status == ClarificationStatus.PENDING:
         if product.status != ProductStatus.AWAITING_INFO:

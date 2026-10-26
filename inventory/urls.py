@@ -8,6 +8,7 @@ from .views import (
     intake_identify_view,
     manifest_view,
     product_add_clarification_view,
+    product_add_direct_clarification_view,
     product_answer_clarification_view,
     product_delete_clarification_view,
     product_detail_view,
@@ -44,6 +45,7 @@ urlpatterns = [
     path("products/<int:pk>/generate-ai/", generate_ai_view, name="generate_ai"),
     path("products/<int:pk>/links/", product_manage_link_view, name="manage_link"),
     path("products/<int:pk>/clarifications/add/", product_add_clarification_view, name="add_clarification"),
+    path("products/<int:pk>/clarifications/add-note/", product_add_direct_clarification_view, name="add_direct_clarification"),
     path("products/<int:pk>/clarifications/<int:clarification_pk>/answer/", product_answer_clarification_view, name="answer_clarification"),
     path("products/<int:pk>/clarifications/<int:clarification_pk>/delete/", product_delete_clarification_view, name="delete_clarification"),
 ]

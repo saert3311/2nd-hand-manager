@@ -20,6 +20,7 @@ from django.utils.translation import gettext as _
 from .forms import (
     ProductClarificationAnswerForm,
     ProductClarificationForm,
+    ProductDirectClarificationForm,
     ProductIntakeForm,
     ProductUpdateForm,
     TurnstileAuthenticationForm,
@@ -396,10 +397,48 @@ def product_detail_view(request, pk):
         "has_unapplied_clarifications": has_unapplied_clarifications,
         "status_logs": product.status_logs.all(),
         "clarification_form": ProductClarificationForm(),
+        "direct_clarification_form": ProductDirectClarificationForm(),
         "answer_form": ProductClarificationAnswerForm(),
         "categories": ClarificationCategory.choices,
     }
     return render(request, "inventory/product_detail.html", context)
+
+
+@login_required
+def product_add_direct_clarification_view(request, pk):
+    """
+    Allows assistants or managers to add a direct post-intake clarification note attached to a product.
+    Immediately saves as RESOLVED with is_direct_note=True without altering product lifecycle status.
+    """
+    if request.method != "POST":
+        return redirect("inventory:product_detail", pk=pk)
+
+    product = get_object_or_404(Product, pk=pk)
+    if product.is_deleted and not is_manager(request.user):
+        messages.warning(request, _("This product has been moved to trash and is not accessible."))
+        return redirect("inventory:dashboard")
+
+    form = ProductDirectClarificationForm(request.POST)
+    if form.is_valid():
+        category = form.cleaned_data["category"]
+        note_text = form.cleaned_data["note"]
+
+        ProductClarification.objects.create(
+            product=product,
+            category=category,
+            is_direct_note=True,
+            question=str(_("Direct Note")),
+            answer=note_text,
+            asked_by=request.user,
+            answered_by=request.user,
+            status=ClarificationStatus.RESOLVED,
+            answered_at=timezone.now(),
+        )
+        messages.success(request, _("Clarification note added successfully."))
+    else:
+        messages.error(request, _("Please provide a valid category and note text."))
+
+    return redirect(f"{reverse('inventory:product_detail', kwargs={'pk': pk})}#clarifications-section")
 
 
 @login_required
