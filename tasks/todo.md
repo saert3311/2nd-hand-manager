@@ -2324,7 +2324,8 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 - [x] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
 - [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_product_soft_delete`
 - [x] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
-- [x] Linter passes: `.venv\Scriptsuff.exe check .`
+- [x] Linter passes: `.venv\Scripts
+uff.exe check .`
 **Dependencies:** Task 97, Task 98, Task 99, Task 100
 **Files likely touched:**
 - `locale/es/LC_MESSAGES/django.po`
@@ -2344,3 +2345,120 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 - [x] Spanish localization compiled and verified.
 - [x] All unit and regression tests pass with 0 failures.
 - [x] `ruff check .` passes cleanly.
+
+
+---
+
+# Phase 29: Product Detail Clarifications Hub (Vertical Slice 25)
+
+### Task 102: Domain Model Expansion (`is_direct_note`), Signal Logic Refactoring, Schema Migration (`0019_clarification_direct_note.py`), and Admin Registration (`inventory/models.py`, `inventory/migrations/0019_clarification_direct_note.py`, `inventory/admin.py`)
+**Description:** Add `is_direct_note = models.BooleanField(default=False, db_index=True, verbose_name=_("Direct Note"))` to `ProductClarification` in `inventory/models.py`. Update the `sync_product_on_clarification_save` post-save signal: when `instance.is_direct_note=True`, bypass transitioning the product to `AWAITING_INFO` and bypass sending Web Push doubt alerts to assistants. In `inventory/admin.py`, update `ProductClarificationAdmin` to include `is_direct_note` in `list_display` and `list_filter`. Generate database migration `0019_clarification_direct_note.py` via `makemigrations` and apply it with `migrate`.
+**Acceptance criteria:**
+- [ ] `ProductClarification` includes `is_direct_note` boolean field with `default=False`.
+- [ ] Migration `0019_clarification_direct_note.py` generated and applied cleanly.
+- [ ] Post-save signal skips `AWAITING_INFO` and assistant push alerts when `is_direct_note=True`.
+- [ ] `ProductClarificationAdmin` exposes `is_direct_note` in list display and filter.
+- [ ] Existing model tests pass with zero regressions.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py makemigrations`
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py migrate`
+- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_models tests.test_clarifications`
+**Dependencies:** None
+**Files likely touched:**
+- `inventory/models.py`
+- `inventory/migrations/0019_clarification_direct_note.py`
+- `inventory/admin.py`
+**Estimated scope:** Small (3 files)
+
+---
+
+### Task 103: Service & Form Layer for Direct Clarifications & AI Copywriting Formatting (`inventory/forms.py`, `inventory/services/ai_service.py`)
+**Description:** In `inventory/forms.py`, create `ProductDirectClarificationForm` allowing users to select `category` and submit `note` text (max 3000 chars, stripped, non-empty validation). In `inventory/services/ai_service.py`, update `generate_product_listing` so that direct notes are formatted cleanly for Gemini (`- [Category] Note: <note>` in English, `- [Categoría] Nota: <nota>` in Spanish), while preserving the Q&A question/answer format for standard manager doubts. Ensure unapplied clarifications callout indicator accounts for newly added direct notes.
+**Acceptance criteria:**
+- [ ] `ProductDirectClarificationForm` cleanly validates category and note text.
+- [ ] Direct clarification notes format cleanly in `ai_service.py` prompt text.
+- [ ] Standard manager doubts maintain question/answer formatting.
+- [ ] Unit tests for form and prompt generation pass.
+**Verification:**
+- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_ai_service tests.test_forms`
+**Dependencies:** Task 102
+**Files likely touched:**
+- `inventory/forms.py`
+- `inventory/services/ai_service.py`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 104: Dedicated Action View (`product_add_direct_clarification_view`) & URL Routing with Multi-Role Permissions (`inventory/views.py`, `inventory/urls.py`)
+**Description:** Implement `product_add_direct_clarification_view` at `/products/<pk>/clarifications/add-note/`. Protect with `@login_required` and `@require_POST`. Allow BOTH Store Managers and Sourcing Assistants to submit direct clarification notes. Validate the form, create `ProductClarification` with `is_direct_note=True`, `status=ClarificationStatus.RESOLVED`, `asked_by=request.user`, `answered_by=request.user`, and `answered_at=timezone.now()`. Ensure product status is NOT changed to `AWAITING_INFO`. Provide a success message and redirect back to `/products/<pk>/#clarifications-section`. Maintain manager-only restriction on `product_add_clarification_view` (Q&A doubts) and `product_delete_clarification_view`.
+**Acceptance criteria:**
+- [ ] Endpoint `/products/<pk>/clarifications/add-note/` registered in `inventory/urls.py`.
+- [ ] POST request by assistant or manager creates a direct resolved clarification note.
+- [ ] Product status is unchanged (does not transition to `AWAITING_INFO`).
+- [ ] GET request or unauthenticated access is rejected/redirected.
+- [ ] Only managers can access standard doubt creation (`add_clarification`).
+**Verification:**
+- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_views tests.test_clarifications`
+**Dependencies:** Task 102, Task 103
+**Files likely touched:**
+- `inventory/views.py`
+- `inventory/urls.py`
+**Estimated scope:** Small (2 files)
+
+---
+
+### Task 105: Product Detail Clarifications Hub UI with Dual-Mode Tabs, Responsive Styling & Accessibility (`inventory/templates/inventory/product_detail.html`)
+**Description:** Redesign the `#clarifications-section` in `product_detail.html` in the Left Column (`lg:col-span-5`) directly below "Preserved Intake Notes". Apply `frontend-ui-engineering` guidelines:
+1. For Managers: Provide an accessible tab/toggle control between `📝 Añadir nota directa` (Direct Clarification Note) and `❓ Preguntar a asistente` (Ask Assistant Doubt).
+2. For Assistants: Expose the `📝 Añadir nota directa` form with category dropdown and note textarea, alongside pending doubts requiring answers.
+3. Clarification List Items: Distinct visual treatment for direct notes vs resolved Q&A items, with category pills, author names, role badges (*Manager* / *Assistant*), and timestamps.
+4. Mobile Ergonomics: Input font size `text-base sm:text-sm` (preventing iOS Safari auto-zoom) and minimum 44px button touch targets.
+5. Deletion: Managers have an accessible delete button for any clarification item.
+**Acceptance criteria:**
+- [ ] `#clarifications-section` renders in the left column below intake notes.
+- [ ] Manager view features dual-mode tab switcher (Direct Note vs Manager Doubt).
+- [ ] Assistant view exposes direct note form and pending doubts.
+- [ ] Direct notes and resolved Q&A items render with distinct badges and attribution.
+- [ ] Form inputs conform to iOS Safari zoom prevention (`text-base sm:text-sm`).
+**Verification:**
+- [ ] Template validation: `.venv\Scripts\python.exe manage.py check`
+- [ ] Manual / live DOM inspection and responsiveness check.
+**Dependencies:** Task 104
+**Files likely touched:**
+- `inventory/templates/inventory/product_detail.html`
+**Estimated scope:** Medium (1 file)
+
+---
+
+### Task 106: Bilingual Localization, Comprehensive Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_clarifications_hub.py`, `CHANGELOG.md`)
+**Description:** Add Spanish translations in `locale/es/LC_MESSAGES/django.po` for all new strings ("Product Clarifications & Notes", "Direct Note", "Add Direct Note", "Clarification note saved successfully.", "Ask Assistant", etc.) and compile to `django.mo`. Build a dedicated test suite `tests/test_clarifications_hub.py` verifying: (1) direct note creation by manager and assistant; (2) product lifecycle status preservation; (3) permission enforcement (assistants can add direct notes, assistants cannot open Q&A doubts, only managers can delete); (4) AI copywriting prompt formatting for direct notes; (5) template rendering and Spanish localization. Update `CHANGELOG.md` under `## [Unreleased]`. Run full regression suite and linter.
+**Acceptance criteria:**
+- [ ] Spanish translations compiled with 0 errors.
+- [ ] Test suite in `tests/test_clarifications_hub.py` passes 100%.
+- [ ] Full regression suite (378+ tests) passes with 0 failures and 0 errors.
+- [ ] `ruff check .` passes with 0 warnings.
+- [ ] `CHANGELOG.md` updated with Phase 29 entries.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_clarifications_hub`
+- [ ] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [ ] Linter passes: `.venv\Scripts\ruff.exe check .`
+**Dependencies:** Task 102, Task 103, Task 104, Task 105
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_clarifications_hub.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (4 files)
+
+---
+
+## Checkpoint 29: Product Detail Clarifications Hub Complete
+- [ ] `is_direct_note` on `ProductClarification` with migration `0019_clarification_direct_note.py` applied cleanly.
+- [ ] Dedicated direct note action view accessible by both managers and assistants.
+- [ ] Direct notes save in `RESOLVED` status without transitioning product to `AWAITING_INFO`.
+- [ ] Product detail page provides accessible dual-mode controls (direct notes vs Q&A) in the left column under intake notes.
+- [ ] Gemini AI prompt incorporates both direct notes and resolved Q&A items.
+- [ ] Spanish localization compiled and verified.
+- [ ] All unit and regression tests pass with 0 failures.
+- [ ] `ruff check .` passes cleanly.
