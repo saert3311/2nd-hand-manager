@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-10-26
+
 ### Added
 - **Product Detail Clarifications Hub ("Direct Notes & Q&A Doubts") (Phase 29)**:
   - **Domain Model Extension**: Added `is_direct_note` (`BooleanField(default=False, db_index=True)`) to `ProductClarification` in `inventory/models.py`. Generated and applied database migration `0019_productclarification_is_direct_note.py`. Refactored post-save signals so direct clarification notes save in `RESOLVED` status without triggering `AWAITING_INFO` or dispatching assistant push notifications.
