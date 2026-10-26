@@ -121,8 +121,11 @@
 
         <!-- Live Thumbnail Previews Grid -->
         <div id="previewContainer" class="hidden mt-3">
-          <p class="text-xs sm:text-sm font-semibold text-slate-600 mb-2">{% trans "Selected Photos Preview:" %}</p>
-          <div id="previewGrid" class="grid grid-cols-3 sm:grid-cols-4 gap-2.5"></div>
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs sm:text-sm font-semibold text-slate-600">{% trans "Selected Photos Preview:" %}</p>
+            <span class="text-[11px] sm:text-xs text-slate-400">{% trans "Drag or tap arrows to reorder" %}</span>
+          </div>
+          <div id="previewGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5"></div>
         </div>
 
         <!-- Pre-flight Identification Trigger Button -->
@@ -339,6 +342,7 @@
   let isSubmitting = false;
   let hasIdentified = false;
   let currentEstimatedResale = null;
+  let draggedFileIndex = null;
 
   function showClientAlert(message, isWarning = true) {
     if (!intakeClientAlert) return;
@@ -440,6 +444,24 @@
     }
   }
 
+  function moveFile(fromIdx, toIdx) {
+    if (formState === 'identifying' || formState === 'submitting') return;
+    if (fromIdx < 0 || fromIdx >= selectedFiles.length || toIdx < 0 || toIdx >= selectedFiles.length) return;
+    const item = selectedFiles.splice(fromIdx, 1)[0];
+    selectedFiles.splice(toIdx, 0, item);
+    syncFileInput();
+    renderPreviews();
+  }
+
+  function setCoverFile(fromIdx) {
+    if (formState === 'identifying' || formState === 'submitting') return;
+    if (fromIdx <= 0 || fromIdx >= selectedFiles.length) return;
+    const item = selectedFiles.splice(fromIdx, 1)[0];
+    selectedFiles.unshift(item);
+    syncFileInput();
+    renderPreviews();
+  }
+
   function renderPreviews() {
     previewGrid.innerHTML = '';
 
@@ -462,22 +484,60 @@
 
     selectedFiles.forEach((file, idx) => {
       const div = document.createElement('div');
-      div.className = 'relative aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100 group';
+      div.className = 'relative aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100 group transition-all duration-150';
+      div.setAttribute('data-index', idx);
+
+      // Desktop HTML5 drag and drop reordering
+      if (formState === 'idle') {
+        div.setAttribute('draggable', 'true');
+        div.addEventListener('dragstart', function(e) {
+          draggedFileIndex = idx;
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', idx);
+          div.classList.add('opacity-40', 'scale-95');
+        });
+        div.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          div.classList.add('ring-2', 'ring-emerald-500');
+        });
+        div.addEventListener('dragleave', function() {
+          div.classList.remove('ring-2', 'ring-emerald-500');
+        });
+        div.addEventListener('drop', function(e) {
+          e.preventDefault();
+          div.classList.remove('ring-2', 'ring-emerald-500');
+          if (draggedFileIndex !== null && draggedFileIndex !== idx) {
+            moveFile(draggedFileIndex, idx);
+          }
+        });
+        div.addEventListener('dragend', function() {
+          div.classList.remove('opacity-40', 'scale-95');
+          draggedFileIndex = null;
+        });
+      }
 
       const img = document.createElement('img');
       const objectUrl = URL.createObjectURL(file);
       img.src = objectUrl;
-      img.className = 'w-full h-full object-cover';
+      img.className = 'w-full h-full object-cover select-none pointer-events-none';
       img.alt = `Preview ${idx + 1}`;
       img.onload = () => URL.revokeObjectURL(objectUrl);
 
+      // Top-Left Badge: #1 gets primary Cover badge, others show #2, #3...
       const badge = document.createElement('span');
-      badge.className = 'absolute top-1.5 left-1.5 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full pointer-events-none select-none';
-      badge.textContent = `#${idx + 1}`;
+      if (idx === 0) {
+        badge.className = 'absolute top-1.5 left-1.5 bg-amber-500 text-white text-[10px] sm:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm flex items-center gap-1 pointer-events-none select-none z-10';
+        badge.innerHTML = `⭐ #1 {% trans "Cover" %}`;
+      } else {
+        badge.className = 'absolute top-1.5 left-1.5 bg-black/70 text-white text-[10px] sm:text-xs font-bold px-1.5 py-0.5 rounded-md shadow-sm pointer-events-none select-none z-10';
+        badge.textContent = `#${idx + 1}`;
+      }
 
+      // Top-Right Delete Button
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
-      delBtn.className = 'photo-delete-btn absolute top-0.5 right-0.5 w-11 h-11 flex items-center justify-center z-20 focus:outline-none focus:ring-2 focus:ring-rose-500 rounded-full transition-transform active:scale-95 disabled:pointer-events-none disabled:opacity-50';
+      delBtn.className = 'photo-delete-btn absolute top-0.5 right-0.5 w-10 h-10 flex items-center justify-center z-20 focus:outline-none focus:ring-2 focus:ring-rose-500 rounded-full transition-transform active:scale-95 disabled:pointer-events-none disabled:opacity-50';
       const delLabel = `{% trans "Remove photo" %} #${idx + 1}`;
       delBtn.setAttribute('aria-label', delLabel);
       delBtn.title = delLabel;
@@ -511,9 +571,65 @@
         }
       });
 
+      // Bottom Overlay Controls: Move Left, Set as Cover, Move Right
+      const controlsBar = document.createElement('div');
+      controlsBar.className = 'absolute bottom-1.5 inset-x-1.5 flex items-center justify-between gap-1 z-10';
+
+      // Move Left Button
+      const moveLeftBtn = document.createElement('button');
+      moveLeftBtn.type = 'button';
+      moveLeftBtn.className = 'photo-reorder-btn w-7 h-7 rounded-md bg-black/60 hover:bg-black/90 text-white flex items-center justify-center text-xs font-bold transition disabled:opacity-20 disabled:pointer-events-none active:scale-95';
+      moveLeftBtn.disabled = (idx === 0 || formState !== 'idle');
+      moveLeftBtn.setAttribute('aria-label', `{% trans "Move photo left" %} #${idx + 1}`);
+      moveLeftBtn.title = `{% trans "Move left" %}`;
+      moveLeftBtn.innerHTML = '◀';
+      moveLeftBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        ev.preventDefault();
+        moveFile(idx, idx - 1);
+      });
+      controlsBar.appendChild(moveLeftBtn);
+
+      // Set as Cover Button (only on items > 0)
+      if (idx > 0) {
+        const coverBtn = document.createElement('button');
+        coverBtn.type = 'button';
+        coverBtn.className = 'photo-make-cover-btn px-2 h-7 rounded-md bg-black/60 hover:bg-amber-600 text-amber-300 hover:text-white flex items-center justify-center gap-1 text-[11px] font-bold transition disabled:opacity-20 disabled:pointer-events-none active:scale-95';
+        coverBtn.disabled = (formState !== 'idle');
+        coverBtn.setAttribute('aria-label', `{% trans "Set as cover photo" %} #${idx + 1}`);
+        coverBtn.title = `{% trans "Set as cover photo" %}`;
+        coverBtn.innerHTML = `⭐ <span class="hidden sm:inline">{% trans "Cover" %}</span>`;
+        coverBtn.addEventListener('click', function(ev) {
+          ev.stopPropagation();
+          ev.preventDefault();
+          setCoverFile(idx);
+        });
+        controlsBar.appendChild(coverBtn);
+      } else {
+        const spacer = document.createElement('div');
+        spacer.className = 'flex-1';
+        controlsBar.appendChild(spacer);
+      }
+
+      // Move Right Button
+      const moveRightBtn = document.createElement('button');
+      moveRightBtn.type = 'button';
+      moveRightBtn.className = 'photo-reorder-btn w-7 h-7 rounded-md bg-black/60 hover:bg-black/90 text-white flex items-center justify-center text-xs font-bold transition disabled:opacity-20 disabled:pointer-events-none active:scale-95';
+      moveRightBtn.disabled = (idx === selectedFiles.length - 1 || formState !== 'idle');
+      moveRightBtn.setAttribute('aria-label', `{% trans "Move photo right" %} #${idx + 1}`);
+      moveRightBtn.title = `{% trans "Move right" %}`;
+      moveRightBtn.innerHTML = '▶';
+      moveRightBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        ev.preventDefault();
+        moveFile(idx, idx + 1);
+      });
+      controlsBar.appendChild(moveRightBtn);
+
       div.appendChild(img);
       div.appendChild(badge);
       div.appendChild(delBtn);
+      div.appendChild(controlsBar);
       previewGrid.appendChild(div);
     });
   }
@@ -521,6 +637,7 @@
   function setFormState(newState) {
     formState = newState;
     const deleteButtons = document.querySelectorAll('.photo-delete-btn');
+    const reorderButtons = document.querySelectorAll('.photo-reorder-btn, .photo-make-cover-btn');
 
     if (newState === 'identifying') {
       // Disable identify button with spinner
@@ -542,6 +659,10 @@
         btn.disabled = true;
         btn.classList.add('pointer-events-none', 'opacity-50');
       });
+      reorderButtons.forEach(btn => {
+        btn.disabled = true;
+        btn.classList.add('pointer-events-none', 'opacity-50');
+      });
     } else if (newState === 'submitting') {
       // Disable submit button with spinner
       updateSubmitButtonState();
@@ -560,6 +681,10 @@
                 btnTriggerGallery.classList.add('opacity-50', 'pointer-events-none');
       }
       deleteButtons.forEach(btn => {
+        btn.disabled = true;
+        btn.classList.add('pointer-events-none', 'opacity-50');
+      });
+      reorderButtons.forEach(btn => {
         btn.disabled = true;
         btn.classList.add('pointer-events-none', 'opacity-50');
       });

@@ -2565,13 +2565,13 @@ uff.exe check .`
 6. Ensure identification gate status (`hasIdentified`) is preserved across reordering operations.
 7. Include accessible ARIA labels on all reorder buttons.
 **Acceptance criteria:**
-- [ ] Preview thumbnails can be moved left and right with tap/click buttons.
-- [ ] Any photo can be promoted to cover (#1) with a single click.
-- [ ] Desktop drag-and-drop reorders cards smoothly.
-- [ ] `imageInput.files` maintains the exact reordered sequence for form submit.
-- [ ] Identification gate remains unlocked if already run.
+- [x] Preview thumbnails can be moved left and right with tap/click buttons.
+- [x] Any photo can be promoted to cover (#1) with a single click.
+- [x] Desktop drag-and-drop reorders cards smoothly.
+- [x] `imageInput.files` maintains the exact reordered sequence for form submit.
+- [x] Identification gate remains unlocked if already run.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
 **Dependencies:** None
 **Files likely touched:**
 - `inventory/templates/inventory/intake.html`
