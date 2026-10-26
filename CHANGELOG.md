@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-10-26
+
 ### Added
 - **Detail View Photo Upload Component System (Phase 34)**:
   - **Component Parity with Intake Flow (`inventory/templates/inventory/product_detail.html`)**: Upgraded the 'Add More Photos' section in the Product Detail workspace from a raw file input into the full, mobile-first photo upload component system from `/intake/`.
