@@ -345,3 +345,10 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - [x] **Task 105:** Product Detail Clarifications Hub UI with Dual-Mode Tabs, Responsive Styling & Accessibility (`inventory/templates/inventory/product_detail.html`).
 - [x] **Task 106:** Bilingual Localization, Comprehensive Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_clarifications_hub.py`, `CHANGELOG.md`).
 - [x] **Checkpoint 29 (Product Detail Clarifications Hub Complete):** Sourcing assistants and store managers can post direct clarification notes post-intake directly in the left column under intake notes; store managers can toggle between direct notes and Q&A doubts; direct notes save in resolved status without blocking the item in `AWAITING_INFO`; Gemini AI copywriting prompt incorporates both direct notes and resolved Q&A items; all tests pass 100% and linter passes with 0 warnings.
+
+---
+
+### Phase 30: Intake Mandatory Pre-flight Identification Gate (Vertical Slice 26)
+- [ ] **Task 107:** Frontend UI State Machine, Save Button Gating & Reset Logic (`inventory/templates/inventory/intake.html`).
+- [ ] **Task 108:** Bilingual Localization, Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_intake_identification_gate.py`, `CHANGELOG.md`).
+- [ ] **Checkpoint 30 (Intake Mandatory Identification Gate Complete):** The Save button on `/intake/` is disabled on initial load and remains disabled when photos are chosen until AI identification is triggered; running identification (success or handled fallback) unlocks the Save button; removing all photos resets the gate and re-disables Save; form submission is strictly guarded against premature submit; all tests pass 100% and linter passes with 0 warnings.
