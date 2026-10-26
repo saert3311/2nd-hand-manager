@@ -362,14 +362,16 @@ class ProductAdmin(admin.ModelAdmin):
         "estimated_retail_price_display",
         "is_sold",
         "sale_channel_col",
+        "is_deleted_col",
         "images_count",
         "created_by",
         "created_at",
     )
-    list_filter = ("status", "is_sold", "sold_channel_type", "sold_marketplace", "created_at")
+    list_filter = ("status", "is_deleted", "is_sold", "sold_channel_type", "sold_marketplace", "created_at")
     search_fields = ("ai_title", "raw_note", "ai_description")
     inlines = [ProductImageInline, ProductListingLinkInline, ProductClarificationInline, ProductStatusLogInline]
-    readonly_fields = ("created_at", "updated_at", "sold_at", "batch_session")
+    readonly_fields = ("created_at", "updated_at", "sold_at", "batch_session", "deleted_at", "deleted_by")
+    actions = ["soft_delete_selected", "restore_selected"]
     list_select_related = ("created_by", "batch_session", "sold_marketplace")
 
     def has_module_permission(self, request):
@@ -424,6 +426,30 @@ class ProductAdmin(admin.ModelAdmin):
         return format_html('<span style="color:#475569; font-weight:600;">📦 {}</span>', display)
 
     sale_channel_col.short_description = _("Sale Channel")
+
+    def is_deleted_col(self, obj):
+        if obj.is_deleted:
+            return format_html('<span style="color:#b91c1c; font-weight:700;">🗑️ {}</span>', _("Erased"))
+        return format_html('<span style="color:#16a34a; font-weight:600;">✓ {}</span>', _("Active"))
+
+    is_deleted_col.short_description = _("Catalog State")
+    is_deleted_col.admin_order_field = "is_deleted"
+
+    @admin.action(description=_("Move selected products to trash"))
+    def soft_delete_selected(self, request, queryset):
+        count = 0
+        for p in queryset.filter(is_deleted=False):
+            p.soft_delete(user=request.user)
+            count += 1
+        self.message_user(request, _("Moved %(count)d product(s) to trash.") % {"count": count})
+
+    @admin.action(description=_("Restore selected products from trash"))
+    def restore_selected(self, request, queryset):
+        count = 0
+        for p in queryset.filter(is_deleted=True):
+            p.restore(user=request.user)
+            count += 1
+        self.message_user(request, _("Restored %(count)d product(s) from trash.") % {"count": count})
 
 
 @admin.register(ProductImage, site=admin_site)

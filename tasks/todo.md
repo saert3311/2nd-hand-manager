@@ -2244,14 +2244,14 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 97: Domain Model Expansion, Migrations & Admin Registration (`inventory/models.py`, `inventory/migrations/0018_product_soft_delete.py`, `inventory/admin.py`)
 **Description:** Add fields `is_deleted = models.BooleanField(default=False, db_index=True)`, `deleted_at = models.DateTimeField(null=True, blank=True)`, and `deleted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="deleted_products")` to `Product`. Add helper methods `product.soft_delete(user=None, reason="")` and `product.restore(user=None)` maintaining original status and creating audit records in `ProductStatusLog`. Generate and execute migration `0018_product_soft_delete.py`. Register `is_deleted` and `deleted_at` in `ProductAdmin.list_display` and `list_filter`, and add admin actions `soft_delete_selected` and `restore_selected`.
 **Acceptance criteria:**
-- [ ] `Product` has `is_deleted`, `deleted_at`, and `deleted_by` fields.
-- [ ] `product.soft_delete()` marks `is_deleted=True`, timestamps `deleted_at`, sets `deleted_by`, and writes a `ProductStatusLog` record.
-- [ ] `product.restore()` clears `is_deleted`, `deleted_at`, `deleted_by`, and writes a `ProductStatusLog` record.
-- [ ] Migration `0018_product_soft_delete.py` generated and applied cleanly.
-- [ ] `ProductAdmin` displays `is_deleted` and provides bulk soft-delete and restore actions.
+- [x] `Product` has `is_deleted`, `deleted_at`, and `deleted_by` fields.
+- [x] `product.soft_delete()` marks `is_deleted=True`, timestamps `deleted_at`, sets `deleted_by`, and writes a `ProductStatusLog` record.
+- [x] `product.restore()` clears `is_deleted`, `deleted_at`, `deleted_by`, and writes a `ProductStatusLog` record.
+- [x] Migration `0018_product_soft_delete.py` generated and applied cleanly.
+- [x] `ProductAdmin` displays `is_deleted` and provides bulk soft-delete and restore actions.
 **Verification:**
-- [ ] Migration applies: `.venv\Scripts\python.exe manage.py migrate`
-- [ ] Model tests pass: `.venv\Scripts\python.exe manage.py test tests.test_models`
+- [x] Migration applies: `.venv\Scripts\python.exe manage.py migrate`
+- [x] Model tests pass: `.venv\Scripts\python.exe manage.py test tests.test_models`
 **Dependencies:** None
 **Files likely touched:**
 - `inventory/models.py`
@@ -2324,7 +2324,8 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 - [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
 - [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_product_soft_delete`
 - [ ] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
-- [ ] Linter passes: `.venv\Scriptsuff.exe check .`
+- [ ] Linter passes: `.venv\Scripts
+uff.exe check .`
 **Dependencies:** Task 97, Task 98, Task 99, Task 100
 **Files likely touched:**
 - `locale/es/LC_MESSAGES/django.po`

@@ -199,6 +199,27 @@ class Product(models.Model):
         verbose_name=_("Intake Batch Session"),
         help_text=_("The intake uploading session in which this product was cataloged"),
     )
+    is_deleted = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name=_("Erased / Deleted"),
+        help_text=_("Whether the product is disabled and moved to the erased trash category"),
+    )
+    deleted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Deleted At"),
+        help_text=_("Timestamp when product was moved to trash"),
+    )
+    deleted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="deleted_products",
+        verbose_name=_("Deleted By"),
+        help_text=_("User who moved the product to trash"),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -497,6 +518,70 @@ class Product(models.Model):
                     "updated_at",
                 ]
             )
+
+    def soft_delete(self, user=None, reason="", commit=True):
+        """
+        Marks the product as soft-deleted and records an audit log entry.
+        Preserves original lifecycle status (e.g. DRAFT, READY, SOLD) for seamless restoration.
+        """
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.deleted_by = user if (user and getattr(user, "is_authenticated", False)) else None
+        if user is not None:
+            self._changed_by = user
+        self._status_trigger = "soft_deleted"
+        notes = f"Product moved to trash / erased: {reason}".strip(": ") if reason else "Product moved to trash / erased"
+        self._status_notes = notes
+
+        if commit:
+            self.save(
+                update_fields=[
+                    "is_deleted",
+                    "deleted_at",
+                    "deleted_by",
+                    "updated_at",
+                ]
+            )
+        ProductStatusLog.objects.create(
+            product=self,
+            from_status=self.status,
+            to_status=self.status,
+            changed_by=self.deleted_by,
+            trigger="soft_deleted",
+            notes=notes,
+        )
+
+    def restore(self, user=None, commit=True):
+        """
+        Restores a soft-deleted product back to the active catalog in its previous status.
+        """
+        self.is_deleted = False
+        self.deleted_at = None
+        self.deleted_by = None
+        if user is not None:
+            self._changed_by = user
+        self._status_trigger = "restored"
+        notes = "Product restored from trash back to active catalog"
+        self._status_notes = notes
+
+        if commit:
+            self.save(
+                update_fields=[
+                    "is_deleted",
+                    "deleted_at",
+                    "deleted_by",
+                    "updated_at",
+                ]
+            )
+        acting_user = user if (user and getattr(user, "is_authenticated", False)) else None
+        ProductStatusLog.objects.create(
+            product=self,
+            from_status=self.status,
+            to_status=self.status,
+            changed_by=acting_user,
+            trigger="restored",
+            notes=notes,
+        )
 
     def delete(self, *args, **kwargs):
         token = None
