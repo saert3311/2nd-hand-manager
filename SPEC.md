@@ -27,6 +27,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 23. **Sale Channel Tracking & Commercial Sales Attribution ("Where Was It Sold?"):** Comprehensive commercial sales channel recording on sold items (`sold_channel_type`, `sold_marketplace`, `sold_channel_notes`). Differentiates sales between physical in-store walk-ins (`in_store`), dynamic online marketplace platforms (`marketplace` linked to `MarketplaceSite`), and direct sales (`other`), backed by conditional form validation, detail view quick-pickers, dashboard sub-filtering (`?status=sold&channel=in_store`), and `ProductStatusLog` audit records ([`docs/prds/PRD-sale-channel-tracking.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-sale-channel-tracking.md)).
 24. **Product Soft-Delete, Archival & "Erased" Trash Category ("Trash & Restore"):** Safe, non-destructive product soft-deletion (`is_deleted`, `deleted_at`, `deleted_by`) allowing managers to remove obsolete, damaged, or erroneous items from the staging workflow. Erased products are completely excluded from default catalog views and active status counts, isolated into a dedicated `?status=erased` ("🗑️ Eliminados" / "🗑️ Trash") tab with live count badge, and can be restored back to their exact prior status at any time from the product detail staging view ([`docs/prds/PRD-product-soft-delete-and-archival.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-product-soft-delete-and-archival.md)).
 25. **Product Detail Clarifications Hub ("Direct Notes & Q&A Doubts"):** Unified post-intake clarification and knowledge hub situated directly below the preserved intake notes in `/products/<pk>/`. Enables assistants and managers to record direct supplemental clarifications (measurements, tags, condition, authenticity) without changing lifecycle status or creating blockers, while preserving manager-to-assistant Q&A doubts (`AWAITING_INFO`), with all resolved items directly consumed by Gemini AI copywriting ([`docs/prds/PRD-product-detail-clarifications-hub.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-product-detail-clarifications-hub.md)).
+26. **Intake Mandatory Pre-flight Identification Gate ("Identify Before Save"):** Client-side workflow gate on `/intake/` disabling the primary Save button (`#submitBtn`) by default until pre-flight AI identification (`#identifyBtn`) has been executed. Enforces appraisal benchmark and spec extraction while providing resilient fallback unlocking on network/timeout blips ([`docs/prds/PRD-intake-mandatory-identification-gate.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-intake-mandatory-identification-gate.md)).
 
 ---
 
@@ -555,6 +556,12 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
 - **Form State Machine (`formState`):**
   - Managed in `inventory/templates/inventory/intake.html` via vanilla JavaScript.
   - Three discrete states: `'idle'`, `'identifying'`, and `'submitting'`.
+  - **Pre-Flight Identification Mandatory Gate (`hasIdentified`):**
+    - The Save button (`#submitBtn`) initializes in a disabled state (`disabled = true`, `opacity-50 cursor-not-allowed`) with helper text `#submitHelpText` informing the user: *"Identifica el producto con IA para habilitar el guardado"* / *"Identify product with AI first to enable saving"*.
+    - `#identifyBtn` is enabled as soon as at least 1 photo is selected.
+    - Tapping "Identificar producto" triggers analysis. Upon completion (success OR network/timeout error fallback), `hasIdentified = true` unlocks `#submitBtn` into full active emerald styling.
+    - If individual photos are added or deleted while photos remain, `hasIdentified` stays true and Save remains enabled. If all photos are deleted, `hasIdentified` resets to false and the Save button is re-disabled.
+    - Form submission handler blocks any synthetic or shortcut submits if `!hasIdentified`.
   - **`identifying` State:**
     - Triggered when the assistant clicks "Identificar producto".
     - Disables `#identifyBtn` and displays animated spinner with *"Analizando fotos con IA..."*.
@@ -1149,3 +1156,11 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
     - **Option B (Direct Clarifications Only):** Only allow notes without pending Q&A doubt state.
     - **Option C (Q&A Doubts Only):** Only allow manager questions requiring assistant answers.
     *Decision:* Option A approved — Dual-mode clarifications hub (direct notes + Q&A) in the left column below intake notes with role-appropriate permissions.
+
+33. **Intake Mandatory Pre-flight Identification Gate Architecture:**
+    - How should the Save button gating and pre-flight identification enforcement behave on `/intake/`?
+    - **Option A (Recommended & Selected — Resilient UI Gate with Identification Requirement):**
+      Initialize the Save button (`#submitBtn`) as disabled with guidance text requiring AI identification before saving. Once identification is executed (or in the event of an API error/timeout fallback), unlock the Save button. Retain the unlocked state if photos are modified, but reset to disabled if all photos are removed.
+    - **Option B (Strict Success Only):**
+      Require `data.success === true` before enabling the Save button, permanently blocking saving if the API is offline.
+    *Decision:* Option A approved — Resilient UI gate unlocking on identification attempt with offline fallback and photo reset tracking.
