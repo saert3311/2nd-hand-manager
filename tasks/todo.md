@@ -2392,13 +2392,13 @@ uff.exe check .`
 ### Task 104: Dedicated Action View (`product_add_direct_clarification_view`) & URL Routing with Multi-Role Permissions (`inventory/views.py`, `inventory/urls.py`)
 **Description:** Implement `product_add_direct_clarification_view` at `/products/<pk>/clarifications/add-note/`. Protect with `@login_required` and `@require_POST`. Allow BOTH Store Managers and Sourcing Assistants to submit direct clarification notes. Validate the form, create `ProductClarification` with `is_direct_note=True`, `status=ClarificationStatus.RESOLVED`, `asked_by=request.user`, `answered_by=request.user`, and `answered_at=timezone.now()`. Ensure product status is NOT changed to `AWAITING_INFO`. Provide a success message and redirect back to `/products/<pk>/#clarifications-section`. Maintain manager-only restriction on `product_add_clarification_view` (Q&A doubts) and `product_delete_clarification_view`.
 **Acceptance criteria:**
-- [ ] Endpoint `/products/<pk>/clarifications/add-note/` registered in `inventory/urls.py`.
-- [ ] POST request by assistant or manager creates a direct resolved clarification note.
-- [ ] Product status is unchanged (does not transition to `AWAITING_INFO`).
-- [ ] GET request or unauthenticated access is rejected/redirected.
-- [ ] Only managers can access standard doubt creation (`add_clarification`).
+- [x] Endpoint `/products/<pk>/clarifications/add-note/` registered in `inventory/urls.py`.
+- [x] POST request by assistant or manager creates a direct resolved clarification note.
+- [x] Product status is unchanged (does not transition to `AWAITING_INFO`).
+- [x] GET request or unauthenticated access is rejected/redirected.
+- [x] Only managers can access standard doubt creation (`add_clarification`).
 **Verification:**
-- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_views tests.test_clarifications`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_views tests.test_clarifications`
 **Dependencies:** Task 102, Task 103
 **Files likely touched:**
 - `inventory/views.py`
