@@ -2297,13 +2297,13 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 100: Dashboard Catalog Filtering, Erased Tab Navigation Pill, Aggregate Count Isolation & Search Scoping (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`)
 **Description:** Update `dashboard_view` in `inventory/views.py` and `inventory/templates/inventory/dashboard.html`: (1) Filter out soft-deleted products (`is_deleted=False`) in all standard tabs (`all`, `active`, `draft`, `price_pending`, `ready`, `published`, `awaiting_info`, `sold`, `blocked`). (2) Calculate all standard status counts over non-deleted products (`is_deleted=False`). (3) Add `erased_count = Count("id", filter=Q(is_deleted=True), distinct=True)` to aggregate counts. (4) Add support for `status=erased` returning exclusively erased products (`is_deleted=True`). (5) Add `🗑️ Eliminados` / `🗑️ Trash` tab pill in `dashboard.html` with `erased_count` badge. (6) Scope multi-field search: global searches never return erased items; searching while on `status=erased` searches within erased items.
 **Acceptance criteria:**
-- [ ] Erased items are excluded from `all`, `active`, `draft`, `ready`, `sold`, etc.
-- [ ] Standard count badges do not count erased items.
-- [ ] `?status=erased` displays only erased products.
-- [ ] `🗑️ Eliminados (N)` tab pill renders on the dashboard with live count.
-- [ ] Search isolates active vs. erased products appropriately.
+- [x] Erased items are excluded from `all`, `active`, `draft`, `ready`, `sold`, etc.
+- [x] Standard count badges do not count erased items.
+- [x] `?status=erased` displays only erased products.
+- [x] `🗑️ Eliminados (N)` tab pill renders on the dashboard with live count.
+- [x] Search isolates active vs. erased products appropriately.
 **Verification:**
-- [ ] Targeted tests pass.
+- [x] Targeted tests pass.
 **Dependencies:** Task 97
 **Files likely touched:**
 - `inventory/views.py`

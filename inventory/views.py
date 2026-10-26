@@ -191,11 +191,11 @@ def dashboard_view(request):
 
     # Query only marketplace sites that have at least one active published product
     available_platforms = (
-        MarketplaceSite.objects.filter(product_links__is_active=True)
+        MarketplaceSite.objects.filter(product_links__is_active=True, product_links__product__is_deleted=False)
         .annotate(
             published_count=Count(
                 "product_links__product",
-                filter=Q(product_links__is_active=True),
+                filter=Q(product_links__is_active=True, product_links__product__is_deleted=False),
                 distinct=True,
             )
         )
@@ -211,32 +211,36 @@ def dashboard_view(request):
             listing_links__is_active=True,
         ).distinct()
 
-    if status_filter == "active":
-        products = products.filter(is_sold=False)
-    elif status_filter == "sold":
-        products = products.filter(is_sold=True)
-        if channel_filter == "in_store":
-            products = products.filter(sold_channel_type=SaleChannelType.IN_STORE)
-        elif channel_filter == "marketplace":
-            products = products.filter(sold_channel_type=SaleChannelType.MARKETPLACE)
-            if platform_filter:
-                products = products.filter(sold_marketplace__slug=platform_filter)
-        elif channel_filter == "other":
-            products = products.filter(sold_channel_type=SaleChannelType.OTHER)
-    elif status_filter == "awaiting_info":
-        products = products.filter(
-            Q(status=ProductStatus.AWAITING_INFO) | Q(clarifications__status=ClarificationStatus.PENDING, is_sold=False)
-        ).distinct()
-    elif status_filter == "price_pending":
-        products = products.filter(status=ProductStatus.PRICE_PENDING)
-    elif status_filter == "published":
-        products = products.filter(status=ProductStatus.PUBLISHED)
-    elif status_filter == "blocked":
-        products = products.filter(status=ProductStatus.BLOCKED)
-    elif status_filter == "ready":
-        products = products.filter(status=ProductStatus.READY)
-    elif status_filter == "draft":
-        products = products.filter(status=ProductStatus.DRAFT)
+    if status_filter == "erased":
+        products = products.filter(is_deleted=True)
+    else:
+        products = products.filter(is_deleted=False)
+        if status_filter == "active":
+            products = products.filter(is_sold=False)
+        elif status_filter == "sold":
+            products = products.filter(is_sold=True)
+            if channel_filter == "in_store":
+                products = products.filter(sold_channel_type=SaleChannelType.IN_STORE)
+            elif channel_filter == "marketplace":
+                products = products.filter(sold_channel_type=SaleChannelType.MARKETPLACE)
+                if platform_filter:
+                    products = products.filter(sold_marketplace__slug=platform_filter)
+            elif channel_filter == "other":
+                products = products.filter(sold_channel_type=SaleChannelType.OTHER)
+        elif status_filter == "awaiting_info":
+            products = products.filter(
+                Q(status=ProductStatus.AWAITING_INFO) | Q(clarifications__status=ClarificationStatus.PENDING, is_sold=False)
+            ).distinct()
+        elif status_filter == "price_pending":
+            products = products.filter(status=ProductStatus.PRICE_PENDING)
+        elif status_filter == "published":
+            products = products.filter(status=ProductStatus.PUBLISHED)
+        elif status_filter == "blocked":
+            products = products.filter(status=ProductStatus.BLOCKED)
+        elif status_filter == "ready":
+            products = products.filter(status=ProductStatus.READY)
+        elif status_filter == "draft":
+            products = products.filter(status=ProductStatus.DRAFT)
 
     if search_query:
         products = products.filter(build_search_query(search_query))
@@ -250,31 +254,32 @@ def dashboard_view(request):
         ).distinct()
 
     counts = counts_qs.aggregate(
-        total_count=Count("id", distinct=True),
-        active_count=Count("id", filter=Q(is_sold=False), distinct=True),
-        price_pending_count=Count("id", filter=Q(status=ProductStatus.PRICE_PENDING), distinct=True),
+        total_count=Count("id", filter=Q(is_deleted=False), distinct=True),
+        active_count=Count("id", filter=Q(is_sold=False, is_deleted=False), distinct=True),
+        price_pending_count=Count("id", filter=Q(status=ProductStatus.PRICE_PENDING, is_deleted=False), distinct=True),
         awaiting_info_count=Count(
             "id",
-            filter=Q(status=ProductStatus.AWAITING_INFO) | Q(clarifications__status=ClarificationStatus.PENDING, is_sold=False),
+            filter=(Q(status=ProductStatus.AWAITING_INFO) | Q(clarifications__status=ClarificationStatus.PENDING, is_sold=False)) & Q(is_deleted=False),
             distinct=True,
         ),
-        sold_count=Count("id", filter=Q(status=ProductStatus.SOLD), distinct=True),
+        sold_count=Count("id", filter=Q(status=ProductStatus.SOLD, is_deleted=False), distinct=True),
         sold_in_store_count=Count(
             "id",
-            filter=Q(status=ProductStatus.SOLD, sold_channel_type=SaleChannelType.IN_STORE),
+            filter=Q(status=ProductStatus.SOLD, sold_channel_type=SaleChannelType.IN_STORE, is_deleted=False),
             distinct=True,
         ),
         sold_marketplace_count=Count(
             "id",
-            filter=Q(status=ProductStatus.SOLD, sold_channel_type=SaleChannelType.MARKETPLACE),
+            filter=Q(status=ProductStatus.SOLD, sold_channel_type=SaleChannelType.MARKETPLACE, is_deleted=False),
             distinct=True,
         ),
         sold_other_count=Count(
             "id",
-            filter=Q(status=ProductStatus.SOLD, sold_channel_type=SaleChannelType.OTHER),
+            filter=Q(status=ProductStatus.SOLD, sold_channel_type=SaleChannelType.OTHER, is_deleted=False),
             distinct=True,
         ),
-        blocked_count=Count("id", filter=Q(status=ProductStatus.BLOCKED), distinct=True),
+        blocked_count=Count("id", filter=Q(status=ProductStatus.BLOCKED, is_deleted=False), distinct=True),
+        erased_count=Count("id", filter=Q(is_deleted=True), distinct=True),
     )
 
     paginator = Paginator(products, PAGE_SIZE)
@@ -314,6 +319,7 @@ def dashboard_view(request):
         "sold_other_count": counts["sold_other_count"] or 0,
         "channel_filter": channel_filter,
         "blocked_count": counts["blocked_count"] or 0,
+        "erased_count": counts["erased_count"] or 0,
         "can_manage": is_manager(request.user),
     }
     return render(request, "inventory/dashboard.html", context)
