@@ -26,6 +26,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 22. **Consolidated Intake Session Notifications ("Debounced Manager Push Alerts"):** Database-backed debounced sourcing session engine (`IntakeBatchSession`) bundling consecutive product uploads by an assistant within a 15-minute sliding inactivity window into a single consolidated Web Push alert to store managers (`📦 Lote completado: [X] nuevos productos`), eliminating notification spam while keeping urgent clarification doubts instant ([`docs/prds/PRD-consolidated-intake-session-notifications.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-consolidated-intake-session-notifications.md)).
 23. **Sale Channel Tracking & Commercial Sales Attribution ("Where Was It Sold?"):** Comprehensive commercial sales channel recording on sold items (`sold_channel_type`, `sold_marketplace`, `sold_channel_notes`). Differentiates sales between physical in-store walk-ins (`in_store`), dynamic online marketplace platforms (`marketplace` linked to `MarketplaceSite`), and direct sales (`other`), backed by conditional form validation, detail view quick-pickers, dashboard sub-filtering (`?status=sold&channel=in_store`), and `ProductStatusLog` audit records ([`docs/prds/PRD-sale-channel-tracking.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-sale-channel-tracking.md)).
 24. **Product Soft-Delete, Archival & "Erased" Trash Category ("Trash & Restore"):** Safe, non-destructive product soft-deletion (`is_deleted`, `deleted_at`, `deleted_by`) allowing managers to remove obsolete, damaged, or erroneous items from the staging workflow. Erased products are completely excluded from default catalog views and active status counts, isolated into a dedicated `?status=erased` ("🗑️ Eliminados" / "🗑️ Trash") tab with live count badge, and can be restored back to their exact prior status at any time from the product detail staging view ([`docs/prds/PRD-product-soft-delete-and-archival.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-product-soft-delete-and-archival.md)).
+25. **Product Detail Clarifications Hub ("Direct Notes & Q&A Doubts"):** Unified post-intake clarification and knowledge hub situated directly below the preserved intake notes in `/products/<pk>/`. Enables assistants and managers to record direct supplemental clarifications (measurements, tags, condition, authenticity) without changing lifecycle status or creating blockers, while preserving manager-to-assistant Q&A doubts (`AWAITING_INFO`), with all resolved items directly consumed by Gemini AI copywriting ([`docs/prds/PRD-product-detail-clarifications-hub.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-product-detail-clarifications-hub.md)).
 
 ---
 
@@ -290,10 +291,11 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
 | `id` | AutoField | Primary Key | Unique clarification question identifier |
 | `product` | ForeignKey(Product) | related_name='clarifications', on_delete=CASCADE | Parent product under review |
 | `category` | CharField | max_length=30, choices=[measurements, tag_composition, flaws_condition, material_authenticity, general] | Question category for structured classification |
-| `question` | TextField | blank=False | Clarification question submitted by manager |
-| `asked_by` | ForeignKey(User) | null=True, blank=True, on_delete=SET_NULL, related_name='asked_clarifications' | Manager who posted the question |
-| `answer` | TextField | blank=True, default="" | Response submitted by assistant |
-| `answered_by` | ForeignKey(User) | null=True, blank=True, on_delete=SET_NULL, related_name='answered_clarifications' | Assistant who answered the question |
+| `is_direct_note` | BooleanField | default=False, db_index=True | Whether entry is a direct post-intake note (True) or a pending manager doubt (False) |
+| `question` | TextField | max_length=2000, blank=False | Clarification question submitted by manager (or note summary for direct notes) |
+| `asked_by` | ForeignKey(User) | null=True, blank=True, on_delete=SET_NULL, related_name='asked_clarifications' | User who posted the question or direct note |
+| `answer` | TextField | max_length=3000, blank=True, default="" | Response submitted by assistant (or note content for direct notes) |
+| `answered_by` | ForeignKey(User) | null=True, blank=True, on_delete=SET_NULL, related_name='answered_clarifications' | Assistant who answered the question (or author for direct notes) |
 | `status` | CharField | max_length=20, default='pending', choices=[pending, resolved] | Status of the clarification request |
 | `created_at` | DateTimeField | auto_now_add=True | Question submission timestamp |
 | `answered_at` | DateTimeField | null=True, blank=True | Answer timestamp |
@@ -703,6 +705,20 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
 4. **Search Isolation:**
    - Keyword search across active catalog views will never return erased items.
    - Searching within `?status=erased&q=...` searches specifically among erased products.
+
+### 6.19 Product Detail Clarifications Hub ("Direct Notes & Q&A Doubts")
+1. **Unified Left-Column Placement:**
+   - Positioned in the Left Column (`lg:col-span-5`) of `/products/<pk>/` directly beneath "Preserved Intake Notes", establishing an all-in-one factual knowledge base alongside photos.
+2. **Dual-Mode Clarifications Support:**
+   - **Direct Clarification Notes (`is_direct_note=True`):** Immediate post-intake details (measurements, brand tags, materials, flaws) added by assistants or managers. Automatically created in `RESOLVED` status without changing product lifecycle status or triggering blocking states.
+   - **Manager Doubt Inquiries (`is_direct_note=False`):** Formal Q&A doubts opened by store managers requesting missing data from assistants. Automatically transitions product status to `AWAITING_INFO` and notifies assistants.
+3. **Role-Gated Controls:**
+   - Both Sourcing Assistants and Store Managers can add direct clarification notes.
+   - Only Store Managers can open pending doubt inquiries or dismiss/delete clarification items.
+   - Both roles can answer pending doubts.
+4. **AI Vision Copywriting Integration:**
+   - All resolved clarifications (both direct notes and answered Q&As) are included in the Gemini AI prompt.
+   - The unapplied clarifications callout (`has_unapplied_clarifications`) indicates when new notes are available for copy regeneration.
 
 ## 7. AI Service Contract (`ai_service.py`)
 ```python
@@ -1125,3 +1141,11 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
       Permanently delete the database row and call OCI Object Storage to purge image files. Risk of irreversible data loss, broken audit history, and orphaned references.
     *Which archival and deletion architecture do you prefer?*
     - **Decision:** Option A approved — Non-destructive soft-delete with dedicated erased category and full restoration capability.
+
+32. **Product Detail Clarifications Hub Architecture & Placement:**
+    - How should product clarifications and post-intake supplemental notes be supported and positioned in `/products/<pk>/`?
+    - **Option A (Recommended & Selected — Dual-Mode Hub in Left Column):**
+      Support both **Direct Clarifications/Notes** (instant info discovered after intake by assistants or managers without blocking status) and **Manager Doubt Inquiries** (Q&A transitioning to `AWAITING_INFO`), located in the Left Column directly below "Preserved Intake Notes" to form a cohesive factual details hub.
+    - **Option B (Direct Clarifications Only):** Only allow notes without pending Q&A doubt state.
+    - **Option C (Q&A Doubts Only):** Only allow manager questions requiring assistant answers.
+    *Decision:* Option A approved — Dual-mode clarifications hub (direct notes + Q&A) in the left column below intake notes with role-appropriate permissions.
