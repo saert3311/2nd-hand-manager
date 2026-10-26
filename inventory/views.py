@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.core.validators import URLValidator
 from django.db import transaction
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Count, Max, Prefetch, Q
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -190,6 +190,7 @@ def dashboard_view(request):
     search_query = request.GET.get("q", "").strip()
     platform_filter = request.GET.get("platform", "").strip().lower()
     channel_filter = request.GET.get("channel", "").strip().lower()
+    sync_filter = request.GET.get("sync", "").strip().lower()
 
     # Query only marketplace sites that have at least one active published product
     available_platforms = (
@@ -237,6 +238,8 @@ def dashboard_view(request):
             products = products.filter(status=ProductStatus.PRICE_PENDING)
         elif status_filter == "published":
             products = products.filter(status=ProductStatus.PUBLISHED)
+            if sync_filter == "out_of_sync":
+                products = products.filter(needs_platform_sync=True)
         elif status_filter == "blocked":
             products = products.filter(status=ProductStatus.BLOCKED)
         elif status_filter == "ready":
@@ -280,6 +283,12 @@ def dashboard_view(request):
             filter=Q(status=ProductStatus.SOLD, sold_channel_type=SaleChannelType.OTHER, is_deleted=False),
             distinct=True,
         ),
+        published_count=Count("id", filter=Q(status=ProductStatus.PUBLISHED, is_deleted=False), distinct=True),
+        out_of_sync_count=Count(
+            "id",
+            filter=Q(status=ProductStatus.PUBLISHED, needs_platform_sync=True, is_deleted=False),
+            distinct=True,
+        ),
         blocked_count=Count("id", filter=Q(status=ProductStatus.BLOCKED, is_deleted=False), distinct=True),
         erased_count=Count("id", filter=Q(is_deleted=True), distinct=True),
     )
@@ -320,6 +329,9 @@ def dashboard_view(request):
         "sold_marketplace_count": counts["sold_marketplace_count"] or 0,
         "sold_other_count": counts["sold_other_count"] or 0,
         "channel_filter": channel_filter,
+        "sync_filter": sync_filter,
+        "published_count": counts["published_count"] or 0,
+        "out_of_sync_count": counts["out_of_sync_count"] or 0,
         "blocked_count": counts["blocked_count"] or 0,
         "erased_count": counts["erased_count"] or 0,
         "can_manage": is_manager(request.user),
@@ -366,6 +378,29 @@ def product_detail_view(request, pk):
             else:
                 updated_product.sold_at = None
             updated_product.save(changed_by=request.user)
+
+            files = request.FILES.getlist("images")
+            if files:
+                current_count = product.images.count()
+                if current_count + len(files) <= 10:
+                    with transaction.atomic():
+                        max_order = product.images.aggregate(m=Max("order"))["m"]
+                        start_order = 0 if max_order is None else max_order + 1
+                        for idx, uploaded_file in enumerate(files):
+                            webp_file = process_and_convert_to_webp(uploaded_file)
+                            ProductImage.objects.create(
+                                product=product,
+                                image=webp_file,
+                                order=start_order + idx,
+                            )
+                        is_published = (
+                            product.status == ProductStatus.PUBLISHED
+                            or product.listing_links.filter(is_active=True).exists()
+                        )
+                        if is_published and not product.needs_platform_sync:
+                            product.needs_platform_sync = True
+                            product.save(update_fields=["needs_platform_sync"])
+
             messages.success(request, _("Product listing updated successfully."))
             return redirect("inventory:product_detail", pk=pk)
     else:
@@ -889,10 +924,22 @@ def product_reorder_images_view(request, pk):
             status=400,
         )
 
+    initial_primary = product.images.order_by("order", "id").first()
+    initial_primary_id = initial_primary.id if initial_primary else None
+
     # Update order atomically
     with transaction.atomic():
         for order_idx, img_id in enumerate(image_ids):
             ProductImage.objects.filter(id=img_id, product=product).update(order=order_idx)
+
+        is_published = (
+            product.status == ProductStatus.PUBLISHED
+            or product.listing_links.filter(is_active=True).exists()
+        )
+        if is_published and image_ids and image_ids[0] != initial_primary_id:
+            if not product.needs_platform_sync:
+                product.needs_platform_sync = True
+                product.save(update_fields=["needs_platform_sync"])
 
     # Return updated list and new primary image url
     primary_image = product.images.order_by("order", "id").first()
@@ -903,4 +950,114 @@ def product_reorder_images_view(request, pk):
         "reordered_ids": image_ids,
         "primary_image_url": primary_image_url,
     })
+
+@login_required
+@manager_required
+@require_POST
+def product_upload_images_view(request, pk):
+    """
+    Allows managers to upload additional photos for an existing product.
+    Enforces maximum of 10 photos total, processes images into WebP,
+    and flags needs_platform_sync = True if product is published.
+    """
+    product = get_object_or_404(Product, pk=pk)
+    files = request.FILES.getlist("images")
+    if not files:
+        messages.error(request, _("Please select at least one photo to upload."))
+        return redirect("inventory:product_detail", pk=pk)
+
+    current_count = product.images.count()
+    if current_count + len(files) > 10:
+        messages.error(
+            request,
+            _("Cannot upload %(new)d photo(s). Product already has %(current)d photo(s) (maximum is 10).")
+            % {"new": len(files), "current": current_count},
+        )
+        return redirect("inventory:product_detail", pk=pk)
+
+    try:
+        with transaction.atomic():
+            max_order = product.images.aggregate(m=Max("order"))["m"]
+            start_order = 0 if max_order is None else max_order + 1
+            for idx, uploaded_file in enumerate(files):
+                webp_file = process_and_convert_to_webp(uploaded_file)
+                ProductImage.objects.create(
+                    product=product,
+                    image=webp_file,
+                    order=start_order + idx,
+                )
+
+            is_published = (
+                product.status == ProductStatus.PUBLISHED
+                or product.listing_links.filter(is_active=True).exists()
+            )
+            if is_published and not product.needs_platform_sync:
+                product.needs_platform_sync = True
+                product.save(update_fields=["needs_platform_sync"])
+
+        messages.success(
+            request,
+            _("Successfully added %(count)d photo(s).") % {"count": len(files)},
+        )
+    except ValidationError as ve:
+        messages.error(request, str(ve.message if hasattr(ve, "message") else ve))
+    except Exception as exc:
+        messages.error(request, _("Error processing uploaded photos: %(error)s") % {"error": str(exc)})
+
+    return redirect("inventory:product_detail", pk=pk)
+
+
+@login_required
+@manager_required
+@require_POST
+def product_delete_image_view(request, pk, image_id):
+    """
+    Allows managers to delete a specific photo from a product.
+    Requires at least 1 photo to remain.
+    Reindexes remaining photos to maintain clean order indexing (0, 1, 2...).
+    If the product is published, flags needs_platform_sync = True.
+    """
+    product = get_object_or_404(Product, pk=pk)
+    image = get_object_or_404(ProductImage, id=image_id, product=product)
+
+    if product.images.count() <= 1:
+        messages.error(
+            request,
+            _("Cannot delete the only photo. Each product must have at least one photo."),
+        )
+        return redirect("inventory:product_detail", pk=pk)
+
+    with transaction.atomic():
+        image.delete()
+
+        # Re-index remaining images
+        remaining_images = product.images.order_by("order", "id")
+        for idx, img in enumerate(remaining_images):
+            if img.order != idx:
+                ProductImage.objects.filter(id=img.id).update(order=idx)
+
+        is_published = (
+            product.status == ProductStatus.PUBLISHED
+            or product.listing_links.filter(is_active=True).exists()
+        )
+        if is_published and not product.needs_platform_sync:
+            product.needs_platform_sync = True
+            product.save(update_fields=["needs_platform_sync"])
+
+    messages.success(request, _("Photo deleted successfully."))
+    return redirect("inventory:product_detail", pk=pk)
+
+
+@login_required
+@manager_required
+@require_POST
+def product_mark_platform_synced_view(request, pk):
+    """
+    Allows managers to mark a published product's external listings as synchronized.
+    Clears needs_platform_sync and records an audit log entry.
+    """
+    product = get_object_or_404(Product, pk=pk)
+    product.mark_platform_synced(user=request.user)
+    messages.success(request, _("Platforms marked as updated successfully."))
+    return redirect("inventory:product_detail", pk=pk)
 

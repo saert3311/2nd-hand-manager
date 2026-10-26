@@ -2710,13 +2710,13 @@ uff.exe check .`
 5. Create and apply database migration `0020_product_platform_sync.py`.
 6. Register `needs_platform_sync` in `ProductAdmin` list display and filters in `inventory/admin.py`.
 **Acceptance criteria:**
-- [ ] Model fields created with indexes and bilingual labels.
-- [ ] Schema migration applies cleanly with backward compatibility.
-- [ ] Changes to published product attributes flag `needs_platform_sync = True`.
-- [ ] `mark_platform_synced()` clears flag and records audit trail.
+- [x] Model fields created with indexes and bilingual labels.
+- [x] Schema migration applies cleanly with backward compatibility.
+- [x] Changes to published product attributes flag `needs_platform_sync = True`.
+- [x] `mark_platform_synced()` clears flag and records audit trail.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
 **Dependencies:** None
 **Files likely touched:**
 - `inventory/models.py`
@@ -2732,12 +2732,12 @@ uff.exe check .`
 2. Implement `product_delete_image_view` at `POST /products/<pk>/images/<image_id>/delete/` strictly restricted to managers, ensuring at least 1 image is retained.
 3. Automatically set `needs_platform_sync = True` if the product is published when photos are added or deleted.
 **Acceptance criteria:**
-- [ ] Managers can attach new photos to existing products in `/products/<pk>/`.
-- [ ] Uploaded photos are compressed to WebP and appended sequentially.
-- [ ] Managers can delete photos while preserving at least 1 photo.
-- [ ] Sourcing assistants cannot delete or upload photos in `/products/<pk>/`.
+- [x] Managers can attach new photos to existing products in `/products/<pk>/`.
+- [x] Uploaded photos are compressed to WebP and appended sequentially.
+- [x] Managers can delete photos while preserving at least 1 photo.
+- [x] Sourcing assistants cannot delete or upload photos in `/products/<pk>/`.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
 **Dependencies:** Task 115
 **Files likely touched:**
 - `inventory/views.py`
@@ -2753,11 +2753,11 @@ uff.exe check .`
 2. Add an accessible, high-contrast warning banner at the top of `/products/<pk>/` when `needs_platform_sync=True`, featuring the "Marcar plataformas como actualizadas" action button.
 3. Add a photo upload dropzone and delete buttons on thumbnails in the Photo Gallery card for managers.
 **Acceptance criteria:**
-- [ ] Prominent workspace banner renders when published product has pending updates.
-- [ ] Tapping "Marcar plataformas como actualizadas" clears the flag and displays a success notice.
-- [ ] Photo Gallery card provides upload dropzone and thumbnail delete controls for managers.
+- [x] Prominent workspace banner renders when published product has pending updates.
+- [x] Tapping "Marcar plataformas como actualizadas" clears the flag and displays a success notice.
+- [x] Photo Gallery card provides upload dropzone and thumbnail delete controls for managers.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
 **Dependencies:** Tasks 115, 116
 **Files likely touched:**
 - `inventory/views.py`
@@ -2773,11 +2773,11 @@ uff.exe check .`
 2. Compute `out_of_sync_count` efficiently in the main dashboard aggregate query.
 3. Render an amber `⚠️ Actualizar plataformas` badge on product cards when `needs_platform_sync=True`.
 **Acceptance criteria:**
-- [ ] Dashboard displays `?status=published&sync=out_of_sync` sub-filter with accurate count.
-- [ ] Only out-of-sync published products are returned when filter is active.
-- [ ] Product cards render visible amber indicators.
+- [x] Dashboard displays `?status=published&sync=out_of_sync` sub-filter with accurate count.
+- [x] Only out-of-sync published products are returned when filter is active.
+- [x] Product cards render visible amber indicators.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
 **Dependencies:** Task 115
 **Files likely touched:**
 - `inventory/views.py`
@@ -2793,16 +2793,16 @@ uff.exe check .`
 3. Run full automated test suite (424+ tests) and `ruff check .`.
 4. Update `CHANGELOG.md` under `## [Unreleased]`.
 **Acceptance criteria:**
-- [ ] Translations compiled with 0 errors.
-- [ ] New automated tests pass 100%.
-- [ ] Full test suite passes with zero regressions.
-- [ ] `ruff check .` passes with 0 warnings.
-- [ ] `CHANGELOG.md` updated with Phase 33 entries.
+- [x] Translations compiled with 0 errors.
+- [x] New automated tests pass 100%.
+- [x] Full test suite passes with zero regressions.
+- [x] `ruff check .` passes with 0 warnings.
+- [x] `CHANGELOG.md` updated with Phase 33 entries.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
-- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_published_platform_sync`
-- [ ] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
-- [ ] Linter passes: `.venv\Scripts\ruff.exe check .`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_published_platform_sync`
+- [x] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check .`
 **Dependencies:** Tasks 115, 116, 117, 118
 **Files likely touched:**
 - `locale/es/LC_MESSAGES/django.po`
@@ -2814,10 +2814,10 @@ uff.exe check .`
 ---
 
 ## Checkpoint 33: Published Product Modifications & Platform Sync Complete
-- [ ] `needs_platform_sync` automatically triggers upon price, copy, photo, or clarification changes on published products.
-- [ ] Managers can upload additional photos and delete photos directly in `/products/<pk>/`.
-- [ ] Workspace renders prominent out-of-sync banner with 1-click sync clearance.
-- [ ] Dashboard provides `?status=published&sync=out_of_sync` sub-filtering with live counter.
-- [ ] Full bilingual Spanish/English localization compiled.
-- [ ] 100% test pass rate with 0 regressions.
-- [ ] `ruff check .` passes cleanly.
+- [x] `needs_platform_sync` automatically triggers upon price, copy, photo, or clarification changes on published products.
+- [x] Managers can upload additional photos and delete photos directly in `/products/<pk>/`.
+- [x] Workspace renders prominent out-of-sync banner with 1-click sync clearance.
+- [x] Dashboard provides `?status=published&sync=out_of_sync` sub-filtering with live counter.
+- [x] Full bilingual Spanish/English localization compiled.
+- [x] 100% test pass rate with 0 regressions.
+- [x] `ruff check .` passes cleanly.

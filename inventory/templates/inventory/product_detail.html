@@ -69,6 +69,40 @@
     </div>
   </div>
 
+  <!-- Out-of-Sync Warning Banner -->
+  {% if product.needs_platform_sync %}
+  <div id="platformSyncBanner" class="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-2xl shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" role="alert">
+    <div class="flex items-start sm:items-center gap-3">
+      <span class="text-3xl" aria-hidden="true">⚠️</span>
+      <div>
+        <h3 class="text-sm sm:text-base font-bold text-amber-950 flex items-center gap-2">
+          <span>{% trans "Update Required on Marketplaces" %}</span>
+          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 uppercase tracking-wider">
+            {% trans "Out of Sync" %}
+          </span>
+        </h3>
+        <p class="text-xs sm:text-sm text-amber-900 mt-1">
+          {% trans "This product was modified after publication. External listings (Wallapop, Vinted, etc.) may have outdated details or photos." %}
+        </p>
+        {% if product.last_platform_synced_at %}
+        <p class="text-xs text-amber-700 mt-0.5">
+          {% trans "Last marked as synchronized:" %} {{ product.last_platform_synced_at|date:"Y-m-d H:i" }}
+        </p>
+        {% endif %}
+      </div>
+    </div>
+    {% if can_manage %}
+    <form method="post" action="{% url 'inventory:product_mark_platform_synced' product.pk %}" class="shrink-0">
+      {% csrf_token %}
+      <button type="submit" id="btnMarkPlatformSynced"
+              class="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition active:scale-95 cursor-pointer">
+        <span>✅</span> {% trans "Mark Platforms as Updated" %}
+      </button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <!-- Trash Warning Banner if Soft-Deleted -->
   {% if product.is_deleted %}
   <div id="erasedProductBanner" class="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-2xl shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" role="alert">
@@ -146,6 +180,20 @@
               {% if forloop.first %}⭐ #1{% else %}#{{ forloop.counter }}{% endif %}
             </span>
 
+            {% if can_manage and product.images.count > 1 %}
+            <!-- Delete Photo Form Button -->
+            <form method="post" action="{% url 'inventory:product_delete_image' product.pk img_obj.id %}"
+                  class="thumb-delete-form absolute top-1 right-1 z-20"
+                  onsubmit="return confirm('{% trans "Are you sure you want to delete this photo?" %}');">
+              {% csrf_token %}
+              <button type="submit"
+                      class="w-6 h-6 rounded-full bg-rose-600/90 hover:bg-rose-700 text-white flex items-center justify-center text-xs font-black shadow-sm transition active:scale-90 cursor-pointer"
+                      title="{% trans 'Delete photo' %}" aria-label="{% trans 'Delete photo' %}">
+                ✕
+              </button>
+            </form>
+            {% endif %}
+
             {% if can_manage %}
             <!-- Reorder Controls Bar (shown when reorder mode is active) -->
             <div class="thumb-reorder-controls hidden absolute bottom-1 inset-x-1 flex items-center justify-between gap-0.5 z-10 bg-slate-900/85 backdrop-blur-xs p-1 rounded-lg">
@@ -160,6 +208,31 @@
           </div>
           {% endfor %}
         </div>
+
+        {% if can_manage and product.images.count < 10 %}
+        <!-- Add More Photos Section -->
+        <div class="pt-3 border-t border-slate-100">
+          <form method="post" action="{% url 'inventory:product_upload_images' product.pk %}" enctype="multipart/form-data" class="space-y-2">
+            {% csrf_token %}
+            <div class="flex items-center justify-between">
+              <label for="detailPhotoInput" class="text-xs font-bold text-slate-700 uppercase tracking-wider cursor-pointer">
+                {% trans "Add More Photos" %}
+              </label>
+              <span class="text-xs text-slate-400">
+                {% trans "Max 10 total" %} ({{ product.images.count }}/10)
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="file" name="images" id="detailPhotoInput" multiple accept="image/*"
+                     class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-200 rounded-lg p-1 bg-slate-50 cursor-pointer">
+              <button type="submit" id="btnUploadDetailPhotos"
+                      class="shrink-0 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm transition flex items-center gap-1 active:scale-95 cursor-pointer">
+                <span>⬆️</span> {% trans "Upload" %}
+              </button>
+            </div>
+          </form>
+        </div>
+        {% endif %}
         {% else %}
         <div class="aspect-square bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 text-sm">
           {% trans "No photos attached." %}
@@ -1109,11 +1182,13 @@
       const controlBars = document.querySelectorAll('.thumb-reorder-controls');
       const thumbItems = document.querySelectorAll('.gallery-thumb-item');
 
+      const deleteForms = document.querySelectorAll('.thumb-delete-form');
       if (isReorderMode) {
         toggleReorderBtn.className = 'text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-600 rounded-lg px-2.5 py-1 transition flex items-center gap-1 active:scale-95 shadow-xs';
         toggleReorderIcon.textContent = '✓';
         toggleReorderText.textContent = "{% trans 'Done' %}";
         controlBars.forEach(bar => bar.classList.remove('hidden'));
+        deleteForms.forEach(f => f.classList.add('hidden'));
         thumbItems.forEach(item => {
           item.setAttribute('draggable', 'true');
         });
@@ -1122,6 +1197,7 @@
         toggleReorderIcon.textContent = '🔄';
         toggleReorderText.textContent = "{% trans 'Reorder' %}";
         controlBars.forEach(bar => bar.classList.add('hidden'));
+        deleteForms.forEach(f => f.classList.remove('hidden'));
         thumbItems.forEach(item => {
           item.removeAttribute('draggable');
         });

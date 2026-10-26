@@ -51,6 +51,24 @@
           </span>
         </a>
 
+        <!-- Published -->
+        <a href="?status=published{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+           role="tab"
+           id="tab-published"
+           aria-selected="{% if status_filter == 'published' %}true{% else %}false{% endif %}"
+           class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'published' %}bg-white text-blue-900 shadow-xs ring-1 ring-blue-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
+          <span aria-hidden="true">🚀</span>
+          <span>{% trans "Published" %}</span>
+          <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs {% if status_filter == 'published' %}bg-blue-100 text-blue-800 font-bold{% else %}bg-slate-200/80 text-slate-600{% endif %}">
+            ({{ published_count }})
+          </span>
+          {% if out_of_sync_count > 0 %}
+          <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] bg-amber-500 text-white font-black animate-pulse" title="{% trans 'Out of sync listings' %}">
+            ⚠️ {{ out_of_sync_count }}
+          </span>
+          {% endif %}
+        </a>
+
         <!-- Price Pending -->
         <a href="?status=price_pending{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
@@ -192,6 +210,23 @@
     </div>
 
     <!-- Tertiary Filter Bar: Sale Channels (When viewing Sold tab) -->
+    {% if status_filter == 'published' %}
+    <div class="flex items-center gap-2 pt-2.5 border-t border-slate-100 overflow-x-auto no-scrollbar py-1">
+      <span class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">
+        {% trans "Sync Status:" %}
+      </span>
+      <a href="?status=published{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+         class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition {% if not sync_filter %}bg-slate-800 text-white shadow-xs{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+        {% trans "All Published" %} ({{ published_count }})
+      </a>
+      <a href="?status=published&sync=out_of_sync{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+         class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition inline-flex items-center gap-1.5 {% if sync_filter == 'out_of_sync' %}bg-amber-600 text-white shadow-xs{% else %}bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200{% endif %}">
+        <span aria-hidden="true">⚠️</span>
+        <span>{% trans "Out of Sync" %} ({{ out_of_sync_count }})</span>
+      </a>
+    </div>
+    {% endif %}
+
     {% if status_filter == 'sold' %}
     <div class="flex items-center gap-2 pt-2.5 border-t border-slate-100 overflow-x-auto no-scrollbar py-1">
       <span class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">
@@ -260,6 +295,11 @@
           <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-blue-600 text-white">
             🚀 {% trans "Published" %}
           </span>
+          {% if product.needs_platform_sync %}
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-amber-500 text-white flex items-center gap-1 animate-pulse" title="{% trans 'Out of sync with external platforms' %}">
+            ⚠️ {% trans "Update Platforms" %}
+          </span>
+          {% endif %}
           {% elif product.status == 'ready' %}
           <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-emerald-600 text-white">
             ✨ {% trans "Ready" %}
@@ -286,6 +326,11 @@
           {% else %}
           <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-emerald-600/90 text-white">
             {% trans "Active" %}
+          </span>
+          {% endif %}
+          {% if product.needs_platform_sync and product.status != 'published' %}
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-amber-500 text-white flex items-center gap-1" title="{% trans 'Out of sync with external platforms' %}">
+            ⚠️ {% trans "Update Platforms" %}
           </span>
           {% endif %}
           {% for link in product.listing_links.all %}

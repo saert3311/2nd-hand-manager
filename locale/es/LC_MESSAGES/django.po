@@ -1454,11 +1454,14 @@ msgstr "Canal:"
 
 msgid "All Channels"
 msgstr "Todos los canales"
+
 msgid "Erased / Deleted"
 msgstr "Eliminado / En papelera"
 
 msgid "Whether the product is disabled and moved to the erased trash category"
-msgstr "Indica si el producto está deshabilitado y movido a la papelera de eliminados"
+msgstr ""
+"Indica si el producto está deshabilitado y movido a la papelera de "
+"eliminados"
 
 msgid "Deleted At"
 msgstr "Fecha de eliminación"
@@ -1481,8 +1484,12 @@ msgstr "Restaurar producto"
 msgid "This product is in the trash"
 msgstr "Este producto está en la papelera"
 
-msgid "It is currently hidden from the active catalog. You can restore it anytime to resume staging."
-msgstr "Actualmente está oculto del catálogo activo. Puedes restaurarlo en cualquier momento para reanudar su edición."
+msgid ""
+"It is currently hidden from the active catalog. You can restore it anytime "
+"to resume staging."
+msgstr ""
+"Actualmente está oculto del catálogo activo. Puedes restaurarlo en cualquier"
+" momento para reanudar su edición."
 
 msgid "Deleted on"
 msgstr "Eliminado el"
@@ -1493,8 +1500,13 @@ msgstr "por"
 msgid "Move Product to Trash?"
 msgstr "¿Mover producto a la papelera?"
 
-msgid "This product will be hidden from the active catalog and all standard categories. You can restore it at any time from the 'Erased' category."
-msgstr "Este producto se ocultará del catálogo activo y de todas las categorías estándar. Podrás restaurarlo en cualquier momento desde la categoría 'Eliminados'."
+msgid ""
+"This product will be hidden from the active catalog and all standard "
+"categories. You can restore it at any time from the 'Erased' category."
+msgstr ""
+"Este producto se ocultará del catálogo activo y de todas las categorías "
+"estándar. Podrás restaurarlo en cualquier momento desde la categoría "
+"'Eliminados'."
 
 msgid "Yes, Move to Trash"
 msgstr "Sí, mover a papelera"
@@ -1553,11 +1565,21 @@ msgstr "Por favor, indica una categoría y texto de nota válidos."
 msgid "Clarification note cannot be empty."
 msgstr "La nota de aclaración no puede estar vacía."
 
-msgid "Record supplemental measurements, composition tags, or condition details discovered after intake. Instantly saved and available for AI copywriting without setting product to Awaiting Info."
-msgstr "Registra medidas, etiquetas de composición o detalles del estado descubiertos tras la entrada. Se guardan al instante y quedan disponibles para la redacción con IA sin poner el producto en 'Esperando info'."
+msgid ""
+"Record supplemental measurements, composition tags, or condition details "
+"discovered after intake. Instantly saved and available for AI copywriting "
+"without setting product to Awaiting Info."
+msgstr ""
+"Registra medidas, etiquetas de composición o detalles del estado "
+"descubiertos tras la entrada. Se guardan al instante y quedan disponibles "
+"para la redacción con IA sin poner el producto en 'Esperando info'."
 
-msgid "Asking a doubt will transition the product lifecycle status to 'Awaiting Info' and alert the sourcing assistant to provide an answer."
-msgstr "Preguntar una duda cambiará el estado del ciclo de vida a 'Esperando información' y avisará al asistente de entrada para que responda."
+msgid ""
+"Asking a doubt will transition the product lifecycle status to 'Awaiting "
+"Info' and alert the sourcing assistant to provide an answer."
+msgstr ""
+"Preguntar una duda cambiará el estado del ciclo de vida a 'Esperando "
+"información' y avisará al asistente de entrada para que responda."
 
 msgid "Resolved Clarifications & Notes"
 msgstr "Aclaraciones y notas resueltas"
@@ -1568,8 +1590,12 @@ msgstr "¿Eliminar esta nota de aclaración?"
 msgid "Delete note"
 msgstr "Eliminar nota"
 
-msgid "Discovered extra measurements, tags, or details after intake? Add them here to enrich the product listing."
-msgstr "¿Descubriste medidas adicionales, etiquetas o detalles tras la entrada? Agrégalos aquí para enriquecer la publicación del producto."
+msgid ""
+"Discovered extra measurements, tags, or details after intake? Add them here "
+"to enrich the product listing."
+msgstr ""
+"¿Descubriste medidas adicionales, etiquetas o detalles tras la entrada? "
+"Agrégalos aquí para enriquecer la publicación del producto."
 
 msgid "Add Clarification Note"
 msgstr "Añadir nota de aclaración"
@@ -1586,8 +1612,11 @@ msgstr "Duda resuelta"
 msgid "Direct note"
 msgstr "Nota directa"
 
-msgid "Indicates a direct clarification note rather than a pending manager doubt"
-msgstr "Indica una nota de aclaración directa en vez de una duda pendiente del manager"
+msgid ""
+"Indicates a direct clarification note rather than a pending manager doubt"
+msgstr ""
+"Indica una nota de aclaración directa en vez de una duda pendiente del "
+"manager"
 
 msgid "Identify product with AI first to enable saving"
 msgstr "Identifica primero el producto con IA para habilitar el guardado"
@@ -1608,7 +1637,8 @@ msgid "Image IDs must be integers."
 msgstr "Los IDs de imagen deben ser números enteros."
 
 msgid "Provided image IDs do not match the product's images."
-msgstr "Los IDs de imagen proporcionados no coinciden con las imágenes del producto."
+msgstr ""
+"Los IDs de imagen proporcionados no coinciden con las imágenes del producto."
 
 msgid "Drag or tap arrows to reorder"
 msgstr "Arrastra o toca las flechas para reordenar"
@@ -1652,7 +1682,6 @@ msgstr "Error al guardar el orden de las fotos."
 msgid "Network error saving photo order."
 msgstr "Error de red al guardar el orden de las fotos."
 
-
 msgid "Tap to view • drag or arrows to reorder"
 msgstr "Toca para ver • arrastra o flechas para reordenar"
 
@@ -1682,3 +1711,108 @@ msgstr "Toca para ampliar foto"
 
 msgid "Close"
 msgstr "Cerrar"
+
+msgid "Needs Platform Sync"
+msgstr "Requiere sincronización con plataformas"
+
+msgid ""
+"Whether edits were made after publication that need updating on external "
+"platforms"
+msgstr ""
+"Indica si se realizaron cambios tras la publicación que deban actualizarse "
+"en las plataformas externas"
+
+msgid "Last Platform Synced At"
+msgstr "Última sincronización con plataformas"
+
+msgid ""
+"Timestamp when external platform listings were last marked as synchronized"
+msgstr ""
+"Fecha y hora en que las publicaciones en plataformas externas se marcaron "
+"como sincronizadas"
+
+msgid "Out of Sync"
+msgstr "Desincronizado"
+
+msgid "Synced"
+msgstr "Sincronizado"
+
+msgid "Sync"
+msgstr "Sincronización"
+
+msgid "Please select at least one photo to upload."
+msgstr "Por favor, selecciona al menos una foto para subir."
+
+msgid ""
+"Cannot upload %(new)d photo(s). Product already has %(current)d photo(s) "
+"(maximum is 10)."
+msgstr ""
+"No se pueden subir %(new)d foto(s). El producto ya tiene %(current)d foto(s)"
+" (el máximo es 10)."
+
+msgid "Successfully added %(count)d photo(s)."
+msgstr "Se añadieron %(count)d foto(s) correctamente."
+
+msgid "Error processing uploaded photos: %(error)s"
+msgstr "Error al procesar las fotos subidas: %(error)s"
+
+msgid ""
+"Cannot delete the only photo. Each product must have at least one photo."
+msgstr ""
+"No se puede eliminar la única foto. Cada producto debe tener al menos una "
+"foto."
+
+msgid "Photo deleted successfully."
+msgstr "Foto eliminada correctamente."
+
+msgid "Platforms marked as updated successfully."
+msgstr "Plataformas marcadas como actualizadas correctamente."
+
+msgid "Update Required on Marketplaces"
+msgstr "Actualización requerida en plataformas"
+
+msgid ""
+"This product was modified after publication. External listings (Wallapop, "
+"Vinted, etc.) may have outdated details or photos."
+msgstr ""
+"Este producto fue modificado tras su publicación. Los anuncios externos "
+"(Wallapop, Vinted, etc.) pueden tener fotos o detalles desactualizados."
+
+msgid "Last marked as synchronized:"
+msgstr "Última sincronización marcada:"
+
+msgid "Mark Platforms as Updated"
+msgstr "Marcar plataformas como actualizadas"
+
+msgid "Add More Photos"
+msgstr "Añadir más fotos"
+
+msgid "Max 10 total"
+msgstr "Máx. 10 en total"
+
+msgid "Upload"
+msgstr "Subir"
+
+msgid "Delete photo"
+msgstr "Eliminar foto"
+
+msgid "Are you sure you want to delete this photo?"
+msgstr "¿Estás seguro de que deseas eliminar esta foto?"
+
+msgid "Sync Status:"
+msgstr "Estado de sincronización:"
+
+msgid "All Published"
+msgstr "Todos los publicados"
+
+msgid "Update Platforms"
+msgstr "Actualizar plataformas"
+
+msgid "Out of sync listings"
+msgstr "Anuncios desincronizados"
+
+msgid "Out of sync with external platforms"
+msgstr "Desincronizado con plataformas externas"
+
+msgid "Platforms synced:"
+msgstr "Plataformas sincronizadas:"
