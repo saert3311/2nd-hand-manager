@@ -1652,3 +1652,33 @@ msgstr "Error al guardar el orden de las fotos."
 msgid "Network error saving photo order."
 msgstr "Error de red al guardar el orden de las fotos."
 
+
+msgid "Tap to view • drag or arrows to reorder"
+msgstr "Toca para ver • arrastra o flechas para reordenar"
+
+msgid "Photo Inspection"
+msgstr "Inspección de foto"
+
+msgid "Close preview"
+msgstr "Cerrar vista previa"
+
+msgid "Full photo inspection"
+msgstr "Inspección de foto completa"
+
+msgid "Previous photo"
+msgstr "Foto anterior"
+
+msgid "Next photo"
+msgstr "Foto siguiente"
+
+msgid "Photo"
+msgstr "Foto"
+
+msgid "of"
+msgstr "de"
+
+msgid "Tap to enlarge photo"
+msgstr "Toca para ampliar foto"
+
+msgid "Close"
+msgstr "Cerrar"

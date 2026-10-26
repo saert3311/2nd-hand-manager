@@ -2648,12 +2648,12 @@ uff.exe check .`
 4. Streamline bottom reorder controls into a compact floating pill (`bg-slate-900/80 backdrop-blur-xs p-0.5 rounded-lg`).
 5. Add an accessible tap-to-inspect Lightbox Modal (`#imagePreviewModal`) so warehouse assistants on small/low-DPI screens can click any thumbnail to inspect image sharpness, labels, and details full-size before submission.
 **Acceptance criteria:**
-- [ ] Miniature cards render in 3 columns on viewports < 640px, keeping height compact.
-- [ ] Delete ('X') button is visually crisp, high-contrast, and unambiguous against all backgrounds.
-- [ ] Clicking a thumbnail opens the full-screen photo inspection modal without mutating form state.
-- [ ] Reordering, deleting, file sync (`DataTransfer`), and pre-flight gate remain fully functional.
+- [x] Miniature cards render in 3 columns on viewports < 640px, keeping height compact.
+- [x] Delete ('X') button is visually crisp, high-contrast, and unambiguous against all backgrounds.
+- [x] Clicking a thumbnail opens the full-screen photo inspection modal without mutating form state.
+- [x] Reordering, deleting, file sync (`DataTransfer`), and pre-flight gate remain fully functional.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
 **Dependencies:** None
 **Files likely touched:**
 - `inventory/templates/inventory/intake.html`
@@ -2668,16 +2668,16 @@ uff.exe check .`
 3. Run full automated test suite and `ruff check .`.
 4. Update `CHANGELOG.md` under `## [Unreleased]`.
 **Acceptance criteria:**
-- [ ] Translations compiled with 0 errors.
-- [ ] New automated tests pass 100%.
-- [ ] Full test suite passes with zero regressions.
-- [ ] `ruff check .` passes with 0 warnings.
-- [ ] `CHANGELOG.md` updated with Phase 32 entries.
+- [x] Translations compiled with 0 errors.
+- [x] New automated tests pass 100%.
+- [x] Full test suite passes with zero regressions.
+- [x] `ruff check .` passes with 0 warnings.
+- [x] `CHANGELOG.md` updated with Phase 32 entries.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
-- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake_low_dpi`
-- [ ] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
-- [ ] Linter passes: `.venv\Scripts\ruff.exe check .`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake_low_dpi`
+- [x] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check .`
 **Dependencies:** Task 113
 **Files likely touched:**
 - `locale/es/LC_MESSAGES/django.po`
@@ -2689,10 +2689,10 @@ uff.exe check .`
 ---
 
 ## Checkpoint 32: Low-DPI Intake Photo Miniatures & Delete Controls Complete
-- [ ] 3-column compact grid deployed on `/intake/` on mobile viewports.
-- [ ] Delete ('X') button is high-contrast, crisp, and unambiguous on 1x DPI displays.
-- [ ] Miniatures feature tap-to-inspect lightbox modal for detail verification.
-- [ ] Existing reorder, file sync, and mandatory AI gate features remain intact.
-- [ ] Spanish translations compiled and verified.
-- [ ] 100% test pass rate with 0 regressions.
-- [ ] `ruff check .` passes cleanly.
+- [x] 3-column compact grid deployed on `/intake/` on mobile viewports.
+- [x] Delete ('X') button is high-contrast, crisp, and unambiguous on 1x DPI displays.
+- [x] Miniatures feature tap-to-inspect lightbox modal for detail verification.
+- [x] Existing reorder, file sync, and mandatory AI gate features remain intact.
+- [x] Spanish translations compiled and verified.
+- [x] 100% test pass rate with 0 regressions.
+- [x] `ruff check .` passes cleanly.
