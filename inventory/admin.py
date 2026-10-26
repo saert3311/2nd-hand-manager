@@ -318,7 +318,7 @@ def format_status_badge(status_val):
 class ProductClarificationInline(admin.TabularInline):
     model = ProductClarification
     extra = 0
-    fields = ("category", "question", "asked_by", "answer", "answered_by", "status", "created_at", "answered_at")
+    fields = ("category", "is_direct_note", "question", "asked_by", "answer", "answered_by", "status", "created_at", "answered_at")
     readonly_fields = ("created_at", "answered_at")
 
 
@@ -608,8 +608,8 @@ class ProductListingLinkAdmin(admin.ModelAdmin):
 
 @admin.register(ProductClarification, site=admin_site)
 class ProductClarificationAdmin(admin.ModelAdmin):
-    list_display = ("id", "product", "category", "status", "asked_by", "answered_by", "created_at")
-    list_filter = ("category", "status", "created_at")
+    list_display = ("id", "product", "category", "is_direct_note", "status", "asked_by", "answered_by", "created_at")
+    list_filter = ("category", "is_direct_note", "status", "created_at")
     search_fields = ("product__ai_title", "product__raw_note", "question", "answer")
     readonly_fields = ("created_at", "answered_at")
 

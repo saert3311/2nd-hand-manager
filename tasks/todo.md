@@ -2354,15 +2354,15 @@ uff.exe check .`
 ### Task 102: Domain Model Expansion (`is_direct_note`), Signal Logic Refactoring, Schema Migration (`0019_clarification_direct_note.py`), and Admin Registration (`inventory/models.py`, `inventory/migrations/0019_clarification_direct_note.py`, `inventory/admin.py`)
 **Description:** Add `is_direct_note = models.BooleanField(default=False, db_index=True, verbose_name=_("Direct Note"))` to `ProductClarification` in `inventory/models.py`. Update the `sync_product_on_clarification_save` post-save signal: when `instance.is_direct_note=True`, bypass transitioning the product to `AWAITING_INFO` and bypass sending Web Push doubt alerts to assistants. In `inventory/admin.py`, update `ProductClarificationAdmin` to include `is_direct_note` in `list_display` and `list_filter`. Generate database migration `0019_clarification_direct_note.py` via `makemigrations` and apply it with `migrate`.
 **Acceptance criteria:**
-- [ ] `ProductClarification` includes `is_direct_note` boolean field with `default=False`.
-- [ ] Migration `0019_clarification_direct_note.py` generated and applied cleanly.
-- [ ] Post-save signal skips `AWAITING_INFO` and assistant push alerts when `is_direct_note=True`.
-- [ ] `ProductClarificationAdmin` exposes `is_direct_note` in list display and filter.
-- [ ] Existing model tests pass with zero regressions.
+- [x] `ProductClarification` includes `is_direct_note` boolean field with `default=False`.
+- [x] Migration `0019_clarification_direct_note.py` generated and applied cleanly.
+- [x] Post-save signal skips `AWAITING_INFO` and assistant push alerts when `is_direct_note=True`.
+- [x] `ProductClarificationAdmin` exposes `is_direct_note` in list display and filter.
+- [x] Existing model tests pass with zero regressions.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py makemigrations`
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py migrate`
-- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_models tests.test_clarifications`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py makemigrations`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py migrate`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_models tests.test_clarifications`
 **Dependencies:** None
 **Files likely touched:**
 - `inventory/models.py`

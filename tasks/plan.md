@@ -339,7 +339,7 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 ---
 
 ### Phase 29: Product Detail Clarifications Hub (Vertical Slice 25)
-- [ ] **Task 102:** Domain Model Expansion (`is_direct_note`), Signal Logic Refactoring, Schema Migration (`0019_clarification_direct_note.py`), and Admin Registration (`inventory/models.py`, `inventory/migrations/0019_clarification_direct_note.py`, `inventory/admin.py`).
+- [x] **Task 102:** Domain Model Expansion (`is_direct_note`), Signal Logic Refactoring, Schema Migration (`0019_clarification_direct_note.py`), and Admin Registration (`inventory/models.py`, `inventory/migrations/0019_clarification_direct_note.py`, `inventory/admin.py`).
 - [ ] **Task 103:** Service & Form Layer for Direct Clarifications & AI Copywriting Formatting (`inventory/forms.py`, `inventory/services/ai_service.py`).
 - [ ] **Task 104:** Dedicated Action View (`product_add_direct_clarification_view`) & URL Routing with Multi-Role Permissions (`inventory/views.py`, `inventory/urls.py`).
 - [ ] **Task 105:** Product Detail Clarifications Hub UI with Dual-Mode Tabs, Responsive Styling & Accessibility (`inventory/templates/inventory/product_detail.html`).
