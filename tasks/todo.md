@@ -2587,12 +2587,12 @@ uff.exe check .`
 4. On success, update `#mainImage` to display the new `#1` image and display an accessible toast notice.
 5. On failure, revert DOM order to prior state and show accessible error message.
 **Acceptance criteria:**
-- [ ] Store managers can reorder photos directly in the product detail view.
-- [ ] Promoting a photo to cover immediately updates the main featured photo preview.
-- [ ] Reordering persists to the database asynchronously.
-- [ ] Sourcing assistants see read-only gallery without reordering controls.
+- [x] Store managers can reorder photos directly in the product detail view.
+- [x] Promoting a photo to cover immediately updates the main featured photo preview.
+- [x] Reordering persists to the database asynchronously.
+- [x] Sourcing assistants see read-only gallery without reordering controls.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py check`
 **Dependencies:** Task 109
 **Files likely touched:**
 - `inventory/templates/inventory/product_detail.html`
