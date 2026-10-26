@@ -2281,12 +2281,12 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 99: Product Detail Staging UI Integration with Confirmation Modal, Trash Indicator Banner & Restore Action (`inventory/templates/inventory/product_detail.html`)
 **Description:** Update `inventory/templates/inventory/product_detail.html`: (1) For active (non-deleted) products, add an accessible "Mover a papelera" / "Move to Trash" button and an accessible modal dialog `#deleteProductModal` prompting for confirmation and submitting POST to `inventory:product_soft_delete`. (2) For erased (`is_deleted=True`) products, render a prominent warning banner at the top of the detail page indicating the item is in the trash and disabled, accompanied by a 1-click "Restaurar producto" / "Restore Product" button submitting POST to `inventory:product_restore`. (3) Ensure UI buttons and modals are only visible to managers (`can_manage`).
 **Acceptance criteria:**
-- [ ] Product detail page displays "Move to Trash" button for active products when viewed by a manager.
-- [ ] Confirmation modal prompts user with cancel and confirm options.
-- [ ] Erased products show prominent warning banner and "Restore Product" button.
-- [ ] All elements conform to responsive styling and WCAG accessibility standards.
+- [x] Product detail page displays "Move to Trash" button for active products when viewed by a manager.
+- [x] Confirmation modal prompts user with cancel and confirm options.
+- [x] Erased products show prominent warning banner and "Restore Product" button.
+- [x] All elements conform to responsive styling and WCAG accessibility standards.
 **Verification:**
-- [ ] Visual inspection and template rendering check.
+- [x] Visual inspection and template rendering check.
 **Dependencies:** Task 98
 **Files likely touched:**
 - `inventory/templates/inventory/product_detail.html`
