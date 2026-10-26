@@ -148,13 +148,13 @@
         </div>
       </div>
 
-      <!-- Product Clarifications Card -->
+      <!-- Product Clarifications & Notes Card -->
       <div id="clarifications-section" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <div class="flex items-center gap-2">
-            <span class="text-base sm:text-lg">❓</span>
+            <span class="text-base sm:text-lg" aria-hidden="true">💡</span>
             <h3 class="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
-              {% trans "Product Clarifications" %}
+              {% trans "Product Clarifications & Notes" %}
             </h3>
           </div>
           <div class="flex items-center gap-1.5 text-xs font-bold">
@@ -179,25 +179,25 @@
         <!-- Pending Clarifications List -->
         {% if pending_clarifications.exists %}
         <div class="space-y-3">
-          <h4 class="text-xs sm:text-sm font-bold text-amber-900 uppercase tracking-wider">
-            {% trans "Pending Doubts (Needs Answer)" %}
+          <h4 class="text-xs sm:text-sm font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+            <span>⚠️</span> {% trans "Pending Doubts (Needs Answer)" %}
           </h4>
           {% for clarif in pending_clarifications %}
           <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 space-y-2.5">
             <div class="flex items-start justify-between gap-2">
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
                 <span class="px-2 py-0.5 text-xs font-bold uppercase tracking-wider rounded-md bg-amber-200 text-amber-900">
                   {{ clarif.get_category_display }}
                 </span>
                 <span class="text-xs text-slate-500">
-                  {{ clarif.asked_by.username }} &bull; {{ clarif.created_at|date:"M d, H:i" }}
+                  {{ clarif.asked_by.username|default:"Manager" }} &bull; {{ clarif.created_at|date:"M d, H:i" }}
                 </span>
               </div>
               {% if can_manage %}
               <form method="post" action="{% url 'inventory:delete_clarification' product.pk clarif.pk %}" class="inline">
                 {% csrf_token %}
                 <button type="submit" onclick="return confirm('{% trans 'Dismiss this clarification question?' %}');"
-                        class="text-sm text-slate-400 hover:text-rose-600 transition p-1" title="{% trans 'Dismiss question' %}">
+                        class="text-sm text-slate-400 hover:text-rose-600 transition p-1 cursor-pointer" title="{% trans 'Dismiss question' %}">
                   ✕
                 </button>
               </form>
@@ -214,9 +214,9 @@
               <div class="flex flex-col sm:flex-row gap-2">
                 <input type="text" name="answer" required
                        placeholder="{% trans 'Enter answer (e.g. 52 cm chest, composition tag...)' %}"
-                       class="flex-1 px-3 py-2 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+                       class="flex-1 px-3.5 py-2 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
                 <button type="submit"
-                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-lg transition whitespace-nowrap shadow-sm">
+                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-lg transition whitespace-nowrap shadow-sm cursor-pointer">
                   {% trans "Answer" %}
                 </button>
               </div>
@@ -226,66 +226,184 @@
         </div>
         {% endif %}
 
-        <!-- Resolved Clarifications List -->
+        <!-- Resolved Clarifications & Direct Notes List -->
         {% if resolved_clarifications.exists %}
         <div class="space-y-2.5 pt-2 border-t border-slate-100">
           <h4 class="text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wider">
-            {% trans "Resolved Clarifications" %}
+            {% trans "Resolved Clarifications & Notes" %}
           </h4>
           {% for clarif in resolved_clarifications %}
           <div class="bg-emerald-50/50 border border-emerald-200 rounded-xl p-3.5 space-y-1.5 text-xs sm:text-sm">
-            <div class="flex items-center justify-between text-xs">
-              <span class="px-2 py-0.5 font-bold uppercase tracking-wider rounded-md bg-emerald-100 text-emerald-800 text-xs">
-                {{ clarif.get_category_display }}
-              </span>
-              <span class="text-xs text-slate-400">
-                {{ clarif.answered_by.username|default:"Assistant" }} &bull; {{ clarif.answered_at|date:"M d, H:i" }}
-              </span>
+            <div class="flex items-center justify-between text-xs gap-2">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="px-2 py-0.5 font-bold uppercase tracking-wider rounded-md {% if clarif.is_direct_note %}bg-teal-100 text-teal-800 border border-teal-200{% else %}bg-emerald-100 text-emerald-800 border border-emerald-200{% endif %} text-xs">
+                  {{ clarif.get_category_display }}
+                </span>
+                {% if clarif.is_direct_note %}
+                <span class="px-1.5 py-0.5 font-semibold rounded bg-slate-100 text-slate-700 text-[11px]">
+                  📝 {% trans "Direct Note" %}
+                </span>
+                {% else %}
+                <span class="px-1.5 py-0.5 font-semibold rounded bg-emerald-100 text-emerald-800 text-[11px]">
+                  ❓ {% trans "Resolved Doubt" %}
+                </span>
+                {% endif %}
+                <span class="text-slate-400">
+                  {{ clarif.answered_by.username|default:clarif.asked_by.username|default:"Staff" }} &bull; {{ clarif.answered_at|default:clarif.created_at|date:"M d, H:i" }}
+                </span>
+              </div>
+              {% if can_manage %}
+              <form method="post" action="{% url 'inventory:delete_clarification' product.pk clarif.pk %}" class="inline shrink-0">
+                {% csrf_token %}
+                <button type="submit" onclick="return confirm('{% trans 'Delete this clarification note?' %}');"
+                        class="text-sm text-slate-400 hover:text-rose-600 transition p-1 cursor-pointer" title="{% trans 'Delete note' %}">
+                  ✕
+                </button>
+              </form>
+              {% endif %}
             </div>
+
+            {% if clarif.is_direct_note %}
+            <p class="text-slate-900 font-medium bg-white p-2.5 rounded-lg border border-emerald-100 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
+              {{ clarif.answer }}
+            </p>
+            {% else %}
             <p class="text-slate-800 font-medium">
               <span class="font-bold text-slate-900">Q:</span> {{ clarif.question }}
             </p>
-            <p class="text-emerald-950 font-semibold bg-white p-2.5 rounded-lg border border-emerald-100 text-sm">
+            <p class="text-emerald-950 font-semibold bg-white p-2.5 rounded-lg border border-emerald-100 text-xs sm:text-sm">
               <span class="text-emerald-700">✓</span> {{ clarif.answer }}
             </p>
+            {% endif %}
           </div>
           {% endfor %}
         </div>
         {% endif %}
 
-        <!-- Ask New Clarification Question (Managers Only) -->
-        {% if can_manage %}
-        <div class="pt-3 border-t border-slate-100 space-y-2">
-          <h4 class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
-            <span>➕</span> {% trans "Ask Assistant for Missing Details" %}
-          </h4>
-          <form method="post" action="{% url 'inventory:add_clarification' product.pk %}" class="space-y-2.5">
-            {% csrf_token %}
-            <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                {% trans "Category" %}
-              </label>
-              <select name="category" class="w-full px-3 py-2 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-emerald-500">
-                {% for cat_val, cat_label in categories %}
-                <option value="{{ cat_val }}">{{ cat_label }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                {% trans "Question" %}
-              </label>
-              <textarea name="question" rows="2" required
-                        placeholder="{% trans 'What is missing? E.g., Please check armpit-to-armpit measurement or internal wash label.' %}"
-                        class="w-full px-3 py-2 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"></textarea>
-            </div>
-            <div class="flex justify-end">
-              <button type="submit"
-                      class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-sm">
-                {% trans "Send Question" %}
-              </button>
-            </div>
-          </form>
+        <!-- Add Clarification Forms -->
+        {% if not product.is_deleted %}
+        <div class="pt-3 border-t border-slate-100 space-y-3">
+          {% if can_manage %}
+          <!-- Manager Dual Mode Switcher -->
+          <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-xl" role="tablist">
+            <button type="button" id="tabBtnDirectNote" onclick="switchClarificationTab('direct')"
+                    role="tab" aria-selected="true"
+                    class="flex-1 py-1.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition shadow-xs bg-white text-slate-900 cursor-pointer">
+              📝 {% trans "Add Direct Note" %}
+            </button>
+            <button type="button" id="tabBtnAskDoubt" onclick="switchClarificationTab('doubt')"
+                    role="tab" aria-selected="false"
+                    class="flex-1 py-1.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition text-slate-600 hover:text-slate-900 cursor-pointer">
+              ❓ {% trans "Ask Assistant (Doubt)" %}
+            </button>
+          </div>
+
+          <!-- Manager Panel 1: Direct Note Form -->
+          <div id="panelDirectNote" class="space-y-2.5">
+            <p class="text-xs text-slate-500">
+              {% trans "Record supplemental measurements, composition tags, or condition details discovered after intake. Instantly saved and available for AI copywriting without setting product to Awaiting Info." %}
+            </p>
+            <form method="post" action="{% url 'inventory:add_direct_clarification' product.pk %}" class="space-y-2.5">
+              {% csrf_token %}
+              <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                  {% trans "Category" %}
+                </label>
+                <select name="category" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-emerald-500">
+                  {% for cat_val, cat_label in categories %}
+                  <option value="{{ cat_val }}">{{ cat_label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                  {% trans "Clarification Note / Details" %}
+                </label>
+                <textarea name="note" rows="2" required
+                          placeholder="{% trans 'E.g., Pit-to-pit: 54cm, length: 70cm, YKK zipper, 100% heavy cotton.' %}"
+                          class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"></textarea>
+              </div>
+              <div class="flex justify-end">
+                <button type="submit"
+                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-sm cursor-pointer">
+                  ➕ {% trans "Save Clarification Note" %}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Manager Panel 2: Ask Doubt Form -->
+          <div id="panelAskDoubt" class="hidden space-y-2.5">
+            <p class="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+              ⚠️ {% trans "Asking a doubt will transition the product lifecycle status to 'Awaiting Info' and alert the sourcing assistant to provide an answer." %}
+            </p>
+            <form method="post" action="{% url 'inventory:add_clarification' product.pk %}" class="space-y-2.5">
+              {% csrf_token %}
+              <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                  {% trans "Category" %}
+                </label>
+                <select name="category" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-amber-500">
+                  {% for cat_val, cat_label in categories %}
+                  <option value="{{ cat_val }}">{{ cat_label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                  {% trans "Question for Assistant" %}
+                </label>
+                <textarea name="question" rows="2" required
+                          placeholder="{% trans 'What is missing? E.g., Please check armpit-to-armpit measurement or internal wash label.' %}"
+                          class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"></textarea>
+              </div>
+              <div class="flex justify-end">
+                <button type="submit"
+                        class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-sm cursor-pointer">
+                  ❓ {% trans "Send Doubt to Assistant" %}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {% else %}
+          <!-- Assistant Direct Note Form -->
+          <div class="space-y-2.5">
+            <h4 class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <span>➕</span> {% trans "Add Clarification Note" %}
+            </h4>
+            <p class="text-xs text-slate-500">
+              {% trans "Discovered extra measurements, tags, or details after intake? Add them here to enrich the product listing." %}
+            </p>
+            <form method="post" action="{% url 'inventory:add_direct_clarification' product.pk %}" class="space-y-2.5">
+              {% csrf_token %}
+              <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                  {% trans "Category" %}
+                </label>
+                <select name="category" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-emerald-500">
+                  {% for cat_val, cat_label in categories %}
+                  <option value="{{ cat_val }}">{{ cat_label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                  {% trans "Clarification Note / Details" %}
+                </label>
+                <textarea name="note" rows="2" required
+                          placeholder="{% trans 'E.g., Pit-to-pit: 54cm, length: 70cm, composition: 100% cotton.' %}"
+                          class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"></textarea>
+              </div>
+              <div class="flex justify-end">
+                <button type="submit"
+                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-sm cursor-pointer">
+                  ➕ {% trans "Save Clarification Note" %}
+                </button>
+              </div>
+            </form>
+          </div>
+          {% endif %}
         </div>
         {% endif %}
       </div>
@@ -953,6 +1071,39 @@
   function closeDeleteModal() {
     const modal = document.getElementById("deleteProductModal");
     if (modal) modal.classList.add("hidden");
+  }
+
+  // Clarifications Hub Tab Switcher
+  function switchClarificationTab(mode) {
+    const tabDirect = document.getElementById("tabBtnDirectNote");
+    const tabDoubt = document.getElementById("tabBtnAskDoubt");
+    const panelDirect = document.getElementById("panelDirectNote");
+    const panelDoubt = document.getElementById("panelAskDoubt");
+    if (!tabDirect || !tabDoubt || !panelDirect || !panelDoubt) return;
+
+    if (mode === "direct") {
+      tabDirect.classList.add("bg-white", "text-slate-900", "shadow-xs");
+      tabDirect.classList.remove("text-slate-600");
+      tabDirect.setAttribute("aria-selected", "true");
+
+      tabDoubt.classList.remove("bg-white", "text-slate-900", "shadow-xs");
+      tabDoubt.classList.add("text-slate-600");
+      tabDoubt.setAttribute("aria-selected", "false");
+
+      panelDirect.classList.remove("hidden");
+      panelDoubt.classList.add("hidden");
+    } else {
+      tabDoubt.classList.add("bg-white", "text-slate-900", "shadow-xs");
+      tabDoubt.classList.remove("text-slate-600");
+      tabDoubt.setAttribute("aria-selected", "true");
+
+      tabDirect.classList.remove("bg-white", "text-slate-900", "shadow-xs");
+      tabDirect.classList.add("text-slate-600");
+      tabDirect.setAttribute("aria-selected", "false");
+
+      panelDoubt.classList.remove("hidden");
+      panelDirect.classList.add("hidden");
+    }
   }
 
 </script>

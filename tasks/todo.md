@@ -2415,14 +2415,14 @@ uff.exe check .`
 4. Mobile Ergonomics: Input font size `text-base sm:text-sm` (preventing iOS Safari auto-zoom) and minimum 44px button touch targets.
 5. Deletion: Managers have an accessible delete button for any clarification item.
 **Acceptance criteria:**
-- [ ] `#clarifications-section` renders in the left column below intake notes.
-- [ ] Manager view features dual-mode tab switcher (Direct Note vs Manager Doubt).
-- [ ] Assistant view exposes direct note form and pending doubts.
-- [ ] Direct notes and resolved Q&A items render with distinct badges and attribution.
-- [ ] Form inputs conform to iOS Safari zoom prevention (`text-base sm:text-sm`).
+- [x] `#clarifications-section` renders in the left column below intake notes.
+- [x] Manager view features dual-mode tab switcher (Direct Note vs Manager Doubt).
+- [x] Assistant view exposes direct note form and pending doubts.
+- [x] Direct notes and resolved Q&A items render with distinct badges and attribution.
+- [x] Form inputs conform to iOS Safari zoom prevention (`text-base sm:text-sm`).
 **Verification:**
-- [ ] Template validation: `.venv\Scripts\python.exe manage.py check`
-- [ ] Manual / live DOM inspection and responsiveness check.
+- [x] Template validation: `.venv\Scripts\python.exe manage.py check`
+- [x] Manual / live DOM inspection and responsiveness check.
 **Dependencies:** Task 104
 **Files likely touched:**
 - `inventory/templates/inventory/product_detail.html`
