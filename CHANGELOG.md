@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-26
+
 ### Added
 - **Product Soft-Delete, Archival & Erased Trash Category (Phase 28)**:
   - **Domain Model Soft-Delete**: Added `is_deleted` (`BooleanField`, indexed, default `False`), `deleted_at` (`DateTimeField`), and `deleted_by` (`ForeignKey(User, null=True, on_delete=SET_NULL)`) to `Product` in `inventory/models.py`. Generated and applied database migration `0018_product_soft_delete.py`. Added helper methods `soft_delete()` and `restore()` which preserve original lifecycle status and append audit trail logs in `ProductStatusLog`.
