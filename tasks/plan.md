@@ -361,3 +361,10 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - [x] **Task 111:** Product Detail Gallery Reordering UI & Live Cover Preview (`inventory/templates/inventory/product_detail.html`).
 - [x] **Task 112:** Bilingual Localization, Automated Test Suite, E2E Verification & Changelog (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_photo_reordering.py`, `CHANGELOG.md`).
 - [x] **Checkpoint 31 (Photo Reordering Complete):** Photos can be reordered in `/intake/` before saving with automatic `DataTransfer` file synchronization and primary cover badge; managers can reorder saved photos on `/products/<pk>/` with instant database persistence and `#mainImage` update; all tests pass 100% and linter passes cleanly.
+
+---
+
+### Phase 32: Low-DPI Intake Photo Miniatures & Delete Controls Optimization (Vertical Slice 28)
+- [x] **Task 113:** Intake Form High-Density Miniature Grid, Enhanced Delete Controls & Lightbox Modal (`inventory/templates/inventory/intake.html`).
+- [x] **Task 114:** Bilingual Localization, Automated Test Suite, Simulation Verification & Changelog (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_intake_low_dpi.py`, `CHANGELOG.md`).
+- [x] **Checkpoint 32 (Low-DPI Intake Photo Miniatures & Delete Controls Complete):** Preview grid adapts responsively to a high-density 3-column layout (`grid-cols-3 sm:grid-cols-4 md:grid-cols-5`) on mobile devices; thumbnails render at compact ~90px–115px square preventing page scroll disruption; delete ('X') button is rendered with high-contrast styling and isolation ring eliminating subpixel blur on 1x DPI screens; tapping a miniature opens an accessible full-screen image inspection modal; all automated tests pass 100% and linter passes cleanly.

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-10-26
+
+### Added
+- **Low-DPI Intake Photo Miniatures & Delete Controls Optimization (Phase 32)**:
+  - **High-Density Responsive Miniature Grid (`inventory/templates/inventory/intake.html`)**: Upgraded `#previewGrid` from `grid-cols-2` to `grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-2.5`. Compacts thumbnail cards to ~90px–115px square on viewports < 640px and low-DPI (1x) handheld warehouse scanners, eliminating vertical page hijacking and allowing assistants to view photo collections without displacing intake form controls.
+  - **High-Contrast Unambiguous Delete ('X') Button**: Refactored the thumbnail delete control with a prominent white isolation ring (`ring-1 ring-white/90`), bold rose badge (`bg-rose-600 hover:bg-rose-700 active:bg-rose-800`), and heavy cross stroke (`stroke-width="3"`) to prevent subpixel blur, aliasing, and background blending on 1x DPI displays. Preserves an accessible 32x32px hit area positioned at `top-0.5 right-0.5` without obscuring photo content.
+  - **Streamlined Cover & Sequence Badges**: Compacted cover badge (`⭐ #1`) and sequence pills (`#N`) with subtle contrast borders, preventing overlap with the delete button even on 90px cards.
+  - **Compact Floating Reorder Bar**: Streamlined reorder arrows (`◀`, `▶`) and 1-click cover promotion (`⭐`) into a semi-transparent floating pill (`bg-slate-900/80 backdrop-blur-xs p-0.5 rounded-lg`), leaving over 70% of the thumbnail surface unobstructed.
+  - **Tap-to-Inspect Lightbox Modal (`#imagePreviewModal`)**: Added an accessible full-screen photo inspection modal with semantic dialog markup (`role="dialog"`, `aria-modal="true"`), previous/next navigation buttons, dismiss handlers (`Escape` key, backdrop click, close button), and uncropped photo rendering so assistants can verify photo sharpness, barcode legibility, and condition before AI submission.
+  - **Bilingual Localization & Comprehensive Test Suite**: Added Spanish translations for photo inspection, navigation, and zoom tooltips in `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`. Authored 9 automated tests in `tests/test_intake_low_dpi.py` verifying grid classes, delete button contrast attributes, lightbox modal presence, accessibility roles, and Spanish/English localization.
+
 ## [1.8.0] - 2026-10-26
 
 ### Added
