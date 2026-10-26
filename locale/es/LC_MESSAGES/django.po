@@ -1588,3 +1588,13 @@ msgstr "Nota directa"
 
 msgid "Indicates a direct clarification note rather than a pending manager doubt"
 msgstr "Indica una nota de aclaración directa en vez de una duda pendiente del manager"
+
+msgid "Identify product with AI first to enable saving"
+msgstr "Identifica primero el producto con IA para habilitar el guardado"
+
+msgid "Product identified — ready to save"
+msgstr "Producto identificado — listo para guardar"
+
+msgid "Please identify the product with AI before saving."
+msgstr "Por favor, identifica el producto con IA antes de guardar."
+

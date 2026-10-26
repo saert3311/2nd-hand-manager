@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Intake Mandatory Pre-flight Identification Gate (Phase 30)**:
+  - **Save Button Gating & Initial State**: Modified `/intake/` in `inventory/templates/inventory/intake.html` so `#submitBtn` is initialized with `disabled` attribute, `aria-disabled="true"`, and disabled styling (`bg-slate-300 text-slate-500 cursor-not-allowed opacity-60`). Renders an accessible dynamic guidance hint `#submitHelpText` beneath the Save button informing the assistant: *"Identifica primero el producto con IA para habilitar el guardado"* / *"Identify product with AI first to enable saving"*.
+  - **State Machine & Lifecycle Gating**: Added internal client tracking variable `hasIdentified` and helper `updateSubmitButtonState()`. Form state transitions (`identifying`, `submitting`, `idle`, and image optimization) strictly respect the gate. Running pre-flight AI identification unlocks the Save button with confirmation text (*"Producto identificado — listo para guardar"* / *"Product identified — ready to save"*).
+  - **Photo Clearing Reset**: When all photos are deleted (`selectedFiles.length === 0`), `hasIdentified` automatically resets to `false` and `#submitBtn` is re-disabled until identification is executed again.
+  - **Client-Side Submit Interception Guard**: Intercepts premature form submissions (e.g. Enter keypress in inputs) if `!hasIdentified`, displaying an inline accessible warning alert and drawing focus/highlight ring to the identification button.
+  - **Non-Blocking Resilient Error Fallback**: If Gemini identification times out, encounters a network issue, or fails to recognize an item, the Save button is gracefully unlocked so warehouse sourcing staff are never blocked from saving intake items.
+  - **Bilingual Localization & Comprehensive Test Suite**: Added Spanish translations in `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`. Authored 6 automated tests in `tests/test_intake_identification_gate.py` covering DOM attributes, Spanish localization, JS state machine presence, AI endpoint success/fallback handling, and backend persistence.
+
 ## [1.6.0] - 2026-10-26
 
 ### Added

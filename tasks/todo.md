@@ -2496,16 +2496,16 @@ uff.exe check .`
 ### Task 108: Bilingual Localization, Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_intake_identification_gate.py`, `CHANGELOG.md`)
 **Description:** Add Spanish translation entries in `locale/es/LC_MESSAGES/django.po` for new strings ("Identify product with AI first to enable saving", "Product identified — ready to save", "Please identify the product with AI before saving.", etc.) and compile to `django.mo`. Build a dedicated test suite `tests/test_intake_identification_gate.py` validating: (1) intake screen renders `#submitBtn` with `disabled` attribute initially; (2) `#submitHelpText` is present with localized text; (3) identify button has proper attributes and triggers; (4) submission with valid data persists; (5) regression check across all 392+ automated tests. Update `CHANGELOG.md` under `## [Unreleased]`.
 **Acceptance criteria:**
-- [ ] Spanish translations compiled with 0 errors.
-- [ ] Test suite in `tests/test_intake_identification_gate.py` passes 100%.
-- [ ] Full regression suite (392+ tests) passes with 0 failures and 0 errors.
-- [ ] `ruff check .` passes with 0 warnings.
-- [ ] `CHANGELOG.md` updated with Phase 30 entries.
+- [x] Spanish translations compiled with 0 errors.
+- [x] Test suite in `tests/test_intake_identification_gate.py` passes 100%.
+- [x] Full regression suite (398 tests) passes with 0 failures and 0 errors.
+- [x] `ruff check .` passes with 0 warnings.
+- [x] `CHANGELOG.md` updated with Phase 30 entries.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
-- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake_identification_gate`
-- [ ] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
-- [ ] Linter passes: `.venv\Scripts\ruff.exe check .`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake_identification_gate`
+- [x] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check .`
 **Dependencies:** Task 107
 **Files likely touched:**
 - `locale/es/LC_MESSAGES/django.po`
@@ -2517,10 +2517,10 @@ uff.exe check .`
 ---
 
 ## Checkpoint 30: Intake Mandatory Identification Gate Complete
-- [ ] `#submitBtn` on `/intake/` initialized as disabled with guidance hint.
-- [ ] Identification required before `#submitBtn` becomes enabled.
-- [ ] Identification completion (or error fallback) unlocks `#submitBtn`.
-- [ ] Photo clearing resets gate state.
-- [ ] Spanish localization compiled and verified.
-- [ ] All unit and regression tests pass with 0 failures.
-- [ ] `ruff check .` passes cleanly.
+- [x] `#submitBtn` on `/intake/` initialized as disabled with guidance hint.
+- [x] Identification required before `#submitBtn` becomes enabled.
+- [x] Identification completion (or error fallback) unlocks `#submitBtn`.
+- [x] Photo clearing resets gate state.
+- [x] Spanish localization compiled and verified.
+- [x] All unit and regression tests pass with 0 failures.
+- [x] `ruff check .` passes cleanly.
