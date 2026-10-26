@@ -25,6 +25,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 21. **Intake AI Valuation & Reference Pricing ("New Retail Value & Used Resale Value"):** AI appraisal benchmarks estimating both the original new retail value (MSRP) and realistic secondhand market resale value during intake identification, persisted to the `Product` model and displayed near the sale price in both the intake form and product staging detail view ([`docs/prds/PRD-intake-ai-valuation-reference-prices.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-intake-ai-valuation-reference-prices.md)).
 22. **Consolidated Intake Session Notifications ("Debounced Manager Push Alerts"):** Database-backed debounced sourcing session engine (`IntakeBatchSession`) bundling consecutive product uploads by an assistant within a 15-minute sliding inactivity window into a single consolidated Web Push alert to store managers (`📦 Lote completado: [X] nuevos productos`), eliminating notification spam while keeping urgent clarification doubts instant ([`docs/prds/PRD-consolidated-intake-session-notifications.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-consolidated-intake-session-notifications.md)).
 23. **Sale Channel Tracking & Commercial Sales Attribution ("Where Was It Sold?"):** Comprehensive commercial sales channel recording on sold items (`sold_channel_type`, `sold_marketplace`, `sold_channel_notes`). Differentiates sales between physical in-store walk-ins (`in_store`), dynamic online marketplace platforms (`marketplace` linked to `MarketplaceSite`), and direct sales (`other`), backed by conditional form validation, detail view quick-pickers, dashboard sub-filtering (`?status=sold&channel=in_store`), and `ProductStatusLog` audit records ([`docs/prds/PRD-sale-channel-tracking.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-sale-channel-tracking.md)).
+24. **Product Soft-Delete, Archival & "Erased" Trash Category ("Trash & Restore"):** Safe, non-destructive product soft-deletion (`is_deleted`, `deleted_at`, `deleted_by`) allowing managers to remove obsolete, damaged, or erroneous items from the staging workflow. Erased products are completely excluded from default catalog views and active status counts, isolated into a dedicated `?status=erased` ("🗑️ Eliminados" / "🗑️ Trash") tab with live count badge, and can be restored back to their exact prior status at any time from the product detail staging view ([`docs/prds/PRD-product-soft-delete-and-archival.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-product-soft-delete-and-archival.md)).
 
 ---
 
@@ -230,6 +231,9 @@ class MarketplaceSite(models.Model):
 | `sold_channel_type` | CharField | max_length=20, blank=True, default="", choices=[in_store, marketplace, other], db_index=True | Channel through which product was sold |
 | `sold_marketplace` | ForeignKey(MarketplaceSite) | null=True, blank=True, on_delete=SET_NULL, related_name='sold_products' | Marketplace platform where the sale occurred (if sold on marketplace) |
 | `sold_channel_notes` | CharField | max_length=255, blank=True, default="" | Optional sale ticket #, buyer reference, or order notes |
+| `is_deleted` | BooleanField | default=False, db_index=True | Whether the product is soft-deleted and moved to the erased trash category |
+| `deleted_at` | DateTimeField | null=True, blank=True | Timestamp when moved to trash |
+| `deleted_by` | ForeignKey(User) | null=True, blank=True, on_delete=SET_NULL, related_name='deleted_products' | Manager who moved the product to trash |
 | `created_by` | ForeignKey(User) | null=True, on_delete=SET_NULL | User who cataloged the item |
 | `created_at` | DateTimeField | auto_now_add=True | Creation timestamp |
 | `updated_at` | DateTimeField | auto_now=True | Last modification timestamp |
@@ -684,6 +688,22 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
 
 ---
 
+### 6.18 Product Soft-Delete, Archival & Erased Trash Category
+1. **Catalog Visibility & Default Exclusions:**
+   - In all default dashboard views (`status=all`, `active`, `draft`, `price_pending`, `ready`, `published`, `awaiting_info`, `sold`, `blocked`), products with `is_deleted=True` are strictly excluded from QuerySets.
+   - All standard status aggregate counters calculate exclusively over non-deleted items (`is_deleted=False`).
+   - A dedicated dashboard category `?status=erased` ("🗑️ Eliminados" / "🗑️ Trash") displays soft-deleted items with an isolated `erased_count` badge.
+2. **Product Detail Trash Action & Confirmation Modal:**
+   - In `/products/<pk>/`, non-deleted products provide a "Mover a papelera" / "Move to Trash" button restricted to `ROLE_MANAGER`.
+   - Clicking triggers an accessible confirmation modal warning the manager that the item will be hidden from the active catalog but can be restored at any time.
+   - Confirming submits a POST request to `/products/<pk>/delete/` which sets `is_deleted=True`, timestamps `deleted_at`, links `deleted_by`, and appends an audit log in `ProductStatusLog`.
+3. **Erased Product Detail Inspection & Restoration:**
+   - When an erased product is inspected, a prominent warning banner is displayed informing the user of its trash state.
+   - A 1-click "Restaurar producto" / "Restore Product" button submits POST to `/products/<pk>/restore/`, which clears `is_deleted`, `deleted_at`, and `deleted_by`, logs the restoration in `ProductStatusLog`, and returns the product to its exact prior status in the active catalog.
+4. **Search Isolation:**
+   - Keyword search across active catalog views will never return erased items.
+   - Searching within `?status=erased&q=...` searches specifically among erased products.
+
 ## 7. AI Service Contract (`ai_service.py`)
 ```python
 def generate_product_listing(
@@ -1097,6 +1117,11 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
     - **Option B (Auto-Default to In-Store):** The channel dropdown automatically selects "Tienda física / In-Store" by default unless changed.
     *Which sale channel interaction pattern do you prefer?*
 
-
-
-
+31. **Product Soft-Delete, Archival & "Erased" Trash Category Architecture:**
+    - When a product is removed or disabled on `/products/<pk>/`:
+    - **Option A (Recommended & Selected — Non-Destructive Soft-Delete with Restore Capability):**
+      Add `is_deleted`, `deleted_at`, and `deleted_by` to `Product`. Hide erased items by default from all active catalog tabs and counters. Isolate them in a dedicated `?status=erased` ("🗑️ Eliminados") dashboard tab. Provide an accessible confirmation modal in `/products/<pk>/` to move to trash, and a 1-click "Restaurar producto" button to restore back to its previous lifecycle status (`draft`, `ready`, `sold`, etc.) without loss of photos, pricing, or audit history. Restricted to `ROLE_MANAGER`.
+    - **Option B (Permanent Hard Deletion):**
+      Permanently delete the database row and call OCI Object Storage to purge image files. Risk of irreversible data loss, broken audit history, and orphaned references.
+    *Which archival and deletion architecture do you prefer?*
+    - **Decision:** Option A approved — Non-destructive soft-delete with dedicated erased category and full restoration capability.
