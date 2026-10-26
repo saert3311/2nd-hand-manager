@@ -2939,12 +2939,12 @@ uff.exe check .`
 5. Deep-link directly to /products/<pk>/.
 6. Collapse repeated notifications per product with tag 'product-out-of-sync-{product.pk}'.
 **Acceptance criteria:**
-- [ ] send_out_of_sync_notification defined with type annotations and docstring.
-- [ ] Returns 0 if PUSH_NOTIFICATIONS_LIVE_SIGNALS is False.
-- [ ] Targets ROLE_MANAGER (including staff and superusers).
-- [ ] Formats localized title, body, deep link, and tag.
+- [x] send_out_of_sync_notification defined with type annotations and docstring.
+- [x] Returns 0 if PUSH_NOTIFICATIONS_LIVE_SIGNALS is False.
+- [x] Targets ROLE_MANAGER (including staff and superusers).
+- [x] Formats localized title, body, deep link, and tag.
 **Verification:**
-- [ ] Command succeeds: .venv\Scripts\python.exe manage.py check
+- [x] Command succeeds: .venv\Scripts\python.exe manage.py check
 **Dependencies:** Checkpoint 34
 **Files likely touched:**
 - inventory/services/push_service.py
@@ -2965,18 +2965,18 @@ eeds_platform_sync to False does not dispatch out-of-sync push.
 5. Ensure subsequent edits while 
 eeds_platform_sync is already True do not send duplicate push notifications.
 **Acceptance criteria:**
-- [ ] _initial_needs_platform_sync tracked on Product instance creation/fetch.
-- [ ] _previous_needs_platform_sync recorded during Product.save().
-- [ ] 
+- [x] _initial_needs_platform_sync tracked on Product instance creation/fetch.
+- [x] _previous_needs_platform_sync recorded during Product.save().
+- [x] 
 otify_managers_on_product_lifecycle_save sends out-of-sync notification strictly on False -> True transitions.
-- [ ] No notification sent when 
+- [x] No notification sent when 
 eeds_platform_sync is cleared (mark_platform_synced).
-- [ ] No notification sent on successive edits while 
+- [x] No notification sent on successive edits while 
 eeds_platform_sync remains True.
-- [ ] No notification sent on unpublished or draft items.
-- [ ] No notification sent on soft-deleted items.
+- [x] No notification sent on unpublished or draft items.
+- [x] No notification sent on soft-deleted items.
 **Verification:**
-- [ ] Command succeeds: .venv\Scripts\python.exe manage.py check
+- [x] Command succeeds: .venv\Scripts\python.exe manage.py check
 **Dependencies:** Task 123
 **Files likely touched:**
 - inventory/models.py
@@ -3004,17 +3004,18 @@ eeds_platform_sync remains True.
 3. Verify full automated test suite passes 100% and Ruff linter passes cleanly.
 4. Document Phase 35 changes in CHANGELOG.md under ## [Unreleased].
 **Acceptance criteria:**
-- [ ] Translations compiled with 0 errors via compile_locales.
-- [ ] Targeted tests in 	est_out_of_sync_notifications.py pass 100%.
-- [ ] Full test suite passes 100% with 0 regressions.
-- [ ] 
+- [x] Translations compiled with 0 errors via compile_locales.
+- [x] Targeted tests in 	est_out_of_sync_notifications.py pass 100%.
+- [x] Full test suite passes 100% with 0 regressions.
+- [x] 
 uff check . passes with 0 warnings.
-- [ ] CHANGELOG.md updated under ## [Unreleased].
+- [x] CHANGELOG.md updated under ## [Unreleased].
 **Verification:**
-- [ ] Command succeeds: .venv\Scripts\python.exe manage.py compile_locales
-- [ ] Targeted tests pass: .venv\Scripts\python.exe manage.py test tests.test_out_of_sync_notifications
-- [ ] Full test suite passes: .venv\Scripts\python.exe manage.py test
-- [ ] Linter passes: .venv\Scriptsuff.exe check .
+- [x] Command succeeds: .venv\Scripts\python.exe manage.py compile_locales
+- [x] Targeted tests pass: .venv\Scripts\python.exe manage.py test tests.test_out_of_sync_notifications
+- [x] Full test suite passes: .venv\Scripts\python.exe manage.py test
+- [x] Linter passes: .venv\Scripts
+uff.exe check .
 **Dependencies:** Tasks 123, 124
 **Files likely touched:**
 - locale/es/LC_MESSAGES/django.po
@@ -3026,10 +3027,10 @@ uff check . passes with 0 warnings.
 ---
 
 ## Checkpoint 35: Out-of-Sync Product Web Push Notifications Complete
-- [ ] Store managers receive instant Web Push notifications when published items become out of sync.
-- [ ] Push payload includes localized title, informative body, deep link to /products/<pk>/, and collapsing tag.
-- [ ] Edge-transition detection fires strictly on False -> True transitions, preventing notification spam.
-- [ ] Platform sync clearance (mark_platform_synced) suppresses notifications.
-- [ ] Full bilingual localization in Spanish and English.
-- [ ] 100% automated test pass rate with 0 regressions and clean linter.
+- [x] Store managers receive instant Web Push notifications when published items become out of sync.
+- [x] Push payload includes localized title, informative body, deep link to /products/<pk>/, and collapsing tag.
+- [x] Edge-transition detection fires strictly on False -> True transitions, preventing notification spam.
+- [x] Platform sync clearance (mark_platform_synced) suppresses notifications.
+- [x] Full bilingual localization in Spanish and English.
+- [x] 100% automated test pass rate with 0 regressions and clean linter.
 

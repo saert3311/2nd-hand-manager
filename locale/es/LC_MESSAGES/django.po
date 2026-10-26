@@ -1856,3 +1856,15 @@ msgstr "Quitar foto de la cola de subida"
 #: inventory/templates/inventory/product_detail.html:220
 msgid "%(available)s available (%(count)s/10)"
 msgstr "%(available)s disponibles (%(count)s/10)"
+
+#: inventory/services/push_service.py
+msgid "⚠️ Product Out of Sync: %(title)s"
+msgstr "⚠️ Producto desincronizado: %(title)s"
+
+#: inventory/services/push_service.py
+msgid ""
+"Modifications detected on published item. External platform listings require"
+" updating."
+msgstr ""
+"Cambios detectados en producto publicado. Se requiere actualizar las "
+"plataformas externas."

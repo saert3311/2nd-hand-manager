@@ -358,6 +358,8 @@ class Product(models.Model):
         self._initial_sale_price = self.sale_price
         self._initial_ai_title = self.ai_title
         self._initial_ai_description = self.ai_description
+        self._initial_needs_platform_sync = self.needs_platform_sync
+        self._previous_needs_platform_sync = None
         self._changed_by = None
         self._status_trigger = None
         self._status_notes = None
@@ -453,6 +455,7 @@ class Product(models.Model):
             kwargs["update_fields"] = list(fields)
 
         self._previous_status = initial_status
+        self._previous_needs_platform_sync = getattr(self, "_initial_needs_platform_sync", False)
         super().save(*args, **kwargs)
 
         from_status = None if is_adding else initial_status
@@ -506,6 +509,7 @@ class Product(models.Model):
         self._initial_sale_price = self.sale_price
         self._initial_ai_title = self.ai_title
         self._initial_ai_description = self.ai_description
+        self._initial_needs_platform_sync = self.needs_platform_sync
         self._changed_by = None
         self._status_trigger = None
         self._status_notes = None
@@ -1041,6 +1045,19 @@ def notify_managers_on_product_lifecycle_save(sender, instance, created=False, *
                 url=f"/products/{instance.pk}/",
                 tag=f"product-price-pending-{instance.pk}",
             )
+
+        # Out-of-sync notification when published product transitions needs_platform_sync: False -> True
+        was_in_sync = not getattr(instance, "_previous_needs_platform_sync", False)
+        if (
+            instance.needs_platform_sync
+            and was_in_sync
+            and not getattr(instance, "is_deleted", False)
+            and not instance.is_sold
+            and instance.status != ProductStatus.SOLD
+        ):
+            from .services.push_service import send_out_of_sync_notification
+
+            send_out_of_sync_notification(instance)
     except Exception:
         pass
 

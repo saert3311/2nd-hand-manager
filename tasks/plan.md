@@ -390,8 +390,8 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 ---
 
 ### Phase 35: Out-of-Sync Product Web Push Notifications (Vertical Slice 31)
-- [ ] **Task 123:** Push Service Dispatcher & Notification Formatting (inventory/services/push_service.py).
-- [ ] **Task 124:** Domain Model Edge-Transition Detection & Signal Receiver Integration (inventory/models.py).
-- [ ] **Task 125:** Bilingual Localization, Comprehensive Automated Test Suite, Full Regression & Changelog (locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.mo, 	ests/test_out_of_sync_notifications.py, CHANGELOG.md).
-- [ ] **Checkpoint 35 (Out-of-Sync Product Web Push Notifications Complete):** Store managers receive immediate, deep-linked Web Push notifications when published items become out of sync, edge-transition logic prevents duplicate notification spam, clearance suppressions work cleanly, 100% test suite passes, and linter is clean.
+- [x] **Task 123:** Push Service Dispatcher & Notification Formatting (inventory/services/push_service.py).
+- [x] **Task 124:** Domain Model Edge-Transition Detection & Signal Receiver Integration (inventory/models.py).
+- [x] **Task 125:** Bilingual Localization, Comprehensive Automated Test Suite, Full Regression & Changelog (locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.mo, 	ests/test_out_of_sync_notifications.py, CHANGELOG.md).
+- [x] **Checkpoint 35 (Out-of-Sync Product Web Push Notifications Complete):** Store managers receive immediate, deep-linked Web Push notifications when published items become out of sync, edge-transition logic prevents duplicate notification spam, clearance suppressions work cleanly, 100% test suite passes, and linter is clean.
 
