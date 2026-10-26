@@ -2375,12 +2375,12 @@ uff.exe check .`
 ### Task 103: Service & Form Layer for Direct Clarifications & AI Copywriting Formatting (`inventory/forms.py`, `inventory/services/ai_service.py`)
 **Description:** In `inventory/forms.py`, create `ProductDirectClarificationForm` allowing users to select `category` and submit `note` text (max 3000 chars, stripped, non-empty validation). In `inventory/services/ai_service.py`, update `generate_product_listing` so that direct notes are formatted cleanly for Gemini (`- [Category] Note: <note>` in English, `- [Categoría] Nota: <nota>` in Spanish), while preserving the Q&A question/answer format for standard manager doubts. Ensure unapplied clarifications callout indicator accounts for newly added direct notes.
 **Acceptance criteria:**
-- [ ] `ProductDirectClarificationForm` cleanly validates category and note text.
-- [ ] Direct clarification notes format cleanly in `ai_service.py` prompt text.
-- [ ] Standard manager doubts maintain question/answer formatting.
-- [ ] Unit tests for form and prompt generation pass.
+- [x] `ProductDirectClarificationForm` cleanly validates category and note text.
+- [x] Direct clarification notes format cleanly in `ai_service.py` prompt text.
+- [x] Standard manager doubts maintain question/answer formatting.
+- [x] Unit tests for form and prompt generation pass.
 **Verification:**
-- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_ai_service tests.test_forms`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_ai_service tests.test_forms`
 **Dependencies:** Task 102
 **Files likely touched:**
 - `inventory/forms.py`

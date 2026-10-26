@@ -266,7 +266,7 @@ class ProductClarificationForm(forms.ModelForm):
         choices=ClarificationCategory.choices,
         label=_("Category"),
         widget=forms.Select(attrs={
-            "class": "w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
         }),
     )
     question = forms.CharField(
@@ -276,7 +276,7 @@ class ProductClarificationForm(forms.ModelForm):
             "rows": 2,
             "maxlength": "2000",
             "placeholder": _("Ask the assistant for missing info (e.g., 'Confirm pit-to-pit measurement or verify fabric composition tag')"),
-            "class": "w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 resize-y"
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-y"
         }),
     )
 
@@ -293,6 +293,32 @@ class ProductClarificationAnswerForm(forms.Form):
             "rows": 2,
             "maxlength": "3000",
             "placeholder": _("Provide measurements, material details, or condition observations..."),
-            "class": "w-full px-3.5 py-2 rounded-xl border border-amber-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-amber-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
         }),
     )
+
+
+class ProductDirectClarificationForm(forms.Form):
+    category = forms.ChoiceField(
+        choices=ClarificationCategory.choices,
+        label=_("Category"),
+        widget=forms.Select(attrs={
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+        }),
+    )
+    note = forms.CharField(
+        max_length=3000,
+        label=_("Clarification Note / Details"),
+        widget=forms.Textarea(attrs={
+            "rows": 2,
+            "maxlength": "3000",
+            "placeholder": _("Add measurements, composition details, flaws, or inspection notes discovered after intake..."),
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
+        }),
+    )
+
+    def clean_note(self):
+        note = self.cleaned_data.get("note", "").strip()
+        if not note:
+            raise forms.ValidationError(_("Clarification note cannot be empty."))
+        return note
