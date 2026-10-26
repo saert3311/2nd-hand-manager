@@ -2264,12 +2264,12 @@ Implement `sync_lifecycle_status()` on `Product` and connect signals on `Product
 ### Task 98: Dedicated Action Views & URL Routing with Manager Role Protection (`inventory/views.py`, `inventory/urls.py`)
 **Description:** Create `product_soft_delete_view(request, pk)` and `product_restore_view(request, pk)` in `inventory/views.py`. Restrict both views strictly to POST requests and store managers (`@manager_required`, `@login_required`). `product_soft_delete_view` soft-deletes the product, adds a success flash message, and redirects to the dashboard erased tab (`inventory:dashboard` with `?status=erased`). `product_restore_view` restores the product, adds a success flash message, and redirects to the product detail page (`inventory:product_detail`, pk=pk). Register routes `/products/<pk>/delete/` and `/products/<pk>/restore/` in `inventory/urls.py`.
 **Acceptance criteria:**
-- [ ] `POST /products/<pk>/delete/` soft-deletes the product and redirects to `/dashboard/?status=erased`.
-- [ ] `POST /products/<pk>/restore/` restores the product and redirects to `/products/<pk>/`.
-- [ ] Non-POST requests return 405 Method Not Allowed.
-- [ ] Non-managers (assistants or unauthenticated users) are denied access (403 or redirect to login).
+- [x] `POST /products/<pk>/delete/` soft-deletes the product and redirects to `/dashboard/?status=erased`.
+- [x] `POST /products/<pk>/restore/` restores the product and redirects to `/products/<pk>/`.
+- [x] Non-POST requests return 405 Method Not Allowed.
+- [x] Non-managers (assistants or unauthenticated users) are denied access (403 or redirect to login).
 **Verification:**
-- [ ] Targeted view test passes.
+- [x] Targeted view test passes.
 **Dependencies:** Task 97
 **Files likely touched:**
 - `inventory/views.py`

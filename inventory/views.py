@@ -10,9 +10,9 @@ from django.core.paginator import Paginator
 from django.core.validators import URLValidator
 from django.db import transaction
 from django.db.models import Count, Prefetch, Q
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.translation import get_language
 from django.utils.translation import gettext as _
@@ -340,6 +340,10 @@ def product_detail_view(request, pk):
     )
     can_manage = is_manager(request.user)
 
+    if product.is_deleted and not can_manage:
+        messages.warning(request, _("This product has been moved to trash and is not accessible."))
+        return redirect("inventory:dashboard")
+
     if request.method == "POST":
         if not can_manage:
             messages.error(request, _("Manager privileges required to edit product details."))
@@ -572,6 +576,36 @@ def product_download_zip_view(request, pk):
     response["Content-Disposition"] = f'attachment; filename="product_{product.id}_photos.zip"'
     response["X-Content-Type-Options"] = "nosniff"
     return response
+
+
+@manager_required
+def product_soft_delete_view(request, pk):
+    """
+    Moves a product to the trash (soft-delete), hiding it from default catalog views.
+    Restricted to managers; requires POST.
+    """
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    product = get_object_or_404(Product, pk=pk)
+    product.soft_delete(user=request.user)
+    messages.success(request, _("Product successfully moved to trash."))
+    return redirect(f"{reverse('inventory:dashboard')}?status=erased")
+
+
+@manager_required
+def product_restore_view(request, pk):
+    """
+    Restores a soft-deleted product from trash back to the active catalog in its previous status.
+    Restricted to managers; requires POST.
+    """
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    product = get_object_or_404(Product, pk=pk)
+    product.restore(user=request.user)
+    messages.success(request, _("Product successfully restored to catalog."))
+    return redirect("inventory:product_detail", pk=pk)
 
 
 @manager_required

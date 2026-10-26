@@ -330,7 +330,7 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 
 ### Phase 28: Product Soft-Delete, Archival & Erased Trash Category (Vertical Slice 24)
 - [x] **Task 97:** Domain Model Fields (`is_deleted`, `deleted_at`, `deleted_by`), Methods (`soft_delete`, `restore`), Schema Migration (`0018_product_soft_delete.py`), and Admin Registration (`inventory/models.py`, `inventory/migrations/0018_product_soft_delete.py`, `inventory/admin.py`).
-- [ ] **Task 98:** Dedicated Action Views (`product_soft_delete_view`, `product_restore_view`) & URL Routing with Manager Role Protection (`inventory/views.py`, `inventory/urls.py`).
+- [x] **Task 98:** Dedicated Action Views (`product_soft_delete_view`, `product_restore_view`) & URL Routing with Manager Role Protection (`inventory/views.py`, `inventory/urls.py`).
 - [ ] **Task 99:** Product Detail Staging UI Integration with Confirmation Modal, Trash Indicator Banner & Restore Action (`inventory/templates/inventory/product_detail.html`).
 - [ ] **Task 100:** Dashboard Catalog Filtering, Erased Tab Navigation Pill, Aggregate Count Isolation & Search Scoping (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`).
 - [ ] **Task 101:** Bilingual Localization, Comprehensive Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_product_soft_delete.py`, `CHANGELOG.md`).
