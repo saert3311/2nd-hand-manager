@@ -199,6 +199,47 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             self.assertTrue(page.locator('text="Certificado de Verificación Rápido Pack"').first.is_visible())
             print("Verified public product detail 60/40 layout, LCP image, and conversion CTA.")
 
+            # Visitor tests canonical 301 slug redirect
+            print("[PART I - STEP 5] Visitor tests canonical 301 slug redirect on product URL...")
+            page.goto(f"{self.live_server_url}/tienda/producto/outdated-slug-{self.public_bike.pk}/")
+            page.wait_for_load_state("networkidle")
+            self.assertIn(f"bicicleta-de-montana-orbea-mx-29-{self.public_bike.pk}", page.url)
+            print("Verified 301 canonical slug redirect to official product slug.")
+
+            # Visitor navigates to standalone 'Cómo comprar' guide (/como-comprar/)
+            print("[PART I - STEP 6] Visitor visits standalone '/como-comprar/' page...")
+            page.goto(f"{self.live_server_url}{reverse('storefront:how_to_buy')}")
+            page.wait_for_selector('h1:has-text("Cómo comprar"), h1:has-text("How to buy")')
+            self.assertIn("Alfafar", page.content())
+            self.assertIn("Comte Ronrée", page.content())
+            print("Verified standalone '/como-comprar/' guide with WhatsApp reservation & store pickup info.")
+
+            # Visitor filters catalog by direct category URL (/tienda/categoria/bicicletas/)
+            print("[PART I - STEP 7] Visitor accesses direct category URL (/tienda/categoria/bicicletas/)...")
+            page.goto(f"{self.live_server_url}/tienda/categoria/bicicletas/")
+            page.wait_for_selector("#categoryRail")
+            self.assertTrue(page.locator('text="Bicicleta de Montaña Orbea MX 29"').first.is_visible())
+            print("Verified direct category URL route.")
+
+            # Visitor tests Spanish query parameter filters (?estado=muy_bueno&orden=baratos)
+            print("[PART I - STEP 8] Visitor applies Spanish query params (?estado=muy_bueno&orden=baratos)...")
+            page.goto(f"{self.live_server_url}/tienda/?estado=muy_bueno&orden=baratos")
+            page.wait_for_load_state("networkidle")
+            self.assertTrue(page.locator('text="Bicicleta de Montaña Orbea MX 29"').first.is_visible())
+            print("Verified Spanish query param filtering & sorting.")
+
+            # Visitor checks RGPD and legal compliance pages
+            print("[PART I - STEP 9] Visitor checks legal and privacy pages (/aviso-legal/, /privacidad/, /cookies/)...")
+            for legal_path, heading_text in [
+                (reverse('storefront:legal_notice'), "Aviso Legal"),
+                (reverse('storefront:privacy'), "Política de Privacidad"),
+                (reverse('storefront:cookies'), "Política de Cookies"),
+            ]:
+                page.goto(f"{self.live_server_url}{legal_path}")
+                page.wait_for_selector(f"h1:has-text('{heading_text}')")
+                self.assertIn("Rápido Pack", page.content())
+            print("Verified legal compliance pages (Aviso Legal, Privacidad, Cookies).")
+
             # =================================================================
             # PART II: STAFF ASSISTANT INTAKE & AI VALUATION WORKFLOW
             # =================================================================
