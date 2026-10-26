@@ -1528,3 +1528,63 @@ msgstr "%(count)d producto(s) movido(s) a la papelera."
 
 msgid "Restored %(count)d product(s) from trash."
 msgstr "%(count)d producto(s) restaurado(s) de la papelera."
+
+msgid "Product Clarifications & Notes"
+msgstr "Aclaraciones y notas del producto"
+
+msgid "Direct Note"
+msgstr "Nota directa"
+
+msgid "Clarification Note / Details"
+msgstr "Nota de aclaración / Detalles"
+
+msgid "Add Direct Note"
+msgstr "Añadir nota directa"
+
+msgid "Save Clarification Note"
+msgstr "Guardar nota de aclaración"
+
+msgid "Clarification note added successfully."
+msgstr "Nota de aclaración añadida correctamente."
+
+msgid "Please provide a valid category and note text."
+msgstr "Por favor, indica una categoría y texto de nota válidos."
+
+msgid "Clarification note cannot be empty."
+msgstr "La nota de aclaración no puede estar vacía."
+
+msgid "Record supplemental measurements, composition tags, or condition details discovered after intake. Instantly saved and available for AI copywriting without setting product to Awaiting Info."
+msgstr "Registra medidas, etiquetas de composición o detalles del estado descubiertos tras la entrada. Se guardan al instante y quedan disponibles para la redacción con IA sin poner el producto en 'Esperando info'."
+
+msgid "Asking a doubt will transition the product lifecycle status to 'Awaiting Info' and alert the sourcing assistant to provide an answer."
+msgstr "Preguntar una duda cambiará el estado del ciclo de vida a 'Esperando información' y avisará al asistente de entrada para que responda."
+
+msgid "Resolved Clarifications & Notes"
+msgstr "Aclaraciones y notas resueltas"
+
+msgid "Delete this clarification note?"
+msgstr "¿Eliminar esta nota de aclaración?"
+
+msgid "Delete note"
+msgstr "Eliminar nota"
+
+msgid "Discovered extra measurements, tags, or details after intake? Add them here to enrich the product listing."
+msgstr "¿Descubriste medidas adicionales, etiquetas o detalles tras la entrada? Agrégalos aquí para enriquecer la publicación del producto."
+
+msgid "Add Clarification Note"
+msgstr "Añadir nota de aclaración"
+
+msgid "Send Doubt to Assistant"
+msgstr "Enviar duda a asistente"
+
+msgid "Ask Assistant (Doubt)"
+msgstr "Preguntar a asistente (Duda)"
+
+msgid "Resolved Doubt"
+msgstr "Duda resuelta"
+
+msgid "Direct note"
+msgstr "Nota directa"
+
+msgid "Indicates a direct clarification note rather than a pending manager doubt"
+msgstr "Indica una nota de aclaración directa en vez de una duda pendiente del manager"

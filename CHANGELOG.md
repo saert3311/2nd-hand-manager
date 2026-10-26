@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Product Detail Clarifications Hub ("Direct Notes & Q&A Doubts") (Phase 29)**:
+  - **Domain Model Extension**: Added `is_direct_note` (`BooleanField(default=False, db_index=True)`) to `ProductClarification` in `inventory/models.py`. Generated and applied database migration `0019_productclarification_is_direct_note.py`. Refactored post-save signals so direct clarification notes save in `RESOLVED` status without triggering `AWAITING_INFO` or dispatching assistant push notifications.
+  - **Direct Clarification Endpoint & Multi-Role Permissions**: Implemented `product_add_direct_clarification_view` at `/products/<pk>/clarifications/add-note/` allowing both Store Managers and Sourcing Assistants to record immediate post-intake clarification notes (measurements, tags, condition, authenticity) without changing lifecycle status or creating blockers.
+  - **AI Vision Copywriting Integration**: Updated Gemini listing prompt generator in `inventory/services/ai_service.py` to seamlessly format direct notes (`- [Category] Note: <content>`) alongside resolved Q&A doubt pairs.
+  - **Frontend UI Engineering**: Redesigned `#clarifications-section` in the Left Column of `product_detail.html` directly below "Preserved Intake Notes". Features an accessible dual-mode tab switcher for managers (`📝 Añadir nota directa` vs `❓ Preguntar a asistente`), distinct badges and attributions for direct notes and doubts, mobile-safe typography (`text-base sm:text-sm` preventing iOS Safari auto-zoom), and manager deletion controls.
+  - **Bilingual Localization & Comprehensive Test Suite**: Added Spanish translations in `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`. Authored 14 automated unit, model, form, view, permission, prompt, and UI localization tests in `tests/test_clarifications_hub.py`.
+
 ## [1.5.0] - 2026-10-26
 
 ### Added

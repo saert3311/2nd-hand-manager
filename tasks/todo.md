@@ -2433,16 +2433,16 @@ uff.exe check .`
 ### Task 106: Bilingual Localization, Comprehensive Automated Test Suite & Full Regression Check (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_clarifications_hub.py`, `CHANGELOG.md`)
 **Description:** Add Spanish translations in `locale/es/LC_MESSAGES/django.po` for all new strings ("Product Clarifications & Notes", "Direct Note", "Add Direct Note", "Clarification note saved successfully.", "Ask Assistant", etc.) and compile to `django.mo`. Build a dedicated test suite `tests/test_clarifications_hub.py` verifying: (1) direct note creation by manager and assistant; (2) product lifecycle status preservation; (3) permission enforcement (assistants can add direct notes, assistants cannot open Q&A doubts, only managers can delete); (4) AI copywriting prompt formatting for direct notes; (5) template rendering and Spanish localization. Update `CHANGELOG.md` under `## [Unreleased]`. Run full regression suite and linter.
 **Acceptance criteria:**
-- [ ] Spanish translations compiled with 0 errors.
-- [ ] Test suite in `tests/test_clarifications_hub.py` passes 100%.
-- [ ] Full regression suite (378+ tests) passes with 0 failures and 0 errors.
-- [ ] `ruff check .` passes with 0 warnings.
-- [ ] `CHANGELOG.md` updated with Phase 29 entries.
+- [x] Spanish translations compiled with 0 errors.
+- [x] Test suite in `tests/test_clarifications_hub.py` passes 100%.
+- [x] Full regression suite (378+ tests) passes with 0 failures and 0 errors.
+- [x] `ruff check .` passes with 0 warnings.
+- [x] `CHANGELOG.md` updated with Phase 29 entries.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
-- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_clarifications_hub`
-- [ ] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
-- [ ] Linter passes: `.venv\Scripts\ruff.exe check .`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_clarifications_hub`
+- [x] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check .`
 **Dependencies:** Task 102, Task 103, Task 104, Task 105
 **Files likely touched:**
 - `locale/es/LC_MESSAGES/django.po`
@@ -2454,11 +2454,11 @@ uff.exe check .`
 ---
 
 ## Checkpoint 29: Product Detail Clarifications Hub Complete
-- [ ] `is_direct_note` on `ProductClarification` with migration `0019_clarification_direct_note.py` applied cleanly.
-- [ ] Dedicated direct note action view accessible by both managers and assistants.
-- [ ] Direct notes save in `RESOLVED` status without transitioning product to `AWAITING_INFO`.
-- [ ] Product detail page provides accessible dual-mode controls (direct notes vs Q&A) in the left column under intake notes.
-- [ ] Gemini AI prompt incorporates both direct notes and resolved Q&A items.
-- [ ] Spanish localization compiled and verified.
-- [ ] All unit and regression tests pass with 0 failures.
-- [ ] `ruff check .` passes cleanly.
+- [x] `is_direct_note` on `ProductClarification` with migration `0019_clarification_direct_note.py` applied cleanly.
+- [x] Dedicated direct note action view accessible by both managers and assistants.
+- [x] Direct notes save in `RESOLVED` status without transitioning product to `AWAITING_INFO`.
+- [x] Product detail page provides accessible dual-mode controls (direct notes vs Q&A) in the left column under intake notes.
+- [x] Gemini AI prompt incorporates both direct notes and resolved Q&A items.
+- [x] Spanish localization compiled and verified.
+- [x] All unit and regression tests pass with 0 failures.
+- [x] `ruff check .` passes cleanly.
