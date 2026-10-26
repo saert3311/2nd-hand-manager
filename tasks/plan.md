@@ -356,7 +356,7 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 ---
 
 ### Phase 31: Photo Reordering in Intake and Detail Workspaces (Vertical Slice 27)
-- [ ] **Task 109:** Backend Image Reordering API Endpoint & Permission Security (`inventory/views.py`, `inventory/urls.py`, `tests/test_photo_reordering.py`).
+- [x] **Task 109:** Backend Image Reordering API Endpoint & Permission Security (`inventory/views.py`, `inventory/urls.py`, `tests/test_photo_reordering.py`).
 - [ ] **Task 110:** Intake Form Hybrid Photo Reordering (Buttons + Drag & Drop) (`inventory/templates/inventory/intake.html`).
 - [ ] **Task 111:** Product Detail Gallery Reordering UI & Live Cover Preview (`inventory/templates/inventory/product_detail.html`).
 - [ ] **Task 112:** Bilingual Localization, Automated Test Suite, E2E Verification & Changelog (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_photo_reordering.py`, `CHANGELOG.md`).

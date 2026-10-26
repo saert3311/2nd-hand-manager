@@ -2539,13 +2539,13 @@ uff.exe check .`
 5. Return JSON `{ "success": True, "reordered_ids": [...] }`.
 6. Write unit tests covering manager access, assistant 403 denial, unauthenticated redirects, invalid payload validation, and atomic database persistence.
 **Acceptance criteria:**
-- [ ] Store managers can reorder existing product images via POST endpoint.
-- [ ] Assistants are blocked with HTTP 403 Forbidden.
-- [ ] Cross-product image ID injection is rejected with HTTP 400.
-- [ ] Incomplete ID lists are rejected with HTTP 400.
-- [ ] `ProductImage.order` is updated atomically.
+- [x] Store managers can reorder existing product images via POST endpoint.
+- [x] Assistants are blocked with HTTP 403 Forbidden.
+- [x] Cross-product image ID injection is rejected with HTTP 400.
+- [x] Incomplete ID lists are rejected with HTTP 400.
+- [x] `ProductImage.order` is updated atomically.
 **Verification:**
-- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py test tests.test_photo_reordering`
+- [x] Command succeeds: `.venv\Scripts\python.exe manage.py test tests.test_photo_reordering`
 **Dependencies:** None
 **Files likely touched:**
 - `inventory/views.py`
