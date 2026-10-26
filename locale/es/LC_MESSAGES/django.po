@@ -1598,3 +1598,57 @@ msgstr "Producto identificado — listo para guardar"
 msgid "Please identify the product with AI before saving."
 msgstr "Por favor, identifica el producto con IA antes de guardar."
 
+msgid "Invalid JSON payload."
+msgstr "Carga útil JSON no válida."
+
+msgid "No image IDs provided."
+msgstr "No se han proporcionado IDs de imagen."
+
+msgid "Image IDs must be integers."
+msgstr "Los IDs de imagen deben ser números enteros."
+
+msgid "Provided image IDs do not match the product's images."
+msgstr "Los IDs de imagen proporcionados no coinciden con las imágenes del producto."
+
+msgid "Drag or tap arrows to reorder"
+msgstr "Arrastra o toca las flechas para reordenar"
+
+msgid "Cover"
+msgstr "Portada"
+
+msgid "Move left"
+msgstr "Mover a la izquierda"
+
+msgid "Move photo left"
+msgstr "Mover foto a la izquierda"
+
+msgid "Move right"
+msgstr "Mover a la derecha"
+
+msgid "Move photo right"
+msgstr "Mover foto a la derecha"
+
+msgid "Make cover photo"
+msgstr "Hacer foto de portada"
+
+msgid "Set as cover photo"
+msgstr "Establecer como foto de portada"
+
+msgid "Reorder"
+msgstr "Reordenar"
+
+msgid "Done"
+msgstr "Listo"
+
+msgid "Cover Photo"
+msgstr "Foto de portada"
+
+msgid "Photo order saved successfully!"
+msgstr "¡Orden de fotos guardado correctamente!"
+
+msgid "Failed to save photo order."
+msgstr "Error al guardar el orden de las fotos."
+
+msgid "Network error saving photo order."
+msgstr "Error de red al guardar el orden de las fotos."
+

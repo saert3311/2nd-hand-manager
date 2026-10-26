@@ -16,6 +16,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.translation import get_language
 from django.utils.translation import gettext as _
+from django.views.decorators.http import require_POST
 
 from .forms import (
     ProductClarificationAnswerForm,
@@ -847,3 +848,59 @@ def push_test_view(request):
         tag="2ndhand-test-push",
     )
     return JsonResponse({"status": "ok", "sent": sent_count})
+
+@login_required
+@manager_required
+@require_POST
+def product_reorder_images_view(request, pk):
+    """
+    Allows managers to reorder existing product images.
+    Payload: JSON { "image_ids": [id1, id2, ...] } or form-data image_ids.
+    Validates that all image IDs belong to the product and updates their order in a single atomic transaction.
+    """
+    product = get_object_or_404(Product, pk=pk)
+
+    try:
+        if request.content_type == "application/json" or (request.body and request.body.startswith(b"{")):
+            data = json.loads(request.body.decode("utf-8"))
+            image_ids = data.get("image_ids", [])
+        else:
+            image_ids = request.POST.getlist("image_ids")
+            if not image_ids and "image_ids[]" in request.POST:
+                image_ids = request.POST.getlist("image_ids[]")
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"success": False, "error": _("Invalid JSON payload.")}, status=400)
+
+    if not isinstance(image_ids, list) or not image_ids:
+        return JsonResponse({"success": False, "error": _("No image IDs provided.")}, status=400)
+
+    try:
+        image_ids = [int(i) for i in image_ids]
+    except (ValueError, TypeError):
+        return JsonResponse({"success": False, "error": _("Image IDs must be integers.")}, status=400)
+
+    # Verify that all image_ids belong to this product and length matches
+    existing_images = list(product.images.all())
+    existing_ids = {img.id for img in existing_images}
+
+    if set(image_ids) != existing_ids or len(image_ids) != len(existing_images):
+        return JsonResponse(
+            {"success": False, "error": _("Provided image IDs do not match the product's images.")},
+            status=400,
+        )
+
+    # Update order atomically
+    with transaction.atomic():
+        for order_idx, img_id in enumerate(image_ids):
+            ProductImage.objects.filter(id=img_id, product=product).update(order=order_idx)
+
+    # Return updated list and new primary image url
+    primary_image = product.images.order_by("order", "id").first()
+    primary_image_url = primary_image.image.url if primary_image else None
+
+    return JsonResponse({
+        "success": True,
+        "reordered_ids": image_ids,
+        "primary_image_url": primary_image_url,
+    })
+

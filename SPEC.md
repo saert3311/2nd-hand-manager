@@ -727,6 +727,19 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
    - All resolved clarifications (both direct notes and answered Q&As) are included in the Gemini AI prompt.
    - The unapplied clarifications callout (`has_unapplied_clarifications`) indicates when new notes are available for copy regeneration.
 
+### 6.20 Photo Reordering in Intake and Detail Workspaces
+1. **Intake Form Hybrid Reordering (`/intake/`):**
+   - The in-memory array `selectedFiles` can be reordered by the assistant before cataloging.
+   - Each preview card features accessible tap/click controls: `◀` Move Left, `▶` Move Right, and `⭐ Portada / Make Cover` (moves photo to position #1), alongside HTML5 drag-and-drop handles for desktop power users.
+   - The primary cover position (#1) receives a prominent badge `⭐ #1 Portada` / `⭐ #1 Cover`.
+   - Any reordering triggers `syncFileInput()` via `DataTransfer`, repopulating `<input type="file" name="images">` in the updated order so `request.FILES.getlist('images')` arrives pre-sorted for `ProductImage.order = 0, 1, 2...`.
+   - Reordering preserves the pre-flight AI identification gate status (`hasIdentified`). Re-running AI identification passes the updated first 3 photos (`selectedFiles.slice(0, 3)`).
+2. **Product Detail Workspace Reordering (`/products/<pk>/`):**
+   - Restricted to Store Managers (`can_manage=True` / `@manager_required`).
+   - The Photo Gallery card features an interactive thumbnail reordering mode with move left/right controls, 1-click "Set as Cover", and drag-and-drop reordering.
+   - Persists changes asynchronously via `POST /products/<pk>/images/reorder/` with atomic database updates (`ProductImage.order = index`).
+   - Automatically synchronizes the primary featured image `#mainImage` and displays an accessible toast notice.
+
 ## 7. AI Service Contract (`ai_service.py`)
 ```python
 def generate_product_listing(
@@ -1164,3 +1177,12 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
     - **Option B (Strict Success Only):**
       Require `data.success === true` before enabling the Save button, permanently blocking saving if the API is offline.
     *Decision:* Option A approved — Resilient UI gate unlocking on identification attempt with offline fallback and photo reset tracking.
+
+34. **Photo Reordering Architecture & Usability Standards:**
+    - How should photo reordering operate across the intake form (`/intake/`) and the product detail workspace (`/products/<pk>/`)?
+    - **Option A (Recommended & Selected — Hybrid Mobile-First Controls + Drag-and-Drop):**
+      - In `/intake/`: Client-side hybrid controls (Move Left/Right, 1-click "Set as Cover", and HTML5 drag-and-drop) with immediate `DataTransfer` synchronization and identification gate preservation.
+      - In `/products/<pk>/`: Manager-only asynchronous reorder endpoint (`POST /products/<pk>/images/reorder/`) with atomic database ordering, live featured image updates, and accessible toast notifications.
+    - **Option B (Drag-and-Drop Only):** Rely exclusively on mouse drag-and-drop, risking touch gesture collisions with vertical scrolling on mobile devices.
+    - **Option C (Buttons Only):** Restrict to button clicks without desktop drag-and-drop capability.
+    *Decision:* Option A approved — Hybrid mobile-first controls with drag-and-drop, manager-only detail permissions, and identification gate preservation.

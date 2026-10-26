@@ -106,22 +106,58 @@
           <h2 class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider">
             {% trans "Photos" %} ({{ product.images.count }})
           </h2>
-          <span class="text-xs text-slate-400">{% trans "Saved as WebP" %}</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-400">{% trans "Saved as WebP" %}</span>
+            {% if can_manage and product.images.count > 1 %}
+            <button type="button" id="toggleReorderModeBtn"
+                    class="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg px-2.5 py-1 transition flex items-center gap-1 active:scale-95 shadow-xs">
+              <span id="toggleReorderIcon">🔄</span> <span id="toggleReorderText">{% trans "Reorder" %}</span>
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Accessible Toast / Feedback Banner for Reordering -->
+        <div id="reorderFeedbackBanner" role="status" aria-live="polite"
+             class="hidden p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between gap-2 transition-all">
+          <span id="reorderFeedbackText"></span>
         </div>
 
         {% if product.images.exists %}
         <!-- Featured Image Container -->
-        <div class="aspect-square bg-slate-100 rounded-xl overflow-hidden border border-slate-200">
+        <div class="aspect-square bg-slate-100 rounded-xl overflow-hidden border border-slate-200 relative group">
           <img id="mainImage" src="{{ product.primary_image.image.url }}" alt="main" class="w-full h-full object-contain">
+          <span id="mainCoverBadge" class="absolute top-2 left-2 bg-amber-500 text-white text-[11px] sm:text-xs font-black px-2 py-0.5 rounded-md shadow-sm flex items-center gap-1 pointer-events-none select-none">
+            ⭐ {% trans "Cover Photo" %}
+          </span>
         </div>
 
         <!-- Thumbnails Strip -->
-        <div class="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-48 overflow-y-auto p-1">
+        <div id="galleryThumbnailsGrid" class="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-56 overflow-y-auto p-1">
           {% for img_obj in product.images.all %}
-          <button type="button" data-image-url="{{ img_obj.image.url }}"
-                  class="gallery-thumb-btn aspect-square rounded-lg overflow-hidden border-2 border-slate-200 hover:border-emerald-500 focus:border-emerald-600 focus:outline-none transition group">
-            <img src="{{ img_obj.image.url }}" class="w-full h-full object-cover">
-          </button>
+          <div class="gallery-thumb-item gallery-thumb-btn relative aspect-square rounded-xl overflow-hidden border-2 {% if forloop.first %}border-amber-400 shadow-sm{% else %}border-slate-200{% endif %} bg-slate-100 group transition-all"
+               data-image-id="{{ img_obj.id }}"
+               data-image-url="{{ img_obj.image.url }}"
+               data-index="{{ forloop.counter0 }}">
+            <img src="{{ img_obj.image.url }}" class="w-full h-full object-cover cursor-pointer gallery-view-trigger select-none" alt="thumb {{ forloop.counter }}">
+
+            <!-- Index Badge -->
+            <span class="thumb-index-badge absolute top-1 left-1 {% if forloop.first %}bg-amber-500 font-black{% else %}bg-slate-900/75 font-bold{% endif %} text-white text-[10px] px-1.5 py-0.5 rounded-md shadow-sm pointer-events-none select-none z-10">
+              {% if forloop.first %}⭐ #1{% else %}#{{ forloop.counter }}{% endif %}
+            </span>
+
+            {% if can_manage %}
+            <!-- Reorder Controls Bar (shown when reorder mode is active) -->
+            <div class="thumb-reorder-controls hidden absolute bottom-1 inset-x-1 flex items-center justify-between gap-0.5 z-10 bg-slate-900/85 backdrop-blur-xs p-1 rounded-lg">
+              <button type="button" class="btn-thumb-move-left w-6 h-6 rounded bg-black/60 hover:bg-black/90 text-white flex items-center justify-center text-[10px] font-bold transition disabled:opacity-20 disabled:pointer-events-none active:scale-95"
+                      title="{% trans 'Move left' %}" aria-label="{% trans 'Move photo left' %}" {% if forloop.first %}disabled{% endif %}>◀</button>
+              <button type="button" class="btn-thumb-make-cover px-1 h-6 rounded bg-black/60 hover:bg-amber-600 text-amber-300 hover:text-white flex items-center justify-center text-[10px] font-bold transition active:scale-95 {% if forloop.first %}hidden{% endif %}"
+                      title="{% trans 'Set as cover photo' %}" aria-label="{% trans 'Set as cover photo' %}">⭐</button>
+              <button type="button" class="btn-thumb-move-right w-6 h-6 rounded bg-black/60 hover:bg-black/90 text-white flex items-center justify-center text-[10px] font-bold transition disabled:opacity-20 disabled:pointer-events-none active:scale-95"
+                      title="{% trans 'Move right' %}" aria-label="{% trans 'Move photo right' %}" {% if forloop.last %}disabled{% endif %}>▶</button>
+            </div>
+            {% endif %}
+          </div>
           {% endfor %}
         </div>
         {% else %}
@@ -926,14 +962,243 @@
     }
   }
 
-  document.querySelectorAll('.gallery-thumb-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const url = btn.getAttribute('data-image-url');
-      if (url) {
-        setMainImage(url);
+  // Click on thumbnail to view in main featured image
+  document.querySelectorAll('.gallery-view-trigger').forEach(img => {
+    img.addEventListener('click', () => {
+      const parent = img.closest('.gallery-thumb-item');
+      if (parent) {
+        const url = parent.getAttribute('data-image-url');
+        if (url) setMainImage(url);
       }
     });
   });
+
+  {% if can_manage %}
+  // Reorder mode & async persistence logic
+  const reorderUrl = "{% url 'inventory:product_reorder_images' product.pk %}";
+  const toggleReorderBtn = document.getElementById('toggleReorderModeBtn');
+  const toggleReorderIcon = document.getElementById('toggleReorderIcon');
+  const toggleReorderText = document.getElementById('toggleReorderText');
+  const thumbnailsGrid = document.getElementById('galleryThumbnailsGrid');
+  const reorderFeedbackBanner = document.getElementById('reorderFeedbackBanner');
+  const reorderFeedbackText = document.getElementById('reorderFeedbackText');
+  let isReorderMode = false;
+  let isReorderingSaving = false;
+  let draggedThumbItem = null;
+
+  function showReorderFeedback(message, isSuccess = true) {
+    if (!reorderFeedbackBanner) return;
+    reorderFeedbackText.textContent = message;
+    if (isSuccess) {
+      reorderFeedbackBanner.className = 'p-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-semibold flex items-center justify-between gap-2 shadow-xs transition-all';
+    } else {
+      reorderFeedbackBanner.className = 'p-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-xs font-semibold flex items-center justify-between gap-2 shadow-xs transition-all';
+    }
+    reorderFeedbackBanner.classList.remove('hidden');
+    setTimeout(() => {
+      reorderFeedbackBanner.classList.add('hidden');
+    }, 2800);
+  }
+
+  function updateThumbnailsUI() {
+    if (!thumbnailsGrid) return;
+    const items = Array.from(thumbnailsGrid.querySelectorAll('.gallery-thumb-item'));
+    items.forEach((item, idx) => {
+      item.setAttribute('data-index', idx);
+      const badge = item.querySelector('.thumb-index-badge');
+      if (badge) {
+        if (idx === 0) {
+          badge.className = 'thumb-index-badge absolute top-1 left-1 bg-amber-500 font-black text-white text-[10px] px-1.5 py-0.5 rounded-md shadow-sm pointer-events-none select-none z-10';
+          badge.innerHTML = '⭐ #1';
+          item.classList.remove('border-slate-200');
+          item.classList.add('border-amber-400');
+        } else {
+          badge.className = 'thumb-index-badge absolute top-1 left-1 bg-slate-900/75 font-bold text-white text-[10px] px-1.5 py-0.5 rounded-md shadow-sm pointer-events-none select-none z-10';
+          badge.textContent = `#${idx + 1}`;
+          item.classList.remove('border-amber-400');
+          item.classList.add('border-slate-200');
+        }
+      }
+
+      const leftBtn = item.querySelector('.btn-thumb-move-left');
+      if (leftBtn) {
+        leftBtn.disabled = (idx === 0 || isReorderingSaving);
+      }
+      const rightBtn = item.querySelector('.btn-thumb-move-right');
+      if (rightBtn) {
+        rightBtn.disabled = (idx === items.length - 1 || isReorderingSaving);
+      }
+      const coverBtn = item.querySelector('.btn-thumb-make-cover');
+      if (coverBtn) {
+        if (idx === 0) {
+          coverBtn.classList.add('hidden');
+        } else {
+          coverBtn.classList.remove('hidden');
+          coverBtn.disabled = isReorderingSaving;
+        }
+      }
+    });
+  }
+
+  async function persistImageOrder() {
+    if (!thumbnailsGrid || isReorderingSaving) return;
+    const items = Array.from(thumbnailsGrid.querySelectorAll('.gallery-thumb-item'));
+    const imageIds = items.map(el => parseInt(el.getAttribute('data-image-id')));
+
+    isReorderingSaving = true;
+    updateThumbnailsUI();
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '';
+
+    try {
+      const response = await fetch(reorderUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify({ image_ids: imageIds }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        if (data.primary_image_url) {
+          setMainImage(data.primary_image_url);
+        }
+        showReorderFeedback("{% trans 'Photo order saved successfully!' %}", true);
+      } else {
+        showReorderFeedback(data.error || "{% trans 'Failed to save photo order.' %}", false);
+      }
+    } catch (err) {
+      console.warn("Reorder request failed:", err);
+      showReorderFeedback("{% trans 'Network error saving photo order.' %}", false);
+    } finally {
+      isReorderingSaving = false;
+      updateThumbnailsUI();
+    }
+  }
+
+  function moveThumbItem(fromIdx, toIdx) {
+    if (!thumbnailsGrid || fromIdx === toIdx) return;
+    const items = Array.from(thumbnailsGrid.querySelectorAll('.gallery-thumb-item'));
+    if (fromIdx < 0 || fromIdx >= items.length || toIdx < 0 || toIdx >= items.length) return;
+
+    const itemToMove = items[fromIdx];
+    if (toIdx > fromIdx) {
+      items[toIdx].after(itemToMove);
+    } else {
+      items[toIdx].before(itemToMove);
+    }
+    updateThumbnailsUI();
+    persistImageOrder();
+  }
+
+  function makeThumbCover(fromIdx) {
+    if (!thumbnailsGrid || fromIdx <= 0) return;
+    const items = Array.from(thumbnailsGrid.querySelectorAll('.gallery-thumb-item'));
+    if (fromIdx >= items.length) return;
+
+    thumbnailsGrid.prepend(items[fromIdx]);
+    updateThumbnailsUI();
+    persistImageOrder();
+  }
+
+  if (toggleReorderBtn) {
+    toggleReorderBtn.addEventListener('click', function() {
+      isReorderMode = !isReorderMode;
+      const controlBars = document.querySelectorAll('.thumb-reorder-controls');
+      const thumbItems = document.querySelectorAll('.gallery-thumb-item');
+
+      if (isReorderMode) {
+        toggleReorderBtn.className = 'text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-600 rounded-lg px-2.5 py-1 transition flex items-center gap-1 active:scale-95 shadow-xs';
+        toggleReorderIcon.textContent = '✓';
+        toggleReorderText.textContent = "{% trans 'Done' %}";
+        controlBars.forEach(bar => bar.classList.remove('hidden'));
+        thumbItems.forEach(item => {
+          item.setAttribute('draggable', 'true');
+        });
+      } else {
+        toggleReorderBtn.className = 'text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg px-2.5 py-1 transition flex items-center gap-1 active:scale-95 shadow-xs';
+        toggleReorderIcon.textContent = '🔄';
+        toggleReorderText.textContent = "{% trans 'Reorder' %}";
+        controlBars.forEach(bar => bar.classList.add('hidden'));
+        thumbItems.forEach(item => {
+          item.removeAttribute('draggable');
+        });
+      }
+    });
+  }
+
+  // Bind drag-and-drop & button handlers to each thumbnail item
+  document.querySelectorAll('.gallery-thumb-item').forEach(item => {
+    item.addEventListener('dragstart', (e) => {
+      if (!isReorderMode) {
+        e.preventDefault();
+        return;
+      }
+      draggedThumbItem = item;
+      e.dataTransfer.effectAllowed = 'move';
+      item.classList.add('opacity-40', 'scale-95');
+    });
+
+    item.addEventListener('dragover', (e) => {
+      if (!isReorderMode || !draggedThumbItem || draggedThumbItem === item) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      item.classList.add('ring-2', 'ring-emerald-500');
+    });
+
+    item.addEventListener('dragleave', () => {
+      item.classList.remove('ring-2', 'ring-emerald-500');
+    });
+
+    item.addEventListener('drop', (e) => {
+      if (!isReorderMode || !draggedThumbItem || draggedThumbItem === item) return;
+      e.preventDefault();
+      item.classList.remove('ring-2', 'ring-emerald-500');
+
+      const items = Array.from(thumbnailsGrid.querySelectorAll('.gallery-thumb-item'));
+      const fromIdx = items.indexOf(draggedThumbItem);
+      const toIdx = items.indexOf(item);
+      moveThumbItem(fromIdx, toIdx);
+    });
+
+    item.addEventListener('dragend', () => {
+      item.classList.remove('opacity-40', 'scale-95');
+      draggedThumbItem = null;
+    });
+
+    const leftBtn = item.querySelector('.btn-thumb-move-left');
+    if (leftBtn) {
+      leftBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const items = Array.from(thumbnailsGrid.querySelectorAll('.gallery-thumb-item'));
+        const idx = items.indexOf(item);
+        moveThumbItem(idx, idx - 1);
+      });
+    }
+
+    const rightBtn = item.querySelector('.btn-thumb-move-right');
+    if (rightBtn) {
+      rightBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const items = Array.from(thumbnailsGrid.querySelectorAll('.gallery-thumb-item'));
+        const idx = items.indexOf(item);
+        moveThumbItem(idx, idx + 1);
+      });
+    }
+
+    const coverBtn = item.querySelector('.btn-thumb-make-cover');
+    if (coverBtn) {
+      coverBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const items = Array.from(thumbnailsGrid.querySelectorAll('.gallery-thumb-item'));
+        const idx = items.indexOf(item);
+        makeThumbCover(idx);
+      });
+    }
+  });
+  {% endif %}
 
   function copyToClipboard(elementId, btn) {
     const input = document.getElementById(elementId);
