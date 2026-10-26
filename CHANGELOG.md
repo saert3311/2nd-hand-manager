@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-10-26
+
+### Added
+- **Published Product Modifications & External Platform Sync Tracking (Phase 33)**:
+  - **Orthogonal Platform Synchronization Domain Model (`inventory/models.py`)**: Added `needs_platform_sync` (`BooleanField`, default `False`, indexed) and `last_platform_synced_at` (`DateTimeField`, null/blank) to `Product`. Preserves published lifecycle state (`PUBLISHED`) while tracking post-publication modifications without disrupting sales attribution, analytics, or external link navigation. Generated and applied migration `0020_product_platform_sync.py`.
+  - **Automated Change-Detection Triggers**: Hooked change detection into `Product.save()` and clarification signals: modifications to `sale_price`, `ai_title`, or `ai_description`, as well as added or resolved `ProductClarification` questions/notes on published products, automatically flag `needs_platform_sync = True`. Reordering photos that alters the primary cover image (`#0`) also triggers out-of-sync tracking.
+  - **Product Detail Staging Photo Management**: Enabled store managers to upload additional photos directly in the Photo Gallery card via `product_upload_images_view` (`POST /products/<pk>/images/upload/`), compressed to WebP with Pillow (up to 10 photos max). Implemented `product_delete_image_view` (`POST /products/<pk>/images/<image_id>/delete/`) with automatic order re-indexing ($0, 1, 2\dots$) while guaranteeing at least 1 photo remains. Both actions set `needs_platform_sync = True` on published items.
+  - **1-Click Platform Sync Clearance Action**: Implemented `product_mark_platform_synced_view` (`POST /products/<pk>/mark-synced/`) and `Product.mark_platform_synced()`. Clears the sync flag, stamps `last_platform_synced_at`, and appends an immutable audit log entry in `ProductStatusLog` (`trigger="platform_sync_cleared"`).
+  - **Accessible Warning Workspace Banner**: Added an amber warning banner `#platformSyncBanner` in `product_detail.html` notifying managers that external marketplace listings may be out of date, equipped with the 1-click `✅ Marcar plataformas como actualizadas` / `Mark Platforms as Updated` action.
+  - **Catalog Dashboard Sub-Filtering & Live Badges (`inventory/templates/inventory/dashboard.html`)**: Added `?status=published&sync=out_of_sync` sub-filter with live counter under the "Publicados" tab, and rendered pulsing amber sync badges (`⚠️ Actualizar plataformas` / `⚠️ Update Platforms`) on product cards.
+  - **Django Admin Visibility (`inventory/admin.py`)**: Added `needs_platform_sync_col` badge in `ProductAdmin.list_display` and `needs_platform_sync` in `list_filter`.
+  - **Bilingual Localization & Comprehensive Test Suite**: Added 29 Spanish translations in `locale/es/LC_MESSAGES/django.po` and compiled to `django.mo`. Authored 21 automated unit, model, form, view, permission, and UI localization tests in `tests/test_published_platform_sync.py`.
+
 ## [1.8.1] - 2026-10-26
 
 ### Added
