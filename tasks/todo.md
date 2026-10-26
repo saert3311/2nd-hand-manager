@@ -2635,3 +2635,64 @@ uff.exe check .`
 - [x] Spanish translations compiled and verified.
 - [x] 100% test pass rate with 0 regressions.
 - [x] `ruff check .` passes cleanly.
+
+---
+
+## Phase 32: Low-DPI Intake Photo Miniatures & Delete Controls Optimization
+
+### Task 113: Intake Form High-Density Miniature Grid, Enhanced Delete Controls & Lightbox Modal (`inventory/templates/inventory/intake.html`)
+**Description:** Optimize photo miniatures, delete controls, and thumbnail inspection in the mobile intake form.
+1. Update `#previewGrid` from `grid-cols-2` to `grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-2.5` to produce compact, proportional miniatures (~90px–115px square) on compact mobile screens.
+2. Refactor the delete ('X') button: render a razor-sharp high-contrast visual badge (`w-6 h-6`, `bg-rose-600 hover:bg-rose-700`, `ring-1 ring-white/90`) with a bold cross (`stroke-width="3"`) to prevent blur and background blending on 1x DPI displays.
+3. Streamline sequence and cover badges to compact pills (`text-[10px]`, `px-1.5 py-0.5`), leaving over 70% of the thumbnail surface unobstructed.
+4. Streamline bottom reorder controls into a compact floating pill (`bg-slate-900/80 backdrop-blur-xs p-0.5 rounded-lg`).
+5. Add an accessible tap-to-inspect Lightbox Modal (`#imagePreviewModal`) so warehouse assistants on small/low-DPI screens can click any thumbnail to inspect image sharpness, labels, and details full-size before submission.
+**Acceptance criteria:**
+- [ ] Miniature cards render in 3 columns on viewports < 640px, keeping height compact.
+- [ ] Delete ('X') button is visually crisp, high-contrast, and unambiguous against all backgrounds.
+- [ ] Clicking a thumbnail opens the full-screen photo inspection modal without mutating form state.
+- [ ] Reordering, deleting, file sync (`DataTransfer`), and pre-flight gate remain fully functional.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** None
+**Files likely touched:**
+- `inventory/templates/inventory/intake.html`
+**Estimated scope:** Medium (1 file)
+
+---
+
+### Task 114: Bilingual Localization, Automated Test Suite, Simulation Verification & Changelog (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_intake_low_dpi.py`, `CHANGELOG.md`)
+**Description:** Compile Spanish translations, write comprehensive automated tests for low-DPI adaptations, verify zero regressions across the full test suite and linter, and document in `CHANGELOG.md`.
+1. Add Spanish translations for new strings ("Foto {x} de {total}", "Cerrar vista previa", "Toca para ampliar foto", etc.) in `django.po` and compile to `django.mo`.
+2. Author `tests/test_intake_low_dpi.py` verifying grid classes, delete button contrast classes, lightbox modal structure, accessibility attributes, and localization.
+3. Run full automated test suite and `ruff check .`.
+4. Update `CHANGELOG.md` under `## [Unreleased]`.
+**Acceptance criteria:**
+- [ ] Translations compiled with 0 errors.
+- [ ] New automated tests pass 100%.
+- [ ] Full test suite passes with zero regressions.
+- [ ] `ruff check .` passes with 0 warnings.
+- [ ] `CHANGELOG.md` updated with Phase 32 entries.
+**Verification:**
+- [ ] Command succeeds: `.venv\Scripts\python.exe manage.py compile_locales`
+- [ ] Targeted tests pass: `.venv\Scripts\python.exe manage.py test tests.test_intake_low_dpi`
+- [ ] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [ ] Linter passes: `.venv\Scripts\ruff.exe check .`
+**Dependencies:** Task 113
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `tests/test_intake_low_dpi.py`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (4 files)
+
+---
+
+## Checkpoint 32: Low-DPI Intake Photo Miniatures & Delete Controls Complete
+- [ ] 3-column compact grid deployed on `/intake/` on mobile viewports.
+- [ ] Delete ('X') button is high-contrast, crisp, and unambiguous on 1x DPI displays.
+- [ ] Miniatures feature tap-to-inspect lightbox modal for detail verification.
+- [ ] Existing reorder, file sync, and mandatory AI gate features remain intact.
+- [ ] Spanish translations compiled and verified.
+- [ ] 100% test pass rate with 0 regressions.
+- [ ] `ruff check .` passes cleanly.
