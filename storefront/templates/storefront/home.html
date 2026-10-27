@@ -263,7 +263,7 @@
         <div class="lg:col-span-5">
           <div class="relative rounded-xl overflow-hidden shadow-lg bg-surface-container">
             <img src="{% static 'img/storefront/shop_team.webp' %}"
-                 alt="{% trans 'Equipo y fachada de Rápido Pack en Alfafar, Valencia' %}"
+                 alt="{% trans 'Rápido Pack team and storefront in Alfafar, Valencia' %}"
                  width="1200"
                  height="896"
                  loading="lazy"
@@ -461,7 +461,7 @@
         <div class="p-space-md bg-surface-container-low flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-2 text-on-surface font-body-sm text-body-sm">
             <span class="material-symbols-outlined text-primary text-[18px]">train</span>
-            <span class="font-medium">{% trans "🚆 Muy cerca de la estación de Alfafar-Benetússer · Fácil aparcamiento" %}</span>
+            <span class="font-medium">{% trans "🚆 Very close to Alfafar-Benetússer station · Easy parking" %}</span>
           </div>
           <span class="font-label-sm text-label-sm text-primary font-bold bg-surface-container px-2.5 py-1 rounded-full">L'Horta Sud</span>
         </div>
@@ -475,8 +475,8 @@
               <span class="material-symbols-outlined text-[24px]">storefront</span>
             </div>
             <div>
-              <h3 class="font-headline-md text-headline-md text-on-surface font-bold">{% trans "Punto de Atención Alfafar" %}</h3>
-              <p class="font-body-sm text-body-sm text-on-surface-variant">{% trans "Paquetería multimarca, Punto Pack y tienda física" %}</p>
+              <h3 class="font-headline-md text-headline-md text-on-surface font-bold">{% trans "Alfafar Service Point" %}</h3>
+              <p class="font-body-sm text-body-sm text-on-surface-variant">{% trans "Multi-carrier parcel hub, Punto Pack, and physical store" %}</p>
             </div>
           </div>
 
@@ -484,7 +484,7 @@
           <div class="flex items-start gap-space-sm bg-surface-container-low p-space-md rounded-xl">
             <span class="material-symbols-outlined text-primary text-[24px] mt-0.5">location_on</span>
             <div>
-              <span class="font-headline-sm text-headline-sm text-on-surface font-bold block">{% trans "Dirección" %}</span>
+              <span class="font-headline-sm text-headline-sm text-on-surface font-bold block">{% trans "Address" %}</span>
               <p class="font-body-md text-body-md text-on-surface-variant mt-0.5">
                 {{ storefront.address }}
               </p>
@@ -495,7 +495,7 @@
           <div class="flex items-start gap-space-sm bg-surface-container-low p-space-md rounded-xl">
             <span class="material-symbols-outlined text-primary text-[24px] mt-0.5">schedule</span>
             <div class="w-full">
-              <span class="font-headline-sm text-headline-sm text-on-surface font-bold block">{% trans "Horario de apertura" %}</span>
+              <span class="font-headline-sm text-headline-sm text-on-surface font-bold block">{% trans "Opening hours" %}</span>
               <div class="mt-1 flex flex-col gap-1 font-body-sm text-body-sm text-on-surface-variant">
                 <div class="flex justify-between">
                   <span class="font-medium text-on-surface">{% trans "Monday to Friday:" %}</span>
@@ -506,8 +506,8 @@
                   <span>10:00 – 15:00 h</span>
                 </div>
                 <div class="flex justify-between text-error font-medium">
-                  <span>{% trans "Domingos:" %}</span>
-                  <span>{% trans "Cerrado" %}</span>
+                  <span>{% trans "Sundays:" %}</span>
+                  <span>{% trans "Closed" %}</span>
                 </div>
               </div>
             </div>
@@ -542,20 +542,20 @@
       <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-space-lg text-center lg:text-left">
         <div class="max-w-2xl">
           <span class="inline-block bg-on-primary/15 text-primary-fixed font-label-sm text-label-sm px-3 py-1 rounded-full uppercase tracking-wider font-semibold mb-space-xs">
-            {% trans "Atención inmediata" %}
+            {% trans "Immediate assistance" %}
           </span>
           <h2 class="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl font-bold tracking-tight text-on-primary">
-            {% trans "¿Tienes un paquete o buscas una oportunidad? Te esperamos en Alfafar." %}
+            {% trans "Have a package or looking for a great find? Visit us in Alfafar." %}
           </h2>
           <p class="font-body-lg text-body-lg text-primary-fixed mt-space-xs">
-            {% trans "Sin citas previas ni trámites complejos. Pásate hoy mismo por la tienda o pregúntanos por WhatsApp." %}
+            {% trans "No appointments or complicated procedures. Drop by the store today or ask us on WhatsApp." %}
           </p>
         </div>
         <div class="flex flex-col sm:flex-row items-center gap-space-sm shrink-0 w-full lg:w-auto">
           <a class="w-full sm:w-auto inline-flex items-center justify-center gap-space-xs bg-surface-container-lowest text-on-surface font-label-md text-label-md font-bold px-6 py-3.5 rounded-xl shadow hover:bg-surface-container transition-all"
              href="{% url 'storefront:catalog' %}">
             <span class="material-symbols-outlined text-[20px] text-primary">storefront</span>
-            <span>{% trans "Ver la tienda online" %}</span>
+            <span>{% trans "View online store" %}</span>
           </a>
           <a class="w-full sm:w-auto inline-flex items-center justify-center gap-space-xs bg-[#25D366] hover:bg-[#20ba59] text-on-primary font-label-md text-label-md font-bold px-6 py-3.5 rounded-xl shadow transition-all"
              href="{% url 'storefront:go_whatsapp' %}"
