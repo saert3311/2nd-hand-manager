@@ -10,7 +10,7 @@
            class="w-full h-full object-cover {% if product.status == 'sold' %}grayscale opacity-70{% else %}group-hover:scale-105 transition-transform duration-500{% endif %}">
     {% else %}
       <div class="w-full h-full flex items-center justify-center text-outline">
-        <span class="material-symbols-outlined text-4xl">photo_camera</span>
+        <span class="material-symbols-outlined text-4xl" aria-hidden="true">photo_camera</span>
       </div>
     {% endif %}
 
@@ -18,17 +18,17 @@
     <div class="absolute top-space-xs left-space-xs flex flex-col gap-1">
       {% if product.status == 'sold' %}
         <span class="inline-flex items-center gap-1 bg-[#475569] text-surface-container-lowest font-label-sm text-label-sm px-2 py-0.5 rounded shadow-sm font-bold">
-          <span class="material-symbols-outlined text-[13px]">done</span>
+          <span class="material-symbols-outlined text-[13px]" aria-hidden="true">done</span>
           <span>{% trans "SOLD" %}</span>
         </span>
       {% elif product.is_reserved %}
         <span class="inline-flex items-center gap-1 bg-[#EA580C] text-surface-container-lowest font-label-sm text-label-sm px-2 py-0.5 rounded shadow-sm font-bold">
-          <span class="material-symbols-outlined text-[13px]">schedule</span>
+          <span class="material-symbols-outlined text-[13px]" aria-hidden="true">schedule</span>
           <span>{% trans "RESERVED" %}</span>
         </span>
       {% elif product.is_featured %}
-        <span class="inline-flex items-center gap-1 bg-[#F59E0B] text-surface-container-lowest font-label-sm text-label-sm px-2 py-0.5 rounded shadow-sm font-bold">
-          <span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">star</span>
+        <span class="inline-flex items-center gap-1 bg-amber-400 text-slate-950 font-label-sm text-label-sm px-2 py-0.5 rounded shadow-sm font-bold">
+          <span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">star</span>
           <span>{% trans "FEATURED" %}</span>
         </span>
       {% endif %}
@@ -84,18 +84,18 @@
       </div>
 
       {% if product.status == 'sold' %}
-        <div class="text-[11px] text-outline flex items-center gap-1 mt-0.5 font-medium">
-          <span class="material-symbols-outlined text-[14px] text-primary">check_circle</span>
+        <div class="text-xs text-outline flex items-center gap-1 mt-0.5 font-medium">
+          <span class="material-symbols-outlined text-[14px] text-primary" aria-hidden="true">check_circle</span>
           <span>{% trans "Recently sold at Alfafar store" %}</span>
         </div>
       {% elif product.is_reserved %}
-        <div class="text-[11px] text-[#EA580C] flex items-center gap-1 font-semibold mt-0.5">
-          <span class="w-1.5 h-1.5 rounded-full bg-[#EA580C] animate-pulse"></span>
+        <div class="text-xs text-[#c2410c] flex items-center gap-1 font-semibold mt-0.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#EA580C] animate-pulse" aria-hidden="true"></span>
           <span>{% trans "Active 24h hold for in-store check" %}</span>
         </div>
       {% else %}
-        <div class="text-[11px] text-primary flex items-center gap-1 font-semibold mt-0.5">
-          <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+        <div class="text-xs text-primary flex items-center gap-1 font-semibold mt-0.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true"></span>
           <span>{% trans "In store Alfafar · Available today" %}</span>
         </div>
       {% endif %}
@@ -106,22 +106,22 @@
       {% if product.status == 'sold' %}
         <a href="{% url 'storefront:catalog' %}{% if product.category %}?category={{ product.category.slug }}{% endif %}"
            class="w-full bg-surface-container text-primary hover:bg-surface-container-high font-label-md text-label-md py-2 px-space-sm rounded-lg flex items-center justify-center gap-1 font-semibold transition-colors">
-          <span class="material-symbols-outlined text-[16px]">manage_search</span>
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">manage_search</span>
           <span>{% trans "See similar items" %}</span>
         </a>
       {% elif product.is_reserved %}
         <button type="button" disabled
                 class="w-full bg-surface-container-high text-on-surface-variant/70 font-label-md text-label-md py-2 px-space-sm rounded-lg flex items-center justify-center gap-1 font-medium cursor-not-allowed">
-          <span class="material-symbols-outlined text-[16px]">hourglass_top</span>
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">hourglass_top</span>
           <span>{% trans "Temporarily reserved (In Store)" %}</span>
         </button>
         <div class="flex items-center justify-center pt-1">
           <a href="{% url 'storefront:go_whatsapp_product' product.pk %}"
              target="_blank"
              rel="noopener noreferrer"
-             class="text-[11px] text-primary hover:underline font-semibold flex items-center gap-1">
+             class="text-xs text-primary hover:underline font-semibold flex items-center gap-1">
             <span>{% trans "Interested? Ask about waiting list" %}</span>
-            <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+            <span class="material-symbols-outlined text-[13px]" aria-hidden="true">arrow_forward</span>
           </a>
         </div>
       {% else %}
@@ -129,8 +129,8 @@
           <a href="{% url 'storefront:go_whatsapp_product' product.pk %}"
              target="_blank"
              rel="noopener noreferrer"
-             class="flex-1 bg-[#25D366] text-white font-label-md text-label-md py-2 px-space-sm rounded-lg flex items-center justify-center gap-1 font-semibold hover:bg-[#20ba5a] transition-colors shadow-sm">
-            <span class="material-symbols-outlined text-[16px]">chat</span>
+             class="flex-1 bg-[#25D366] text-slate-950 font-label-md text-label-md py-2 px-space-sm rounded-lg flex items-center justify-center gap-1 font-bold hover:bg-[#20ba5a] transition-colors shadow-sm">
+            <span class="material-symbols-outlined text-[16px]" aria-hidden="true">chat</span>
             <span>WhatsApp</span>
           </a>
           <a href="{{ product.get_public_url }}"
