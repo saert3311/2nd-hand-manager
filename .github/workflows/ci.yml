@@ -3,6 +3,7 @@ name: CI/CD Quality Gates & Docker Build
 on:
   push:
     branches: [ master, main ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ master, main ]
 
@@ -14,6 +15,8 @@ jobs:
   quality-gates:
     name: Code Quality & Automated Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout Source Code
@@ -38,6 +41,10 @@ jobs:
         run: |
           python manage.py check
 
+      - name: Gate 2b - Translation Catalog Compilation Check
+        run: |
+          python manage.py compile_locales
+
       - name: Gate 3 - Unit & Integration Test Suite
         env:
           SECRET_KEY: ci-test-secret-key-12345
@@ -50,6 +57,8 @@ jobs:
     name: Docker Build & Container Smoke Test
     needs: quality-gates
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout Source Code
@@ -62,6 +71,16 @@ jobs:
         id: build_time
         run: echo "now=$(date -u +'%Y-%m-%d %H:%M UTC')" >> $GITHUB_OUTPUT
 
+      - name: Resolve Application Version
+        id: app_version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(python3 -c "import re; content = open('config/settings.py').read(); match = re.search(r'APP_VERSION\s*=\s*os\.getenv\([^\)]+,\s*[\x27\x22]([^\x27\x22]+)[\x27\x22]', content); print(match.group(1) if match else '2.1.0')")
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          fi
+
       - name: Gate 4 - Build Docker Image
         uses: docker/build-push-action@v6
         with:
@@ -73,7 +92,7 @@ jobs:
           build-args: |
             BUILD_TIME=${{ steps.build_time.outputs.now }}
             BUILD_COMMIT=${{ github.sha }}
-            APP_VERSION=${{ github.ref_name }}
+            APP_VERSION=${{ steps.app_version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -118,24 +137,43 @@ jobs:
             exit 1
           fi
 
-          # Verify that root redirects or serves the login/app page
-          RESPONSE=$(curl -s -L http://127.0.0.1:8000/)
-          echo "$RESPONSE" | grep -i "2ndHand" > /dev/null
+          # 1. Verify Public Corporate Business Landing Page & Storefront Catalog
+          RESPONSE_PUBLIC=$(curl -s -L http://127.0.0.1:8000/)
+          echo "$RESPONSE_PUBLIC" | grep -iE "(Rápido Pack|segunda mano|paquetería)" > /dev/null
           if [ $? -eq 0 ]; then
-            echo "PASS: Application title verified in smoke test response."
+            echo "PASS: Public corporate landing page verified in smoke test response."
           else
-            echo "ERROR: Expected application content missing from response."
-            echo "$RESPONSE" | head -n 30
+            echo "ERROR: Expected public storefront content missing from root response."
+            echo "$RESPONSE_PUBLIC" | head -n 30
             exit 1
           fi
 
-          # Verify that compilation build timestamp is present in footer
-          echo "$RESPONSE" | grep -i "footer-build-time" > /dev/null
-          if [ $? -eq 0 ]; then
-            echo "PASS: Build compilation timestamp verified in footer response."
+          STATUS_CATALOG=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/tienda/)
+          if [ "$STATUS_CATALOG" -eq 200 ]; then
+            echo "PASS: Public catalog endpoint (/tienda/) responded with HTTP 200."
           else
-            echo "ERROR: Build compilation timestamp missing from footer response."
-            echo "$RESPONSE" | tail -n 30
+            echo "ERROR: Public catalog (/tienda/) responded with HTTP $STATUS_CATALOG instead of 200."
+            exit 1
+          fi
+
+          # 2. Verify Internal Staff Portal & Staging Hub
+          RESPONSE_STAFF=$(curl -s -L http://127.0.0.1:8000/panel/)
+          echo "$RESPONSE_STAFF" | grep -i "2ndHand" > /dev/null
+          if [ $? -eq 0 ]; then
+            echo "PASS: Internal staging hub branding (2ndHand) verified in staff portal response."
+          else
+            echo "ERROR: Expected staging hub content missing from /panel/ response."
+            echo "$RESPONSE_STAFF" | head -n 30
+            exit 1
+          fi
+
+          # Verify that compilation build timestamp is present in staging footer
+          echo "$RESPONSE_STAFF" | grep -i "footer-build-time" > /dev/null
+          if [ $? -eq 0 ]; then
+            echo "PASS: Build compilation timestamp verified in staging footer response."
+          else
+            echo "ERROR: Build compilation timestamp missing from staging footer response."
+            echo "$RESPONSE_STAFF" | tail -n 30
             exit 1
           fi
 
@@ -148,7 +186,7 @@ jobs:
     name: Build & Push to GitHub Container Registry (GHCR)
     needs: [quality-gates, docker-build-and-smoke-test]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) && github.event_name == 'push'
     permissions:
       contents: read
       packages: write
@@ -176,7 +214,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
             type=sha,format=short
             type=ref,event=tag
 
@@ -184,7 +222,17 @@ jobs:
         id: build_time
         run: echo "now=$(date -u +'%Y-%m-%d %H:%M UTC')" >> $GITHUB_OUTPUT
 
-      - name: Build and Push Production Image to GHCR (Multi-Arch)
+      - name: Resolve Application Version
+        id: app_version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(python3 -c "import re; content = open('config/settings.py').read(); match = re.search(r'APP_VERSION\s*=\s*os\.getenv\([^\)]+,\s*[\x27\x22]([^\x27\x22]+)[\x27\x22]', content); print(match.group(1) if match else '2.1.0')")
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Gate 7 - Build and Push Production Image to GHCR (Multi-Arch)
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -196,7 +244,6 @@ jobs:
           build-args: |
             BUILD_TIME=${{ steps.build_time.outputs.now }}
             BUILD_COMMIT=${{ github.sha }}
-            APP_VERSION=${{ github.ref_name }}
+            APP_VERSION=${{ steps.app_version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-

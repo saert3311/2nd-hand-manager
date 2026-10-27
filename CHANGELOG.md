@@ -8,7 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **CI Container Smoke Test Adaptation (Gate 6)**: Resolved smoke test expectation mismatch caused by the Phase 27 URL route restructuring (`/` -> corporate landing page, staff hub -> `/panel/`). Updated Gate 6 in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml) to independently smoke-test and verify:
+  1. The public corporate landing page (`/`) and public catalog (`/tienda/`) for HTTP 200 and storefront identity content (`Rápido Pack`, paquetería, segunda mano).
+  2. The internal staff staging portal (`/panel/` -> `/login/`) for branding (`2ndHand`) and footer compilation timestamp (`footer-build-time`).
 - **CI Test Isolation for AI Services**: Decorated `test_ai_copywriting_prompt_formats_direct_notes` in [`tests/test_clarifications_hub.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_clarifications_hub.py) with `@override_settings(GEMINI_API_KEY="test-key")` to prevent failures in clean CI runner environments lacking local `.env` secrets. Hardened Gate 3 in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml) with a dummy fallback `GEMINI_API_KEY`.
+
+### Added
+- **Translation Catalog Quality Gate (Gate 2b)**: Integrated `python manage.py compile_locales` into the `quality-gates` job in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml), enforcing `AGENTS.md` Rule 5 zero-failure translation compilation in CI before unit tests run.
+- **Semantic Version Resolution & Dockerfile Synchronization**: Added automated `app_version` resolution step in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml) to extract semantic version from `config/settings.py` (or release tag) during image builds instead of propagating branch names (`master`). Synchronized default `ARG APP_VERSION="2.1.0"` in [`Dockerfile`](file:///C:/Users/Jose/antigravity/epic-tesla/Dockerfile).
+- **Release Tag Automation & GHCR Multi-Arch Publishing**: Expanded workflow triggers in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml) to listen on `tags: [ 'v*' ]`, enabling automated GHCR multi-arch container image builds and semantic tag publishing whenever a release tag is pushed.
+- **Least-Privilege Security Hardening**: Added explicit `permissions: contents: read` to `quality-gates` and `docker-build-and-smoke-test` jobs in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml).
 
 ## [2.1.0] - 2026-10-27
 
