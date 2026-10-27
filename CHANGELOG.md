@@ -7,10 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.1.0] - 2026-10-22
+## [2.1.0] - 2026-10-27
 
 ### Added
-- **Corporate Business Landing Page (`/`), Revised Marketplace URLs (`/tienda/`) & Staff Router (`/panel/`) (Phase 28)**:
+- **Corporate Business Landing Page (`/`), Revised Marketplace URLs (`/tienda/`) & Staff Router (`/panel/`) (Phase 37)**:
   - **Corporate Business Landing Page (`/`, `storefront:home`)**: Implemented [`storefront/templates/storefront/home.html`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/templates/storefront/home.html) and `home_view` in [`storefront/views.py`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/views.py) based on the Stitch reference screen (`docs/stitch_references/landing_page.html`), featuring:
     1. Sticky header with corporate navigation (`Paquetería`, `Punto Pack`, `Tienda`, `Sobre nosotros`, `Contacto`) and direct WhatsApp CTA (`/go/whatsapp/`).
     2. Split Hero section with LCP-prioritized photo (`fetchpriority="high"` on `hero_counter.webp`), live business hours pill, and dual CTAs (`/tienda/`, `/#paqueteria`).
@@ -30,11 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `/panel/` $\to$ `inventory:root` (Staff entry router preserving `name="root"`)
     - Updated `/sitemap.xml` and `/robots.txt` (`Allow: /tienda/`, `Disallow: /panel/`).
 
-## [2.0.0] - 2026-10-22
+## [2.0.0] - 2026-10-27
 
 ### Added
-- **Public Marketplace Storefront Transformation — Rápido Pack (`rapidopack.es`, Phase 27)**:
-  - **Domain Models & Official 12-Category Taxonomy**: Added `Category`, `StorefrontConfiguration` singleton (`get_solo()`), and `ProductCondition` (`new_with_tags`, `very_good`, `good`, `vintage`) in `inventory/models.py`, extended `Product` with `category`, `condition`, `is_public`, `is_featured`, `is_reserved`, `reserved_until`, `views_count`, and `whatsapp_clicks`, added `ProductListingLink.clicks_count`, and implemented `ProductQuerySet.public_visible()` with 7-day `SOLD` social proof retention. Seeded all 12 official Rápido Pack categories and default `StorefrontConfiguration` (`Carrer del Comte Ronrée, 8, 46910 Alfafar, Valencia`) in migration `0017_marketplace_storefront.py`.
+- **Public Marketplace Storefront Transformation — Rápido Pack (`rapidopack.es`, Phase 36)**:
+  - **Domain Models & Official 12-Category Taxonomy**: Added `Category`, `StorefrontConfiguration` singleton (`get_solo()`), and `ProductCondition` (`new_with_tags`, `very_good`, `good`, `vintage`) in `inventory/models.py`, extended `Product` with `category`, `condition`, `is_public`, `is_featured`, `is_reserved`, `reserved_until`, `views_count`, and `whatsapp_clicks`, added `ProductListingLink.clicks_count`, and implemented `ProductQuerySet.public_visible()` with 7-day `SOLD` social proof retention. Seeded all 12 official Rápido Pack categories and default `StorefrontConfiguration` (`Carrer del Comte Ronrée, 8, 46910 Alfafar, Valencia`) in migration `0021_marketplace_storefront.py`.
   - **SQLite WAL Mode & Concurrency Tuning**: Enabled `PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;` on SQLite connections in `inventory/apps.py`.
   - **AI Taxonomy Auto-Classification & `classify_products` Command**: Extended `ProductListingSchema` and `IntakePreflightSchema` in `inventory/services/ai_service.py` with `category_slug` and `condition`, plus deterministic keyword fallback `infer_taxonomy_heuristically()`. Added `python manage.py classify_products` CLI command to classify existing products.
   - **Dedicated `storefront` Application & Stitch Design System**: Created `storefront/` app serving `/` (`storefront:catalog`), `/p/<slug>-<pk>/` (`storefront:product_detail`), `/go/whatsapp/<pk>/` (`storefront:go_whatsapp`), `/go/link/<link_pk>/` (`storefront:go_marketplace_link`), `/sitemap.xml`, `/robots.txt`, and RGPD/LSSI legal pages (`/legal/aviso-legal/`, `/legal/privacidad/`, `/legal/cookies/`). Moved internal staff root redirect to `/staff/` (`inventory:root`).
