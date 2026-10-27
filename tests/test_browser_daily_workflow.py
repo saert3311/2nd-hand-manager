@@ -81,6 +81,33 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         )
         self.store_config = StorefrontConfiguration.get_solo()
 
+        # Ensure categories exist across test runs in TransactionTestCase
+        categories_data = [
+            ("motor-y-accesorios", "Motor y accesorios", "Motors & Accessories", "two_wheeler", 1),
+            ("moda-y-accesorios", "Moda y accesorios", "Fashion & Accessories", "apparel", 2),
+            ("tecnologia-y-electronica", "Tecnología y electrónica", "Tech & Electronics", "devices", 3),
+            ("deporte-y-ocio", "Deporte y ocio", "Sports & Leisure", "fitness_center", 4),
+            ("bicicletas", "Bicicletas", "Bicycles", "pedal_bike", 5),
+            ("hogar-y-jardin", "Hogar y jardín", "Home & Garden", "chair", 6),
+            ("electrodomesticos", "Electrodomésticos", "Appliances", "kitchen", 7),
+            ("cine-libros-y-musica", "Cine, libros y música", "Movies, Books & Music", "menu_book", 8),
+            ("ninos-y-bebes", "Niños y bebés", "Kids & Babies", "child_friendly", 9),
+            ("coleccionismo", "Coleccionismo", "Collectibles", "auto_awesome", 10),
+            ("construccion-y-reformas", "Construcción y reformas", "Tools & DIY", "construction", 11),
+            ("otras-oportunidades", "Otras oportunidades", "Other Opportunities", "category", 12),
+        ]
+        for slug, name_es, name_en, icon, order in categories_data:
+            Category.objects.get_or_create(
+                slug=slug,
+                defaults={
+                    "name": name_es,
+                    "name_en": name_en,
+                    "icon": icon,
+                    "order": order,
+                    "is_active": True,
+                },
+            )
+
         # Seed initial public opportunity in catalog (Bicicleta Orbea)
         bicycles_cat = Category.objects.get(slug="bicicletas")
         self.public_bike = Product.objects.create(
