@@ -23,24 +23,24 @@
   <!-- Alert Banner: Pending Clarifications -->
   <div class="alert-pending-clarifications-banner p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between gap-3 shadow-sm">
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center text-lg font-bold shadow-sm shrink-0">
+      <div class="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center text-lg font-bold shadow-sm shrink-0" aria-hidden="true">
         ❓
       </div>
       <div>
-        <h3 class="text-sm sm:text-base font-bold text-amber-900">
+        <h2 class="text-sm sm:text-base font-bold text-amber-900">
           {% blocktrans count count=pending_clarifications_count %}
             You have {{ count }} product clarification awaiting your answer.
           {% plural %}
             You have {{ count }} product clarifications awaiting your answer.
           {% endblocktrans %}
-        </h3>
+        </h2>
         <p class="text-xs sm:text-sm text-amber-700 mt-0.5">
           {% trans "The manager needs more details before publishing." %}
         </p>
       </div>
     </div>
     <a href="{% url 'inventory:dashboard' %}?status=awaiting_info"
-       class="whitespace-nowrap px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition min-h-[38px] inline-flex items-center">
+       class="whitespace-nowrap px-3.5 py-2 bg-amber-700 hover:bg-amber-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition min-h-[38px] inline-flex items-center">
       {% trans "Review" %} &rarr;
     </a>
   </div>
@@ -55,7 +55,7 @@
       {{ form.estimated_resale_price }}
 
       {% if form.non_field_errors %}
-      <div class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold space-y-1">
+      <div role="alert" class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold space-y-1">
         {% for error in form.non_field_errors %}
           <div>⚠️ {{ error }}</div>
         {% endfor %}
@@ -66,15 +66,15 @@
       <div id="intakeClientAlert" role="alert" aria-live="polite"
            class="hidden p-3.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-sm font-semibold flex items-start justify-between gap-2.5 shadow-sm transition-all duration-200">
         <div class="flex items-start gap-2.5">
-          <span id="clientAlertIcon" class="text-base shrink-0 leading-none mt-0.5">⚠️</span>
+          <span id="clientAlertIcon" class="text-base shrink-0 leading-none mt-0.5" aria-hidden="true">⚠️</span>
           <div id="clientAlertText" class="space-y-0.5 leading-relaxed"></div>
         </div>
-        <button type="button" id="dismissClientAlertBtn" class="text-rose-500 hover:text-rose-700 p-1 rounded text-sm shrink-0" title="{% trans 'Dismiss' %}">✕</button>
+        <button type="button" id="dismissClientAlertBtn" class="text-rose-600 hover:text-rose-800 p-1 rounded text-sm shrink-0" title="{% trans 'Dismiss' %}" aria-label="{% trans 'Dismiss' %}">✕</button>
       </div>
 
       <!-- Photo Upload Zone -->
       <div>
-        <label class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+        <label for="imageInput" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
           <span>{% trans "Photos (Required)" %}</span>
           <span class="text-slate-500 font-normal lowercase text-xs sm:text-sm" id="photoCount">0 / {{ max_images }} {% trans "selected" %}</span>
         </label>
@@ -85,7 +85,7 @@
           <input type="file" id="cameraInput" accept="image/*" capture="environment"
                  class="sr-only">
           <div class="space-y-3">
-            <div class="w-12 h-12 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl group-hover:scale-105 transition duration-150">
+            <div class="w-12 h-12 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl group-hover:scale-105 transition duration-150" aria-hidden="true">
               📷
             </div>
             <div>
@@ -96,23 +96,23 @@
             <div class="flex flex-wrap items-center justify-center gap-2.5 pt-1">
               <label for="cameraInput" id="btnTriggerCamera" role="button" tabindex="0"
                      class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl shadow-sm text-xs sm:text-sm transition cursor-pointer min-h-[40px] select-none">
-                <span class="text-base leading-none">📸</span>
+                <span class="text-base leading-none" aria-hidden="true">📸</span>
                 <span>{% trans "Take Photo" %}</span>
               </label>
               <label for="imageInput" id="btnTriggerGallery" role="button" tabindex="0"
                      class="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 font-bold rounded-xl border border-slate-300 shadow-sm text-xs sm:text-sm transition cursor-pointer min-h-[40px] select-none">
-                <span class="text-base leading-none">🖼️</span>
+                <span class="text-base leading-none" aria-hidden="true">🖼️</span>
                 <span>{% trans "Choose from Gallery" %}</span>
               </label>
             </div>
-            <p class="text-[11px] text-slate-400 hidden sm:block">{% trans "Or drop photos anywhere in this box" %}</p>
+            <p class="text-xs text-slate-500 hidden sm:block">{% trans "Or drop photos anywhere in this box" %}</p>
           </div>
         </div>
 
         <!-- Inline Compression / Optimization Indicator -->
         <div id="compressionIndicator" role="status" aria-live="polite"
              class="hidden mt-2 p-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition-all duration-200">
-          <svg class="animate-spin h-4 w-4 text-emerald-600 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <svg class="animate-spin h-4 w-4 text-emerald-600 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
           </svg>
@@ -123,7 +123,7 @@
         <div id="previewContainer" class="hidden mt-3">
           <div class="flex items-center justify-between mb-2">
             <p class="text-xs sm:text-sm font-semibold text-slate-600">{% trans "Selected Photos Preview:" %}</p>
-            <span class="text-[11px] sm:text-xs text-slate-400">{% trans "Drag or tap arrows to reorder" %}</span>
+            <span class="text-xs text-slate-500">{% trans "Drag or tap arrows to reorder" %}</span>
           </div>
           <div id="previewGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-2.5"></div>
         </div>
@@ -174,11 +174,11 @@
         <!-- AI Valuation Estimates (New Retail MSRP & Used Resale) -->
         <div id="advisoryValuationContainer" class="hidden mt-3 pt-3 border-t border-indigo-100/60 grid grid-cols-2 gap-2 text-xs">
           <div class="bg-white/85 rounded-xl p-2.5 border border-indigo-100/80 shadow-xs flex flex-col justify-between">
-            <span class="text-slate-500 font-semibold block text-[11px] sm:text-xs uppercase tracking-wider">{% trans "Est. New Retail (MSRP)" %}</span>
+            <span class="text-slate-500 font-semibold block text-xs uppercase tracking-wider">{% trans "Est. New Retail (MSRP)" %}</span>
             <span id="advisoryRetailPrice" class="font-extrabold text-slate-800 text-sm sm:text-base font-mono mt-0.5">--</span>
           </div>
           <div class="bg-white/85 rounded-xl p-2.5 border border-emerald-100/80 shadow-xs flex flex-col justify-between">
-            <span class="text-emerald-700 font-semibold block text-[11px] sm:text-xs uppercase tracking-wider">{% trans "Est. Used Resale" %}</span>
+            <span class="text-emerald-700 font-semibold block text-xs uppercase tracking-wider">{% trans "Est. Used Resale" %}</span>
             <span id="advisoryResalePrice" class="font-extrabold text-emerald-800 text-sm sm:text-base font-mono mt-0.5">--</span>
           </div>
         </div>
@@ -200,6 +200,11 @@
           {% trans "Field Notes / Short Description" %}
         </label>
         {{ form.raw_note }}
+        {% if form.raw_note.errors %}
+        <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+          {% for error in form.raw_note.errors %}{{ error }}{% endfor %}
+        </div>
+        {% endif %}
         <p class="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">{% trans "Brand, model, size, obvious flaws or condition notes. AI will expand this later." %}</p>
       </div>
 
@@ -232,7 +237,7 @@
         </div>
         <p class="text-xs sm:text-sm text-slate-500 mt-1">{% trans "If price is already known. Can also be set later in staging." %}</p>
         {% if form.sale_price.errors %}
-        <div class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+        <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
           {% for error in form.sale_price.errors %}{{ error }}{% endfor %}
         </div>
         {% endif %}
@@ -255,15 +260,15 @@
   <!-- Recent Uploads by This User -->
   {% if recent_products %}
   <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-3">
-    <h3 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-600">{% trans "Your Recent Uploads" %}</h3>
+    <h2 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-600">{% trans "Your Recent Uploads" %}</h2>
     <div class="divide-y divide-slate-100">
       {% for prod in recent_products %}
       <div class="py-2.5 flex items-center justify-between text-sm">
         <div class="flex items-center gap-3">
           {% if prod.primary_image %}
-          <img src="{{ prod.primary_image.image.url }}" alt="thumb" class="w-11 h-11 rounded-lg object-cover border border-slate-200 shrink-0">
+          <img src="{{ prod.primary_image.image.url }}" alt="{{ prod.display_title }}" class="w-11 h-11 rounded-lg object-cover border border-slate-200 shrink-0">
           {% else %}
-          <div class="w-11 h-11 rounded-lg bg-slate-100 flex items-center justify-center text-sm text-slate-400 shrink-0">{% trans "No img" %}</div>
+          <div class="w-11 h-11 rounded-lg bg-slate-100 flex items-center justify-center text-sm text-slate-500 shrink-0">{% trans "No img" %}</div>
           {% endif %}
           <div>
             <p class="font-medium text-slate-800 text-sm sm:text-base line-clamp-1">{{ prod.display_title }}</p>
@@ -285,15 +290,15 @@
     <div class="bg-slate-900 rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-700/80 overflow-hidden flex flex-col max-h-[92vh]">
       <div class="px-4 py-3 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between text-white">
         <div class="flex items-center gap-2">
-          <span id="modalCoverBadge" class="hidden bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow-xs">
+          <span id="modalCoverBadge" class="hidden bg-amber-400 text-slate-950 text-xs font-black px-1.5 py-0.5 rounded shadow-xs">
             ⭐ {% trans "Cover" %}
           </span>
-          <h3 id="modalPhotoTitle" class="text-xs sm:text-sm font-bold text-slate-100">
+          <h2 id="modalPhotoTitle" class="text-xs sm:text-sm font-bold text-slate-100">
             {% trans "Photo Inspection" %}
-          </h3>
+          </h2>
         </div>
         <button type="button" id="closeImageModalBtn"
-                class="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-slate-200 hover:text-white flex items-center justify-center text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                class="w-9 h-9 min-w-[36px] min-h-[36px] rounded-lg bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-slate-200 hover:text-white flex items-center justify-center text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                 title="{% trans 'Close preview' %}" aria-label="{% trans 'Close preview' %}">
           ✕
         </button>
@@ -574,11 +579,11 @@
       // Top-Left Badge: #1 gets primary Cover badge, others show #2, #3...
       const badge = document.createElement('span');
       if (idx === 0) {
-        badge.className = 'absolute top-1 left-1 bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs ring-1 ring-black/20 flex items-center gap-0.5 pointer-events-none select-none z-10';
+        badge.className = 'absolute top-1 left-1 bg-amber-400 text-slate-950 text-xs font-black px-1.5 py-0.5 rounded-md shadow-xs ring-1 ring-black/20 flex items-center gap-0.5 pointer-events-none select-none z-10';
         badge.title = '{% trans "Cover Photo" %}';
         badge.innerHTML = `⭐ #1`;
       } else {
-        badge.className = 'absolute top-1 left-1 bg-slate-900/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-xs ring-1 ring-white/20 pointer-events-none select-none z-10';
+        badge.className = 'absolute top-1 left-1 bg-slate-900/80 text-white text-xs font-bold px-1.5 py-0.5 rounded-md shadow-xs ring-1 ring-white/20 pointer-events-none select-none z-10';
         badge.textContent = `#${idx + 1}`;
       }
 
@@ -632,7 +637,7 @@
       // Move Left Button
       const moveLeftBtn = document.createElement('button');
       moveLeftBtn.type = 'button';
-      moveLeftBtn.className = 'photo-reorder-btn w-6 h-6 rounded bg-white/10 hover:bg-white/20 active:bg-white/30 text-white flex items-center justify-center text-[10px] font-bold transition disabled:opacity-20 disabled:pointer-events-none active:scale-95 cursor-pointer';
+      moveLeftBtn.className = 'photo-reorder-btn w-6 h-6 rounded bg-white/10 hover:bg-white/20 active:bg-white/30 text-white flex items-center justify-center text-xs font-bold transition disabled:opacity-20 disabled:pointer-events-none active:scale-95 cursor-pointer';
       moveLeftBtn.disabled = (idx === 0 || formState !== 'idle');
       moveLeftBtn.setAttribute('aria-label', `{% trans "Move photo left" %} #${idx + 1}`);
       moveLeftBtn.title = `{% trans "Move left" %}`;
@@ -648,7 +653,7 @@
       if (idx > 0) {
         const coverBtn = document.createElement('button');
         coverBtn.type = 'button';
-        coverBtn.className = 'photo-make-cover-btn px-1 h-6 rounded bg-amber-500/30 hover:bg-amber-500 active:bg-amber-600 text-amber-300 hover:text-white flex items-center justify-center text-[10px] font-bold transition disabled:opacity-20 disabled:pointer-events-none active:scale-95 cursor-pointer';
+        coverBtn.className = 'photo-make-cover-btn px-1 h-6 rounded bg-amber-500/30 hover:bg-amber-400 active:bg-amber-500 text-amber-300 hover:text-slate-950 flex items-center justify-center text-xs font-bold transition disabled:opacity-20 disabled:pointer-events-none active:scale-95 cursor-pointer';
         coverBtn.disabled = (formState !== 'idle');
         coverBtn.setAttribute('aria-label', `{% trans "Set as cover photo" %} #${idx + 1}`);
         coverBtn.title = `{% trans "Set as cover photo" %}`;
@@ -668,7 +673,7 @@
       // Move Right Button
       const moveRightBtn = document.createElement('button');
       moveRightBtn.type = 'button';
-      moveRightBtn.className = 'photo-reorder-btn w-6 h-6 rounded bg-white/10 hover:bg-white/20 active:bg-white/30 text-white flex items-center justify-center text-[10px] font-bold transition disabled:opacity-20 disabled:pointer-events-none active:scale-95 cursor-pointer';
+      moveRightBtn.className = 'photo-reorder-btn w-6 h-6 rounded bg-white/10 hover:bg-white/20 active:bg-white/30 text-white flex items-center justify-center text-xs font-bold transition disabled:opacity-20 disabled:pointer-events-none active:scale-95 cursor-pointer';
       moveRightBtn.disabled = (idx === selectedFiles.length - 1 || formState !== 'idle');
       moveRightBtn.setAttribute('aria-label', `{% trans "Move photo right" %} #${idx + 1}`);
       moveRightBtn.title = `{% trans "Move right" %}`;
@@ -1299,9 +1304,14 @@
   const modalNextBtn = document.getElementById('modalNextBtn');
   let currentLightboxIndex = 0;
   let activeModalObjectUrl = null;
+  let lastLightboxTrigger = null;
 
   function openLightbox(idx) {
     if (idx < 0 || idx >= selectedFiles.length) return;
+    const wasHidden = imagePreviewModal && imagePreviewModal.classList.contains('hidden');
+    if (wasHidden) {
+      lastLightboxTrigger = document.activeElement;
+    }
     currentLightboxIndex = idx;
     const file = selectedFiles[idx];
     if (!imagePreviewModal || !modalPreviewImg) return;
@@ -1334,10 +1344,14 @@
 
     imagePreviewModal.classList.remove('hidden');
     document.body.classList.add('overflow-hidden');
+    if (wasHidden && closeImageModalBtn) {
+      closeImageModalBtn.focus();
+    }
   }
 
   function closeLightbox() {
     if (!imagePreviewModal) return;
+    const wasOpen = !imagePreviewModal.classList.contains('hidden');
     imagePreviewModal.classList.add('hidden');
     document.body.classList.remove('overflow-hidden');
     if (activeModalObjectUrl) {
@@ -1345,6 +1359,10 @@
       activeModalObjectUrl = null;
     }
     if (modalPreviewImg) modalPreviewImg.src = '';
+    if (wasOpen && lastLightboxTrigger && typeof lastLightboxTrigger.focus === 'function') {
+      lastLightboxTrigger.focus();
+      lastLightboxTrigger = null;
+    }
   }
 
   function updateLightboxPhoto(delta) {
