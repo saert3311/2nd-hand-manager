@@ -1,0 +1,3138 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 2ndHand Staging Hub 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-27 12:00+0100\n"
+"PO-Revision-Date: 2026-10-27 12:00+0100\n"
+"Last-Translator: Antigravity AI <dev@example.com>\n"
+"Language-Team: English <dev@example.com>\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "English"
+msgstr "English"
+
+msgid "Spanish"
+msgstr "Spanish"
+
+msgid "New Intake"
+msgstr "New Intake"
+
+msgid "Intake"
+msgstr "Intake"
+
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Admin"
+msgstr "Admin"
+
+msgid "Sign Out"
+msgstr "Sign Out"
+
+msgid ""
+"2ndHand Product Intake & Staging Hub • Powered by Django & Gemini Vision"
+msgstr ""
+"2ndHand Product Intake & Staging Hub • Powered by Django & Gemini Vision"
+
+msgid "Sign In - 2ndHand Staging"
+msgstr "Sign In - 2ndHand Staging"
+
+msgid "Sign in to your account"
+msgstr "Sign in to your account"
+
+msgid "Access product intake and the staging dashboard"
+msgstr "Access product intake and the staging dashboard"
+
+msgid "Your username and password didn't match. Please try again."
+msgstr "Your username and password didn't match. Please try again."
+
+msgid "Username"
+msgstr "Username"
+
+msgid "Password"
+msgstr "Password"
+
+msgid "e.g. assistant or manager"
+msgstr "e.g. assistant or manager"
+
+msgid "Sign In"
+msgstr "Sign In"
+
+msgid "Product"
+msgstr "Product"
+
+msgid "Products"
+msgstr "Products"
+
+msgid "Product Image"
+msgstr "Product Image"
+
+msgid "Product Images"
+msgstr "Product Images"
+
+msgid "Image"
+msgstr "Image"
+
+msgid "New"
+msgstr "New"
+
+msgid "Original raw field note taken during intake"
+msgstr "Original raw field note taken during intake"
+
+msgid "AI-generated marketplace title"
+msgstr "AI-generated marketplace title"
+
+msgid "AI-generated marketplace listing description"
+msgstr "AI-generated marketplace listing description"
+
+msgid "Sale price in Euros (€)"
+msgstr "Sale price in Euros (€)"
+
+msgid "Whether the product has been sold"
+msgstr "Whether the product has been sold"
+
+msgid "Timestamp when marked as sold"
+msgstr "Timestamp when marked as sold"
+
+msgid "Manager privileges required to access this action."
+msgstr "Manager privileges required to access this action."
+
+msgid "Please attach at least one photo of the product."
+msgstr "Please attach at least one photo of the product."
+
+msgid "Product #%(id)s cataloged successfully with %(count)d photo%(plural)s!"
+msgstr ""
+"Product #%(id)s cataloged successfully with %(count)d photo%(plural)s!"
+
+msgid "Error saving product: %(error)s"
+msgstr "Error saving product: %(error)s"
+
+msgid "Manager privileges required to edit product details."
+msgstr "Manager privileges required to edit product details."
+
+msgid "Product listing updated successfully."
+msgstr "Product listing updated successfully."
+
+msgid "This product has no photos to download."
+msgstr "This product has no photos to download."
+
+msgid "AI listing successfully generated from photos and notes!"
+msgstr "AI listing successfully generated from photos and notes!"
+
+msgid "Unexpected error during AI generation: %(error)s"
+msgstr "Unexpected error during AI generation: %(error)s"
+
+msgid "Image '%(filename)s' exceeds the 10MB limit (%(size).1fMB)."
+msgstr "Image '%(filename)s' exceeds the 10MB limit (%(size).1fMB)."
+
+msgid "File '%(filename)s' is not a valid or readable image."
+msgstr "File '%(filename)s' is not a valid or readable image."
+
+msgid ""
+"You can upload a maximum of %(max)d images per product. Received %(count)d."
+msgstr ""
+"You can upload a maximum of %(max)d images per product. Received %(count)d."
+
+msgid "Raw Field Notes"
+msgstr "Raw Field Notes"
+
+msgid ""
+"Brief description / field notes (e.g., 'Vintage 90s Nike windbreaker, "
+"blue/white, small tear on left sleeve')"
+msgstr ""
+"Brief description / field notes (e.g., 'Vintage 90s Nike windbreaker, "
+"blue/white, small tear on left sleeve')"
+
+msgid "Listing Title"
+msgstr "Listing Title"
+
+msgid "Listing Description / Copy"
+msgstr "Listing Description / Copy"
+
+msgid "Sale Price (€)"
+msgstr "Sale Price (€)"
+
+msgid "Mark Product as Sold"
+msgstr "Mark Product as Sold"
+
+msgid "Quick Intake - 2ndHand Staging"
+msgstr "Quick Intake - 2ndHand Staging"
+
+msgid "New Product Intake"
+msgstr "New Product Intake"
+
+msgid "Snap photos & jot notes on the go. Auto-optimizes to WebP."
+msgstr "Snap photos & jot notes on the go. Auto-optimizes to WebP."
+
+msgid "View Catalog"
+msgstr "View Catalog"
+
+msgid "Photos (Required)"
+msgstr "Photos (Required)"
+
+msgid "selected"
+msgstr "selected"
+
+msgid "Tap to take photos or upload"
+msgstr "Tap to take photos or upload"
+
+msgid "Select up to %(max)s images (max 10MB each)"
+msgstr "Select up to %(max)s images (max 10MB each)"
+
+msgid "Select up to %(max)s photos (auto-optimized to WebP 2560px)"
+msgstr "Select up to %(max)s photos (auto-optimized to WebP 2560px)"
+
+msgid "Take Photo"
+msgstr "Take Photo"
+
+msgid "Choose from Gallery"
+msgstr "Choose from Gallery"
+
+msgid "Or drop photos anywhere in this box"
+msgstr "Or drop photos anywhere in this box"
+
+msgid "Optimizing photos to WebP (2560px)..."
+msgstr "Optimizing photos to WebP (2560px)..."
+
+msgid "Optimizing photo"
+msgstr "Optimizing photo"
+
+msgid "Selected Photos Preview:"
+msgstr "Selected Photos Preview:"
+
+msgid "Field Notes / Short Description"
+msgstr "Field Notes / Short Description"
+
+msgid ""
+"Brand, model, size, obvious flaws or condition notes. AI will expand this "
+"later."
+msgstr ""
+"Brand, model, size, obvious flaws or condition notes. AI will expand this "
+"later."
+
+msgid "Save & Catalog Next Item"
+msgstr "Save & Catalog Next Item"
+
+msgid "Your Recent Uploads"
+msgstr "Your Recent Uploads"
+
+msgid "No img"
+msgstr "No img"
+
+msgid "photos"
+msgstr "photos"
+
+msgid "Sold"
+msgstr "Sold"
+
+msgid "Active"
+msgstr "Active"
+
+msgid "Please select a maximum of 10 photos."
+msgstr "Please select a maximum of 10 photos."
+
+msgid "Dashboard - 2ndHand Staging"
+msgstr "Dashboard - 2ndHand Staging"
+
+msgid "Inventory Catalog"
+msgstr "Inventory Catalog"
+
+msgid "Track, stage, and prepare marketplace listings."
+msgstr "Track, stage, and prepare marketplace listings."
+
+msgid "All"
+msgstr "All"
+
+msgid "Search title, note, flaws..."
+msgstr "Search title, note, flaws..."
+
+msgid "No Photos"
+msgstr "No Photos"
+
+msgid "No price set"
+msgstr "No price set"
+
+msgid "No products found"
+msgstr "No products found"
+
+msgid "No products matched your search \"%(query)s\". Try clearing the filter."
+msgstr "No products matched your search \"%(query)s\". Try clearing the filter."
+
+msgid ""
+"There are no products in this view yet. Start by taking pictures of "
+"inventory."
+msgstr ""
+"There are no products in this view yet. Start by taking pictures of "
+"inventory."
+
+msgid "Catalog First Item"
+msgstr "Catalog First Item"
+
+msgid "Staging"
+msgstr "Staging"
+
+msgid "Back to Dashboard"
+msgstr "Back to Dashboard"
+
+msgid "Download All Photos (.ZIP)"
+msgstr "Download All Photos (.ZIP)"
+
+msgid "Photos"
+msgstr "Photos"
+
+msgid "Saved as WebP"
+msgstr "Saved as WebP"
+
+msgid "No photos attached."
+msgstr "No photos attached."
+
+msgid "Preserved Intake Notes"
+msgstr "Preserved Intake Notes"
+
+msgid "Read-Only"
+msgstr "Read-Only"
+
+msgid "No field notes provided during intake."
+msgstr "No field notes provided during intake."
+
+msgid "Cataloged by"
+msgstr "Cataloged by"
+
+msgid "Gemini Multimodal Vision"
+msgstr "Gemini Multimodal Vision"
+
+msgid ""
+"Analyzes attached photos & raw notes to draft an SEO marketplace title and "
+"description."
+msgstr ""
+"Analyzes attached photos & raw notes to draft an SEO marketplace title and "
+"description."
+
+msgid "Generate AI Listing"
+msgstr "Generate AI Listing"
+
+msgid "Manager Only"
+msgstr "Manager Only"
+
+msgid "Marketplace Listing Copy"
+msgstr "Marketplace Listing Copy"
+
+msgid "Status: Sold"
+msgstr "Status: Sold"
+
+msgid "Status: Available for Sale"
+msgstr "Status: Available for Sale"
+
+msgid "Copy Title"
+msgstr "Copy Title"
+
+msgid "Copy Description"
+msgstr "Copy Description"
+
+msgid "Sold Status"
+msgstr "Sold Status"
+
+msgid "Sold on"
+msgstr "Sold on"
+
+msgid "Save Listing Changes"
+msgstr "Save Listing Changes"
+
+msgid "Nothing to copy!"
+msgstr "Nothing to copy!"
+
+msgid "Copied!"
+msgstr "Copied!"
+
+msgid "Analyzing Photos with AI..."
+msgstr "Analyzing Photos with AI..."
+
+msgid "Search title, note, or date (e.g. 2026-10-10)..."
+msgstr "Search title, note, or date (e.g. 2026-10-10)..."
+
+msgid ""
+"Showing <span class=\"font-bold text-slate-800\">%(start)s</span> to <span "
+"class=\"font-bold text-slate-800\">%(end)s</span> of <span class=\"font-bold"
+" text-slate-800\">%(total)s</span> products"
+msgstr ""
+"Showing <span class=\"font-bold text-slate-800\">%(start)s</span> to <span "
+"class=\"font-bold text-slate-800\">%(end)s</span> of <span class=\"font-bold"
+" text-slate-800\">%(total)s</span> products"
+
+msgid "Pagination"
+msgstr "Pagination"
+
+msgid "Previous"
+msgstr "Previous"
+
+msgid "Next"
+msgstr "Next"
+
+msgid "2ndHand Staging - Administration"
+msgstr "2ndHand Staging - Administration"
+
+msgid "2ndHand Staging Admin"
+msgstr "2ndHand Staging Admin"
+
+msgid "Store Administration & User Management"
+msgstr "Store Administration & User Management"
+
+msgid "Role"
+msgstr "Role"
+
+msgid "Superuser"
+msgstr "Superuser"
+
+msgid "Manager"
+msgstr "Manager"
+
+msgid "Assistant"
+msgstr "Assistant"
+
+msgid "None"
+msgstr "None"
+
+msgid "Cataloged Items"
+msgstr "Cataloged Items"
+
+msgid "Assign Assistant role to selected users"
+msgstr "Assign Assistant role to selected users"
+
+msgid "Successfully assigned Assistant role to %(count)d user(s)."
+msgstr "Successfully assigned Assistant role to %(count)d user(s)."
+
+msgid "Assign Manager role to selected users"
+msgstr "Assign Manager role to selected users"
+
+msgid "Successfully assigned Manager role to %(count)d user(s)."
+msgstr "Successfully assigned Manager role to %(count)d user(s)."
+
+msgid "Deactivate selected users (Revoke access, preserve items)"
+msgstr "Deactivate selected users (Revoke access, preserve items)"
+
+msgid ""
+"Successfully deactivated %(count)d user(s). Access revoked while preserving "
+"product attributions."
+msgstr ""
+"Successfully deactivated %(count)d user(s). Access revoked while preserving "
+"product attributions."
+
+msgid "Activate selected users"
+msgstr "Activate selected users"
+
+msgid "Successfully activated %(count)d user(s)."
+msgstr "Successfully activated %(count)d user(s)."
+
+msgid "Preview"
+msgstr "Preview"
+
+msgid "Price (€)"
+msgstr "Price (€)"
+
+msgid "Images"
+msgstr "Images"
+
+msgid "Spanish"
+msgstr "Spanish"
+
+msgid "English"
+msgstr "English"
+
+msgid "Language"
+msgstr "Language"
+
+msgid "Target listing language"
+msgstr "Target listing language"
+
+msgid "Model Name"
+msgstr "Model Name"
+
+msgid "Gemini model identifier (e.g. gemini-2.5-flash, gemini-2.5-pro)"
+msgstr "Gemini model identifier (e.g. gemini-2.5-flash, gemini-2.5-pro)"
+
+msgid "Temperature"
+msgstr "Temperature"
+
+msgid "Sampling temperature between 0.0 and 1.0"
+msgstr "Sampling temperature between 0.0 and 1.0"
+
+msgid "System Instruction"
+msgstr "System Instruction"
+
+msgid ""
+"Custom listing instructions, marketplace guidelines (Wallapop, Vinted, "
+"eBay), and tone of voice."
+msgstr ""
+"Custom listing instructions, marketplace guidelines (Wallapop, Vinted, "
+"eBay), and tone of voice."
+
+msgid "Is Active"
+msgstr "Is Active"
+
+msgid "Whether this configuration is actively used for listing generation."
+msgstr "Whether this configuration is actively used for listing generation."
+
+msgid "AI Prompt Configuration"
+msgstr "AI Prompt Configuration"
+
+msgid "AI Prompt Configurations"
+msgstr "AI Prompt Configurations"
+
+msgid "Active"
+msgstr "Active"
+
+msgid "Inactive"
+msgstr "Inactive"
+
+msgid "Temperature must be between 0.0 and 1.0."
+msgstr "Temperature must be between 0.0 and 1.0."
+
+msgid "Model Parameters"
+msgstr "Model Parameters"
+
+msgid ""
+"Specify the Gemini model identifier (e.g. gemini-2.5-flash, gemini-2.5-pro) "
+"and sampling temperature (0.0 = deterministic, 1.0 = creative)."
+msgstr ""
+"Specify the Gemini model identifier (e.g. gemini-2.5-flash, gemini-2.5-pro) "
+"and sampling temperature (0.0 = deterministic, 1.0 = creative)."
+
+msgid "Copywriting & Prompt Instructions"
+msgstr "Copywriting & Prompt Instructions"
+
+msgid ""
+"Define marketplace instructions, selling tone, and format guidelines. Note: "
+"The system automatically appends assistant field notes and enforces the "
+"structured title/description output schema."
+msgstr ""
+"Define marketplace instructions, selling tone, and format guidelines. Note: "
+"The system automatically appends assistant field notes and enforces the "
+"structured title/description output schema."
+
+msgid "Status & Timestamps"
+msgstr "Status & Timestamps"
+
+msgid "Site Name"
+msgstr "Site Name"
+
+msgid "Marketplace platform name (e.g. Wallapop, Vinted, eBay, Milanuncios)"
+msgstr "Marketplace platform name (e.g. Wallapop, Vinted, eBay, Milanuncios)"
+
+msgid "Slug"
+msgstr "Slug"
+
+msgid "Unique identifier slug for styling and programmatic reference"
+msgstr "Unique identifier slug for styling and programmatic reference"
+
+msgid "Base URL"
+msgstr "Base URL"
+
+msgid "Base homepage URL of the marketplace (e.g. https://es.wallapop.com)"
+msgstr "Base homepage URL of the marketplace (e.g. https://es.wallapop.com)"
+
+msgid "Whether this platform is actively offered when adding listing links"
+msgstr "Whether this platform is actively offered when adding listing links"
+
+msgid "Display Order"
+msgstr "Display Order"
+
+msgid "Sorting order for displaying platforms in dropdowns and lists"
+msgstr "Sorting order for displaying platforms in dropdowns and lists"
+
+msgid "Marketplace Site"
+msgstr "Marketplace Site"
+
+msgid "Marketplace Sites"
+msgstr "Marketplace Sites"
+
+msgid "Product Listing Link"
+msgstr "Product Listing Link"
+
+msgid "Product Listing Links"
+msgstr "Product Listing Links"
+
+msgid "Listing URL"
+msgstr "Listing URL"
+
+msgid "Direct link to the active ad on the marketplace platform"
+msgstr "Direct link to the active ad on the marketplace platform"
+
+msgid "Is Active Listing"
+msgstr "Is Active Listing"
+
+msgid "Whether this listing is currently live"
+msgstr "Whether this listing is currently live"
+
+msgid "Linked Products"
+msgstr "Linked Products"
+
+msgid "Manager privileges required to manage listing links."
+msgstr "Manager privileges required to manage listing links."
+
+msgid "Marketplace link removed successfully."
+msgstr "Marketplace link removed successfully."
+
+msgid "Marketplace site identifier is required."
+msgstr "Marketplace site identifier is required."
+
+msgid "Marketplace link cleared."
+msgstr "Marketplace link cleared."
+
+msgid "Please provide a valid URL starting with http:// or https://."
+msgstr "Please provide a valid URL starting with http:// or https://."
+
+msgid "Link for %(site)s saved successfully."
+msgstr "Link for %(site)s saved successfully."
+
+msgid "Marketplace Listing Links"
+msgstr "Marketplace Listing Links"
+
+msgid "Keep track of active listings across external resale platforms."
+msgstr "Keep track of active listings across external resale platforms."
+
+msgid "active links"
+msgstr "active links"
+
+msgid "published"
+msgstr "published"
+
+msgid "Visit platform home"
+msgstr "Visit platform home"
+
+msgid "Listed"
+msgstr "Listed"
+
+msgid "Not Listed"
+msgstr "Not Listed"
+
+msgid "Open Listing"
+msgstr "Open Listing"
+
+msgid "Copy URL"
+msgstr "Copy URL"
+
+msgid "Are you sure you want to remove this link?"
+msgstr "Are you sure you want to remove this link?"
+
+msgid "Remove"
+msgstr "Remove"
+
+msgid "Update listing URL"
+msgstr "Update listing URL"
+
+msgid "Paste listing URL (e.g. https://...)"
+msgstr "Paste listing URL (e.g. https://...)"
+
+msgid "Save Link"
+msgstr "Save Link"
+
+msgid ""
+"No active marketplace platforms found. Manage platforms in Django Admin "
+"under Marketplace Sites."
+msgstr ""
+"No active marketplace platforms found. Manage platforms in Django Admin "
+"under Marketplace Sites."
+
+msgid "Archived / Deactivated Marketplace Links"
+msgstr "Archived / Deactivated Marketplace Links"
+
+msgid "Delete"
+msgstr "Delete"
+
+msgid "All Platforms"
+msgstr "All Platforms"
+
+msgid "Filter by marketplace platform"
+msgstr "Filter by marketplace platform"
+
+msgid "Clear search"
+msgstr "Clear search"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Draft"
+msgstr "Draft"
+
+msgid "Awaiting Info"
+msgstr "Awaiting Info"
+
+msgid "Ready to Publish"
+msgstr "Ready to Publish"
+
+msgid "Ready"
+msgstr "Ready"
+
+msgid "Sold"
+msgstr "Sold"
+
+msgid "Blocked"
+msgstr "Blocked"
+
+msgid "Category"
+msgstr "Category"
+
+msgid "Measurements / Dimensions"
+msgstr "Measurements / Dimensions"
+
+msgid "Label / Wash Tag"
+msgstr "Label / Wash Tag"
+
+msgid "Flaws / Wear Details"
+msgstr "Flaws / Wear Details"
+
+msgid "Material / Authenticity"
+msgstr "Material / Authenticity"
+
+msgid "General / Other"
+msgstr "General / Other"
+
+msgid "Pending"
+msgstr "Pending"
+
+msgid "Resolved"
+msgstr "Resolved"
+
+msgid "Dismissed"
+msgstr "Dismissed"
+
+msgid "Product Clarification"
+msgstr "Product Clarification"
+
+msgid "Product Clarifications"
+msgstr "Product Clarifications"
+
+msgid "Select a category"
+msgstr "Select a category"
+
+msgid "Specify what needs clarification..."
+msgstr "Specify what needs clarification..."
+
+msgid "Question"
+msgstr "Question"
+
+msgid "Your answer..."
+msgstr "Your answer..."
+
+msgid "Answer"
+msgstr "Answer"
+
+msgid "Clarification question sent to assistant."
+msgstr "Clarification question sent to assistant."
+
+msgid "Please provide a valid question and category."
+msgstr "Please provide a valid question and category."
+
+msgid "All doubts resolved! Product marked as ready to publish."
+msgstr "All doubts resolved! Product marked as ready to publish."
+
+msgid "Answer saved. %d doubts still pending."
+msgstr "Answer saved. %d doubts still pending."
+
+msgid "Please provide an answer."
+msgstr "Please provide an answer."
+
+msgid "Manager privileges required to delete clarifications."
+msgstr "Manager privileges required to delete clarifications."
+
+msgid "Clarification removed."
+msgstr "Clarification removed."
+
+msgid "Lifecycle Status"
+msgstr "Lifecycle Status"
+
+msgid "Doubts"
+msgstr "Doubts"
+
+msgid "Pending Doubts"
+msgstr "Pending Doubts"
+
+msgid "pending"
+msgstr "pending"
+
+msgid "resolved"
+msgstr "resolved"
+
+msgid "None"
+msgstr "None"
+
+msgid "Pending Doubts (Needs Answer)"
+msgstr "Pending Doubts (Needs Answer)"
+
+msgid "Dismiss this clarification question?"
+msgstr "Dismiss this clarification question?"
+
+msgid "Dismiss question"
+msgstr "Dismiss question"
+
+msgid "Enter answer (e.g. 52 cm chest, composition tag...)"
+msgstr "Enter answer (e.g. 52 cm chest, composition tag...)"
+
+msgid "Resolved Clarifications"
+msgstr "Resolved Clarifications"
+
+msgid "Ask Assistant for Missing Details"
+msgstr "Ask Assistant for Missing Details"
+
+msgid ""
+"What is missing? E.g., Please check armpit-to-armpit measurement or internal"
+" wash label."
+msgstr ""
+"What is missing? E.g., Please check armpit-to-armpit measurement or internal"
+" wash label."
+
+msgid "Send Question"
+msgstr "Send Question"
+
+msgid "New clarification responses available!"
+msgstr "New clarification responses available!"
+
+msgid ""
+"Answers from assistant have been provided. Re-generate the listing copy to "
+"include these details in the AI description."
+msgstr ""
+"Answers from assistant have been provided. Re-generate the listing copy to "
+"include these details in the AI description."
+
+msgid "Caution: Product has pending clarifications"
+msgstr "Caution: Product has pending clarifications"
+
+msgid "Caution: Product is blocked"
+msgstr "Caution: Product is blocked"
+
+msgid ""
+"Resolve pending doubts or unblock before publishing listings to external "
+"marketplaces to avoid inaccurate product claims."
+msgstr ""
+"Resolve pending doubts or unblock before publishing listings to external "
+"marketplaces to avoid inaccurate product claims."
+
+msgid "Pending clarifications from manager"
+msgstr "Pending clarifications from manager"
+
+msgid "You have %(count)s product clarification awaiting your answer."
+msgid_plural "You have %(count)s product clarifications awaiting your answer."
+msgstr[0] "You have %(count)s product clarification awaiting your answer."
+msgstr[1] "You have %(count)s product clarifications awaiting your answer."
+
+msgid "The manager needs more details before publishing."
+msgstr "The manager needs more details before publishing."
+
+msgid "Review"
+msgstr "Review"
+
+msgid "Please complete the security challenge."
+msgstr "Please complete the security challenge."
+
+msgid "Security verification failed. Please try again."
+msgstr "Security verification failed. Please try again."
+
+msgid "Filename"
+msgstr "Filename"
+
+msgid "Name of generated backup archive (e.g. db_20261014_030000.sqlite3.gz)"
+msgstr "Name of generated backup archive (e.g. db_20261014_030000.sqlite3.gz)"
+
+msgid "Remote Path"
+msgstr "Remote Path"
+
+msgid "Storage object path in OCI Object Storage bucket or local path"
+msgstr "Storage object path in OCI Object Storage bucket or local path"
+
+msgid "File Size (Bytes)"
+msgstr "File Size (Bytes)"
+
+msgid "Size of backup archive in bytes"
+msgstr "Size of backup archive in bytes"
+
+msgid "Duration (Seconds)"
+msgstr "Duration (Seconds)"
+
+msgid "Total backup execution time in seconds"
+msgstr "Total backup execution time in seconds"
+
+msgid "Trigger Type"
+msgstr "Trigger Type"
+
+msgid "Triggered By"
+msgstr "Triggered By"
+
+msgid "User who initiated manual backup (null for scheduled/CLI runs)"
+msgstr "User who initiated manual backup (null for scheduled/CLI runs)"
+
+msgid "Error Message"
+msgstr "Error Message"
+
+msgid "Detailed exception trace or error description if backup failed"
+msgstr "Detailed exception trace or error description if backup failed"
+
+msgid "Database Backup Log"
+msgstr "Database Backup Log"
+
+msgid "Database Backup Logs"
+msgstr "Database Backup Logs"
+
+msgid "Success"
+msgstr "Success"
+
+msgid "Failed"
+msgstr "Failed"
+
+msgid "Scheduled / CLI"
+msgstr "Scheduled / CLI"
+
+msgid "Manual / Admin"
+msgstr "Manual / Admin"
+
+msgid "Backup"
+msgstr "Backup"
+
+msgid "Trigger"
+msgstr "Trigger"
+
+msgid "Duration"
+msgstr "Duration"
+
+msgid "Create Backup Now"
+msgstr "Create Backup Now"
+
+msgid "Confirm Database Backup"
+msgstr "Confirm Database Backup"
+
+msgid "Create On-Demand Database Backup"
+msgstr "Create On-Demand Database Backup"
+
+msgid ""
+"Are you sure you want to trigger an immediate hot backup of the SQLite "
+"database? A consistent, point-in-time snapshot (.sqlite3.gz) will be created"
+" and uploaded directly to cloud storage."
+msgstr ""
+"Are you sure you want to trigger an immediate hot backup of the SQLite "
+"database? A consistent, point-in-time snapshot (.sqlite3.gz) will be created"
+" and uploaded directly to cloud storage."
+
+msgid "Yes, Create Backup Now"
+msgstr "Yes, Create Backup Now"
+
+msgid "Database backup created successfully: %(filename)s (%(size)s)"
+msgstr "Database backup created successfully: %(filename)s (%(size)s)"
+
+msgid "Database backup failed: %(error)s"
+msgstr "Database backup failed: %(error)s"
+
+msgid "Manager privileges required to trigger backups."
+msgstr "Manager privileges required to trigger backups."
+
+msgid "Warning: The most recent automated database backup failed!"
+msgstr "Warning: The most recent automated database backup failed!"
+
+msgid "Please inspect the database backup audit log."
+msgstr "Please inspect the database backup audit log."
+
+msgid "View Backup Logs"
+msgstr "View Backup Logs"
+
+msgid "Confirm Backup"
+msgstr "Confirm Backup"
+
+msgid "Identify product"
+msgstr "Identify product"
+
+msgid "Analyzing photos with AI..."
+msgstr "Analyzing photos with AI..."
+
+msgid "Select photos first"
+msgstr "Select photos first"
+
+msgid "Optional AI pre-check"
+msgstr "Optional AI pre-check"
+
+msgid "Detected:"
+msgstr "Detected:"
+
+msgid "Suggested details to verify:"
+msgstr "Suggested details to verify:"
+
+msgid "Quickly copy AI suggestion into field notes"
+msgstr "Quickly copy AI suggestion into field notes"
+
+msgid "Apply suggestion to notes"
+msgstr "Apply suggestion to notes"
+
+msgid "Applied!"
+msgstr "Applied!"
+
+msgid "Dismiss"
+msgstr "Dismiss"
+
+msgid "Checking brand, tags & condition..."
+msgstr "Checking brand, tags & condition..."
+
+msgid "Product Identified"
+msgstr "Product Identified"
+
+msgid "Analysis completed!"
+msgstr "Analysis completed!"
+
+msgid "Identification notice"
+msgstr "Identification notice"
+
+msgid "Could not identify product from photos."
+msgstr "Could not identify product from photos."
+
+msgid "AI pre-check skipped"
+msgstr "AI pre-check skipped"
+
+msgid "Network error"
+msgstr "Network error"
+
+msgid "Target Sale Price"
+msgstr "Target Sale Price"
+
+msgid "If price is already known. Can also be set later in staging."
+msgstr "If price is already known. Can also be set later in staging."
+
+msgid "Please attach at least one photo to identify the product."
+msgstr "Please attach at least one photo to identify the product."
+
+msgid "Method not allowed. Use POST."
+msgstr "Method not allowed. Use POST."
+
+msgid "Please attach at least one photo of the product before saving."
+msgstr "Please attach at least one photo of the product before saving."
+
+msgid ""
+"The file '%(name)s' exceeds the 10MB limit (%(size)s MB). Please select "
+"photos under 10MB."
+msgstr ""
+"The file '%(name)s' exceeds the 10MB limit (%(size)s MB). Please select "
+"photos under 10MB."
+
+msgid "Please enter a valid, non-negative price."
+msgstr "Please enter a valid, non-negative price."
+
+msgid "Saving product..."
+msgstr "Saving product..."
+
+msgid "Please wait for AI analysis to finish..."
+msgstr "Please wait for AI analysis to finish..."
+
+msgid "Open menu"
+msgstr "Open menu"
+
+msgid "Close menu"
+msgstr "Close menu"
+
+msgid "Mobile navigation"
+msgstr "Mobile navigation"
+
+msgid "Administration Panel"
+msgstr "Administration Panel"
+
+msgid "Remove photo"
+msgstr "Remove photo"
+
+msgid "Please select a maximum of 10 photos."
+msgstr "Please select a maximum of 10 photos."
+
+msgid "Price Pending"
+msgstr "Price Pending"
+
+msgid "Published"
+msgstr "Published"
+
+msgid "Identified Title"
+msgstr "Identified Title"
+
+msgid "Enable Alerts"
+msgstr "Enable Alerts"
+
+msgid "Alerts Active"
+msgstr "Alerts Active"
+
+msgid "Test Alert"
+msgstr "Test Alert"
+
+msgid "Send Test Alert"
+msgstr "Send Test Alert"
+
+msgid "Toggle push notification alerts on this device"
+msgstr "Toggle push notification alerts on this device"
+
+msgid "Push Notifications"
+msgstr "Push Notifications"
+
+msgid "Push Subscription"
+msgstr "Push Subscription"
+
+msgid "Push Subscriptions"
+msgstr "Push Subscriptions"
+
+msgid "Push Endpoint"
+msgstr "Push Endpoint"
+
+msgid "P-256DH Key"
+msgstr "P-256DH Key"
+
+msgid "Auth Secret"
+msgstr "Auth Secret"
+
+msgid "User Agent"
+msgstr "User Agent"
+
+msgid "Send test push notification"
+msgstr "Send test push notification"
+
+msgid "Web Push VAPID keys are not configured in settings/.env."
+msgstr "Web Push VAPID keys are not configured in settings/.env."
+
+msgid "🔔 2ndHand Staging Test Alert"
+msgstr "🔔 2ndHand Staging Test Alert"
+
+msgid "Push notifications are working on this device!"
+msgstr "Push notifications are working on this device!"
+
+msgid "Successfully sent %(count)d test push notification(s)."
+msgstr "Successfully sent %(count)d test push notification(s)."
+
+msgid "Mobile intake & AI staging workspace for second-hand inventory."
+msgstr "Mobile intake & AI staging workspace for second-hand inventory."
+
+msgid "Method not allowed."
+msgstr "Method not allowed."
+
+msgid "Invalid JSON payload."
+msgstr "Invalid JSON payload."
+
+msgid "Missing required push subscription fields (endpoint, p256dh, auth)."
+msgstr "Missing required push subscription fields (endpoint, p256dh, auth)."
+
+msgid "Invalid push endpoint URL."
+msgstr "Invalid push endpoint URL."
+
+msgid "Web Push VAPID keys are not configured."
+msgstr "Web Push VAPID keys are not configured."
+
+msgid "❓ New Doubt on %(title)s"
+msgstr "❓ New Doubt on %(title)s"
+
+msgid "✅ Doubt Answered: %(title)s"
+msgstr "✅ Doubt Answered: %(title)s"
+
+msgid "Assistant provided clarification details."
+msgstr "Assistant provided clarification details."
+
+msgid "📦 New Intake in Draft: %(title)s"
+msgstr "📦 New Intake in Draft: %(title)s"
+
+msgid "Needs AI description and staging review."
+msgstr "Needs AI description and staging review."
+
+msgid "🏷️ Price Needed: %(title)s"
+msgstr "🏷️ Price Needed: %(title)s"
+
+msgid "Title and description are ready — waiting for sale price (€)."
+msgstr "Title and description are ready — waiting for sale price (€)."
+
+msgid "Push notification alerts disabled on this device."
+msgstr "Push notification alerts disabled on this device."
+
+msgid ""
+"On iPhone/iPad: tap Share → Add to Home Screen to enable push notifications."
+msgstr ""
+"On iPhone/iPad: tap Share → Add to Home Screen to enable push notifications."
+
+msgid "Push notifications are not supported by this browser."
+msgstr "Push notifications are not supported by this browser."
+
+msgid "Web Push VAPID keys are not configured on the server."
+msgstr "Web Push VAPID keys are not configured on the server."
+
+msgid "Notification permission was denied in browser settings."
+msgstr "Notification permission was denied in browser settings."
+
+msgid "Push notification alerts enabled on this device!"
+msgstr "Push notification alerts enabled on this device!"
+
+msgid "Could not register push subscription."
+msgstr "Could not register push subscription."
+
+msgid "Test push alert dispatched!"
+msgstr "Test push alert dispatched!"
+
+msgid "Failed to send test push alert."
+msgstr "Failed to send test push alert."
+
+msgid "Product Status Log"
+msgstr "Product Status Log"
+
+msgid "Product Status Logs"
+msgstr "Product Status Logs"
+
+msgid "The product whose state changed"
+msgstr "The product whose state changed"
+
+msgid "From Status"
+msgstr "From Status"
+
+msgid "Previous lifecycle status (null for initial creation)"
+msgstr "Previous lifecycle status (null for initial creation)"
+
+msgid "To Status"
+msgstr "To Status"
+
+msgid "New lifecycle status"
+msgstr "New lifecycle status"
+
+msgid "Changed By"
+msgstr "Changed By"
+
+msgid "User who initiated the change (null if automated system event)"
+msgstr "User who initiated the change (null if automated system event)"
+
+msgid "Trigger / Reason"
+msgstr "Trigger / Reason"
+
+msgid ""
+"Machine code for event trigger (e.g. intake, staging_update, "
+"clarification_opened, etc.)"
+msgstr ""
+"Machine code for event trigger (e.g. intake, staging_update, "
+"clarification_opened, etc.)"
+
+msgid "Notes / Description"
+msgstr "Notes / Description"
+
+msgid "Human-readable explanation or contextual details"
+msgstr "Human-readable explanation or contextual details"
+
+msgid "Timestamp"
+msgstr "Timestamp"
+
+msgid "Exact time the state change was recorded"
+msgstr "Exact time the state change was recorded"
+
+msgid "Lifecycle Audit Trail"
+msgstr "Lifecycle Audit Trail"
+
+msgid "changes"
+msgstr "changes"
+
+msgid "View full history"
+msgstr "View full history"
+
+msgid "Show less"
+msgstr "Show less"
+
+msgid "No status transitions recorded yet."
+msgstr "No status transitions recorded yet."
+
+msgid "System / Automatic"
+msgstr "System / Automatic"
+
+msgid "Build:"
+msgstr "Build:"
+
+msgid "Commit:"
+msgstr "Commit:"
+
+msgid "Development"
+msgstr "Development"
+
+msgid "Production"
+msgstr "Production"
+
+msgid "Staging"
+msgstr "Staging"
+
+msgid "Estimated Retail Price (€)"
+msgstr "Estimated Retail Price (€)"
+
+msgid "Estimated original retail price when new (MSRP)"
+msgstr "Estimated original retail price when new (MSRP)"
+
+msgid "Estimated Resale Price (€)"
+msgstr "Estimated Resale Price (€)"
+
+msgid "Estimated secondhand market resale value"
+msgstr "Estimated secondhand market resale value"
+
+msgid "Est. Resale (€)"
+msgstr "Est. Resale (€)"
+
+msgid "Est. Retail (€)"
+msgstr "Est. Retail (€)"
+
+msgid "Est. New Retail (MSRP)"
+msgstr "Est. New Retail (MSRP)"
+
+msgid "Est. Used Resale"
+msgstr "Est. Used Resale"
+
+msgid "PVP Nuevo (MSRP):"
+msgstr "PVP Nuevo (MSRP):"
+
+msgid "Reventa estimada:"
+msgstr "Reventa estimada:"
+
+msgid "Usar precio de reventa estimado"
+msgstr "Usar precio de reventa estimado"
+
+msgid "PVP Nuevo:"
+msgstr "PVP Nuevo:"
+
+msgid "Reventa est.:"
+msgstr "Reventa est.:"
+
+msgid "Aplicar reventa (€%(price)s)"
+msgstr "Aplicar reventa (€%(price)s)"
+
+msgid "Intake Batch Session"
+msgstr "Intake Batch Session"
+
+msgid "Intake Batch Sessions"
+msgstr "Intake Batch Sessions"
+
+msgid "Started At"
+msgstr "Started At"
+
+msgid "Last Activity At"
+msgstr "Last Activity At"
+
+msgid "Product Count"
+msgstr "Product Count"
+
+msgid "Is Notified"
+msgstr "Is Notified"
+
+msgid "Closed At"
+msgstr "Closed At"
+
+msgid "The intake uploading session in which this product was cataloged"
+msgstr "The intake uploading session in which this product was cataloged"
+
+msgid "The assistant who uploaded products during this session"
+msgstr "The assistant who uploaded products during this session"
+
+msgid "Timestamp when the first product of the batch was uploaded"
+msgstr "Timestamp when the first product of the batch was uploaded"
+
+msgid "Timestamp of the most recent product upload in this session"
+msgstr "Timestamp of the most recent product upload in this session"
+
+msgid "Total number of products cataloged during this batch session"
+msgstr "Total number of products cataloged during this batch session"
+
+msgid "Whether the consolidated manager push notification has been sent"
+msgstr "Whether the consolidated manager push notification has been sent"
+
+msgid "Timestamp when the session was finalized and marked closed"
+msgstr "Timestamp when the session was finalized and marked closed"
+
+msgid "📦 Lote completado: %(count)s nuevos productos"
+msgstr "📦 Lote completado: %(count)s nuevos productos"
+
+msgid "Toca para revisar las prendas en el panel de staging."
+msgstr "Toca para revisar las prendas en el panel de staging."
+
+msgid "Push Status"
+msgstr "Push Status"
+
+msgid "Sale Channel"
+msgstr "Sale Channel"
+
+msgid "Sale Channel Type"
+msgstr "Sale Channel Type"
+
+msgid "In-Store / Physical Store"
+msgstr "In-Store / Physical Store"
+
+msgid "In-Store"
+msgstr "In-Store"
+
+msgid "In-Store (Tienda física)"
+msgstr "In-Store (Tienda física)"
+
+msgid "Online Marketplace"
+msgstr "Online Marketplace"
+
+msgid "Other / Direct Sale"
+msgstr "Other / Direct Sale"
+
+msgid "Other"
+msgstr "Other"
+
+msgid "Sold Marketplace"
+msgstr "Sold Marketplace"
+
+msgid "Marketplace Platform"
+msgstr "Marketplace Platform"
+
+msgid "Marketplaces"
+msgstr "Marketplaces"
+
+msgid "Commercial channel through which the product was sold"
+msgstr "Commercial channel through which the product was sold"
+
+msgid "Marketplace platform where the sale occurred"
+msgstr "Marketplace platform where the sale occurred"
+
+msgid "Sale Reference / Notes"
+msgstr "Sale Reference / Notes"
+
+msgid "Optional ticket number, order ID, or buyer reference"
+msgstr "Optional ticket number, order ID, or buyer reference"
+
+msgid "Ticket #, order ID, buyer username (optional)"
+msgstr "Ticket #, order ID, buyer username (optional)"
+
+msgid ""
+"Please select where this product was sold (In-Store, Marketplace, or Other)."
+msgstr ""
+"Please select where this product was sold (In-Store, Marketplace, or Other)."
+
+msgid "Please select the marketplace platform where the product was sold."
+msgstr "Please select the marketplace platform where the product was sold."
+
+msgid "Sold: In-Store"
+msgstr "Sold: In-Store"
+
+msgid "Sold: Other"
+msgstr "Sold: Other"
+
+msgid "Where was it sold?"
+msgstr "Where was it sold?"
+
+msgid "Quick picks:"
+msgstr "Quick picks:"
+
+msgid "Channel:"
+msgstr "Channel:"
+
+msgid "All Channels"
+msgstr "All Channels"
+
+msgid "Erased / Deleted"
+msgstr "Erased / Deleted"
+
+msgid "Whether the product is disabled and moved to the erased trash category"
+msgstr ""
+"Whether the product is disabled and moved to the erased trash category"
+
+msgid "Deleted At"
+msgstr "Deleted At"
+
+msgid "Deleted By"
+msgstr "Deleted By"
+
+msgid "Product moved to trash / erased"
+msgstr "Product moved to trash / erased"
+
+msgid "Product restored from trash back to active catalog"
+msgstr "Product restored from trash back to active catalog"
+
+msgid "Move to Trash"
+msgstr "Move to Trash"
+
+msgid "Restore Product"
+msgstr "Restore Product"
+
+msgid "This product is in the trash"
+msgstr "This product is in the trash"
+
+msgid ""
+"It is currently hidden from the active catalog. You can restore it anytime "
+"to resume staging."
+msgstr ""
+"It is currently hidden from the active catalog. You can restore it anytime "
+"to resume staging."
+
+msgid "Deleted on"
+msgstr "Deleted on"
+
+msgid "by"
+msgstr "by"
+
+msgid "Move Product to Trash?"
+msgstr "Move Product to Trash?"
+
+msgid ""
+"This product will be hidden from the active catalog and all standard "
+"categories. You can restore it at any time from the 'Erased' category."
+msgstr ""
+"This product will be hidden from the active catalog and all standard "
+"categories. You can restore it at any time from the 'Erased' category."
+
+msgid "Yes, Move to Trash"
+msgstr "Yes, Move to Trash"
+
+msgid "Product successfully moved to trash."
+msgstr "Product successfully moved to trash."
+
+msgid "Product successfully restored to catalog."
+msgstr "Product successfully restored to catalog."
+
+msgid "This product has been moved to trash and is not accessible."
+msgstr "This product has been moved to trash and is not accessible."
+
+msgid "Erased"
+msgstr "Erased"
+
+msgid "Trash"
+msgstr "Trash"
+
+msgid "Catalog State"
+msgstr "Catalog State"
+
+msgid "Move selected products to trash"
+msgstr "Move selected products to trash"
+
+msgid "Restore selected products from trash"
+msgstr "Restore selected products from trash"
+
+msgid "Moved %(count)d product(s) to trash."
+msgstr "Moved %(count)d product(s) to trash."
+
+msgid "Restored %(count)d product(s) from trash."
+msgstr "Restored %(count)d product(s) from trash."
+
+msgid "Product Clarifications & Notes"
+msgstr "Product Clarifications & Notes"
+
+msgid "Direct Note"
+msgstr "Direct Note"
+
+msgid "Clarification Note / Details"
+msgstr "Clarification Note / Details"
+
+msgid "Add Direct Note"
+msgstr "Add Direct Note"
+
+msgid "Save Clarification Note"
+msgstr "Save Clarification Note"
+
+msgid "Clarification note added successfully."
+msgstr "Clarification note added successfully."
+
+msgid "Please provide a valid category and note text."
+msgstr "Please provide a valid category and note text."
+
+msgid "Clarification note cannot be empty."
+msgstr "Clarification note cannot be empty."
+
+msgid ""
+"Record supplemental measurements, composition tags, or condition details "
+"discovered after intake. Instantly saved and available for AI copywriting "
+"without setting product to Awaiting Info."
+msgstr ""
+"Record supplemental measurements, composition tags, or condition details "
+"discovered after intake. Instantly saved and available for AI copywriting "
+"without setting product to Awaiting Info."
+
+msgid ""
+"Asking a doubt will transition the product lifecycle status to 'Awaiting "
+"Info' and alert the sourcing assistant to provide an answer."
+msgstr ""
+"Asking a doubt will transition the product lifecycle status to 'Awaiting "
+"Info' and alert the sourcing assistant to provide an answer."
+
+msgid "Resolved Clarifications & Notes"
+msgstr "Resolved Clarifications & Notes"
+
+msgid "Delete this clarification note?"
+msgstr "Delete this clarification note?"
+
+msgid "Delete note"
+msgstr "Delete note"
+
+msgid ""
+"Discovered extra measurements, tags, or details after intake? Add them here "
+"to enrich the product listing."
+msgstr ""
+"Discovered extra measurements, tags, or details after intake? Add them here "
+"to enrich the product listing."
+
+msgid "Add Clarification Note"
+msgstr "Add Clarification Note"
+
+msgid "Send Doubt to Assistant"
+msgstr "Send Doubt to Assistant"
+
+msgid "Ask Assistant (Doubt)"
+msgstr "Ask Assistant (Doubt)"
+
+msgid "Resolved Doubt"
+msgstr "Resolved Doubt"
+
+msgid "Direct note"
+msgstr "Direct note"
+
+msgid ""
+"Indicates a direct clarification note rather than a pending manager doubt"
+msgstr ""
+"Indicates a direct clarification note rather than a pending manager doubt"
+
+msgid "Identify product with AI first to enable saving"
+msgstr "Identify product with AI first to enable saving"
+
+msgid "Product identified — ready to save"
+msgstr "Product identified — ready to save"
+
+msgid "Please identify the product with AI before saving."
+msgstr "Please identify the product with AI before saving."
+
+msgid "Invalid JSON payload."
+msgstr "Invalid JSON payload."
+
+msgid "No image IDs provided."
+msgstr "No image IDs provided."
+
+msgid "Image IDs must be integers."
+msgstr "Image IDs must be integers."
+
+msgid "Provided image IDs do not match the product's images."
+msgstr "Provided image IDs do not match the product's images."
+
+msgid "Drag or tap arrows to reorder"
+msgstr "Drag or tap arrows to reorder"
+
+msgid "Cover"
+msgstr "Cover"
+
+msgid "Move left"
+msgstr "Move left"
+
+msgid "Move photo left"
+msgstr "Move photo left"
+
+msgid "Move right"
+msgstr "Move right"
+
+msgid "Move photo right"
+msgstr "Move photo right"
+
+msgid "Make cover photo"
+msgstr "Make cover photo"
+
+msgid "Set as cover photo"
+msgstr "Set as cover photo"
+
+msgid "Reorder"
+msgstr "Reorder"
+
+msgid "Done"
+msgstr "Done"
+
+msgid "Cover Photo"
+msgstr "Cover Photo"
+
+msgid "Photo order saved successfully!"
+msgstr "Photo order saved successfully!"
+
+msgid "Failed to save photo order."
+msgstr "Failed to save photo order."
+
+msgid "Network error saving photo order."
+msgstr "Network error saving photo order."
+
+msgid "Tap to view • drag or arrows to reorder"
+msgstr "Tap to view • drag or arrows to reorder"
+
+msgid "Photo Inspection"
+msgstr "Photo Inspection"
+
+msgid "Close preview"
+msgstr "Close preview"
+
+msgid "Full photo inspection"
+msgstr "Full photo inspection"
+
+msgid "Previous photo"
+msgstr "Previous photo"
+
+msgid "Next photo"
+msgstr "Next photo"
+
+msgid "Photo"
+msgstr "Photo"
+
+msgid "of"
+msgstr "of"
+
+msgid "Tap to enlarge photo"
+msgstr "Tap to enlarge photo"
+
+msgid "Close"
+msgstr "Close"
+
+msgid "Needs Platform Sync"
+msgstr "Needs Platform Sync"
+
+msgid ""
+"Whether edits were made after publication that need updating on external "
+"platforms"
+msgstr ""
+"Whether edits were made after publication that need updating on external "
+"platforms"
+
+msgid "Last Platform Synced At"
+msgstr "Last Platform Synced At"
+
+msgid ""
+"Timestamp when external platform listings were last marked as synchronized"
+msgstr ""
+"Timestamp when external platform listings were last marked as synchronized"
+
+msgid "Out of Sync"
+msgstr "Out of Sync"
+
+msgid "Synced"
+msgstr "Synced"
+
+msgid "Sync"
+msgstr "Sync"
+
+msgid "Please select at least one photo to upload."
+msgstr "Please select at least one photo to upload."
+
+msgid ""
+"Cannot upload %(new)d photo(s). Product already has %(current)d photo(s) "
+"(maximum is 10)."
+msgstr ""
+"Cannot upload %(new)d photo(s). Product already has %(current)d photo(s) "
+"(maximum is 10)."
+
+msgid "Successfully added %(count)d photo(s)."
+msgstr "Successfully added %(count)d photo(s)."
+
+msgid "Error processing uploaded photos: %(error)s"
+msgstr "Error processing uploaded photos: %(error)s"
+
+msgid ""
+"Cannot delete the only photo. Each product must have at least one photo."
+msgstr ""
+"Cannot delete the only photo. Each product must have at least one photo."
+
+msgid "Photo deleted successfully."
+msgstr "Photo deleted successfully."
+
+msgid "Platforms marked as updated successfully."
+msgstr "Platforms marked as updated successfully."
+
+msgid "Update Required on Marketplaces"
+msgstr "Update Required on Marketplaces"
+
+msgid ""
+"This product was modified after publication. External listings (Wallapop, "
+"Vinted, etc.) may have outdated details or photos."
+msgstr ""
+"This product was modified after publication. External listings (Wallapop, "
+"Vinted, etc.) may have outdated details or photos."
+
+msgid "Last marked as synchronized:"
+msgstr "Last marked as synchronized:"
+
+msgid "Mark Platforms as Updated"
+msgstr "Mark Platforms as Updated"
+
+msgid "Add More Photos"
+msgstr "Add More Photos"
+
+msgid "Max 10 total"
+msgstr "Max 10 total"
+
+msgid "Upload"
+msgstr "Upload"
+
+msgid "Delete photo"
+msgstr "Delete photo"
+
+msgid "Are you sure you want to delete this photo?"
+msgstr "Are you sure you want to delete this photo?"
+
+msgid "Sync Status:"
+msgstr "Sync Status:"
+
+msgid "All Published"
+msgstr "All Published"
+
+msgid "Update Platforms"
+msgstr "Update Platforms"
+
+msgid "Out of sync listings"
+msgstr "Out of sync listings"
+
+msgid "Out of sync with external platforms"
+msgstr "Out of sync with external platforms"
+
+msgid "Platforms synced:"
+msgstr "Platforms synced:"
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "New Photos to Upload"
+msgstr "New Photos to Upload"
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "Clear All"
+msgstr "Clear All"
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "Upload Selected Photos"
+msgstr "Upload Selected Photos"
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "Upload 1 Selected Photo"
+msgstr "Upload 1 Selected Photo"
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "Uploading photos..."
+msgstr "Uploading photos..."
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "Maximum photo limit (10) reached for this product."
+msgstr "Maximum photo limit (10) reached for this product."
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "Some photos were skipped because the maximum limit is 10 photos."
+msgstr "Some photos were skipped because the maximum limit is 10 photos."
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "Remove from upload queue"
+msgstr "Remove from upload queue"
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "Remove photo from upload queue"
+msgstr "Remove photo from upload queue"
+
+#: inventory/templates/inventory/product_detail.html:220
+msgid "%(available)s available (%(count)s/10)"
+msgstr "%(available)s available (%(count)s/10)"
+
+#: inventory/services/push_service.py
+msgid "⚠️ Product Out of Sync: %(title)s"
+msgstr "⚠️ Product Out of Sync: %(title)s"
+
+#: inventory/services/push_service.py
+msgid ""
+"Modifications detected on published item. External platform listings require"
+" updating."
+msgstr ""
+"Modifications detected on published item. External platform listings require"
+" updating."
+
+msgid "New with tags"
+msgstr "New with tags"
+
+msgid "Very good"
+msgstr "Very good"
+
+msgid "Good condition"
+msgstr "Good condition"
+
+msgid "Vintage"
+msgstr "Vintage"
+
+msgid "Storefront"
+msgstr "Storefront"
+
+msgid "Public Storefront"
+msgstr "Public Storefront"
+
+msgid "Second-Hand & Opportunity Store in Valencia & Online"
+msgstr "Second-Hand & Opportunity Store in Valencia & Online"
+
+msgid "Staff Mode"
+msgstr "Staff Mode"
+
+msgid "Staging Dashboard"
+msgstr "Staging Dashboard"
+
+msgid "Protected shipping across Spain & Free pickup in Alfafar"
+msgstr "Protected shipping across Spain & Free pickup in Alfafar"
+
+msgid "Search items, brands, categories, Ref #..."
+msgstr "Search items, brands, categories, Ref #..."
+
+msgid "Search items, categories, Ref #..."
+msgstr "Search items, categories, Ref #..."
+
+msgid "Search catalog"
+msgstr "Search catalog"
+
+msgid "How to buy"
+msgstr "How to buy"
+
+msgid "Direct contact"
+msgstr "Direct contact"
+
+msgid "Guide"
+msgstr "Guide"
+
+msgid "Physical Store & Online"
+msgstr "Physical Store & Online"
+
+msgid ""
+"Your second-hand, vintage, and opportunity store in Alfafar (Valencia). "
+"Every item is inspected and photographed in-house."
+msgstr ""
+"Your second-hand, vintage, and opportunity store in Alfafar (Valencia). "
+"Every item is inspected and photographed in-house."
+
+msgid "Address:"
+msgstr "Address:"
+
+msgid "Hours:"
+msgstr "Hours:"
+
+msgid "Open in Google Maps"
+msgstr "Open in Google Maps"
+
+msgid "Featured Categories"
+msgstr "Featured Categories"
+
+msgid "Tech & Electronics"
+msgstr "Tech & Electronics"
+
+msgid "Home & Garden"
+msgstr "Home & Garden"
+
+msgid "Appliances"
+msgstr "Appliances"
+
+msgid "Bicycles"
+msgstr "Bicycles"
+
+msgid "Collectibles"
+msgstr "Collectibles"
+
+msgid "Sports & Leisure"
+msgstr "Sports & Leisure"
+
+msgid "Fashion & Vintage"
+msgstr "Fashion & Vintage"
+
+msgid "Books, Film & Music"
+msgstr "Books, Film & Music"
+
+msgid "Have a question about an item?"
+msgstr "Have a question about an item?"
+
+msgid "WhatsApp Store →"
+msgstr "WhatsApp Store →"
+
+msgid "How to Buy, Pickup & Guarantee"
+msgstr "How to Buy, Pickup & Guarantee"
+
+msgid "How to buy, reserve & pick up? (Learn more)"
+msgstr "How to buy, reserve & pick up? (Learn more)"
+
+msgid ""
+"24-hour reservation holds without upfront payment for in-person inspection "
+"in Alfafar."
+msgstr ""
+"24-hour reservation holds without upfront payment for in-person inspection "
+"in Alfafar."
+
+msgid "Protected national shipping"
+msgstr "Protected national shipping"
+
+msgid ""
+"Tracked shipments across Spain via Wallapop Envíos, Vinted, and Milanuncios."
+msgstr ""
+"Tracked shipments across Spain via Wallapop Envíos, Vinted, and Milanuncios."
+
+msgid "Legal Notice"
+msgstr "Legal Notice"
+
+msgid "Privacy Policy"
+msgstr "Privacy Policy"
+
+msgid "Cookies Policy"
+msgstr "Cookies Policy"
+
+msgid "Staff Access"
+msgstr "Staff Access"
+
+msgid "All rights reserved."
+msgstr "All rights reserved."
+
+msgid "Circular economy & transparent local commerce"
+msgstr "Circular economy & transparent local commerce"
+
+msgid "Unique opportunities inspected daily in-store and online"
+msgstr "Unique opportunities inspected daily in-store and online"
+
+msgid "Technically audited"
+msgstr "Technically audited"
+
+msgid "Free in-store pickup"
+msgstr "Free in-store pickup"
+
+msgid "Inspected & verified items"
+msgstr "Inspected & verified items"
+
+msgid "100% real product photos"
+msgstr "100% real product photos"
+
+msgid "FREE store pickup (Alfafar)"
+msgstr "FREE store pickup (Alfafar)"
+
+msgid "Direct contact & WhatsApp hold"
+msgstr "Direct contact & WhatsApp hold"
+
+msgid "All Categories"
+msgstr "All Categories"
+
+msgid "Price:"
+msgstr "Price:"
+
+msgid "All"
+msgstr "All"
+
+msgid "Under 20 €"
+msgstr "Under 20 €"
+
+msgid "Over 50 €"
+msgstr "Over 50 €"
+
+msgid "Condition:"
+msgstr "Condition:"
+
+msgid "items available"
+msgstr "items available"
+
+msgid "Sort:"
+msgstr "Sort:"
+
+msgid "Newest first"
+msgstr "Newest first"
+
+msgid "Featured ★"
+msgstr "Featured ★"
+
+msgid "Price: low to high"
+msgstr "Price: low to high"
+
+msgid "Price: high to low"
+msgstr "Price: high to low"
+
+msgid "No items match your current filters"
+msgstr "No items match your current filters"
+
+msgid ""
+"We update our catalog daily with new arrivals at our Alfafar store. Try "
+"clearing the filters or ask us directly via WhatsApp."
+msgstr ""
+"We update our catalog daily with new arrivals at our Alfafar store. Try "
+"clearing the filters or ask us directly via WhatsApp."
+
+msgid "View all items"
+msgstr "View all items"
+
+msgid "Ask on WhatsApp"
+msgstr "Ask on WhatsApp"
+
+msgid "PHYSICAL STORE & STAGING STUDIO"
+msgstr "PHYSICAL STORE & STAGING STUDIO"
+
+msgid "Visit us in person in Alfafar"
+msgstr "Visit us in person in Alfafar"
+
+msgid ""
+"You can inspect and test any item in our catalog with no obligation. Visit "
+"us at"
+msgstr ""
+"You can inspect and test any item in our catalog with no obligation. Visit "
+"us at"
+
+msgid "Get directions (Google Maps)"
+msgstr "Get directions (Google Maps)"
+
+msgid "How to reserve & store hours"
+msgstr "How to reserve & store hours"
+
+msgid "SOLD"
+msgstr "SOLD"
+
+msgid "RESERVED"
+msgstr "RESERVED"
+
+msgid "FEATURED"
+msgstr "FEATURED"
+
+msgid "Delivered in Alfafar"
+msgstr "Delivered in Alfafar"
+
+msgid "Opportunity"
+msgstr "Opportunity"
+
+msgid "Ask for price"
+msgstr "Ask for price"
+
+msgid "Recently sold at Alfafar store"
+msgstr "Recently sold at Alfafar store"
+
+msgid "Active 24h hold for in-store check"
+msgstr "Active 24h hold for in-store check"
+
+msgid "In store Alfafar · Available today"
+msgstr "In store Alfafar · Available today"
+
+msgid "See similar items"
+msgstr "See similar items"
+
+msgid "Temporarily reserved (In Store)"
+msgstr "Temporarily reserved (In Store)"
+
+msgid "Interested? Ask about waiting list"
+msgstr "Interested? Ask about waiting list"
+
+msgid "Details"
+msgstr "Details"
+
+msgid "How to buy at Rápido Pack Alfafar?"
+msgstr "How to buy at Rápido Pack Alfafar?"
+
+msgid ""
+"In-store pickup guide, 24h reservation & protected shipping across Spain"
+msgstr ""
+"In-store pickup guide, 24h reservation & protected shipping across Spain"
+
+msgid "Option A: Free pickup at our physical store (Alfafar)"
+msgstr "Option A: Free pickup at our physical store (Alfafar)"
+
+msgid "Free shipping / No fees"
+msgstr "Free shipping / No fees"
+
+msgid "Option B: Protected shipping across Spain"
+msgstr "Option B: Protected shipping across Spain"
+
+msgid "Buyer protection"
+msgstr "Buyer protection"
+
+msgid "Option C: Verified condition & real photos"
+msgstr "Option C: Verified condition & real photos"
+
+msgid "100% Real Photos"
+msgstr "100% Real Photos"
+
+msgid "Got it, back to store"
+msgstr "Got it, back to store"
+
+msgid "Edit in Staging"
+msgstr "Edit in Staging"
+
+msgid "Catalog"
+msgstr "Catalog"
+
+msgid "Verified in Alfafar"
+msgstr "Verified in Alfafar"
+
+msgid "SINGLE PIECE AVAILABLE"
+msgstr "SINGLE PIECE AVAILABLE"
+
+msgid "Zoom photo"
+msgstr "Zoom photo"
+
+msgid "100% real photograph of the item in stock (Alfafar Studio)"
+msgstr "100% real photograph of the item in stock (Alfafar Studio)"
+
+msgid "Product Description & Details"
+msgstr "Product Description & Details"
+
+msgid "View store pickup, 24h hold & shipping guide"
+msgstr "View store pickup, 24h hold & shipping guide"
+
+msgid "Rápido Pack Verification Guarantee"
+msgstr "Rápido Pack Verification Guarantee"
+
+msgid ""
+"Visual and functional inspection completed at our Alfafar (Valencia) store"
+msgstr ""
+"Visual and functional inspection completed at our Alfafar (Valencia) store"
+
+msgid "Inspected in Store"
+msgstr "Inspected in Store"
+
+msgid "Real Studio Photographs"
+msgstr "Real Studio Photographs"
+
+msgid "24h Free In-Store Hold"
+msgstr "24h Free In-Store Hold"
+
+msgid "Keep exploring"
+msgstr "Keep exploring"
+
+msgid "Related Opportunities"
+msgstr "Related Opportunities"
+
+msgid "View full catalog"
+msgstr "View full catalog"
+
+msgid "Available (Single item)"
+msgstr "Available (Single item)"
+
+msgid "Inspected at Alfafar store · Real item in stock"
+msgstr "Inspected at Alfafar store · Real item in stock"
+
+msgid "Unified price in-store and online"
+msgstr "Unified price in-store and online"
+
+msgid "Free store pickup"
+msgstr "Free store pickup"
+
+msgid "This item has been sold"
+msgstr "This item has been sold"
+
+msgid "See similar items in catalog"
+msgstr "See similar items in catalog"
+
+msgid "Temporarily reserved for in-store check (24h hold)"
+msgstr "Temporarily reserved for in-store check (24h hold)"
+
+msgid "Join waiting list via WhatsApp"
+msgstr "Join waiting list via WhatsApp"
+
+msgid "Buy / Ask via WhatsApp"
+msgstr "Buy / Ask via WhatsApp"
+
+msgid "Automatic message with %(ref)s ready to send"
+msgstr "Automatic message with %(ref)s ready to send"
+
+msgid "Learn more about free pickup in Alfafar & shipping"
+msgstr "Learn more about free pickup in Alfafar & shipping"
+
+msgid "Also available with protected shipping on:"
+msgstr "Also available with protected shipping on:"
+
+msgid "Protected shipping"
+msgstr "Protected shipping"
+
+msgid "FREE pickup at Alfafar store"
+msgstr "FREE pickup at Alfafar store"
+
+msgid "In-store payments: Cash, Bizum, or Card."
+msgstr "In-store payments: Cash, Bizum, or Card."
+
+msgid "Shipping across Spain"
+msgstr "Shipping across Spain"
+
+msgid "View in Storefront"
+msgstr "View in Storefront"
+
+msgid "Manager privileges required to access administration."
+msgstr "Manager privileges required to access administration."
+
+msgid "Members Count"
+msgstr "Members Count"
+
+msgid "Notes"
+msgstr "Notes"
+
+msgid "Notified"
+msgstr "Notified"
+
+msgid "---------"
+msgstr "---------"
+
+msgid ""
+"Add measurements, composition details, flaws, or inspection notes discovered"
+" after intake..."
+msgstr ""
+"Add measurements, composition details, flaws, or inspection notes discovered"
+" after intake..."
+
+msgid ""
+"Ask the assistant for missing info (e.g., 'Confirm pit-to-pit measurement or"
+" verify fabric composition tag')"
+msgstr ""
+"Ask the assistant for missing info (e.g., 'Confirm pit-to-pit measurement or"
+" verify fabric composition tag')"
+
+msgid ""
+"Cannot mark product as Ready to Publish while pending clarifications remain "
+"unresolved."
+msgstr ""
+"Cannot mark product as Ready to Publish while pending clarifications remain "
+"unresolved."
+
+msgid "Condition State"
+msgstr "Condition State"
+
+msgid "Featured (⭐)"
+msgstr "Featured (⭐)"
+
+msgid "Provide measurements, material details, or condition observations..."
+msgstr "Provide measurements, material details, or condition observations..."
+
+msgid "Question for Assistant"
+msgstr "Question for Assistant"
+
+msgid "Reserved (⏳)"
+msgstr "Reserved (⏳)"
+
+msgid "Storefront Category"
+msgstr "Storefront Category"
+
+msgid "Visible in Public Storefront"
+msgstr "Visible in Public Storefront"
+
+msgid "— Select Category —"
+msgstr "— Select Category —"
+
+msgid "— Select Condition —"
+msgstr "— Select Condition —"
+
+msgid "Answered At"
+msgstr "Answered At"
+
+msgid "Answered By"
+msgstr "Answered By"
+
+msgid "Area of clarification"
+msgstr "Area of clarification"
+
+msgid "Asked By"
+msgstr "Asked By"
+
+msgid "Categories"
+msgstr "Categories"
+
+msgid "Category Name (EN)"
+msgstr "Category Name (EN)"
+
+msgid "Category Name (ES)"
+msgstr "Category Name (ES)"
+
+msgid "Category display name in English"
+msgstr "Category display name in English"
+
+msgid "Client authentication secret (Base64URL)"
+msgstr "Client authentication secret (Base64URL)"
+
+msgid "Client public encryption key (Base64URL)"
+msgstr "Client public encryption key (Base64URL)"
+
+msgid "Company NIF / CIF"
+msgstr "Company NIF / CIF"
+
+msgid "Condition"
+msgstr "Condition"
+
+msgid "Contact Email"
+msgstr "Contact Email"
+
+msgid "Created At"
+msgstr "Created At"
+
+msgid "Current lifecycle status of the product"
+msgstr "Current lifecycle status of the product"
+
+msgid "Enter a valid URL starting with http:// or https://."
+msgstr "Enter a valid URL starting with http:// or https://."
+
+msgid "Flaws / Condition / Stains"
+msgstr "Flaws / Condition / Stains"
+
+msgid "General Question"
+msgstr "General Question"
+
+msgid "Google Maps URL"
+msgstr "Google Maps URL"
+
+msgid "Highlight this item with a Featured badge and priority placement"
+msgstr "Highlight this item with a Featured badge and priority placement"
+
+msgid "International format with country code, e.g. 34600000000"
+msgstr "International format with country code, e.g. 34600000000"
+
+msgid "Marketplace"
+msgstr "Marketplace"
+
+msgid "Marketplace product category"
+msgstr "Marketplace product category"
+
+msgid "Material Icon"
+msgstr "Material Icon"
+
+msgid "Material Symbols Outlined icon name (e.g. pedal_bike, devices)"
+msgstr "Material Symbols Outlined icon name (e.g. pedal_bike, devices)"
+
+msgid "Measurements / Sizing"
+msgstr "Measurements / Sizing"
+
+msgid "Number of outbound WhatsApp inquiry clicks"
+msgstr "Number of outbound WhatsApp inquiry clicks"
+
+msgid "Number of public clicks to this marketplace listing"
+msgstr "Number of public clicks to this marketplace listing"
+
+msgid "Number of public detail page views"
+msgstr "Number of public detail page views"
+
+msgid "Opening Hours (EN)"
+msgstr "Opening Hours (EN)"
+
+msgid "Opening Hours (ES)"
+msgstr "Opening Hours (ES)"
+
+msgid "Optional expiration timestamp for reservation hold"
+msgstr "Optional expiration timestamp for reservation hold"
+
+msgid "Outbound Clicks"
+msgstr "Outbound Clicks"
+
+msgid "Physical Store Address"
+msgstr "Physical Store Address"
+
+msgid "Physical condition state of the item"
+msgstr "Physical condition state of the item"
+
+msgid "Primary category display name in Spanish"
+msgstr "Primary category display name in Spanish"
+
+msgid "Public Views"
+msgstr "Public Views"
+
+msgid "Question from manager regarding missing product details"
+msgstr "Question from manager regarding missing product details"
+
+msgid "Reserved Until"
+msgstr "Reserved Until"
+
+msgid "Response from assistant"
+msgstr "Response from assistant"
+
+msgid "Sorting order in storefront navigation"
+msgstr "Sorting order in storefront navigation"
+
+msgid "Store Domain"
+msgstr "Store Domain"
+
+msgid "Store Name"
+msgstr "Store Name"
+
+msgid "Storefront Configuration"
+msgstr "Storefront Configuration"
+
+msgid "Tag / Brand / Composition"
+msgstr "Tag / Brand / Composition"
+
+msgid "Tagline (EN)"
+msgstr "Tagline (EN)"
+
+msgid "Tagline (ES)"
+msgstr "Tagline (ES)"
+
+msgid "Tax identification number for legal notice (optional)"
+msgstr "Tax identification number for legal notice (optional)"
+
+msgid "Temporarily hold this item as Reserved in the public storefront"
+msgstr "Temporarily hold this item as Reserved in the public storefront"
+
+msgid "Timestamp when product was moved to trash"
+msgstr "Timestamp when product was moved to trash"
+
+msgid "URL-safe category identifier"
+msgstr "URL-safe category identifier"
+
+msgid "Unique browser push service endpoint URL"
+msgstr "Unique browser push service endpoint URL"
+
+msgid "Updated At"
+msgstr "Updated At"
+
+msgid "User"
+msgstr "User"
+
+msgid "User who moved the product to trash"
+msgstr "User who moved the product to trash"
+
+msgid "WhatsApp Clicks"
+msgstr "WhatsApp Clicks"
+
+msgid "WhatsApp Phone Number"
+msgstr "WhatsApp Phone Number"
+
+msgid "Whether this category is visible in the public storefront"
+msgstr "Whether this category is visible in the public storefront"
+
+msgid ""
+"Whether this item is visible in the public storefront when Ready/Published"
+msgstr ""
+"Whether this item is visible in the public storefront when Ready/Published"
+
+msgid "Failed to process image '%(filename)s': %(error)s"
+msgstr "Failed to process image '%(filename)s': %(error)s"
+
+msgid ""
+"File '%(filename)s' is too large in pixel dimensions (possible decompression"
+" bomb)."
+msgstr ""
+"File '%(filename)s' is too large in pixel dimensions (possible decompression"
+" bomb)."
+
+msgid "Image '%(filename)s' is empty (0 bytes)."
+msgstr "Image '%(filename)s' is empty (0 bytes)."
+
+msgid ""
+"Image format '%(format)s' is not supported. Please upload JPEG, PNG, or "
+"WebP."
+msgstr ""
+"Image format '%(format)s' is not supported. Please upload JPEG, PNG, or "
+"WebP."
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Home"
+msgstr "Home"
+
+msgid "Featured"
+msgstr "Featured"
+
+msgid "Filter products by status"
+msgstr "Filter products by status"
+
+msgid "No products matched your search \"{{ query }}\". Try clearing the filter."
+msgstr "No products matched your search \"{{ query }}\". Try clearing the filter."
+
+msgid "Reserved"
+msgstr "Reserved"
+
+msgid "Search products by title, note, or date"
+msgstr "Search products by title, note, or date"
+
+msgid ""
+"Showing <span class=\"font-bold text-slate-800\">{{ start }}</span> to <span"
+" class=\"font-bold text-slate-800\">{{ end }}</span> of <span class=\"font-"
+"bold text-slate-800\">{{ total }}</span> products"
+msgstr ""
+"Showing <span class=\"font-bold text-slate-800\">{{ start }}</span> to <span"
+" class=\"font-bold text-slate-800\">{{ end }}</span> of <span class=\"font-"
+"bold text-slate-800\">{{ total }}</span> products"
+
+msgid "Estimated resale:"
+msgstr "Estimated resale:"
+
+msgid "New Retail (MSRP):"
+msgstr "New Retail (MSRP):"
+
+msgid "Optional"
+msgstr "Optional"
+
+msgid "Select up to {{ max }} photos (auto-optimized to WebP 2560px)"
+msgstr "Select up to {{ max }} photos (auto-optimized to WebP 2560px)"
+
+msgid "Use estimated resale price"
+msgstr "Use estimated resale price"
+
+msgid "Apply resale (€{{ price }})"
+msgstr "Apply resale (€{{ price }})"
+
+msgid "E.g., Pit-to-pit: 54cm, length: 70cm, YKK zipper, 100% heavy cotton."
+msgstr "E.g., Pit-to-pit: 54cm, length: 70cm, YKK zipper, 100% heavy cotton."
+
+msgid "E.g., Pit-to-pit: 54cm, length: 70cm, composition: 100% cotton."
+msgstr "E.g., Pit-to-pit: 54cm, length: 70cm, composition: 100% cotton."
+
+msgid "Platform Clicks"
+msgstr "Platform Clicks"
+
+msgid "Public Storefront & Taxonomy (Rápido Pack)"
+msgstr "Public Storefront & Taxonomy (Rápido Pack)"
+
+msgid "Update"
+msgstr "Update"
+
+msgid "clicks"
+msgstr "clicks"
+
+msgid "{{ available }} available ({{ count }}/10)"
+msgstr "{{ available }} available ({{ count }}/10)"
+
+msgid "Catalog Dashboard"
+msgstr "Catalog Dashboard"
+
+msgid "Manager privileges required to ask clarifications."
+msgstr "Manager privileges required to ask clarifications."
+
+msgid "Legal Notice and Terms of Use"
+msgstr "Legal Notice and Terms of Use"
+
+msgid ""
+"Official Punto Pack & Multi-Carrier Parcel Hub (SEUR, GLS, InPost, Amazon, "
+"Kanguro, DHL)"
+msgstr ""
+"Official Punto Pack & Multi-Carrier Parcel Hub (SEUR, GLS, InPost, Amazon, "
+"Kanguro, DHL)"
+
+msgid "Parcel Services, Punto Pack and Second-Hand Store"
+msgstr "Parcel Services, Punto Pack and Second-Hand Store"
+
+msgid "Parcel shipping, pickups, and returns in Alfafar"
+msgstr "Parcel shipping, pickups, and returns in Alfafar"
+
+msgid "Privacy Policy (GDPR)"
+msgstr "Privacy Policy (GDPR)"
+
+msgid "Secondhand and opportunity store with verified items"
+msgstr "Secondhand and opportunity store with verified items"
+
+msgid "About Us"
+msgstr "About Us"
+
+msgid "Carriers"
+msgstr "Carriers"
+
+msgid "Contact"
+msgstr "Contact"
+
+msgid "Go to Panel"
+msgstr "Go to Panel"
+
+msgid "How to Buy & Reserve"
+msgstr "How to Buy & Reserve"
+
+msgid "Legal"
+msgstr "Legal"
+
+msgid "Main navigation"
+msgstr "Main navigation"
+
+msgid "Message us on WhatsApp"
+msgstr "Message us on WhatsApp"
+
+msgid "Official Punto Pack · Multi-Carrier Parcel Hub · Store in Alfafar"
+msgstr "Official Punto Pack · Multi-Carrier Parcel Hub · Store in Alfafar"
+
+msgid "Parcel Pickup"
+msgstr "Parcel Pickup"
+
+msgid "Parcel Services"
+msgstr "Parcel Services"
+
+msgid "Questions?"
+msgstr "Questions?"
+
+msgid "Rapidez y confianza a la vuelta de la esquina."
+msgstr "Rapidez y confianza a la vuelta de la esquina."
+
+msgid "Returns"
+msgstr "Returns"
+
+msgid "Second-Hand Store"
+msgstr "Second-Hand Store"
+
+msgid "Services"
+msgstr "Services"
+
+msgid "Shipping"
+msgstr "Shipping"
+
+msgid "Speed and trust right around the corner."
+msgstr "Speed and trust right around the corner."
+
+msgid "Store"
+msgstr "Store"
+
+msgid "Store opening hours and physical location in Alfafar"
+msgstr "Store opening hours and physical location in Alfafar"
+
+msgid "Toggle high contrast mode"
+msgstr "Toggle high contrast mode"
+
+msgid "Toggle theme"
+msgstr "Toggle theme"
+
+msgid "100% Inspected"
+msgstr "100% Inspected"
+
+msgid "6+ carriers"
+msgstr "6+ carriers"
+
+msgid "Address"
+msgstr "Address"
+
+msgid "Alfafar Service Point"
+msgstr "Alfafar Service Point"
+
+msgid ""
+"Centralize all your parcel operations in one single local hub close to home,"
+" with extended hours and direct service."
+msgstr ""
+"Centralize all your parcel operations in one single local hub close to home,"
+" with extended hours and direct service."
+
+msgid "Closed"
+msgstr "Closed"
+
+msgid "Done in minutes, no queues."
+msgstr "Done in minutes, no queues."
+
+msgid "Done, with real-time tracking"
+msgstr "Done, with real-time tracking"
+
+msgid "Digital label, QR code, or ready-to-ship parcel."
+msgstr "Digital label, QR code, or ready-to-ship parcel."
+
+msgid "Explore the store"
+msgstr "Explore the store"
+
+msgid "Free"
+msgstr "Free"
+
+msgid "Fresh Arrivals"
+msgstr "Fresh Arrivals"
+
+msgid "Giving a new chapter to products with a story."
+msgstr "Giving a new chapter to products with a story."
+
+msgid "Have a package or looking for a great find? Visit us in Alfafar."
+msgstr "Have a package or looking for a great find? Visit us in Alfafar."
+
+msgid "How it works"
+msgstr "How it works"
+
+msgid "How to get here"
+msgstr "How to get here"
+
+msgid "Immediate assistance"
+msgstr "Immediate assistance"
+
+msgid "Immediate counter scanning."
+msgstr "Immediate counter scanning."
+
+msgid "In-store pickup of purchases"
+msgstr "In-store pickup of purchases"
+
+msgid "In-store review"
+msgstr "In-store review"
+
+msgid "Inquire about shipping"
+msgstr "Inquire about shipping"
+
+msgid "Inquire on WhatsApp"
+msgstr "Inquire on WhatsApp"
+
+msgid "Inspected items"
+msgstr "Inspected items"
+
+msgid "Inspected items and safely guarded parcels."
+msgstr "Inspected items and safely guarded parcels."
+
+msgid "Instant receipt with live tracking code."
+msgstr "Instant receipt with live tracking code."
+
+msgid "Latest arrivals in our store"
+msgstr "Latest arrivals in our store"
+
+msgid "Local commerce, direct and friendly service."
+msgstr "Local commerce, direct and friendly service."
+
+msgid "Location & Opening Hours"
+msgstr "Location & Opening Hours"
+
+msgid "Monday to Friday:"
+msgstr "Monday to Friday:"
+
+msgid "More than a store, your local community hub"
+msgstr "More than a store, your local community hub"
+
+msgid ""
+"Multi-brand parcel hub, official Punto Pack, and second-hand opportunity "
+"shop with verified items in Alfafar (Valencia)."
+msgstr ""
+"Multi-brand parcel hub, official Punto Pack, and second-hand opportunity "
+"shop with verified items in Alfafar (Valencia)."
+
+msgid ""
+"Multi-Brand Parcel Point, Official Punto Pack & Second-Hand Store in Alfafar"
+msgstr ""
+"Multi-Brand Parcel Point, Official Punto Pack & Second-Hand Store in Alfafar"
+
+msgid "Multi-carrier parcel hub, Punto Pack, and physical store"
+msgstr "Multi-carrier parcel hub, Punto Pack, and physical store"
+
+msgid "Neighborhood store, professional service"
+msgstr "Neighborhood store, professional service"
+
+msgid "New opportunities daily at our Alfafar store"
+msgstr "New opportunities daily at our Alfafar store"
+
+msgid ""
+"No appointments or complicated procedures. Drop by the store today or ask us"
+" on WhatsApp."
+msgstr ""
+"No appointments or complicated procedures. Drop by the store today or ask us"
+" on WhatsApp."
+
+msgid "Official"
+msgstr "Official"
+
+msgid "Official Punto Pack"
+msgstr "Official Punto Pack"
+
+msgid "Opening hours"
+msgstr "Opening hours"
+
+msgid "Opening Hours"
+msgstr "Opening Hours"
+
+msgid "Parcel Carriers"
+msgstr "Parcel Carriers"
+
+msgid "Parcel Pickup & Reception"
+msgstr "Parcel Pickup & Reception"
+
+msgid "Process your returns for Amazon and other online retailers in minutes."
+msgstr ""
+"Process your returns for Amazon and other online retailers in minutes."
+
+msgid "Punto Pack"
+msgstr "Punto Pack"
+
+msgid "Rápido Pack parcel counter and second-hand store in Alfafar"
+msgstr "Rápido Pack parcel counter and second-hand store in Alfafar"
+
+msgid "Rápido Pack team and storefront in Alfafar, Valencia"
+msgstr "Rápido Pack team and storefront in Alfafar, Valencia"
+
+msgid ""
+"Rápido Pack was born in Alfafar with a simple mission: to make sending, "
+"receiving, or shopping fast and trustworthy. 'Rápido' because we value your "
+"time. 'Pack' because every parcel, whether you send it or bring an item "
+"home, deserves genuine care."
+msgstr ""
+"Rápido Pack was born in Alfafar with a simple mission: to make sending, "
+"receiving, or shopping fast and trustworthy. 'Rápido' because we value your "
+"time. 'Pack' because every parcel, whether you send it or bring an item "
+"home, deserves genuine care."
+
+msgid ""
+"Receive your orders here and collect them whenever it suits you, without "
+"waiting at home."
+msgstr ""
+"Receive your orders here and collect them whenever it suits you, without "
+"waiting at home."
+
+msgid "Return a parcel"
+msgstr "Return a parcel"
+
+msgid "Saturdays:"
+msgstr "Saturdays:"
+
+msgid "Second Life"
+msgstr "Second Life"
+
+msgid "Ship, receive, and discover in Alfafar"
+msgstr "Ship, receive, and discover in Alfafar"
+
+msgid "Ship, receive, and discover. All in one place."
+msgstr "Ship, receive, and discover. All in one place."
+
+msgid "Speed"
+msgstr "Speed"
+
+msgid "Sundays & holidays: Closed"
+msgstr "Sundays & holidays: Closed"
+
+msgid "Sundays:"
+msgstr "Sundays:"
+
+msgid ""
+"The 4 newest items in our store. One-of-a-kind finds: once they are gone, "
+"they are gone."
+msgstr ""
+"The 4 newest items in our store. One-of-a-kind finds: once they are gone, "
+"they are gone."
+
+msgid "Trust"
+msgstr "Trust"
+
+msgid "View all store items"
+msgstr "View all store items"
+
+msgid "View online store"
+msgstr "View online store"
+
+msgid "View parcel services"
+msgstr "View parcel services"
+
+msgid "View pickup hours"
+msgstr "View pickup hours"
+
+msgid "Visit us in Alfafar"
+msgstr "Visit us in Alfafar"
+
+msgid "Warmth & Proximity"
+msgstr "Warmth & Proximity"
+
+msgid ""
+"We are a multi-brand parcel point (SEUR, GLS, InPost, Amazon, Kanguro, DHL),"
+" official Punto Pack, and second-hand shop with verified items in Alfafar, "
+"Valencia."
+msgstr ""
+"We are a multi-brand parcel point (SEUR, GLS, InPost, Amazon, Kanguro, DHL),"
+" official Punto Pack, and second-hand shop with verified items in Alfafar, "
+"Valencia."
+
+msgid ""
+"We are a multi-brand parcel service point and Punto Pack, plus a curated "
+"second-hand store with inspected items. Fast, local, and hassle-free."
+msgstr ""
+"We are a multi-brand parcel service point and Punto Pack, plus a curated "
+"second-hand store with inspected items. Fast, local, and hassle-free."
+
+msgid ""
+"We are an official Punto Pack: drop off or pick up your shipments quickly "
+"and securely."
+msgstr ""
+"We are an official Punto Pack: drop off or pick up your shipments quickly "
+"and securely."
+
+msgid ""
+"We are constantly preparing inspected items. Explore the full catalog or "
+"contact us directly on WhatsApp."
+msgstr ""
+"We are constantly preparing inspected items. Explore the full catalog or "
+"contact us directly on WhatsApp."
+
+msgid ""
+"We are located in the heart of Alfafar, very close to the train station with"
+" convenient nearby parking."
+msgstr ""
+"We are located in the heart of Alfafar, very close to the train station with"
+" convenient nearby parking."
+
+msgid "We handle it instantly"
+msgstr "We handle it instantly"
+
+msgid "We manage your shipments, pickups, and returns with leading carriers"
+msgstr "We manage your shipments, pickups, and returns with leading carriers"
+
+msgid "Your parcels in good hands"
+msgstr "Your parcels in good hands"
+
+msgid "Your shipments and pickups in 3 simple steps:"
+msgstr "Your shipments and pickups in 3 simple steps:"
+
+msgid "Your trusted local hub in Alfafar"
+msgstr "Your trusted local hub in Alfafar"
+
+msgid "🚆 Very close to Alfafar-Benetússer station · Easy parking"
+msgstr "🚆 Very close to Alfafar-Benetússer station · Easy parking"
+
+msgid ""
+"Bring your package and we will ship it with whichever carrier you need."
+msgstr ""
+"Bring your package and we will ship it with whichever carrier you need."
+
+msgid "Bring your package or code"
+msgstr "Bring your package or code"
+
+msgid "24h no-commitment hold:"
+msgstr "24h no-commitment hold:"
+
+msgid "Accepted in-store payment methods:"
+msgstr "Accepted in-store payment methods:"
+
+msgid "Back to store"
+msgstr "Back to store"
+
+msgid "Cash, Bizum, or Debit/Credit Card at the counter."
+msgstr "Cash, Bizum, or Debit/Credit Card at the counter."
+
+msgid ""
+"Contact us via WhatsApp quoting the item reference (e.g. Ref. #1042) and we "
+"will hold it for 24 hours without upfront payment."
+msgstr ""
+"Contact us via WhatsApp quoting the item reference (e.g. Ref. #1042) and we "
+"will hold it for 24 hours without upfront payment."
+
+msgid ""
+"Every item is photographed in our Alfafar staging studio and inspected "
+"before listing. Need an extra photo or video? Message us on WhatsApp and we "
+"will send it from the shop floor."
+msgstr ""
+"Every item is photographed in our Alfafar staging studio and inspected "
+"before listing. Need an extra photo or video? Message us on WhatsApp and we "
+"will send it from the shop floor."
+
+msgid "Explore the store catalog"
+msgstr "Explore the store catalog"
+
+msgid "If you live outside Valencia or prefer home delivery:"
+msgstr "If you live outside Valencia or prefer home delivery:"
+
+msgid "Inspect in person:"
+msgstr "Inspect in person:"
+
+msgid "Location:"
+msgstr "Location:"
+
+msgid ""
+"Professional shock-resistant packaging prepared directly by Rápido Pack."
+msgstr ""
+"Professional shock-resistant packaging prepared directly by Rápido Pack."
+
+msgid ""
+"Shopping guide, 24-hour WhatsApp reservations, free store pickup in Alfafar,"
+" and protected delivery across Spain."
+msgstr ""
+"Shopping guide, 24-hour WhatsApp reservations, free store pickup in Alfafar,"
+" and protected delivery across Spain."
+
+msgid "View location and hours in Alfafar"
+msgstr "View location and hours in Alfafar"
+
+msgid ""
+"Visit our store in Alfafar, inspect the item closely, and test it before "
+"deciding."
+msgstr ""
+"Visit our store in Alfafar, inspect the item closely, and test it before "
+"deciding."
+
+msgid ""
+"We ship via our official listings on Wallapop Envíos, Vinted, and "
+"Milanuncios, or direct shipment curated from our logistics center."
+msgstr ""
+"We ship via our official listings on Wallapop Envíos, Vinted, and "
+"Milanuncios, or direct shipment curated from our logistics center."
+
+msgid ""
+"Your payment stays protected in escrow until you receive and verify the "
+"package."
+msgstr ""
+"Your payment stays protected in escrow until you receive and verify the "
+"package."
+
+msgid "Back to catalog"
+msgstr "Back to catalog"
+
+msgid ""
+"Browsing the public catalog of Rápido Pack does not require user "
+"registration or the submission of personal forms on this website. When you "
+"contact us via WhatsApp, your inquiry is processed solely to answer your "
+"product availability or reservation request."
+msgstr ""
+"Browsing the public catalog of Rápido Pack does not require user "
+"registration or the submission of personal forms on this website. When you "
+"contact us via WhatsApp, your inquiry is processed solely to answer your "
+"product availability or reservation request."
+
+msgid "Data Protection (GDPR / LOPDGDD)"
+msgstr "Data Protection (GDPR / LOPDGDD)"
+
+msgid ""
+"In compliance with Spanish Law 34/2002 on Information Society Services and "
+"Electronic Commerce (LSSI-CE), this website is operated by:"
+msgstr ""
+"In compliance with Spanish Law 34/2002 on Information Society Services and "
+"Electronic Commerce (LSSI-CE), this website is operated by:"
+
+msgid "Opening hours:"
+msgstr "Opening hours:"
+
+msgid "Purpose of the Catalog"
+msgstr "Purpose of the Catalog"
+
+msgid "Store Identification"
+msgstr "Store Identification"
+
+msgid "Technical Cookies Only"
+msgstr "Technical Cookies Only"
+
+msgid ""
+"This public catalog displays second-hand, vintage, and opportunity items "
+"available at our physical store in Alfafar (Valencia) and across our "
+"official marketplace profiles (Wallapop, Vinted, Milanuncios). Reservations "
+"and inquiries are processed directly via WhatsApp or in store."
+msgstr ""
+"This public catalog displays second-hand, vintage, and opportunity items "
+"available at our physical store in Alfafar (Valencia) and across our "
+"official marketplace profiles (Wallapop, Vinted, Milanuncios). Reservations "
+"and inquiries are processed directly via WhatsApp or in store."
+
+msgid ""
+"This storefront uses strictly necessary technical cookies (such as language "
+"preference ES/EN and CSRF security tokens) required for the basic operation "
+"of the website. No third-party advertising or behavioral tracking cookies "
+"are installed."
+msgstr ""
+"This storefront uses strictly necessary technical cookies (such as language "
+"preference ES/EN and CSRF security tokens) required for the basic operation "
+"of the website. No third-party advertising or behavioral tracking cookies "
+"are installed."
+
+msgid "User Rights"
+msgstr "User Rights"
+
+msgid ""
+"You may exercise your rights of access, rectification, deletion, and "
+"opposition in person at our store in"
+msgstr ""
+"You may exercise your rights of access, rectification, deletion, and "
+"opposition in person at our store in"
+
+msgid "or through our direct customer service channel."
+msgstr "or through our direct customer service channel."
+
+msgid "physical establishment located at"
+msgstr "physical establishment located at"
+
+msgid "Close dialog"
+msgstr "Close dialog"
+
+msgid "Open full guide"
+msgstr "Open full guide"
+
+msgid "Questions about an item or shipping? We reply fast during store hours."
+msgstr ""
+"Questions about an item or shipping? We reply fast during store hours."
+
+msgid "Automatic message with {{ ref }} ready to send"
+msgstr "Automatic message with {{ ref }} ready to send"
+
+msgid ""
+"Managed with buyer protection and tracking via Wallapop and Vinted, or "
+"direct contact."
+msgstr ""
+"Managed with buyer protection and tracking via Wallapop and Vinted, or "
+"direct contact."
+
+msgid "Close zoom"
+msgstr "Close zoom"
+
+msgid ""
+"Every photo corresponds to the exact unit available in our Alfafar store."
+msgstr ""
+"Every photo corresponds to the exact unit available in our Alfafar store."
+
+msgid ""
+"Reserve via WhatsApp and inspect it in person in Alfafar before paying."
+msgstr ""
+"Reserve via WhatsApp and inspect it in person in Alfafar before paying."
+
+msgid "View photo"
+msgstr "View photo"
+
+msgid "Authorized Punto Pack"
+msgstr "Authorized Punto Pack"
+
+msgid "Page {{ current }} of {{ total }}"
+msgstr "Page {{ current }} of {{ total }}"
+
+msgid "Quick navigation"
+msgstr "Quick navigation"
+
+msgid "Search"
+msgstr "Search"
+
+msgid "WhatsApp →"
+msgstr "WhatsApp →"
