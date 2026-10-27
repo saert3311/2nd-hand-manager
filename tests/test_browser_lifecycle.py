@@ -195,6 +195,8 @@ class BrowserRefinedLifecycleTests(StaticLiveServerTestCase):
             wallapop_row = page.locator('div[data-site-slug="wallapop"]')
             delete_btn = wallapop_row.locator('form:has(input[value="delete"]) button[type="submit"]')
             delete_btn.click()
+            page.wait_for_selector("#actionConfirmModal:not(.hidden)")
+            page.click("#btnProceedActionConfirm")
             page.wait_for_load_state("networkidle")
 
             product.refresh_from_db()

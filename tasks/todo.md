@@ -3382,15 +3382,15 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ## Task 141: Global App Shells, Skip Links, Landmarks, Typography (`rem` & `text-scale`), & Contrast Hardening
 **Goal:** Establish WCAG 2.1 AA landmark navigation, skip links, relative `rem` typography, OS text-scale opt-in, mobile 16px input zoom prevention, and accessible header/footer contrast across the staff shell (`inventory/base.html`), public storefront shell (`storefront/base_public.html`), and login screen (`registration/login.html`).
 **Acceptance Criteria:**
-- [ ] `[A-01]` Both `inventory/templates/inventory/base.html` and `storefront/templates/storefront/base_public.html` render a keyboard-focusable "Skip to main content" link (`<a href="#main-content" class="sr-only focus:not-sr-only ...">`) as the first interactive element in `<body>`, targeting `<main id="main-content" tabindex="-1">`.
-- [ ] `[A-02]` `<nav id="desktop-nav">` in `inventory/base.html` has `aria-label="{% trans 'Primary' %}"` to distinguish it from `#mobile-menu` and page-level `<nav>` landmarks.
-- [ ] `[A-03]` Mobile search wrapper in `storefront/base_public.html` includes `focus-within:ring-2 focus-within:ring-primary` so keyboard focus on the mobile search `<input>` is clearly visible.
-- [ ] `[A-11]` `#global-push-banner` and `.flash-message` alerts in `inventory/base.html` include proper live-region semantics (`role="status"` / `role="alert"`, `aria-live="polite"`) and accessible dismiss buttons (`aria-label="{% trans 'Dismiss notification' %}"`, `min-w-[36px] min-h-[36px]`).
-- [ ] `[V-01]` & `[U-04]` `registration/login.html` promotes its page heading to `<h1>`, adds `autocomplete="username"` and `autocomplete="current-password"` on `#id_username` / `#id_password`, and associates field/non-field errors via `role="alert"`.
-- [ ] `[V-03]`, `[V-05]`, `[V-06]`, `[V-09]`, `[V-10]` Replace invalid `py-0.2` with `py-0.5`, convert fixed `px` font-size tokens in `storefront/base_public.html` to `rem` (minimum `0.75rem`), add `<meta name="text-scale" content="scale">` and mobile `@media (max-width: 640px)` `16px` input font-size rule to `storefront/base_public.html`, remove `text-[10px]`/`text-[11px]` in `inventory/base.html`, and upgrade low-contrast footer/logo colors (`text-slate-400` -> `text-slate-500`, `text-secondary-container` `#fe932c` -> `text-[#b45309]` / `text-secondary`).
+- [x] `[A-01]` Both `inventory/templates/inventory/base.html` and `storefront/templates/storefront/base_public.html` render a keyboard-focusable "Skip to main content" link (`<a href="#main-content" class="sr-only focus:not-sr-only ...">`) as the first interactive element in `<body>`, targeting `<main id="main-content" tabindex="-1">`.
+- [x] `[A-02]` `<nav id="desktop-nav">` in `inventory/base.html` has `aria-label="{% trans 'Primary' %}"` to distinguish it from `#mobile-menu` and page-level `<nav>` landmarks.
+- [x] `[A-03]` Mobile search wrapper in `storefront/base_public.html` includes `focus-within:ring-2 focus-within:ring-primary` so keyboard focus on the mobile search `<input>` is clearly visible.
+- [x] `[A-11]` `#global-push-banner` and `.flash-message` alerts in `inventory/base.html` include proper live-region semantics (`role="status"` / `role="alert"`, `aria-live="polite"`) and accessible dismiss buttons (`aria-label="{% trans 'Dismiss notification' %}"`, `min-w-[36px] min-h-[36px]`).
+- [x] `[V-01]` & `[U-04]` `registration/login.html` promotes its page heading to `<h1>`, adds `autocomplete="username"` and `autocomplete="current-password"` on `#id_username` / `#id_password`, and associates field/non-field errors via `role="alert"`.
+- [x] `[V-03]`, `[V-05]`, `[V-06]`, `[V-09]`, `[V-10]` Replace invalid `py-0.2` with `py-0.5`, convert fixed `px` font-size tokens in `storefront/base_public.html` to `rem` (minimum `0.75rem`), add `<meta name="text-scale" content="scale">` and mobile `@media (max-width: 640px)` `16px` input font-size rule to `storefront/base_public.html`, remove `text-[10px]`/`text-[11px]` in `inventory/base.html`, and upgrade low-contrast footer/logo colors (`text-slate-400` -> `text-slate-500`, `text-secondary-container` `#fe932c` -> `text-[#b45309]` / `text-secondary`).
 **Verification:**
-- [ ] `.venv\Scripts\python.exe manage.py check`
-- [ ] `.venv\Scripts\python.exe manage.py test tests.test_storefront tests.test_i18n`
+- [x] `.venv\Scripts\python.exe manage.py check`
+- [x] `.venv\Scripts\python.exe manage.py test tests.test_storefront tests.test_i18n`
 **Dependencies:** None
 **Files likely touched:**
 - `inventory/templates/inventory/base.html`
@@ -3403,12 +3403,12 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ## Task 142: Storefront Visual Contrast, Decorative Icon Hiding (`aria-hidden="true"`), Sticky Layout Offset & Touch Target Sizing
 **Goal:** Remediate WCAG AA color contrast failures on WhatsApp/Condition badges, hide Material Symbols ligatures from screen readers across all storefront templates, fix the mobile sticky category bar overlap, and enlarge mobile filter/navigation touch targets.
 **Acceptance Criteria:**
-- [ ] `[V-07]` All WhatsApp primary CTAs (`bg-[#25D366]`) across `storefront/templates/` use dark high-contrast text (`text-slate-950 font-bold`, **9.4:1** contrast) or dark accessible emerald (`bg-[#128C7E] text-white`, **>4.5:1** contrast), eliminating 2.10:1 white-on-neon-green contrast failures.
-- [ ] `[V-08]` Used condition badges in `storefront/templates/storefront/partials/_product_card.html` replace `bg-[#F59E0B] text-white` (2.15:1) with high-contrast `bg-amber-400 text-slate-950` or `bg-amber-700 text-white` (>= 4.5:1).
-- [ ] `[A-09]` Every decorative `<span class="material-symbols-outlined">...</span>` across `storefront/templates/` (`base_public.html`, `home.html`, `catalog.html`, `product_detail.html`, `how_to_buy.html`, `legal_page.html`, `_product_card.html`, `_purchase_box.html`, `_how_to_buy_modal.html`) includes `aria-hidden="true"`.
-- [ ] `[V-02]`, `[V-04]`, `[V-06]`, `[U-01]` Fix sticky category rail mobile top offset in `storefront/catalog.html` (`top-[148px] md:top-[108px]`), promote modal dialog titles (`#how-to-buy-modal-title`, `#lightbox-title`) from `<h3>` to `<h2>`, replace `text-[10px]`/`text-[11px]` with `text-xs`, and increase mobile touch target heights (`min-h-[36px]` / `min-h-[44px]`) on language switchers, category pills, and filter chips.
+- [x] `[V-07]` All WhatsApp primary CTAs (`bg-[#25D366]`) across `storefront/templates/` use dark high-contrast text (`text-slate-950 font-bold`, **9.4:1** contrast) or dark accessible emerald (`bg-[#128C7E] text-white`, **>4.5:1** contrast), eliminating 2.10:1 white-on-neon-green contrast failures.
+- [x] `[V-08]` Used condition badges in `storefront/templates/storefront/partials/_product_card.html` replace `bg-[#F59E0B] text-white` (2.15:1) with high-contrast `bg-amber-400 text-slate-950` or `bg-amber-700 text-white` (>= 4.5:1).
+- [x] `[A-09]` Every decorative `<span class="material-symbols-outlined">...</span>` across `storefront/templates/` (`base_public.html`, `home.html`, `catalog.html`, `product_detail.html`, `how_to_buy.html`, `legal_page.html`, `_product_card.html`, `_purchase_box.html`, `_how_to_buy_modal.html`) includes `aria-hidden="true"`.
+- [x] `[V-02]`, `[V-04]`, `[V-06]`, `[U-01]` Fix sticky category rail mobile top offset in `storefront/catalog.html` (`top-[148px] md:top-[108px]`), promote modal dialog titles (`#how-to-buy-modal-title`, `#lightbox-title`) from `<h3>` to `<h2>`, replace `text-[10px]`/`text-[11px]` with `text-xs`, and increase mobile touch target heights (`min-h-[36px]` / `min-h-[44px]`) on language switchers, category pills, and filter chips.
 **Verification:**
-- [ ] `.venv\Scripts\python.exe manage.py test tests.test_storefront`
+- [x] `.venv\Scripts\python.exe manage.py test tests.test_storefront`
 **Dependencies:** Task 141
 **Files likely touched:**
 - `storefront/templates/storefront/home.html`
@@ -3426,12 +3426,12 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ## Task 143: Staff Dashboard & Intake Accessibility: Heading Hierarchy, Micro-Font Elimination, Keyboard Focus & Lightbox Focus Management
 **Goal:** Remediate heading skips, sub-12px micro-fonts, low-contrast amber badges, unassociated form labels, missing field error display, and modal focus management in `inventory/dashboard.html` and `inventory/intake.html`.
 **Acceptance Criteria:**
-- [ ] `[V-02]` Fix skipped heading levels (`<h1>` -> `<h2>`) in `inventory/dashboard.html` (empty state heading) and `inventory/intake.html` (pending clarifications alert heading, recent uploads heading, and `#imageModalTitle`).
-- [ ] `[V-06]`, `[V-08]`, `[V-09]` Replace all `text-[10px]` and `text-[11px]` classes in `inventory/dashboard.html` and `inventory/intake.html` with `text-xs`, upgrade `bg-amber-500 text-white` badges to WCAG AA contrast (`bg-amber-600`/`bg-amber-700 text-white` or `bg-amber-400 text-slate-950`), and upgrade `text-slate-400` metadata labels to `text-slate-500`.
-- [ ] `[U-03]` & `[A-08]` Add `for="imageInput"` to the Photos `<label>` in `inventory/intake.html`, render `{{ form.raw_note.errors }}` and `{{ form.non_field_errors }}` with `role="alert"`, and replace `alt="thumb"` with descriptive alt text (`alt="{{ item.ai_title|default:item.raw_note|truncatechars:40 }}"`).
-- [ ] `[A-04]` Update `openImageModal()` and `closeImageModal()` in `inventory/intake.html` to move focus to `#closeImageModalBtn` on open, trap `Tab` focus inside `#imagePreviewModal`, and restore focus to the triggering button on close.
+- [x] `[V-02]` Fix skipped heading levels (`<h1>` -> `<h2>`) in `inventory/dashboard.html` (empty state heading) and `inventory/intake.html` (pending clarifications alert heading, recent uploads heading, and `#imageModalTitle`).
+- [x] `[V-06]`, `[V-08]`, `[V-09]` Replace all `text-[10px]` and `text-[11px]` classes in `inventory/dashboard.html` and `inventory/intake.html` with `text-xs`, upgrade `bg-amber-500 text-white` badges to WCAG AA contrast (`bg-amber-600`/`bg-amber-700 text-white` or `bg-amber-400 text-slate-950`), and upgrade `text-slate-400` metadata labels to `text-slate-500`.
+- [x] `[U-03]` & `[A-08]` Add `for="imageInput"` to the Photos `<label>` in `inventory/intake.html`, render `{{ form.raw_note.errors }}` and `{{ form.non_field_errors }}` with `role="alert"`, and replace `alt="thumb"` with descriptive alt text (`alt="{{ item.ai_title|default:item.raw_note|truncatechars:40 }}"`).
+- [x] `[A-04]` Update `openImageModal()` and `closeImageModal()` in `inventory/intake.html` to move focus to `#closeImageModalBtn` on open, trap `Tab` focus inside `#imagePreviewModal`, and restore focus to the triggering button on close.
 **Verification:**
-- [ ] `.venv\Scripts\python.exe manage.py test tests.test_views tests.test_dashboard_scopes`
+- [x] `.venv\Scripts\python.exe manage.py test tests.test_views tests.test_dashboard_scopes`
 **Dependencies:** Task 141
 **Files likely touched:**
 - `inventory/templates/inventory/dashboard.html`
@@ -3443,13 +3443,13 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ## Task 144: Product Detail Workspace UX & Accessibility: Eliminate Native `alert()`/`confirm()`, Form Error Rendering, Explicit `<label for>` Associations & Keyboard Gallery Navigation
 **Goal:** Bring `inventory/product_detail.html` into full compliance with `AGENTS.md` and WCAG 2.1 AA by replacing all 5 native `alert()`/`confirm()` calls with accessible dialogs/toasts, rendering inline field validation errors, associating all 9 unlabeled inputs/labels, and making the image gallery and modals keyboard-navigable.
 **Acceptance Criteria:**
-- [ ] `[V-01]` & `[U-05]` Add a primary `<h1>` displaying the product title (`{{ product.ai_title|default:product.raw_note|truncatechars:70 }}`) and status context in the top header of `inventory/product_detail.html`.
-- [ ] `[U-02]` Remove all 4 native `confirm()` calls (delete photo, dismiss clarification, delete direct note, remove marketplace link) and 1 native `alert()` call (`copyToClipboard` empty state) in `inventory/product_detail.html`, replacing them with a reusable accessible confirmation modal (`role="dialog"`, `aria-modal="true"`, `Escape`/backdrop dismissal, focus trap + focus return) and inline accessible status feedback (`role="status"`).
-- [ ] `[U-03]` Render `form.non_field_errors`, `form.ai_title.errors`, `form.ai_description.errors`, `form.sale_price.errors`, `form.status.errors`, `form.sold_channel_type.errors`, `form.sold_marketplace.errors`, and `form.sold_channel_notes.errors` directly adjacent to their respective inputs with `role="alert"` and `aria-describedby`.
-- [ ] `[A-04]`, `[A-05]`, `[A-06]`, `[A-07]`, `[A-08]`, `[A-10]` Make `.gallery-view-trigger` keyboard-focusable (`<button type="button">` or `role="button" tabindex="0"` with `Enter`/`Space` support) and give images descriptive `alt` text; add `Escape`/backdrop dismissal and focus trap/restoration to `#deleteProductModal`; complete `aria-controls` / `role="tabpanel"` on `#tabBtnDirectNote` & `#tabBtnAskDoubt`; add `aria-expanded` to `#toggleStatusLogsBtn` and `aria-pressed` to `#toggleReorderModeBtn`; and add explicit `<label for="...">` or `aria-label` to all 9 unassociated inputs in Clarifications Hub, Sold Channel attribution, and Marketplace Links.
-- [ ] `[V-06]`, `[V-08]`, `[V-09]` Replace all `text-[10px]` and `text-[11px]` occurrences in `inventory/product_detail.html` with `text-xs`, and fix low-contrast amber badges (`bg-amber-500 text-white`).
+- [x] `[V-01]` & `[U-05]` Add a primary `<h1>` displaying the product title (`{{ product.ai_title|default:product.raw_note|truncatechars:70 }}`) and status context in the top header of `inventory/product_detail.html`.
+- [x] `[U-02]` Remove all 4 native `confirm()` calls (delete photo, dismiss clarification, delete direct note, remove marketplace link) and 1 native `alert()` call (`copyToClipboard` empty state) in `inventory/product_detail.html`, replacing them with a reusable accessible confirmation modal (`role="dialog"`, `aria-modal="true"`, `Escape`/backdrop dismissal, focus trap + focus return) and inline accessible status feedback (`role="status"`).
+- [x] `[U-03]` Render `form.non_field_errors`, `form.ai_title.errors`, `form.ai_description.errors`, `form.sale_price.errors`, `form.status.errors`, `form.sold_channel_type.errors`, `form.sold_marketplace.errors`, and `form.sold_channel_notes.errors` directly adjacent to their respective inputs with `role="alert"` and `aria-describedby`.
+- [x] `[A-04]`, `[A-05]`, `[A-06]`, `[A-07]`, `[A-08]`, `[A-10]` Make `.gallery-view-trigger` keyboard-focusable (`<button type="button">` or `role="button" tabindex="0"` with `Enter`/`Space` support) and give images descriptive `alt` text; add `Escape`/backdrop dismissal and focus trap/restoration to `#deleteProductModal`; complete `aria-controls` / `role="tabpanel"` on `#tabBtnDirectNote` & `#tabBtnAskDoubt`; add `aria-expanded` to `#toggleStatusLogsBtn` and `aria-pressed` to `#toggleReorderModeBtn`; and add explicit `<label for="...">` or `aria-label` to all 9 unassociated inputs in Clarifications Hub, Sold Channel attribution, and Marketplace Links.
+- [x] `[V-06]`, `[V-08]`, `[V-09]` Replace all `text-[10px]` and `text-[11px]` occurrences in `inventory/product_detail.html` with `text-xs`, and fix low-contrast amber badges (`bg-amber-500 text-white`).
 **Verification:**
-- [ ] `.venv\Scripts\python.exe manage.py test tests.test_views tests.test_product_soft_delete tests.test_clarifications`
+- [x] `.venv\Scripts\python.exe manage.py test tests.test_views tests.test_product_soft_delete tests.test_clarifications`
 **Dependencies:** Task 141, Task 143
 **Files likely touched:**
 - `inventory/templates/inventory/product_detail.html`
@@ -3461,19 +3461,19 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ## Task 145: Bilingual Localization (`es`/`en`), Automated Accessibility & UI Test Suite (`tests/test_ui_accessibility.py`), Linter & Full Regression Gate
 **Goal:** Translate any newly introduced UI strings (`Skip to main content`, modal headings/buttons, aria-labels) in `locale/es/LC_MESSAGES/django.po` & `locale/en/LC_MESSAGES/django.po`, compile `.mo` catalogs, add an automated regression test suite (`tests/test_ui_accessibility.py`) verifying all 22 audit remediations, and pass the full quality gate.
 **Acceptance Criteria:**
-- [ ] All new `{% trans %}` strings have complete Spanish and English entries in `locale/es/LC_MESSAGES/django.po` and `locale/en/LC_MESSAGES/django.po` and compile cleanly via `python manage.py compile_locales`.
-- [ ] New test suite `tests/test_ui_accessibility.py` asserts:
+- [x] All new `{% trans %}` strings have complete Spanish and English entries in `locale/es/LC_MESSAGES/django.po` and `locale/en/LC_MESSAGES/django.po` and compile cleanly via `python manage.py compile_locales`.
+- [x] New test suite `tests/test_ui_accessibility.py` asserts:
   - Presence of skip links (`href="#main-content"`) and `<main id="main-content">` on both `inventory/base.html` and `storefront/base_public.html`.
   - Presence of `<h1>` on login, dashboard, intake, product detail, storefront home, catalog, and product detail pages.
   - Absence of `text-[10px]`, `text-[11px]`, `py-0.2`, `confirm(`, and `alert(` across rendered templates.
   - Presence of `aria-hidden="true"` on Material Symbols icons in storefront templates.
   - Field-level validation error rendering on `product_detail.html` when invalid status/sale_price/sold_channel data is posted.
-- [ ] `CHANGELOG.md` and `tasks/todo.md` updated.
+- [x] `CHANGELOG.md` and `tasks/todo.md` updated.
 **Verification:**
-- [ ] `.venv\Scripts\python.exe manage.py compile_locales`
-- [ ] `.venv\Scripts\ruff.exe check .`
-- [ ] `.venv\Scripts\python.exe manage.py check`
-- [ ] `.venv\Scripts\python.exe manage.py test`
+- [x] `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] `.venv\Scripts\ruff.exe check .`
+- [x] `.venv\Scripts\python.exe manage.py check`
+- [x] `.venv\Scripts\python.exe manage.py test`
 **Dependencies:** Task 141, Task 142, Task 143, Task 144
 **Files likely touched:**
 - `tests/test_ui_accessibility.py`
@@ -3487,7 +3487,7 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ---
 
 ## Checkpoint 39: UI/UX Design System, Usability & Accessibility Audit Remediation Complete
-- [ ] All 22 findings (`[V-01]`–`[V-10]`, `[U-01]`–`[U-05]`, `[A-01]`–`[A-11]`) in `docs/prds/PRD-ui-ux-accessibility-audit.md` are resolved and verified by automated tests.
-- [ ] Zero native browser `alert()` / `confirm()` calls remain in any template.
-- [ ] Zero sub-12px micro-font classes (`text-[10px]`, `text-[11px]`) or fixed `px` font-size tokens remain.
-- [ ] 100% of automated tests (`manage.py test`), Django checks (`manage.py check`), locale compilation (`manage.py compile_locales`), and Ruff checks (`ruff check .`) pass with zero warnings.
+- [x] All 22 findings (`[V-01]`–`[V-10]`, `[U-01]`–`[U-05]`, `[A-01]`–`[A-11]`) in `docs/prds/PRD-ui-ux-accessibility-audit.md` are resolved and verified by automated tests.
+- [x] Zero native browser `alert()` / `confirm()` calls remain in any template.
+- [x] Zero sub-12px micro-font classes (`text-[10px]`, `text-[11px]`) or fixed `px` font-size tokens remain.
+- [x] 100% of automated tests (`manage.py test`), Django checks (`manage.py check`), locale compilation (`manage.py compile_locales`), and Ruff checks (`ruff check .`) pass with zero warnings.

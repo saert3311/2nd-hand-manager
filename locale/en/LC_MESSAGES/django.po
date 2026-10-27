@@ -3136,3 +3136,25 @@ msgstr "Search"
 
 msgid "WhatsApp →"
 msgstr "WhatsApp →"
+
+msgid "Skip to main content"
+msgstr "Skip to main content"
+
+msgid "Primary"
+msgstr "Primary"
+
+msgid "Dismiss notification"
+msgstr "Dismiss notification"
+
+msgid "Answer to clarification question"
+msgstr "Answer to clarification question"
+
+msgid "Listing URL for"
+msgstr "Listing URL for"
+
+msgid "Confirm Action"
+msgstr "Confirm Action"
+
+msgid "Confirm"
+msgstr "Confirm"
+

@@ -438,9 +438,9 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 ---
 
 ### Phase 39: Comprehensive UI/UX Design System, Usability & Accessibility (WCAG 2.1 AA) Audit & Remediation (Vertical Slice 35)
-- [ ] **Task 141:** Global App Shells, Skip Links, Landmarks, Typography (`rem` & `text-scale`), & Contrast Hardening (`inventory/base.html`, `storefront/base_public.html`, `registration/login.html`).
-- [ ] **Task 142:** Storefront Visual Contrast, Decorative Icon Hiding (`aria-hidden="true"`), Sticky Layout Offset & Touch Target Sizing (`storefront/templates/...`).
-- [ ] **Task 143:** Staff Dashboard & Intake Accessibility: Heading Hierarchy, Micro-Font Elimination, Keyboard Focus & Lightbox Focus Management (`inventory/dashboard.html`, `inventory/intake.html`).
-- [ ] **Task 144:** Product Detail Workspace UX & Accessibility: Eliminate Native `alert()`/`confirm()` with Accessible Confirmation Modal, Form Error Rendering, Explicit `<label for>` Associations & Keyboard Gallery Navigation (`inventory/product_detail.html`, `inventory/forms.py`).
-- [ ] **Task 145:** Bilingual Localization (`es`/`en`), Automated Accessibility & UI Test Suite (`tests/test_ui_accessibility.py`), Linter & Full Regression Gate.
-- [ ] **Checkpoint 39 (UI/UX & Accessibility Remediation Complete):** Zero WCAG AA contrast failures (`#25D366`, `#F59E0B`, `#FE932C`, `text-slate-400` remediated); zero sub-12px micro-fonts or fixed `px` font tokens; zero native `alert()`/`confirm()` dialogs; 100% explicit `<label>`/input associations, keyboard-accessible modals/galleries, skip links, and `aria-hidden="true"` decorative icons; 100% automated tests and Ruff checks pass.
+- [x] **Task 141:** Global App Shells, Skip Links, Landmarks, Typography (`rem` & `text-scale`), & Contrast Hardening (`inventory/base.html`, `storefront/base_public.html`, `registration/login.html`).
+- [x] **Task 142:** Storefront Visual Contrast, Decorative Icon Hiding (`aria-hidden="true"`), Sticky Layout Offset & Touch Target Sizing (`storefront/templates/...`).
+- [x] **Task 143:** Staff Dashboard & Intake Accessibility: Heading Hierarchy, Micro-Font Elimination, Keyboard Focus & Lightbox Focus Management (`inventory/dashboard.html`, `inventory/intake.html`).
+- [x] **Task 144:** Product Detail Workspace UX & Accessibility: Eliminate Native `alert()`/`confirm()` with Accessible Confirmation Modal, Form Error Rendering, Explicit `<label for>` Associations & Keyboard Gallery Navigation (`inventory/product_detail.html`, `inventory/forms.py`).
+- [x] **Task 145:** Bilingual Localization (`es`/`en`), Automated Accessibility & UI Test Suite (`tests/test_ui_accessibility.py`), Linter & Full Regression Gate.
+- [x] **Checkpoint 39 (UI/UX & Accessibility Remediation Complete):** Zero WCAG AA contrast failures (`#25D366`, `#F59E0B`, `#FE932C`, `text-slate-400` remediated); zero sub-12px micro-fonts or fixed `px` font tokens; zero native `alert()`/`confirm()` dialogs; 100% explicit `<label>`/input associations, keyboard-accessible modals/galleries, skip links, and `aria-hidden="true"` decorative icons; 100% automated tests and Ruff checks pass.
