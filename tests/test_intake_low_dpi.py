@@ -51,6 +51,19 @@ class IntakeLowDPITests(TestCase):
         self.assertNotIn("Ver catálogo", html)
         self.assertNotIn('id="identifyHelpText"', html)
 
+    def test_streamlined_ai_advisory_banner(self):
+        """Verify AI advisory banner has reduced margins, full-width button without helper text, and overflow protection."""
+        self.client.login(username="scanner_assistant", password="password123")
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode("utf-8")
+
+        self.assertIn('id="aiAdvisoryBanner" class="hidden p-3 sm:p-3.5 rounded-xl border', html)
+        self.assertNotIn("Quickly copy AI suggestion into field notes", html)
+        self.assertNotIn("Copia rápidamente la sugerencia", html)
+        self.assertIn("w-full sm:w-auto inline-flex items-center justify-center", html)
+        self.assertIn("max-w-full", html)
+
     def test_delete_button_contrast_and_stroke_width(self):
         """Verify delete button 'X' visual badge uses high-contrast white ring and bold stroke-width=3 for 1x low-DPI clarity."""
         self.client.login(username="scanner_assistant", password="password123")
