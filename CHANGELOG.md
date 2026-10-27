@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-10-27
+
 ### Added
 - **Comprehensive Bilingual Localization Audit & Catalog Completeness (Phase 38)**:
   - **Template & Code English `msgid` Harmonization**: Standardized all source `msgid`s across public storefront templates ([`storefront/templates/storefront/home.html`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/templates/storefront/home.html), [`base_public.html`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/templates/storefront/base_public.html), [`how_to_buy.html`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/templates/storefront/how_to_buy.html)), staging templates ([`intake.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/intake.html), [`product_detail.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/product_detail.html)), and views ([`storefront/views.py`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/views.py)) to standard English strings. This resolves the root cause where visitors selecting English were served raw Spanish text due to Spanish `msgid`s without an English catalog.
@@ -26,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Translation Catalog Quality Gate (Gate 2b)**: Integrated `python manage.py compile_locales` into the `quality-gates` job in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml), enforcing `AGENTS.md` Rule 5 zero-failure translation compilation in CI before unit tests run.
-- **Semantic Version Resolution & Dockerfile Synchronization**: Added automated `app_version` resolution step in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml) to extract semantic version from `config/settings.py` (or release tag) during image builds instead of propagating branch names (`master`). Synchronized default `ARG APP_VERSION="2.1.0"` in [`Dockerfile`](file:///C:/Users/Jose/antigravity/epic-tesla/Dockerfile).
+- **Semantic Version Resolution & Dockerfile Synchronization**: Added automated `app_version` resolution step in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml) to extract semantic version from `config/settings.py` (or release tag) during image builds instead of propagating branch names (`master`). Synchronized default `ARG APP_VERSION="2.1.1"` in [`Dockerfile`](file:///C:/Users/Jose/antigravity/epic-tesla/Dockerfile).
 - **Release Tag Automation & GHCR Multi-Arch Publishing**: Expanded workflow triggers in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml) to listen on `tags: [ 'v*' ]`, enabling automated GHCR multi-arch container image builds and semantic tag publishing whenever a release tag is pushed.
 - **Least-Privilege Security Hardening**: Added explicit `permissions: contents: read` to `quality-gates` and `docker-build-and-smoke-test` jobs in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml).
 
