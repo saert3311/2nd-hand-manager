@@ -7,71 +7,76 @@
 <div class="space-y-6">
 
   <!-- Breadcrumb & Top Bar -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-semibold text-slate-500">
-      <a href="{% url 'inventory:dashboard' %}" class="hover:text-slate-800 transition flex items-center gap-1">
-        &larr; {% trans "Back to Dashboard" %}
-      </a>
-      <span>&bull;</span>
-      <span class="text-slate-800">{% trans "Product" %} #{{ product.id }}</span>
-      <span>&bull;</span>
-      <span id="product-status-badge" class="product-status-badge text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider
-        {% if product.is_deleted %}bg-rose-100 text-rose-800 border border-rose-300
-        {% elif product.status == 'awaiting_info' %}bg-amber-100 text-amber-800 border border-amber-300
-        {% elif product.status == 'ready' %}bg-emerald-100 text-emerald-800 border border-emerald-300
-        {% elif product.status == 'price_pending' %}bg-amber-100 text-amber-900 border border-amber-300
-        {% elif product.status == 'published' %}bg-blue-100 text-blue-900 border border-blue-300
-        {% elif product.status == 'blocked' %}bg-rose-100 text-rose-800 border border-rose-300
-        {% elif product.status == 'sold' %}bg-purple-100 text-purple-800 border border-purple-300
-        {% else %}bg-slate-100 text-slate-700 border border-slate-300{% endif %}">
-        {% if product.is_deleted %}🗑️ {% trans "Erased" %}
-        {% elif product.status == 'awaiting_info' %}❓ {% trans "Awaiting Info" %}
-        {% elif product.status == 'ready' %}✅ {% trans "Ready" %}
-        {% elif product.status == 'price_pending' %}🏷️ {% trans "Price Pending" %}
-        {% elif product.status == 'published' %}🚀 {% trans "Published" %}
-        {% elif product.status == 'blocked' %}⛔ {% trans "Blocked" %}
-        {% elif product.status == 'sold' %}🏷️ {% trans "Sold" %}
-        {% else %}📝 {% trans "Draft" %}{% endif %}
-      </span>
-      {% if product.sale_price is not None %}
-      <span>&bull;</span>
-      <span id="product-price-badge" class="product-price-badge text-xs sm:text-sm font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full shadow-sm">
-        €{{ product.sale_price|floatformat:2 }}
-      </span>
-      {% endif %}
-    </div>
-
-    <div class="flex flex-wrap items-center gap-2">
-      <!-- Public Storefront Preview Button -->
-      <a href="{{ product.get_public_url }}" target="_blank" rel="noopener noreferrer"
-         class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition">
-        <span>🏪</span> {% trans "View in Storefront" %}
-      </a>
-      <!-- ZIP Download Button -->
-      {% if product.images.exists %}
-      <a href="{% url 'inventory:download_zip' product.pk %}"
-         class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition">
-        <span>💾</span> {% trans "Download All Photos (.ZIP)" %}
-      </a>
-      {% endif %}
-
-      {% if can_manage %}
-        {% if product.is_deleted %}
-        <form method="post" action="{% url 'inventory:product_restore' product.pk %}" class="inline">
-          {% csrf_token %}
-          <button type="submit" id="btnRestoreProductTop"
-                  class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer">
-            <span>♻️</span> {% trans "Restore Product" %}
-          </button>
-        </form>
-        {% else %}
-        <button type="button" id="btnOpenDeleteModal" onclick="openDeleteModal()"
-                class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer">
-          <span>🗑️</span> {% trans "Move to Trash" %}
-        </button>
+  <div class="space-y-2">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-semibold text-slate-500">
+        <a href="{% url 'inventory:dashboard' %}" class="hover:text-slate-800 transition flex items-center gap-1">
+          &larr; {% trans "Back to Dashboard" %}
+        </a>
+        <span>&bull;</span>
+        <span class="text-slate-800">{% trans "Product" %} #{{ product.id }}</span>
+        <span>&bull;</span>
+        <span id="product-status-badge" class="product-status-badge text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider
+          {% if product.is_deleted %}bg-rose-100 text-rose-800 border border-rose-300
+          {% elif product.status == 'awaiting_info' %}bg-amber-100 text-amber-800 border border-amber-300
+          {% elif product.status == 'ready' %}bg-emerald-100 text-emerald-800 border border-emerald-300
+          {% elif product.status == 'price_pending' %}bg-amber-100 text-amber-900 border border-amber-300
+          {% elif product.status == 'published' %}bg-blue-100 text-blue-900 border border-blue-300
+          {% elif product.status == 'blocked' %}bg-rose-100 text-rose-800 border border-rose-300
+          {% elif product.status == 'sold' %}bg-purple-100 text-purple-800 border border-purple-300
+          {% else %}bg-slate-100 text-slate-700 border border-slate-300{% endif %}">
+          {% if product.is_deleted %}🗑️ {% trans "Erased" %}
+          {% elif product.status == 'awaiting_info' %}❓ {% trans "Awaiting Info" %}
+          {% elif product.status == 'ready' %}✅ {% trans "Ready" %}
+          {% elif product.status == 'price_pending' %}🏷️ {% trans "Price Pending" %}
+          {% elif product.status == 'published' %}🚀 {% trans "Published" %}
+          {% elif product.status == 'blocked' %}⛔ {% trans "Blocked" %}
+          {% elif product.status == 'sold' %}🏷️ {% trans "Sold" %}
+          {% else %}📝 {% trans "Draft" %}{% endif %}
+        </span>
+        {% if product.sale_price is not None %}
+        <span>&bull;</span>
+        <span id="product-price-badge" class="product-price-badge text-xs sm:text-sm font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full shadow-sm">
+          €{{ product.sale_price|floatformat:2 }}
+        </span>
         {% endif %}
-      {% endif %}
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Public Storefront Preview Button -->
+        <a href="{{ product.get_public_url }}" target="_blank" rel="noopener noreferrer"
+           class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition">
+          <span aria-hidden="true">🏪</span> {% trans "View in Storefront" %}
+        </a>
+        <!-- ZIP Download Button -->
+        {% if product.images.exists %}
+        <a href="{% url 'inventory:download_zip' product.pk %}"
+           class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition">
+          <span aria-hidden="true">💾</span> {% trans "Download All Photos (.ZIP)" %}
+        </a>
+        {% endif %}
+
+        {% if can_manage %}
+          {% if product.is_deleted %}
+          <form method="post" action="{% url 'inventory:product_restore' product.pk %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" id="btnRestoreProductTop"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer">
+              <span aria-hidden="true">♻️</span> {% trans "Restore Product" %}
+            </button>
+          </form>
+          {% else %}
+          <button type="button" id="btnOpenDeleteModal" onclick="openDeleteModal()"
+                  class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer">
+            <span aria-hidden="true">🗑️</span> {% trans "Move to Trash" %}
+          </button>
+          {% endif %}
+        {% endif %}
+      </div>
     </div>
+    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight break-words">
+      {{ product.display_title }}
+    </h1>
   </div>
 
   <!-- Out-of-Sync Warning Banner -->
@@ -80,12 +85,12 @@
     <div class="flex items-start sm:items-center gap-3">
       <span class="text-3xl" aria-hidden="true">⚠️</span>
       <div>
-        <h3 class="text-sm sm:text-base font-bold text-amber-950 flex items-center gap-2">
+        <h2 class="text-sm sm:text-base font-bold text-amber-950 flex items-center gap-2">
           <span>{% trans "Update Required on Marketplaces" %}</span>
-          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 uppercase tracking-wider">
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 uppercase tracking-wider">
             {% trans "Out of Sync" %}
           </span>
-        </h3>
+        </h2>
         <p class="text-xs sm:text-sm text-amber-900 mt-1">
           {% trans "This product was modified after publication. External listings (Wallapop, Vinted, etc.) may have outdated details or photos." %}
         </p>
@@ -101,7 +106,7 @@
       {% csrf_token %}
       <button type="submit" id="btnMarkPlatformSynced"
               class="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition active:scale-95 cursor-pointer">
-        <span>✅</span> {% trans "Mark Platforms as Updated" %}
+        <span aria-hidden="true">✅</span> {% trans "Mark Platforms as Updated" %}
       </button>
     </form>
     {% endif %}
@@ -114,10 +119,10 @@
     <div class="flex items-start sm:items-center gap-3">
       <span class="text-3xl" aria-hidden="true">🗑️</span>
       <div>
-        <h3 class="text-sm font-bold text-amber-900">{% trans "This product is in the trash" %}</h3>
+        <h2 class="text-sm font-bold text-amber-900">{% trans "This product is in the trash" %}</h2>
         <p class="text-xs text-amber-700 mt-0.5">{% trans "It is currently hidden from the active catalog. You can restore it anytime to resume staging." %}</p>
         {% if product.deleted_at %}
-        <p class="text-[11px] text-amber-600 mt-0.5">{% trans "Deleted on" %}: {{ product.deleted_at|date:"Y-m-d H:i" }}{% if product.deleted_by %} {% trans "by" %} {{ product.deleted_by.get_full_name|default:product.deleted_by.username }}{% endif %}</p>
+        <p class="text-xs text-amber-700 mt-0.5">{% trans "Deleted on" %}: {{ product.deleted_at|date:"Y-m-d H:i" }}{% if product.deleted_by %} {% trans "by" %} {{ product.deleted_by.get_full_name|default:product.deleted_by.username }}{% endif %}</p>
         {% endif %}
       </div>
     </div>
@@ -146,11 +151,11 @@
             {% trans "Photos" %} ({{ product.images.count }})
           </h2>
           <div class="flex items-center gap-2">
-            <span class="text-xs text-slate-400">{% trans "Saved as WebP" %}</span>
+            <span class="text-xs text-slate-500">{% trans "Saved as WebP" %}</span>
             {% if can_manage and product.images.count > 1 %}
-            <button type="button" id="toggleReorderModeBtn"
+            <button type="button" id="toggleReorderModeBtn" aria-pressed="false"
                     class="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg px-2.5 py-1 transition flex items-center gap-1 active:scale-95 shadow-xs">
-              <span id="toggleReorderIcon">🔄</span> <span id="toggleReorderText">{% trans "Reorder" %}</span>
+              <span id="toggleReorderIcon" aria-hidden="true">🔄</span> <span id="toggleReorderText">{% trans "Reorder" %}</span>
             </button>
             {% endif %}
           </div>
@@ -165,8 +170,8 @@
         {% if product.images.exists %}
         <!-- Featured Image Container -->
         <div class="aspect-square bg-slate-100 rounded-xl overflow-hidden border border-slate-200 relative group">
-          <img id="mainImage" src="{{ product.primary_image.image.url }}" alt="main" class="w-full h-full object-contain">
-          <span id="mainCoverBadge" class="absolute top-2 left-2 bg-amber-500 text-white text-[11px] sm:text-xs font-black px-2 py-0.5 rounded-md shadow-sm flex items-center gap-1 pointer-events-none select-none">
+          <img id="mainImage" src="{{ product.primary_image.image.url }}" alt="{{ product.display_title }}" class="w-full h-full object-contain">
+          <span id="mainCoverBadge" class="absolute top-2 left-2 bg-amber-400 text-slate-950 text-xs font-black px-2 py-0.5 rounded-md shadow-sm flex items-center gap-1 pointer-events-none select-none">
             ⭐ {% trans "Cover Photo" %}
           </span>
         </div>
@@ -178,10 +183,10 @@
                data-image-id="{{ img_obj.id }}"
                data-image-url="{{ img_obj.image.url }}"
                data-index="{{ forloop.counter0 }}">
-            <img src="{{ img_obj.image.url }}" class="w-full h-full object-cover cursor-pointer gallery-view-trigger select-none" alt="thumb {{ forloop.counter }}">
+            <img src="{{ img_obj.image.url }}" role="button" tabindex="0" class="w-full h-full object-cover cursor-pointer gallery-view-trigger select-none focus:outline-none focus:ring-2 focus:ring-emerald-500" alt="{{ product.display_title }} - {% trans 'Photo' %} {{ forloop.counter }}">
 
             <!-- Index Badge -->
-            <span class="thumb-index-badge absolute top-1 left-1 {% if forloop.first %}bg-amber-500 font-black{% else %}bg-slate-900/75 font-bold{% endif %} text-white text-[10px] px-1.5 py-0.5 rounded-md shadow-sm pointer-events-none select-none z-10">
+            <span class="thumb-index-badge absolute top-1 left-1 {% if forloop.first %}bg-amber-400 text-slate-950 font-black{% else %}bg-slate-900/75 text-white font-bold{% endif %} text-xs px-1.5 py-0.5 rounded-md shadow-sm pointer-events-none select-none z-10">
               {% if forloop.first %}⭐ #1{% else %}#{{ forloop.counter }}{% endif %}
             </span>
 
@@ -189,7 +194,7 @@
             <!-- Delete Photo Form Button -->
             <form method="post" action="{% url 'inventory:product_delete_image' product.pk img_obj.id %}"
                   class="thumb-delete-form absolute top-1 right-1 z-20"
-                  onsubmit="return confirm('{% trans "Are you sure you want to delete this photo?" %}');">
+                  data-confirm-message="{% trans 'Are you sure you want to delete this photo?' %}">
               {% csrf_token %}
               <button type="submit"
                       class="w-6 h-6 rounded-full bg-rose-600/90 hover:bg-rose-700 text-white flex items-center justify-center text-xs font-black shadow-sm transition active:scale-90 cursor-pointer"
@@ -202,11 +207,11 @@
             {% if can_manage %}
             <!-- Reorder Controls Bar (shown when reorder mode is active) -->
             <div class="thumb-reorder-controls hidden absolute bottom-1 inset-x-1 flex items-center justify-between gap-0.5 z-10 bg-slate-900/85 backdrop-blur-xs p-1 rounded-lg">
-              <button type="button" class="btn-thumb-move-left w-6 h-6 rounded bg-black/60 hover:bg-black/90 text-white flex items-center justify-center text-[10px] font-bold transition disabled:opacity-20 disabled:pointer-events-none active:scale-95"
+              <button type="button" class="btn-thumb-move-left w-6 h-6 rounded bg-black/60 hover:bg-black/90 text-white flex items-center justify-center text-xs font-bold transition disabled:opacity-20 disabled:pointer-events-none active:scale-95"
                       title="{% trans 'Move left' %}" aria-label="{% trans 'Move photo left' %}" {% if forloop.first %}disabled{% endif %}>◀</button>
-              <button type="button" class="btn-thumb-make-cover px-1 h-6 rounded bg-black/60 hover:bg-amber-600 text-amber-300 hover:text-white flex items-center justify-center text-[10px] font-bold transition active:scale-95 {% if forloop.first %}hidden{% endif %}"
+              <button type="button" class="btn-thumb-make-cover px-1 h-6 rounded bg-black/60 hover:bg-amber-600 text-amber-300 hover:text-white flex items-center justify-center text-xs font-bold transition active:scale-95 {% if forloop.first %}hidden{% endif %}"
                       title="{% trans 'Set as cover photo' %}" aria-label="{% trans 'Set as cover photo' %}">⭐</button>
-              <button type="button" class="btn-thumb-move-right w-6 h-6 rounded bg-black/60 hover:bg-black/90 text-white flex items-center justify-center text-[10px] font-bold transition disabled:opacity-20 disabled:pointer-events-none active:scale-95"
+              <button type="button" class="btn-thumb-move-right w-6 h-6 rounded bg-black/60 hover:bg-black/90 text-white flex items-center justify-center text-xs font-bold transition disabled:opacity-20 disabled:pointer-events-none active:scale-95"
                       title="{% trans 'Move right' %}" aria-label="{% trans 'Move photo right' %}" {% if forloop.last %}disabled{% endif %}>▶</button>
             </div>
             {% endif %}
@@ -219,7 +224,7 @@
         <div id="detailPhotoUploadContainer" class="pt-4 border-t border-slate-100 space-y-3">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <span>📷</span> {% trans "Add More Photos" %}
+              <span aria-hidden="true">📷</span> {% trans "Add More Photos" %}
             </span>
             <span id="detailUploadSlotCount" class="text-xs font-semibold text-slate-500" data-existing="{{ product.images.count }}" data-max="10">
               {% blocktrans with available=available_slots count=product.images.count %}
@@ -234,7 +239,7 @@
             <input type="file" id="detailCameraInput" accept="image/*" capture="environment" class="sr-only">
 
             <div class="space-y-2.5">
-              <div class="w-10 h-10 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl group-hover:scale-105 transition duration-150 shadow-xs">
+              <div class="w-10 h-10 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl group-hover:scale-105 transition duration-150 shadow-xs" aria-hidden="true">
                 📷
               </div>
               <div>
@@ -248,16 +253,16 @@
               <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
                 <label for="detailCameraInput" id="btnTriggerDetailCamera" role="button" tabindex="0"
                        class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl shadow-sm text-xs sm:text-sm transition cursor-pointer min-h-[38px] select-none">
-                  <span class="text-base leading-none">📸</span>
+                  <span class="text-base leading-none" aria-hidden="true">📸</span>
                   <span>{% trans "Take Photo" %}</span>
                 </label>
                 <label for="detailImageInput" id="btnTriggerDetailGallery" role="button" tabindex="0"
                        class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 font-bold rounded-xl border border-slate-300 shadow-sm text-xs sm:text-sm transition cursor-pointer min-h-[38px] select-none">
-                  <span class="text-base leading-none">🖼️</span>
+                  <span class="text-base leading-none" aria-hidden="true">🖼️</span>
                   <span>{% trans "Choose from Gallery" %}</span>
                 </label>
               </div>
-              <p class="text-[11px] text-slate-400 hidden sm:block">{% trans "Or drop photos anywhere in this box" %}</p>
+              <p class="text-xs text-slate-500 hidden sm:block">{% trans "Or drop photos anywhere in this box" %}</p>
             </div>
           </div>
 
@@ -358,7 +363,7 @@
         {% if pending_clarifications.exists %}
         <div class="space-y-3">
           <h4 class="text-xs sm:text-sm font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-            <span>⚠️</span> {% trans "Pending Doubts (Needs Answer)" %}
+            <span aria-hidden="true">⚠️</span> {% trans "Pending Doubts (Needs Answer)" %}
           </h4>
           {% for clarif in pending_clarifications %}
           <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 space-y-2.5">
@@ -372,10 +377,11 @@
                 </span>
               </div>
               {% if can_manage %}
-              <form method="post" action="{% url 'inventory:delete_clarification' product.pk clarif.pk %}" class="inline">
+              <form method="post" action="{% url 'inventory:delete_clarification' product.pk clarif.pk %}" class="inline"
+                    data-confirm-message="{% trans 'Dismiss this clarification question?' %}">
                 {% csrf_token %}
-                <button type="submit" onclick="return confirm('{% trans 'Dismiss this clarification question?' %}');"
-                        class="text-sm text-slate-400 hover:text-rose-600 transition p-1 cursor-pointer" title="{% trans 'Dismiss question' %}">
+                <button type="submit" aria-label="{% trans 'Dismiss question' %}"
+                        class="text-sm text-slate-500 hover:text-rose-600 transition p-1 cursor-pointer" title="{% trans 'Dismiss question' %}">
                   ✕
                 </button>
               </form>
@@ -390,7 +396,7 @@
             <form method="post" action="{% url 'inventory:answer_clarification' product.pk clarif.pk %}" class="space-y-2 pt-1">
               {% csrf_token %}
               <div class="flex flex-col sm:flex-row gap-2">
-                <input type="text" name="answer" required
+                <input type="text" name="answer" required aria-label="{% trans 'Answer to clarification question' %}"
                        placeholder="{% trans 'Enter answer (e.g. 52 cm chest, composition tag...)' %}"
                        class="flex-1 px-3.5 py-2 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
                 <button type="submit"
@@ -418,23 +424,24 @@
                   {{ clarif.get_category_display }}
                 </span>
                 {% if clarif.is_direct_note %}
-                <span class="px-1.5 py-0.5 font-semibold rounded bg-slate-100 text-slate-700 text-[11px]">
+                <span class="px-1.5 py-0.5 font-semibold rounded bg-slate-100 text-slate-700 text-xs">
                   📝 {% trans "Direct Note" %}
                 </span>
                 {% else %}
-                <span class="px-1.5 py-0.5 font-semibold rounded bg-emerald-100 text-emerald-800 text-[11px]">
+                <span class="px-1.5 py-0.5 font-semibold rounded bg-emerald-100 text-emerald-800 text-xs">
                   ❓ {% trans "Resolved Doubt" %}
                 </span>
                 {% endif %}
-                <span class="text-slate-400">
+                <span class="text-slate-500">
                   {{ clarif.answered_by.username|default:clarif.asked_by.username|default:"Staff" }} &bull; {{ clarif.answered_at|default:clarif.created_at|date:"M d, H:i" }}
                 </span>
               </div>
               {% if can_manage %}
-              <form method="post" action="{% url 'inventory:delete_clarification' product.pk clarif.pk %}" class="inline shrink-0">
+              <form method="post" action="{% url 'inventory:delete_clarification' product.pk clarif.pk %}" class="inline shrink-0"
+                    data-confirm-message="{% trans 'Delete this clarification note?' %}">
                 {% csrf_token %}
-                <button type="submit" onclick="return confirm('{% trans 'Delete this clarification note?' %}');"
-                        class="text-sm text-slate-400 hover:text-rose-600 transition p-1 cursor-pointer" title="{% trans 'Delete note' %}">
+                <button type="submit" aria-label="{% trans 'Delete note' %}"
+                        class="text-sm text-slate-500 hover:text-rose-600 transition p-1 cursor-pointer" title="{% trans 'Delete note' %}">
                   ✕
                 </button>
               </form>
@@ -465,39 +472,39 @@
           <!-- Manager Dual Mode Switcher -->
           <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-xl" role="tablist">
             <button type="button" id="tabBtnDirectNote" onclick="switchClarificationTab('direct')"
-                    role="tab" aria-selected="true"
+                    role="tab" aria-selected="true" aria-controls="panelDirectNote"
                     class="flex-1 py-1.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition shadow-xs bg-white text-slate-900 cursor-pointer">
               📝 {% trans "Add Direct Note" %}
             </button>
             <button type="button" id="tabBtnAskDoubt" onclick="switchClarificationTab('doubt')"
-                    role="tab" aria-selected="false"
+                    role="tab" aria-selected="false" aria-controls="panelAskDoubt"
                     class="flex-1 py-1.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition text-slate-600 hover:text-slate-900 cursor-pointer">
               ❓ {% trans "Ask Assistant (Doubt)" %}
             </button>
           </div>
 
           <!-- Manager Panel 1: Direct Note Form -->
-          <div id="panelDirectNote" class="space-y-2.5">
+          <div id="panelDirectNote" role="tabpanel" aria-labelledby="tabBtnDirectNote" class="space-y-2.5">
             <p class="text-xs text-slate-500">
               {% trans "Record supplemental measurements, composition tags, or condition details discovered after intake. Instantly saved and available for AI copywriting without setting product to Awaiting Info." %}
             </p>
             <form method="post" action="{% url 'inventory:add_direct_clarification' product.pk %}" class="space-y-2.5">
               {% csrf_token %}
               <div>
-                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                <label for="directNoteCategory" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
                   {% trans "Category" %}
                 </label>
-                <select name="category" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-emerald-500">
+                <select id="directNoteCategory" name="category" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-emerald-500">
                   {% for cat_val, cat_label in categories %}
                   <option value="{{ cat_val }}">{{ cat_label }}</option>
                   {% endfor %}
                 </select>
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                <label for="directNoteText" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
                   {% trans "Clarification Note / Details" %}
                 </label>
-                <textarea name="note" rows="2" required
+                <textarea id="directNoteText" name="note" rows="2" required
                           placeholder="{% trans 'E.g., Pit-to-pit: 54cm, length: 70cm, YKK zipper, 100% heavy cotton.' %}"
                           class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"></textarea>
               </div>
@@ -511,27 +518,27 @@
           </div>
 
           <!-- Manager Panel 2: Ask Doubt Form -->
-          <div id="panelAskDoubt" class="hidden space-y-2.5">
+          <div id="panelAskDoubt" role="tabpanel" aria-labelledby="tabBtnAskDoubt" class="hidden space-y-2.5">
             <p class="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
               ⚠️ {% trans "Asking a doubt will transition the product lifecycle status to 'Awaiting Info' and alert the sourcing assistant to provide an answer." %}
             </p>
             <form method="post" action="{% url 'inventory:add_clarification' product.pk %}" class="space-y-2.5">
               {% csrf_token %}
               <div>
-                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                <label for="askDoubtCategory" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
                   {% trans "Category" %}
                 </label>
-                <select name="category" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-amber-500">
+                <select id="askDoubtCategory" name="category" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-amber-500">
                   {% for cat_val, cat_label in categories %}
                   <option value="{{ cat_val }}">{{ cat_label }}</option>
                   {% endfor %}
                 </select>
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                <label for="askDoubtQuestion" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
                   {% trans "Question for Assistant" %}
                 </label>
-                <textarea name="question" rows="2" required
+                <textarea id="askDoubtQuestion" name="question" rows="2" required
                           placeholder="{% trans 'What is missing? E.g., Please check armpit-to-armpit measurement or internal wash label.' %}"
                           class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"></textarea>
               </div>
@@ -548,7 +555,7 @@
           <!-- Assistant Direct Note Form -->
           <div class="space-y-2.5">
             <h4 class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <span>➕</span> {% trans "Add Clarification Note" %}
+              <span aria-hidden="true">➕</span> {% trans "Add Clarification Note" %}
             </h4>
             <p class="text-xs text-slate-500">
               {% trans "Discovered extra measurements, tags, or details after intake? Add them here to enrich the product listing." %}
@@ -556,20 +563,20 @@
             <form method="post" action="{% url 'inventory:add_direct_clarification' product.pk %}" class="space-y-2.5">
               {% csrf_token %}
               <div>
-                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                <label for="assistantNoteCategory" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
                   {% trans "Category" %}
                 </label>
-                <select name="category" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-emerald-500">
+                <select id="assistantNoteCategory" name="category" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-emerald-500">
                   {% for cat_val, cat_label in categories %}
                   <option value="{{ cat_val }}">{{ cat_label }}</option>
                   {% endfor %}
                 </select>
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                <label for="assistantNoteText" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
                   {% trans "Clarification Note / Details" %}
                 </label>
-                <textarea name="note" rows="2" required
+                <textarea id="assistantNoteText" name="note" rows="2" required
                           placeholder="{% trans 'E.g., Pit-to-pit: 54cm, length: 70cm, composition: 100% cotton.' %}"
                           class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"></textarea>
               </div>
@@ -689,7 +696,7 @@
 
         {% if status_logs|length > 4 %}
         <div class="pt-2 text-center">
-          <button type="button" id="toggleStatusLogsBtn"
+          <button type="button" id="toggleStatusLogsBtn" aria-expanded="false"
                   class="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition">
             {% trans "View full history" %} ({{ status_logs|length }})
           </button>
@@ -711,7 +718,7 @@
       {% if has_unapplied_clarifications %}
       <!-- AI Regeneration Callout -->
       <div class="ai-regeneration-callout bg-amber-50 border border-amber-300 text-amber-900 rounded-2xl p-4 flex items-start gap-3 shadow-sm">
-        <span class="text-xl shrink-0">💡</span>
+        <span class="text-xl shrink-0" aria-hidden="true">💡</span>
         <div class="space-y-1">
           <h4 class="font-bold text-xs sm:text-sm uppercase tracking-wider text-amber-950">{% trans "New clarification responses available!" %}</h4>
           <p class="text-xs sm:text-sm text-amber-800">
@@ -724,9 +731,9 @@
       <!-- AI Action Banner -->
       <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-5 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h3 class="font-extrabold text-base sm:text-lg flex items-center gap-2">
-            <span>✨</span> {% trans "Gemini Multimodal Vision" %}
-          </h3>
+          <h2 class="font-extrabold text-base sm:text-lg flex items-center gap-2">
+            <span aria-hidden="true">✨</span> {% trans "Gemini Multimodal Vision" %}
+          </h2>
           <p class="text-xs sm:text-sm text-emerald-100 mt-0.5">
             {% trans "Analyzes attached photos & raw notes to draft an SEO marketplace title and description." %}
           </p>
@@ -737,7 +744,7 @@
           {% csrf_token %}
           <button type="submit" id="aiBtn"
                   class="whitespace-nowrap px-4 py-2.5 bg-white hover:bg-emerald-50 text-emerald-900 font-bold text-xs sm:text-sm rounded-xl shadow-md transition flex items-center gap-1.5">
-            <span id="aiIcon">⚡</span>
+            <span id="aiIcon" aria-hidden="true">⚡</span>
             <span id="aiText">{% trans "Generate AI Listing" %}</span>
           </button>
         </form>
@@ -777,6 +784,14 @@
         <form method="post" class="space-y-5">
           {% csrf_token %}
 
+          {% if form.non_field_errors %}
+          <div role="alert" class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-semibold space-y-1">
+            {% for error in form.non_field_errors %}
+              <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+          {% endif %}
+
           <!-- Title Field with Copy Button -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
@@ -785,10 +800,13 @@
               </label>
               <button type="button" onclick="copyToClipboard('id_ai_title', this)"
                       class="text-xs sm:text-sm font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md transition">
-                <span>📋</span> {% trans "Copy Title" %}
+                <span aria-hidden="true">📋</span> {% trans "Copy Title" %}
               </button>
             </div>
             {{ form.ai_title }}
+            {% if form.ai_title.errors %}
+            <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.ai_title.errors.0 }}</p>
+            {% endif %}
           </div>
 
           <!-- Description Field with Copy Button -->
@@ -799,10 +817,13 @@
               </label>
               <button type="button" onclick="copyToClipboard('id_ai_description', this)"
                       class="text-xs sm:text-sm font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md transition">
-                <span>📋</span> {% trans "Copy Description" %}
+                <span aria-hidden="true">📋</span> {% trans "Copy Description" %}
               </button>
             </div>
             {{ form.ai_description }}
+            {% if form.ai_description.errors %}
+            <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.ai_description.errors.0 }}</p>
+            {% endif %}
           </div>
 
           <!-- Pricing & Status Controls -->
@@ -819,26 +840,29 @@
                        {% if not can_manage %}readonly disabled{% endif %}
                        class="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 {% if not can_manage %}bg-slate-50 cursor-not-allowed text-slate-600{% endif %}">
               </div>
+              {% if form.sale_price.errors %}
+              <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.sale_price.errors.0 }}</p>
+              {% endif %}
               <!-- Benchmark Valuation References -->
               {% if product.estimated_retail_price is not None or product.estimated_resale_price is not None %}
               <div class="mt-2 space-y-1.5" id="detail-valuation-benchmarks">
                 <div class="flex flex-wrap items-center gap-1.5 text-xs">
                   {% if product.estimated_retail_price is not None %}
                   <span id="ref-retail-price" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium">
-                    <span class="text-slate-400">🏷️</span> <span class="font-semibold">{% trans "New Retail (MSRP):" %}</span> <span class="font-mono font-bold">€{{ product.estimated_retail_price|floatformat:2 }}</span>
+                    <span class="text-slate-400" aria-hidden="true">🏷️</span> <span class="font-semibold">{% trans "New Retail (MSRP):" %}</span> <span class="font-mono font-bold">€{{ product.estimated_retail_price|floatformat:2 }}</span>
                   </span>
                   {% endif %}
                   {% if product.estimated_resale_price is not None %}
                   <span id="ref-resale-price" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/60 font-medium">
-                    <span class="text-emerald-500">✨</span> <span class="font-semibold">{% trans "Estimated resale:" %}</span> <span class="font-mono font-bold">€{{ product.estimated_resale_price|floatformat:2 }}</span>
+                    <span class="text-emerald-500" aria-hidden="true">✨</span> <span class="font-semibold">{% trans "Estimated resale:" %}</span> <span class="font-mono font-bold">€{{ product.estimated_resale_price|floatformat:2 }}</span>
                   </span>
                   {% endif %}
                 </div>
                 {% if can_manage and product.estimated_resale_price is not None %}
                 <div>
                   <button type="button" id="btnApplyResalePrice" data-resale="{{ product.estimated_resale_price|unlocalize }}"
-                          class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded transition cursor-pointer shadow-xs active:scale-95">
-                    <span>✨</span> {% blocktrans with price=product.estimated_resale_price|floatformat:2 %}Apply resale (€{{ price }}){% endblocktrans %}
+                          class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded transition cursor-pointer shadow-xs active:scale-95">
+                    <span aria-hidden="true">✨</span> {% blocktrans with price=product.estimated_resale_price|floatformat:2 %}Apply resale (€{{ price }}){% endblocktrans %}
                   </button>
                 </div>
                 {% endif %}
@@ -851,6 +875,9 @@
                 {% trans "Lifecycle Status" %}
               </label>
               {{ form.status }}
+              {% if form.status.errors %}
+              <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.status.errors.0 }}</p>
+              {% endif %}
             </div>
 
             <div class="sm:col-span-2 rounded-xl p-4 bg-slate-50 border border-slate-200 space-y-3">
@@ -870,10 +897,10 @@
                     {% if product.sold_channel_type == 'in_store' %}🏪 {{ product.sale_channel_display }}{% elif product.sold_channel_type == 'marketplace' %}🌐 {{ product.sale_channel_display }}{% else %}📦 {{ product.sale_channel_display }}{% endif %}
                   </span>
                   {% if product.sold_at %}
-                  <p class="text-[11px] text-slate-500 mt-1">{% trans "Sold on" %} {{ product.sold_at|date:"M d, Y H:i" }}</p>
+                  <p class="text-xs text-slate-500 mt-1">{% trans "Sold on" %} {{ product.sold_at|date:"M d, Y H:i" }}</p>
                   {% endif %}
                   {% if product.sold_channel_notes %}
-                  <p class="text-[11px] text-slate-600 font-medium italic mt-0.5">"{{ product.sold_channel_notes }}"</p>
+                  <p class="text-xs text-slate-600 font-medium italic mt-0.5">"{{ product.sold_channel_notes }}"</p>
                   {% endif %}
                 </div>
                 {% endif %}
@@ -907,13 +934,14 @@
                     <div>
                       {{ form.sold_channel_type }}
                       {% if form.sold_channel_type.errors %}
-                      <p class="text-xs text-rose-600 font-semibold mt-1">{{ form.sold_channel_type.errors.0 }}</p>
+                      <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.sold_channel_type.errors.0 }}</p>
                       {% endif %}
                     </div>
                     <div id="soldMarketplaceWrapper" class="{% if form.sold_channel_type.value != 'marketplace' and product.sold_channel_type != 'marketplace' %}hidden{% endif %}">
+                      <label for="id_sold_marketplace" class="sr-only">{% trans "Sold Marketplace" %}</label>
                       {{ form.sold_marketplace }}
                       {% if form.sold_marketplace.errors %}
-                      <p class="text-xs text-rose-600 font-semibold mt-1">{{ form.sold_marketplace.errors.0 }}</p>
+                      <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.sold_marketplace.errors.0 }}</p>
                       {% endif %}
                     </div>
                   </div>
@@ -921,11 +949,11 @@
 
                 <div>
                   <label for="id_sold_channel_notes" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    {% trans "Sale Reference / Notes" %} <span class="text-slate-400 font-normal">({% trans "Optional" %})</span>
+                    {% trans "Sale Reference / Notes" %} <span class="text-slate-500 font-normal">({% trans "Optional" %})</span>
                   </label>
                   {{ form.sold_channel_notes }}
                   {% if form.sold_channel_notes.errors %}
-                  <p class="text-xs text-rose-600 font-semibold mt-1">{{ form.sold_channel_notes.errors.0 }}</p>
+                  <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.sold_channel_notes.errors.0 }}</p>
                   {% endif %}
                 </div>
               </div>
@@ -1072,22 +1100,23 @@
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white p-2.5 rounded-lg border border-slate-200">
               <a href="{{ row.link.url }}" target="_blank" rel="noopener noreferrer"
                  class="text-xs sm:text-sm font-medium text-emerald-700 hover:text-emerald-900 break-all flex items-center gap-1.5 group">
-                <span class="group-hover:translate-x-0.5 transition-transform">↗</span>
+                <span class="group-hover:translate-x-0.5 transition-transform" aria-hidden="true">↗</span>
                 <span>{{ row.link.url }}</span>
               </a>
               <div class="flex items-center gap-1.5 shrink-0">
                 <button type="button" onclick="copyLinkUrl('{{ row.link.url|escapejs }}', this)"
                         class="text-xs sm:text-sm px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition flex items-center gap-1">
-                  <span>📋</span> {% trans "Copy URL" %}
+                  <span aria-hidden="true">📋</span> {% trans "Copy URL" %}
                 </button>
                 {% if can_manage %}
-                <form method="post" action="{% url 'inventory:manage_link' product.pk %}" class="inline">
+                <form method="post" action="{% url 'inventory:manage_link' product.pk %}" class="inline"
+                      data-confirm-message="{% trans 'Are you sure you want to remove this link?' %}">
                   {% csrf_token %}
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="site_id" value="{{ row.site.id }}">
-                  <button type="submit" onclick="return confirm('{% trans 'Are you sure you want to remove this link?' %}');"
+                  <button type="submit"
                           class="text-xs sm:text-sm px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-md font-medium transition flex items-center gap-1">
-                    <span>✕</span> {% trans "Remove" %}
+                    <span aria-hidden="true">✕</span> {% trans "Remove" %}
                   </button>
                 </form>
                 {% endif %}
@@ -1102,6 +1131,7 @@
               <input type="hidden" name="action" value="save">
               <input type="hidden" name="site_id" value="{{ row.site.id }}">
               <input type="url" name="url" value="{{ row.link.url|default:'' }}"
+                     aria-label="{% trans 'Listing URL for' %} {{ row.site.name }}"
                      placeholder="{% if row.link %}{% trans 'Update listing URL' %}{% else %}{% trans 'Paste listing URL (e.g. https://...)' %}{% endif %}"
                      class="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono">
               <button type="submit"
@@ -1164,13 +1194,20 @@
     }
   }
 
-  // Click on thumbnail to view in main featured image
+  // Click or keyboard activate on thumbnail to view in main featured image
   document.querySelectorAll('.gallery-view-trigger').forEach(img => {
-    img.addEventListener('click', () => {
+    const activateThumb = () => {
       const parent = img.closest('.gallery-thumb-item');
       if (parent) {
         const url = parent.getAttribute('data-image-url');
         if (url) setMainImage(url);
+      }
+    };
+    img.addEventListener('click', activateThumb);
+    img.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        activateThumb();
       }
     });
   });
@@ -1210,12 +1247,12 @@
       const badge = item.querySelector('.thumb-index-badge');
       if (badge) {
         if (idx === 0) {
-          badge.className = 'thumb-index-badge absolute top-1 left-1 bg-amber-500 font-black text-white text-[10px] px-1.5 py-0.5 rounded-md shadow-sm pointer-events-none select-none z-10';
+          badge.className = 'thumb-index-badge absolute top-1 left-1 bg-amber-400 text-slate-950 font-black text-xs px-1.5 py-0.5 rounded-md shadow-sm pointer-events-none select-none z-10';
           badge.innerHTML = '⭐ #1';
           item.classList.remove('border-slate-200');
           item.classList.add('border-amber-400');
         } else {
-          badge.className = 'thumb-index-badge absolute top-1 left-1 bg-slate-900/75 font-bold text-white text-[10px] px-1.5 py-0.5 rounded-md shadow-sm pointer-events-none select-none z-10';
+          badge.className = 'thumb-index-badge absolute top-1 left-1 bg-slate-900/75 font-bold text-white text-xs px-1.5 py-0.5 rounded-md shadow-sm pointer-events-none select-none z-10';
           badge.textContent = `#${idx + 1}`;
           item.classList.remove('border-amber-400');
           item.classList.add('border-slate-200');
@@ -1308,6 +1345,7 @@
   if (toggleReorderBtn) {
     toggleReorderBtn.addEventListener('click', function() {
       isReorderMode = !isReorderMode;
+      toggleReorderBtn.setAttribute('aria-pressed', isReorderMode ? 'true' : 'false');
       const controlBars = document.querySelectorAll('.thumb-reorder-controls');
       const thumbItems = document.querySelectorAll('.gallery-thumb-item');
 
@@ -1408,12 +1446,20 @@
   function copyToClipboard(elementId, btn) {
     const input = document.getElementById(elementId);
     if (!input || !input.value.trim()) {
-      alert("{% trans 'Nothing to copy!' %}");
+      if (btn) {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span aria-hidden="true">⚠️</span> {% trans "Nothing to copy!" %}';
+        btn.classList.add('bg-amber-100', 'text-amber-900');
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.classList.remove('bg-amber-100', 'text-amber-900');
+        }, 1600);
+      }
       return;
     }
     navigator.clipboard.writeText(input.value.trim()).then(() => {
       const originalText = btn.innerHTML;
-      btn.innerHTML = '<span>✅</span> {% trans "Copied!" %}';
+      btn.innerHTML = '<span aria-hidden="true">✅</span> {% trans "Copied!" %}';
       btn.classList.add('bg-emerald-200', 'text-emerald-900');
       setTimeout(() => {
         btn.innerHTML = originalText;
@@ -1428,7 +1474,7 @@
     if (!url) return;
     navigator.clipboard.writeText(url).then(() => {
       const originalText = btn.innerHTML;
-      btn.innerHTML = '<span>✅</span> {% trans "Copied!" %}';
+      btn.innerHTML = '<span aria-hidden="true">✅</span> {% trans "Copied!" %}';
       btn.classList.add('bg-emerald-200', 'text-emerald-900');
       setTimeout(() => {
         btn.innerHTML = originalText;
@@ -1456,6 +1502,7 @@
     let expanded = false;
     toggleLogsBtn.addEventListener('click', () => {
       expanded = !expanded;
+      toggleLogsBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
       document.querySelectorAll('.extra-status-log').forEach(el => {
         el.classList.toggle('hidden', !expanded);
       });
@@ -1534,14 +1581,70 @@
   }
 
   // Soft-Delete Confirmation Modal Helpers
+  let lastDeleteModalTrigger = null;
   function openDeleteModal() {
+    lastDeleteModalTrigger = document.activeElement;
     const modal = document.getElementById("deleteProductModal");
-    if (modal) modal.classList.remove("hidden");
+    if (modal) {
+      modal.classList.remove("hidden");
+      const cancelBtn = document.getElementById("btnCancelDeleteProduct");
+      if (cancelBtn) setTimeout(() => cancelBtn.focus(), 20);
+    }
   }
   function closeDeleteModal() {
     const modal = document.getElementById("deleteProductModal");
     if (modal) modal.classList.add("hidden");
+    if (lastDeleteModalTrigger && typeof lastDeleteModalTrigger.focus === "function") {
+      lastDeleteModalTrigger.focus();
+    }
   }
+
+  // Reusable Accessible Action Confirmation Modal (Replaces native confirm())
+  let pendingConfirmForm = null;
+  let lastConfirmModalTrigger = null;
+
+  function openActionConfirmModal(form, message, triggerEl) {
+    pendingConfirmForm = form;
+    lastConfirmModalTrigger = triggerEl || document.activeElement;
+    const modal = document.getElementById("actionConfirmModal");
+    const msgEl = document.getElementById("actionConfirmModalMessage");
+    if (msgEl && message) msgEl.textContent = message;
+    if (modal) {
+      modal.classList.remove("hidden");
+      const cancelBtn = document.getElementById("btnCancelActionConfirm");
+      if (cancelBtn) setTimeout(() => cancelBtn.focus(), 20);
+    }
+  }
+
+  function closeActionConfirmModal() {
+    const modal = document.getElementById("actionConfirmModal");
+    if (modal) modal.classList.add("hidden");
+    pendingConfirmForm = null;
+    if (lastConfirmModalTrigger && typeof lastConfirmModalTrigger.focus === "function") {
+      lastConfirmModalTrigger.focus();
+    }
+  }
+
+  document.querySelectorAll("form[data-confirm-message]").forEach(form => {
+    form.addEventListener("submit", function(e) {
+      if (form.dataset.confirmed === "true") return;
+      e.preventDefault();
+      openActionConfirmModal(form, form.getAttribute("data-confirm-message"), e.submitter || document.activeElement);
+    });
+  });
+
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") {
+      const deleteModal = document.getElementById("deleteProductModal");
+      if (deleteModal && !deleteModal.classList.contains("hidden")) {
+        closeDeleteModal();
+      }
+      const confirmModal = document.getElementById("actionConfirmModal");
+      if (confirmModal && !confirmModal.classList.contains("hidden")) {
+        closeActionConfirmModal();
+      }
+    }
+  });
 
   // Clarifications Hub Tab Switcher
   function switchClarificationTab(mode) {
@@ -1799,7 +1902,7 @@
       card.appendChild(img);
 
       const badge = document.createElement('span');
-      badge.className = 'absolute top-1 left-1 bg-emerald-600 font-bold text-white text-[10px] px-1.5 py-0.5 rounded-md shadow-xs pointer-events-none select-none';
+      badge.className = 'absolute top-1 left-1 bg-emerald-600 font-bold text-white text-xs px-1.5 py-0.5 rounded-md shadow-xs pointer-events-none select-none';
       badge.textContent = `+${index + 1}`;
       card.appendChild(badge);
 
@@ -1927,21 +2030,21 @@
 
 {% if can_manage and not product.is_deleted %}
 <!-- Soft-Delete Confirmation Modal -->
-<div id="deleteProductModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+<div id="deleteProductModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" onclick="if (event.target === this) closeDeleteModal()">
   <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
     <div class="flex items-start gap-3">
-      <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0 text-xl text-rose-600">
+      <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0 text-xl text-rose-600" aria-hidden="true">
         🗑️
       </div>
       <div>
-        <h3 id="deleteModalTitle" class="text-base font-bold text-slate-900">{% trans "Move Product to Trash?" %}</h3>
+        <h2 id="deleteModalTitle" class="text-base font-bold text-slate-900">{% trans "Move Product to Trash?" %}</h2>
         <p class="text-xs text-slate-600 mt-1">
           {% trans "This product will be hidden from the active catalog and all standard categories. You can restore it at any time from the 'Erased' category." %}
         </p>
       </div>
     </div>
     <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-      <button type="button" onclick="closeDeleteModal()"
+      <button type="button" id="btnCancelDeleteProduct" onclick="closeDeleteModal()"
               class="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer">
         {% trans "Cancel" %}
       </button>
@@ -1956,5 +2059,31 @@
   </div>
 </div>
 {% endif %}
+
+<!-- Reusable Action Confirmation Modal -->
+<div id="actionConfirmModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="actionConfirmModalTitle" onclick="if (event.target === this) closeActionConfirmModal()">
+  <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+    <div class="flex items-start gap-3">
+      <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0 text-xl text-rose-600" aria-hidden="true">
+        ⚠️
+      </div>
+      <div>
+        <h2 id="actionConfirmModalTitle" class="text-base font-bold text-slate-900">{% trans "Confirm Action" %}</h2>
+        <p id="actionConfirmModalMessage" class="text-xs sm:text-sm text-slate-600 mt-1"></p>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+      <button type="button" id="btnCancelActionConfirm" onclick="closeActionConfirmModal()"
+              class="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer">
+        {% trans "Cancel" %}
+      </button>
+      <button type="button" id="btnProceedActionConfirm"
+              onclick="if (pendingConfirmForm) { pendingConfirmForm.dataset.confirmed = 'true'; pendingConfirmForm.submit(); }"
+              class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-xs cursor-pointer">
+        {% trans "Confirm" %}
+      </button>
+    </div>
+  </div>
+</div>
 
 {% endblock %}
