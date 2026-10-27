@@ -27,17 +27,42 @@ class IntakeLowDPITests(TestCase):
         return SimpleUploadedFile(name, buf.getvalue(), content_type=f"image/{format.lower()}")
 
     def test_preview_grid_density_responsive_classes(self):
-        """Verify the preview grid uses a compact 3-column layout on mobile viewports instead of oversized 2 columns."""
+        """Verify the preview grid uses a comfortable 2-column layout on mobile viewports for easier button tapping."""
         self.client.login(username="scanner_assistant", password="password123")
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
 
-        # Must use high-density 3-column layout on compact mobile devices
+        # Must use 2-column layout on mobile devices for accessible touch controls
         self.assertIn('id="previewGrid"', html)
-        self.assertIn("grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-2.5", html)
-        # Old oversized 2-column layout should no longer be present
-        self.assertNotIn("grid-cols-2 sm:grid-cols-3 md:grid-cols-4", html)
+        self.assertIn("grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3", html)
+        self.assertNotIn("grid-cols-3 sm:grid-cols-4 md:grid-cols-5", html)
+
+    def test_streamlined_intake_header_and_identify_elements(self):
+        """Verify the 'View Catalog' link, header subtitle, and identify help text are removed for streamlined mobile UX."""
+        self.client.login(username="scanner_assistant", password="password123")
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode("utf-8")
+
+        self.assertNotIn("Snap photos &amp; jot notes on the go", html)
+        self.assertNotIn("Snap photos & jot notes on the go", html)
+        self.assertNotIn("View Catalog", html)
+        self.assertNotIn("Ver catálogo", html)
+        self.assertNotIn('id="identifyHelpText"', html)
+
+    def test_streamlined_ai_advisory_banner(self):
+        """Verify AI advisory banner has reduced margins, full-width button without helper text, and overflow protection."""
+        self.client.login(username="scanner_assistant", password="password123")
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode("utf-8")
+
+        self.assertIn('id="aiAdvisoryBanner" class="hidden p-3 sm:p-3.5 rounded-xl border', html)
+        self.assertNotIn("Quickly copy AI suggestion into field notes", html)
+        self.assertNotIn("Copia rápidamente la sugerencia", html)
+        self.assertIn("w-full sm:w-auto inline-flex items-center justify-center", html)
+        self.assertIn("max-w-full", html)
 
     def test_delete_button_contrast_and_stroke_width(self):
         """Verify delete button 'X' visual badge uses high-contrast white ring and bold stroke-width=3 for 1x low-DPI clarity."""
