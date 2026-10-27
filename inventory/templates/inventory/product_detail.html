@@ -1126,16 +1126,16 @@
 
             {% if can_manage %}
             <!-- Input to Add or Update Link -->
-            <form method="post" action="{% url 'inventory:manage_link' product.pk %}" class="flex items-center gap-2">
+            <form method="post" action="{% url 'inventory:manage_link' product.pk %}" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               {% csrf_token %}
               <input type="hidden" name="action" value="save">
               <input type="hidden" name="site_id" value="{{ row.site.id }}">
               <input type="url" name="url" value="{{ row.link.url|default:'' }}"
                      aria-label="{% trans 'Listing URL for' %} {{ row.site.name }}"
                      placeholder="{% if row.link %}{% trans 'Update listing URL' %}{% else %}{% trans 'Paste listing URL (e.g. https://...)' %}{% endif %}"
-                     class="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono">
+                     class="min-w-0 flex-1 px-3 py-2 rounded-lg border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono">
               <button type="submit"
-                      class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-lg transition whitespace-nowrap">
+                      class="w-full sm:w-auto shrink-0 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-lg transition whitespace-nowrap">
                 {% if row.link %}{% trans "Update" %}{% else %}{% trans "Save Link" %}{% endif %}
               </button>
             </form>

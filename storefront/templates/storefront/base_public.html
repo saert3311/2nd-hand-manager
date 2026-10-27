@@ -199,19 +199,19 @@
 
     <!-- Main Navbar -->
     <div class="h-20 border-b border-outline-variant/25">
-      <div class="max-w-7xl mx-auto px-margin lg:px-margin-desktop h-full flex items-center justify-between gap-space-md">
+      <div class="max-w-7xl mx-auto px-3 sm:px-margin lg:px-margin-desktop h-full flex items-center justify-between gap-1.5 sm:gap-space-md">
         <!-- Brand Logo (Stitch parcel box + bolt icon) -->
         <div class="flex items-center gap-space-md shrink-0">
-          <a href="{% url 'storefront:home' %}" class="flex items-center gap-space-sm group">
-            <div class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-primary-container text-on-primary shadow-sm group-hover:bg-primary transition-colors">
-              <span class="material-symbols-outlined text-[24px]" aria-hidden="true">inventory_2</span>
-              <span class="material-symbols-outlined absolute -bottom-1 -right-1 text-secondary-container text-[16px] drop-shadow-sm" aria-hidden="true">bolt</span>
+          <a href="{% url 'storefront:home' %}" class="flex items-center gap-space-xs sm:gap-space-sm group">
+            <div class="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary-container text-on-primary shadow-sm group-hover:bg-primary transition-colors shrink-0">
+              <span class="material-symbols-outlined text-[20px] sm:text-[24px]" aria-hidden="true">inventory_2</span>
+              <span class="material-symbols-outlined absolute -bottom-1 -right-1 text-secondary-container text-[14px] sm:text-[16px] drop-shadow-sm" aria-hidden="true">bolt</span>
             </div>
             <div class="flex flex-col">
               <div class="flex items-center font-headline-md text-headline-md tracking-tight font-bold leading-none">
                 <span class="text-primary-container">Rápido</span><span class="text-secondary ml-1">Pack</span>
               </div>
-              <span class="font-label-sm text-label-sm text-on-surface-variant font-medium tracking-wide uppercase mt-0.5">Alfafar · Valencia</span>
+              <span class="hidden sm:inline-block font-label-sm text-label-sm text-on-surface-variant font-medium tracking-wide uppercase mt-0.5">Alfafar · Valencia</span>
             </div>
           </a>
         </div>
@@ -256,7 +256,7 @@
         {% endif %}
 
         <!-- Right Actions: Language Switcher + How to Buy + Direct WhatsApp -->
-        <div class="flex items-center gap-space-sm shrink-0">
+        <div class="flex items-center gap-1 sm:gap-space-sm shrink-0">
           <!-- Language Switcher (ES | EN) -->
           <form action="{% url 'set_language' %}" method="post" class="inline-flex items-center">
             {% csrf_token %}
@@ -264,13 +264,13 @@
             {% get_current_language as CURRENT_LANG %}
             <div class="flex items-center bg-surface-container-low p-0.5 rounded-full font-label-sm text-label-sm text-on-surface-variant gap-0.5 border border-outline-variant/30">
               <button type="submit" name="language" value="es"
-                      class="px-2.5 py-1 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-full transition {% if CURRENT_LANG == 'es' %}font-bold bg-primary text-on-primary{% else %}text-on-surface-variant hover:text-on-surface{% endif %}"
+                      class="px-2 sm:px-2.5 py-1 min-h-[36px] min-w-[32px] sm:min-w-[36px] inline-flex items-center justify-center rounded-full transition {% if CURRENT_LANG == 'es' %}font-bold bg-primary text-on-primary{% else %}text-on-surface-variant hover:text-on-surface{% endif %}"
                       title="Español">
                 ES
               </button>
               <span class="text-outline-variant" aria-hidden="true">|</span>
               <button type="submit" name="language" value="en"
-                      class="px-2.5 py-1 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-full transition {% if CURRENT_LANG == 'en' %}font-bold bg-primary text-on-primary{% else %}text-on-surface-variant hover:text-on-surface{% endif %}"
+                      class="px-2 sm:px-2.5 py-1 min-h-[36px] min-w-[32px] sm:min-w-[36px] inline-flex items-center justify-center rounded-full transition {% if CURRENT_LANG == 'en' %}font-bold bg-primary text-on-primary{% else %}text-on-surface-variant hover:text-on-surface{% endif %}"
                       title="English">
                 EN
               </button>
@@ -289,7 +289,8 @@
           <a href="{% url 'storefront:go_whatsapp' %}"
              target="_blank"
              rel="noopener noreferrer"
-             class="inline-flex items-center gap-space-xs bg-[#25D366] hover:bg-[#20ba59] text-slate-950 font-label-md text-label-md font-bold px-space-md py-2.5 min-h-[40px] rounded-xl shadow-sm transition-all shrink-0">
+             aria-label="{% trans 'Message us on WhatsApp' %}"
+             class="inline-flex items-center justify-center gap-space-xs bg-[#25D366] hover:bg-[#20ba59] text-slate-950 font-label-md text-label-md font-bold px-2 sm:px-space-md py-2 sm:py-2.5 min-h-[38px] sm:min-h-[40px] rounded-xl shadow-sm transition-all shrink-0">
             <span class="material-symbols-outlined text-[18px]" aria-hidden="true">chat</span>
             <span class="hidden sm:inline">{% trans "Message us on WhatsApp" %}</span>
           </a>

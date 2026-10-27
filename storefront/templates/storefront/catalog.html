@@ -24,23 +24,23 @@
         </div>
 
         <!-- Metric Pill Summary Cards -->
-        <div class="flex sm:flex-col justify-start sm:justify-end gap-space-sm shrink-0">
-          <div class="bg-surface-container-lowest shadow-sm rounded-xl p-space-md flex items-center gap-space-md border border-outline-variant/25">
-            <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-primary">
-              <span class="material-symbols-outlined text-[28px]" aria-hidden="true">verified</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-space-sm w-full lg:w-auto shrink-0">
+          <div class="bg-surface-container-lowest shadow-sm rounded-xl p-space-sm sm:p-space-md flex items-center gap-space-sm sm:gap-space-md border border-outline-variant/25 min-w-0">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0">
+              <span class="material-symbols-outlined text-[24px] sm:text-[28px]" aria-hidden="true">verified</span>
             </div>
-            <div>
+            <div class="min-w-0">
               <div class="font-headline-md text-headline-md text-on-surface font-bold leading-none">100%</div>
-              <div class="font-label-sm text-label-sm text-on-surface-variant mt-1">{% trans "Technically audited" %}</div>
+              <div class="font-label-sm text-label-sm text-on-surface-variant mt-1 truncate">{% trans "Technically audited" %}</div>
             </div>
           </div>
-          <div class="bg-surface-container-lowest shadow-sm rounded-xl p-space-md flex items-center gap-space-md border border-outline-variant/25">
-            <div class="w-12 h-12 rounded-lg bg-secondary-fixed/50 flex items-center justify-center text-secondary">
-              <span class="material-symbols-outlined text-[28px]" aria-hidden="true">storefront</span>
+          <div class="bg-surface-container-lowest shadow-sm rounded-xl p-space-sm sm:p-space-md flex items-center gap-space-sm sm:gap-space-md border border-outline-variant/25 min-w-0">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-secondary-fixed/50 flex items-center justify-center text-secondary shrink-0">
+              <span class="material-symbols-outlined text-[24px] sm:text-[28px]" aria-hidden="true">storefront</span>
             </div>
-            <div>
+            <div class="min-w-0">
               <div class="font-headline-md text-headline-md text-on-surface font-bold leading-none">Alfafar</div>
-              <div class="font-label-sm text-label-sm text-on-surface-variant mt-1">{% trans "Free in-store pickup" %}</div>
+              <div class="font-label-sm text-label-sm text-on-surface-variant mt-1 truncate">{% trans "Free in-store pickup" %}</div>
             </div>
           </div>
         </div>
@@ -134,21 +134,21 @@
         </div>
 
         <!-- Right: Counter + Sort Dropdown -->
-        <div class="flex items-center justify-between sm:justify-end gap-space-md pt-space-xs xl:pt-0">
+        <div class="flex flex-wrap items-center justify-between gap-space-sm pt-space-xs xl:pt-0 min-w-0">
           <span class="font-label-md text-label-md text-on-surface-variant font-medium">
             <strong class="text-on-surface font-bold">{{ total_count }}</strong> {% trans "items available" %}
           </span>
-          <form method="get" action="{% url 'storefront:catalog' %}" class="flex items-center gap-space-xs">
+          <form method="get" action="{% url 'storefront:catalog' %}" class="flex flex-wrap items-center gap-space-xs min-w-0">
             {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
             {% if active_price %}<input type="hidden" name="price" value="{{ active_price }}">{% endif %}
             {% if active_condition %}<input type="hidden" name="condition" value="{{ active_condition }}">{% endif %}
             {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
-            <label class="font-label-sm text-label-sm text-on-surface-variant" for="sortDropdown">{% trans "Sort:" %}</label>
-            <div class="relative inline-block">
+            <label class="font-label-sm text-label-sm text-on-surface-variant shrink-0" for="sortDropdown">{% trans "Sort:" %}</label>
+            <div class="relative inline-block min-w-0">
               <select id="sortDropdown"
                       name="sort"
                       onchange="this.form.submit()"
-                      class="appearance-none bg-surface-container-low text-on-surface font-label-md text-label-md rounded-lg pl-space-sm pr-8 py-1.5 min-h-[38px] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer border border-outline-variant/30">
+                      class="appearance-none bg-surface-container-low text-on-surface font-label-md text-label-md rounded-lg pl-space-sm pr-8 py-1.5 min-h-[38px] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer border border-outline-variant/30 max-w-[210px] truncate">
                 <option value="newest" {% if active_sort == 'newest' %}selected{% endif %}>{% trans "Newest first" %}</option>
                 <option value="featured" {% if active_sort == 'featured' %}selected{% endif %}>{% trans "Featured ★" %}</option>
                 <option value="price_asc" {% if active_sort == 'price_asc' %}selected{% endif %}>{% trans "Price: low to high" %}</option>
