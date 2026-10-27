@@ -174,7 +174,7 @@
         <div class="hidden sm:flex items-center gap-space-md">
           <span class="flex items-center gap-1">
             <span class="material-symbols-outlined text-[15px] text-primary-fixed">inventory_2</span>
-            <span>{% trans "Punto Pack Oficial · Paquetería Multimarca · Tienda en Alfafar" %}</span>
+            <span>{% trans "Official Punto Pack · Multi-Carrier Parcel Hub · Store in Alfafar" %}</span>
           </span>
         </div>
       </div>
@@ -202,21 +202,21 @@
         {% if is_landing_page %}
         <!-- Corporate Landing Navigation Links -->
         <nav class="hidden lg:flex items-center gap-space-xs xl:gap-space-sm" aria-label="{% trans 'Main navigation' %}">
-          <a href="{% url 'storefront:home' %}#paqueteria" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg">{% trans "Paquetería" %}</a>
+          <a href="{% url 'storefront:home' %}#paqueteria" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg">{% trans "Parcel Services" %}</a>
           <a href="{% url 'storefront:home' %}#punto-pack" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg">{% trans "Punto Pack" %}</a>
           <a href="{% url 'storefront:catalog' %}" class="font-label-md text-label-md text-primary font-bold hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg flex items-center gap-1">
             <span class="material-symbols-outlined text-[16px]">storefront</span>
-            <span>{% trans "Tienda" %}</span>
+            <span>{% trans "Store" %}</span>
           </a>
-          <a href="{% url 'storefront:home' %}#quienes-somos" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg">{% trans "Sobre nosotros" %}</a>
-          <a href="{% url 'storefront:home' %}#contacto" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg">{% trans "Contacto" %}</a>
+          <a href="{% url 'storefront:home' %}#quienes-somos" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg">{% trans "About Us" %}</a>
+          <a href="{% url 'storefront:home' %}#contacto" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg">{% trans "Contact" %}</a>
         </nav>
         {% else %}
         <!-- Desktop Global Search Form + Quick Nav Links -->
         <div class="hidden md:flex flex-1 items-center gap-space-sm max-w-2xl mx-space-sm">
           <nav class="hidden xl:flex items-center gap-1 shrink-0" aria-label="{% trans 'Quick navigation' %}">
-            <a href="{% url 'storefront:home' %}#paqueteria" class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary px-2 py-1 rounded-lg transition-colors">{% trans "Paquetería" %}</a>
-            <a href="{% url 'storefront:catalog' %}" class="font-label-sm text-label-sm text-primary font-bold bg-surface-container-low px-2.5 py-1 rounded-lg transition-colors">{% trans "Tienda" %}</a>
+            <a href="{% url 'storefront:home' %}#paqueteria" class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary px-2 py-1 rounded-lg transition-colors">{% trans "Parcel Services" %}</a>
+            <a href="{% url 'storefront:catalog' %}" class="font-label-sm text-label-sm text-primary font-bold bg-surface-container-low px-2.5 py-1 rounded-lg transition-colors">{% trans "Store" %}</a>
           </nav>
           <form action="{% url 'storefront:catalog' %}" method="get" class="relative flex-1 flex items-center">
             {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
@@ -274,7 +274,7 @@
              rel="noopener noreferrer"
              class="inline-flex items-center gap-space-xs bg-[#25D366] hover:bg-[#20ba59] text-on-primary font-label-md text-label-md font-bold px-space-md py-2.5 rounded-xl shadow-sm transition-all shrink-0">
             <span class="material-symbols-outlined text-[18px]">chat</span>
-            <span class="hidden sm:inline">{% trans "Escríbenos por WhatsApp" %}</span>
+            <span class="hidden sm:inline">{% trans "Message us on WhatsApp" %}</span>
           </a>
         </div>
       </div>
@@ -284,11 +284,11 @@
     <!-- Mobile Quick Links Bar on Landing Page (< 1024px) -->
     <div class="lg:hidden px-margin py-space-xs bg-surface-container-lowest border-b border-outline-variant/25 overflow-x-auto no-scrollbar">
       <div class="flex items-center gap-space-xs whitespace-nowrap font-label-sm text-label-sm">
-        <a href="#paqueteria" class="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "Paquetería" %}</a>
+        <a href="#paqueteria" class="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "Parcel Services" %}</a>
         <a href="#punto-pack" class="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "Punto Pack" %}</a>
-        <a href="{% url 'storefront:catalog' %}" class="px-2.5 py-1 rounded-full bg-primary text-on-primary font-bold">{% trans "Tienda" %}</a>
-        <a href="#quienes-somos" class="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "Sobre nosotros" %}</a>
-        <a href="#contacto" class="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "Contacto" %}</a>
+        <a href="{% url 'storefront:catalog' %}" class="px-2.5 py-1 rounded-full bg-primary text-on-primary font-bold">{% trans "Store" %}</a>
+        <a href="#quienes-somos" class="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "About Us" %}</a>
+        <a href="#contacto" class="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "Contact" %}</a>
       </div>
     </div>
     {% else %}
@@ -337,7 +337,7 @@
             </div>
           </a>
           <p class="font-body-md text-body-md text-on-surface-variant max-w-sm">
-            {% trans "Rapidez y confianza a la vuelta de la esquina." %}
+            {% trans "Speed and trust right around the corner." %}
           </p>
           <div class="flex flex-col gap-space-xs mt-space-xs text-on-surface-variant font-body-sm text-body-sm">
             <div class="flex items-start gap-space-xs">
@@ -362,20 +362,20 @@
 
         <!-- Column 2: Servicios -->
         <div class="lg:col-span-3 flex flex-col gap-space-sm">
-          <span class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Servicios" %}</span>
+          <span class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Services" %}</span>
           <ul class="flex flex-col gap-space-xs font-body-sm text-body-sm text-on-surface-variant">
-            <li><a href="{% url 'storefront:home' %}#paqueteria" class="hover:text-primary transition-colors">{% trans "Envíos" %}</a></li>
-            <li><a href="{% url 'storefront:home' %}#paqueteria" class="hover:text-primary transition-colors">{% trans "Recepción de paquetes" %}</a></li>
-            <li><a href="{% url 'storefront:home' %}#paqueteria" class="hover:text-primary transition-colors">{% trans "Devoluciones" %}</a></li>
+            <li><a href="{% url 'storefront:home' %}#paqueteria" class="hover:text-primary transition-colors">{% trans "Shipping" %}</a></li>
+            <li><a href="{% url 'storefront:home' %}#paqueteria" class="hover:text-primary transition-colors">{% trans "Parcel Pickup" %}</a></li>
+            <li><a href="{% url 'storefront:home' %}#paqueteria" class="hover:text-primary transition-colors">{% trans "Returns" %}</a></li>
             <li><a href="{% url 'storefront:home' %}#punto-pack" class="hover:text-primary transition-colors">{% trans "Punto Pack" %}</a></li>
-            <li><a href="{% url 'storefront:catalog' %}" class="hover:text-primary transition-colors font-semibold text-primary">{% trans "Tienda de segunda mano" %}</a></li>
-            <li><a href="{% url 'storefront:how_to_buy' %}" class="hover:text-primary transition-colors">{% trans "¿Cómo comprar y reservar?" %}</a></li>
+            <li><a href="{% url 'storefront:catalog' %}" class="hover:text-primary transition-colors font-semibold text-primary">{% trans "Second-Hand Store" %}</a></li>
+            <li><a href="{% url 'storefront:how_to_buy' %}" class="hover:text-primary transition-colors">{% trans "How to Buy & Reserve" %}</a></li>
           </ul>
         </div>
 
         <!-- Column 3: Agencias -->
         <div class="lg:col-span-3 flex flex-col gap-space-sm">
-          <span class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Agencias" %}</span>
+          <span class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Carriers" %}</span>
           <ul class="grid grid-cols-2 gap-space-xs font-body-sm text-body-sm text-on-surface-variant">
             <li class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-600"></span><span>SEUR</span></li>
             <li class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-700"></span><span>GLS</span></li>
@@ -385,7 +385,7 @@
             <li class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-yellow-600"></span><span>DHL</span></li>
           </ul>
           <div class="mt-space-xs bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
-            <span>{% trans "¿Dudas?" %}</span>
+            <span>{% trans "Questions?" %}</span>
             <a href="{% url 'storefront:go_whatsapp' %}" target="_blank" rel="noopener noreferrer" class="text-primary font-bold hover:underline">
               {% trans "WhatsApp →" %}
             </a>
@@ -396,9 +396,9 @@
         <div class="lg:col-span-2 flex flex-col gap-space-sm">
           <span class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Legal" %}</span>
           <ul class="flex flex-col gap-space-xs font-body-sm text-body-sm text-on-surface-variant">
-            <li><a href="{% url 'storefront:legal_notice' %}" class="hover:text-on-surface transition-colors">{% trans "Aviso Legal" %}</a></li>
-            <li><a href="{% url 'storefront:privacy' %}" class="hover:text-on-surface transition-colors">{% trans "Política de Privacidad" %}</a></li>
-            <li><a href="{% url 'storefront:cookies' %}" class="hover:text-on-surface transition-colors">{% trans "Política de Cookies" %}</a></li>
+            <li><a href="{% url 'storefront:legal_notice' %}" class="hover:text-on-surface transition-colors">{% trans "Legal Notice" %}</a></li>
+            <li><a href="{% url 'storefront:privacy' %}" class="hover:text-on-surface transition-colors">{% trans "Privacy Policy" %}</a></li>
+            <li><a href="{% url 'storefront:cookies' %}" class="hover:text-on-surface transition-colors">{% trans "Cookies Policy" %}</a></li>
             {% if not user.is_authenticated %}
             <li><a href="{% url 'inventory:login' %}" class="hover:text-on-surface transition-colors">{% trans "Staff Access" %}</a></li>
             {% endif %}

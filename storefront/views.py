@@ -183,11 +183,11 @@ def home_view(request):
         ],
         "hasOfferCatalog": {
             "@type": "OfferCatalog",
-            "name": _("Servicios de Paquetería, Punto Pack y Tienda de Segunda Mano"),
+            "name": _("Parcel Services, Punto Pack and Second-Hand Store"),
             "itemListElement": [
-                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Punto Pack Oficial y Paquetería Multimarca (SEUR, GLS, InPost, Amazon, Kanguro, DHL)"}},
-                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Envíos, recepción y devoluciones de paquetes en Alfafar"}},
-                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Tienda de segunda mano y oportunidad con artículos revisados"}},
+                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": _("Official Punto Pack & Multi-Carrier Parcel Hub (SEUR, GLS, InPost, Amazon, Kanguro, DHL)")}},
+                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": _("Parcel shipping, pickups, and returns in Alfafar")}},
+                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": _("Secondhand and opportunity store with verified items")}},
             ],
         },
     }
@@ -532,7 +532,7 @@ def how_to_buy_view(request):
         request,
         "storefront/how_to_buy.html",
         {
-            "page_title": _("¿Cómo comprar en Rápido Pack Alfafar?"),
+            "page_title": _("How to buy at Rápido Pack Alfafar?"),
         },
     )
 
@@ -543,7 +543,7 @@ def go_store_whatsapp_view(request):
     """
     store_config = StorefrontConfiguration.get_solo()
     text = _(
-        "Hola %(store)s, os escribo desde la web para hacer una consulta sobre paquetería o artículos de la tienda de Alfafar."
+        "Hello %(store)s, I am contacting you from your website to inquire about parcel services or items in your Alfafar store."
     ) % {"store": store_config.store_name}
     target_url = f"https://wa.me/{store_config.clean_whatsapp_number}?text={quote(text)}"
     return HttpResponseRedirect(target_url)
@@ -697,7 +697,7 @@ def legal_notice_view(request):
         "storefront/legal_page.html",
         {
             "page_type": "legal_notice",
-            "page_title": _("Aviso Legal y Condiciones de Uso"),
+            "page_title": _("Legal Notice and Terms of Use"),
         },
     )
 
@@ -708,7 +708,7 @@ def privacy_policy_view(request):
         "storefront/legal_page.html",
         {
             "page_type": "privacy_policy",
-            "page_title": _("Política de Privacidad (RGPD)"),
+            "page_title": _("Privacy Policy (GDPR)"),
         },
     )
 
@@ -719,6 +719,6 @@ def cookies_policy_view(request):
         "storefront/legal_page.html",
         {
             "page_type": "cookies_policy",
-            "page_title": _("Política de Cookies"),
+            "page_title": _("Cookies Policy"),
         },
     )

@@ -1,14 +1,14 @@
 {% extends "storefront/base_public.html" %}
 {% load i18n static %}
 
-{% block title %}{{ storefront.store_name }} · {% trans "Paquetería Multimarca, Punto Pack y Tienda de Segunda Mano en Alfafar" %}{% endblock %}
-{% block meta_description %}{% trans "Somos punto de paquetería multimarca (SEUR, GLS, InPost, Amazon, Kanguro, DHL), Punto Pack oficial y tienda de segunda mano con artículos revisados en Alfafar, Valencia." %}{% endblock %}
+{% block title %}{{ storefront.store_name }} · {% trans "Multi-Brand Parcel Point, Official Punto Pack & Second-Hand Store in Alfafar" %}{% endblock %}
+{% block meta_description %}{% trans "We are a multi-brand parcel point (SEUR, GLS, InPost, Amazon, Kanguro, DHL), official Punto Pack, and second-hand shop with verified items in Alfafar, Valencia." %}{% endblock %}
 
 {% block meta_seo %}
 <link rel="canonical" href="{{ canonical_url }}">
 <meta property="og:site_name" content="{{ storefront.store_name }} ({{ storefront.domain }})">
-<meta property="og:title" content="{{ storefront.store_name }} · {% trans 'Envía, recibe y descubre en Alfafar' %}">
-<meta property="og:description" content="{% trans 'Punto de paquetería multimarca, Punto Pack oficial y tienda de segunda mano con artículos revisados en Alfafar (Valencia).' %}">
+<meta property="og:title" content="{{ storefront.store_name }} · {% trans 'Ship, receive, and discover in Alfafar' %}">
+<meta property="og:description" content="{% trans 'Multi-brand parcel hub, official Punto Pack, and second-hand opportunity shop with verified items in Alfafar (Valencia).' %}">
 <meta property="og:url" content="{{ canonical_url }}">
 <meta property="og:type" content="website">
 <script type="application/ld+json">{{ local_business_json_ld|safe }}</script>
@@ -24,24 +24,24 @@
       <div class="lg:col-span-7 flex flex-col gap-space-md">
         <div class="inline-flex items-center gap-space-xs self-start bg-secondary-fixed text-on-secondary-fixed px-3 py-1 rounded-full font-label-md text-label-md shadow-sm">
           <span>📍</span>
-          <span>{% trans "Tu punto de confianza en Alfafar" %}</span>
+          <span>{% trans "Your trusted local hub in Alfafar" %}</span>
         </div>
         <h1 class="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl tracking-tight text-on-surface font-extrabold max-w-xl">
-          {% trans "Envía, recibe y descubre. Todo en un mismo sitio." %}
+          {% trans "Ship, receive, and discover. All in one place." %}
         </h1>
         <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl leading-relaxed">
-          {% trans "Somos punto de paquetería multimarca y Punto Pack, y además tenemos una tienda de segunda mano con artículos revisados. Rápido, cerca y sin complicaciones." %}
+          {% trans "We are a multi-brand parcel service point and Punto Pack, plus a curated second-hand store with inspected items. Fast, local, and hassle-free." %}
         </p>
         <div class="flex flex-wrap items-center gap-space-sm pt-space-xs">
           <a class="inline-flex items-center justify-center gap-space-xs bg-primary-container text-on-primary font-label-md text-label-md px-6 py-3.5 rounded-xl shadow-md hover:bg-primary transition-all duration-200"
              href="#paqueteria">
             <span class="material-symbols-outlined text-[20px]">local_shipping</span>
-            <span>{% trans "Ver servicios de paquetería" %}</span>
+            <span>{% trans "View parcel services" %}</span>
           </a>
           <a class="inline-flex items-center justify-center gap-space-xs bg-surface-container-lowest text-on-surface font-label-md text-label-md px-6 py-3.5 rounded-xl shadow-sm border border-outline-variant/40 hover:bg-surface-container hover:shadow transition-all duration-200"
              href="{% url 'storefront:catalog' %}">
             <span class="material-symbols-outlined text-[20px] text-primary">storefront</span>
-            <span>{% trans "Explorar la tienda" %}</span>
+            <span>{% trans "Explore the store" %}</span>
           </a>
         </div>
         <div class="flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md pt-space-xs">
@@ -54,7 +54,7 @@
       <div class="lg:col-span-5 relative">
         <div class="relative overflow-hidden rounded-xl shadow-xl bg-surface-container">
           <img src="{% static 'img/storefront/hero_counter.webp' %}"
-               alt="{% trans 'Mostrador de paquetería y tienda Rápido Pack en Alfafar' %}"
+               alt="{% trans 'Rápido Pack parcel counter and second-hand store in Alfafar' %}"
                width="1200"
                height="896"
                fetchpriority="high"
@@ -64,16 +64,16 @@
           <div class="absolute top-4 left-4 bg-surface-container-lowest/95 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-lg flex items-center gap-2">
             <span class="text-secondary text-lg">📦</span>
             <div class="flex flex-col">
-              <span class="font-headline-sm text-[13px] leading-tight text-on-surface font-bold">{% trans "+6 agencias" %}</span>
-              <span class="font-label-sm text-label-sm text-on-surface-variant">{% trans "Punto Pack oficial" %}</span>
+              <span class="font-headline-sm text-[13px] leading-tight text-on-surface font-bold">{% trans "6+ carriers" %}</span>
+              <span class="font-label-sm text-label-sm text-on-surface-variant">{% trans "Official Punto Pack" %}</span>
             </div>
           </div>
           <!-- Floating Badge Bottom Right -->
           <div class="absolute bottom-4 right-4 bg-surface-container-lowest/95 backdrop-blur-md px-3.5 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
             <span class="text-secondary-container text-lg">⭐</span>
             <div class="flex flex-col">
-              <span class="font-headline-sm text-[13px] leading-tight text-on-surface font-bold">{% trans "100% Verificados" %}</span>
-              <span class="font-label-sm text-label-sm text-primary font-medium">{% trans "Revisión en tienda" %}</span>
+              <span class="font-headline-sm text-[13px] leading-tight text-on-surface font-bold">{% trans "100% Inspected" %}</span>
+              <span class="font-label-sm text-label-sm text-primary font-medium">{% trans "In-store review" %}</span>
             </div>
           </div>
         </div>
@@ -85,7 +85,7 @@
   <section class="w-full bg-surface-container-low py-space-lg">
     <div class="max-w-7xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop flex flex-col gap-space-md">
       <p class="text-center font-label-md text-label-md text-on-surface-variant font-medium uppercase tracking-wider">
-        {% trans "Gestionamos tus envíos, recogidas y devoluciones de las principales agencias" %}
+        {% trans "We manage your shipments, pickups, and returns with leading carriers" %}
       </p>
       <div class="flex flex-wrap items-center justify-center gap-space-sm sm:gap-space-md">
         <!-- SEUR -->
@@ -131,13 +131,13 @@
   <section class="w-full max-w-7xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-space-xl scroll-mt-24" id="paqueteria">
     <div class="flex flex-col items-center text-center gap-space-xs mb-space-lg">
       <span class="bg-surface-container text-primary font-label-md text-label-md px-3 py-1 rounded-full uppercase tracking-wider font-semibold">
-        {% trans "Servicios de paquetería" %}
+        {% trans "Parcel Services" %}
       </span>
       <h2 class="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl text-on-surface font-bold tracking-tight">
-        {% trans "Tu paquete, en buenas manos" %}
+        {% trans "Your parcels in good hands" %}
       </h2>
       <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
-        {% trans "Centraliza todas tus operaciones de paquetería en un solo punto cerca de casa, con horario amplio y atención directa." %}
+        {% trans "Centralize all your parcel operations in one single local hub close to home, with extended hours and direct service." %}
       </p>
     </div>
 
@@ -150,14 +150,14 @@
             <span class="material-symbols-outlined text-[28px]">outbox</span>
           </div>
           <h3 class="font-headline-md text-headline-md text-on-surface font-bold mb-space-xs">
-            📦 {% trans "Envíos" %}
+            📦 {% trans "Shipping" %}
           </h3>
           <p class="font-body-md text-body-md text-on-surface-variant">
-            {% trans "Trae tu paquete y lo enviamos con la agencia que necesites." %}
+            {% trans "Bring your package and we will ship it with whichever carrier you need." %}
           </p>
         </div>
         <a href="#contacto" class="mt-space-md pt-space-xs text-primary font-label-md text-label-md flex items-center gap-1 hover:underline">
-          <span>{% trans "Consultar envío" %}</span>
+          <span>{% trans "Inquire about shipping" %}</span>
           <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
         </a>
       </div>
@@ -169,14 +169,14 @@
             <span class="material-symbols-outlined text-[28px]">move_to_inbox</span>
           </div>
           <h3 class="font-headline-md text-headline-md text-on-surface font-bold mb-space-xs">
-            📥 {% trans "Recepción y recogida" %}
+            📥 {% trans "Parcel Pickup & Reception" %}
           </h3>
           <p class="font-body-md text-body-md text-on-surface-variant">
-            {% trans "Recibe tus pedidos aquí y recógelos cuando te venga bien, sin esperar en casa." %}
+            {% trans "Receive your orders here and collect them whenever it suits you, without waiting at home." %}
           </p>
         </div>
         <a href="#contacto" class="mt-space-md pt-space-xs text-primary font-label-md text-label-md flex items-center gap-1 hover:underline">
-          <span>{% trans "Ver horarios de recogida" %}</span>
+          <span>{% trans "View pickup hours" %}</span>
           <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
         </a>
       </div>
@@ -188,14 +188,14 @@
             <span class="material-symbols-outlined text-[28px]">replay</span>
           </div>
           <h3 class="font-headline-md text-headline-md text-on-surface font-bold mb-space-xs">
-            ↩️ {% trans "Devoluciones" %}
+            ↩️ {% trans "Returns" %}
           </h3>
           <p class="font-body-md text-body-md text-on-surface-variant">
-            {% trans "Gestiona tus devoluciones de Amazon y otras tiendas online en minutos." %}
+            {% trans "Process your returns for Amazon and other online retailers in minutes." %}
           </p>
         </div>
         <a href="#contacto" class="mt-space-md pt-space-xs text-primary font-label-md text-label-md flex items-center gap-1 hover:underline">
-          <span>{% trans "Devolver paquete" %}</span>
+          <span>{% trans "Return a parcel" %}</span>
           <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
         </a>
       </div>
@@ -210,11 +210,11 @@
             🏪 {% trans "Punto Pack" %}
           </h3>
           <p class="font-body-md text-body-md text-on-surface-variant">
-            {% trans "Somos Punto Pack oficial: deja o recoge tus envíos de forma rápida y segura." %}
+            {% trans "We are an official Punto Pack: drop off or pick up your shipments quickly and securely." %}
           </p>
         </div>
         <div class="mt-space-md pt-space-xs text-primary font-label-md text-label-md flex items-center gap-1">
-          <span>{% trans "Punto Pack oficial" %}</span>
+          <span>{% trans "Official Punto Pack" %}</span>
           <span class="material-symbols-outlined text-[16px]">verified</span>
         </div>
       </div>
@@ -223,32 +223,32 @@
     <!-- 3-Step Horizontal "Cómo funciona" Strip -->
     <div class="mt-space-lg bg-surface-container-low rounded-xl p-space-md sm:p-space-lg">
       <div class="text-center mb-space-md">
-        <span class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-bold">{% trans "Cómo funciona" %}</span>
-        <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Tus envíos y recogidas en 3 pasos:" %}</h3>
+        <span class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-bold">{% trans "How it works" %}</span>
+        <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Your shipments and pickups in 3 simple steps:" %}</h3>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-space-md items-center">
         <!-- Step 1 -->
         <div class="bg-surface-container-lowest rounded-xl p-space-md flex items-center gap-space-sm shadow-sm">
           <div class="w-10 h-10 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center font-bold shrink-0">1</div>
           <div>
-            <div class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Trae tu paquete o código" %}</div>
-            <div class="font-body-sm text-body-sm text-on-surface-variant">{% trans "Etiqueta digital, QR o paquete listo." %}</div>
+            <div class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Bring your package or code" %}</div>
+            <div class="font-body-sm text-body-sm text-on-surface-variant">{% trans "Digital label, QR code, or ready-to-ship parcel." %}</div>
           </div>
         </div>
         <!-- Step 2 -->
         <div class="bg-surface-container-lowest rounded-xl p-space-md flex items-center gap-space-sm shadow-sm">
           <div class="w-10 h-10 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-bold shrink-0">2</div>
           <div>
-            <div class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Lo gestionamos al momento" %}</div>
-            <div class="font-body-sm text-body-sm text-on-surface-variant">{% trans "Escaneo inmediato en mostrador." %}</div>
+            <div class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "We handle it instantly" %}</div>
+            <div class="font-body-sm text-body-sm text-on-surface-variant">{% trans "Immediate counter scanning." %}</div>
           </div>
         </div>
         <!-- Step 3 -->
         <div class="bg-surface-container-lowest rounded-xl p-space-md flex items-center gap-space-sm shadow-sm">
           <div class="w-10 h-10 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center font-bold shrink-0">3</div>
           <div>
-            <div class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Listo, con seguimiento" %}</div>
-            <div class="font-body-sm text-body-sm text-on-surface-variant">{% trans "Recibo al instante con código de seguimiento." %}</div>
+            <div class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Done, with real-time tracking" %}</div>
+            <div class="font-body-sm text-body-sm text-on-surface-variant">{% trans "Instant receipt with live tracking code." %}</div>
           </div>
         </div>
       </div>
@@ -269,7 +269,7 @@
                  loading="lazy"
                  class="w-full h-[380px] sm:h-[440px] object-cover">
             <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-on-surface/75 via-transparent to-transparent p-space-md">
-              <span class="text-on-primary font-headline-sm text-headline-sm font-bold block">{% trans "Comercio de barrio, servicio profesional" %}</span>
+              <span class="text-on-primary font-headline-sm text-headline-sm font-bold block">{% trans "Neighborhood store, professional service" %}</span>
               <span class="text-primary-fixed font-body-sm text-body-sm">{{ storefront.address }}</span>
             </div>
           </div>
@@ -278,13 +278,13 @@
         <!-- Content Right -->
         <div class="lg:col-span-7 flex flex-col gap-space-md">
           <div>
-            <span class="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">{% trans "Quiénes somos" %}</span>
+            <span class="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">{% trans "About Us" %}</span>
             <h2 class="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl text-on-surface font-bold mt-1">
-              {% trans "Más que una tienda, tu punto de barrio" %}
+              {% trans "More than a store, your local community hub" %}
             </h2>
           </div>
           <p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
-            {% trans "Rápido Pack nace en Alfafar con una idea sencilla: que enviar, recibir o comprar sea rápido y de confianza. 'Rápido' porque valoramos tu tiempo. 'Pack' porque cada paquete, ya sea el que envías o el artículo que te llevas, merece el mismo cuidado." %}
+            {% trans "Rápido Pack was born in Alfafar with a simple mission: to make sending, receiving, or shopping fast and trustworthy. 'Rápido' because we value your time. 'Pack' because every parcel, whether you send it or bring an item home, deserves genuine care." %}
           </p>
 
           <!-- 2x2 Value Pills Grid -->
@@ -295,8 +295,8 @@
                 <span class="material-symbols-outlined text-[22px]">bolt</span>
               </div>
               <div>
-                <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">⚡ {% trans "Rapidez" %}</h3>
-                <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{% trans "Gestiones en minutos, sin colas." %}</p>
+                <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">⚡ {% trans "Speed" %}</h3>
+                <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{% trans "Done in minutes, no queues." %}</p>
               </div>
             </div>
             <!-- Cercanía -->
@@ -305,8 +305,8 @@
                 <span class="material-symbols-outlined text-[22px]">handshake</span>
               </div>
               <div>
-                <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">🤝 {% trans "Cercanía" %}</h3>
-                <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{% trans "Comercio local, trato directo y personal." %}</p>
+                <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">🤝 {% trans "Warmth & Proximity" %}</h3>
+                <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{% trans "Local commerce, direct and friendly service." %}</p>
               </div>
             </div>
             <!-- Confianza -->
@@ -315,8 +315,8 @@
                 <span class="material-symbols-outlined text-[22px]">verified_user</span>
               </div>
               <div>
-                <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">✅ {% trans "Confianza" %}</h3>
-                <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{% trans "Artículos revisados y paquetes bien custodiados." %}</p>
+                <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">✅ {% trans "Trust" %}</h3>
+                <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{% trans "Inspected items and safely guarded parcels." %}</p>
               </div>
             </div>
             <!-- Segunda vida -->
@@ -325,8 +325,8 @@
                 <span class="material-symbols-outlined text-[22px]">recycling</span>
               </div>
               <div>
-                <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">♻️ {% trans "Segunda vida" %}</h3>
-                <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{% trans "Damos una nueva oportunidad a productos con historia." %}</p>
+                <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">♻️ {% trans "Second Life" %}</h3>
+                <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{% trans "Giving a new chapter to products with a story." %}</p>
               </div>
             </div>
           </div>
@@ -341,18 +341,18 @@
       <div>
         <div class="inline-flex items-center gap-1 text-secondary font-label-md text-label-md font-bold mb-1 uppercase">
           <span class="material-symbols-outlined text-[16px]">local_fire_department</span>
-          <span>{% trans "Lo último en nuestra tienda" %}</span>
+          <span>{% trans "Latest arrivals in our store" %}</span>
         </div>
         <h2 class="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl text-on-surface font-bold tracking-tight">
-          {% trans "Recién llegados" %}
+          {% trans "Fresh Arrivals" %}
         </h2>
         <p class="font-body-md text-body-md text-on-surface-variant mt-1">
-          {% trans "Los 4 artículos más nuevos de nuestra tienda. Piezas únicas: cuando se van, no vuelven." %}
+          {% trans "The 4 newest items in our store. One-of-a-kind finds: once they are gone, they are gone." %}
         </p>
       </div>
       <a class="inline-flex items-center gap-1 font-label-md text-label-md text-primary font-bold hover:text-primary-container transition-colors shrink-0"
          href="{% url 'storefront:catalog' %}">
-        <span>{% trans "Ver toda la tienda" %}</span>
+        <span>{% trans "View all store items" %}</span>
         <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
       </a>
     </div>
@@ -369,22 +369,22 @@
         <span class="material-symbols-outlined text-3xl">storefront</span>
       </div>
       <h3 class="font-headline-md text-headline-md text-on-surface font-bold">
-        {% trans "Nuevas oportunidades cada día en nuestra tienda de Alfafar" %}
+        {% trans "New opportunities daily at our Alfafar store" %}
       </h3>
       <p class="font-body-md text-body-md text-on-surface-variant max-w-md mx-auto">
-        {% trans "Estamos preparando nuevos artículos revisados. Explora el catálogo completo o consúltanos directamente por WhatsApp." %}
+        {% trans "We are constantly preparing inspected items. Explore the full catalog or contact us directly on WhatsApp." %}
       </p>
       <div class="pt-space-xs flex flex-wrap items-center justify-center gap-space-sm">
         <a href="{% url 'storefront:catalog' %}"
            class="px-space-md py-2.5 rounded-xl bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container transition-colors">
-          {% trans "Explorar la tienda" %}
+          {% trans "Explore the store" %}
         </a>
         <a href="{% url 'storefront:go_whatsapp' %}"
            target="_blank"
            rel="noopener noreferrer"
            class="px-space-md py-2.5 rounded-xl bg-[#25D366] text-white font-label-md text-label-md hover:bg-[#20ba5a] transition-colors inline-flex items-center gap-1">
           <span class="material-symbols-outlined text-[16px]">chat</span>
-          <span>{% trans "Consultar por WhatsApp" %}</span>
+          <span>{% trans "Inquire on WhatsApp" %}</span>
         </a>
       </div>
     </div>
@@ -401,23 +401,23 @@
             <span class="material-symbols-outlined text-[28px] text-primary-fixed">local_shipping</span>
           </div>
           <span class="font-headline-xl text-headline-xl font-extrabold text-on-primary">+6</span>
-          <span class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider mt-1">{% trans "Agencias de paquetería" %}</span>
+          <span class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider mt-1">{% trans "Parcel Carriers" %}</span>
         </div>
         <!-- Stat 2 -->
         <div class="flex flex-col items-center">
           <div class="w-12 h-12 rounded-xl bg-on-primary/10 flex items-center justify-center mb-space-xs">
             <span class="material-symbols-outlined text-[28px] text-primary-fixed">verified</span>
           </div>
-          <span class="font-headline-xl text-headline-xl font-extrabold text-on-primary">{% trans "Oficial" %}</span>
-          <span class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider mt-1">{% trans "Punto Pack homologado" %}</span>
+          <span class="font-headline-xl text-headline-xl font-extrabold text-on-primary">{% trans "Official" %}</span>
+          <span class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider mt-1">{% trans "Authorized Punto Pack" %}</span>
         </div>
         <!-- Stat 3 -->
         <div class="flex flex-col items-center">
           <div class="w-12 h-12 rounded-xl bg-on-primary/10 flex items-center justify-center mb-space-xs">
             <span class="material-symbols-outlined text-[28px] text-primary-fixed">shopping_bag</span>
           </div>
-          <span class="font-headline-xl text-headline-xl font-extrabold text-on-primary">{% trans "Gratis" %}</span>
-          <span class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider mt-1">{% trans "Recogida de compras en tienda" %}</span>
+          <span class="font-headline-xl text-headline-xl font-extrabold text-on-primary">{% trans "Free" %}</span>
+          <span class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider mt-1">{% trans "In-store pickup of purchases" %}</span>
         </div>
         <!-- Stat 4 -->
         <div class="flex flex-col items-center">
@@ -425,7 +425,7 @@
             <span class="material-symbols-outlined text-[28px] text-primary-fixed">check_circle</span>
           </div>
           <span class="font-headline-xl text-headline-xl font-extrabold text-on-primary">100%</span>
-          <span class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider mt-1">{% trans "Artículos revisados" %}</span>
+          <span class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider mt-1">{% trans "Inspected items" %}</span>
         </div>
       </div>
     </div>
@@ -435,13 +435,13 @@
   <section class="w-full max-w-7xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-space-xl scroll-mt-24" id="contacto">
     <div class="flex flex-col items-center text-center gap-space-xs mb-space-lg">
       <span class="bg-surface-container text-primary font-label-md text-label-md px-3 py-1 rounded-full uppercase tracking-wider font-semibold">
-        {% trans "Ubicación y horarios" %}
+        {% trans "Location & Opening Hours" %}
       </span>
       <h2 class="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl text-on-surface font-bold tracking-tight">
-        {% trans "Visítanos en Alfafar" %}
+        {% trans "Visit us in Alfafar" %}
       </h2>
       <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
-        {% trans "Estamos en el corazón de Alfafar, muy cerca de la estación de tren y con fácil aparcamiento en la zona." %}
+        {% trans "We are located in the heart of Alfafar, very close to the train station with convenient nearby parking." %}
       </p>
     </div>
 
@@ -498,11 +498,11 @@
               <span class="font-headline-sm text-headline-sm text-on-surface font-bold block">{% trans "Horario de apertura" %}</span>
               <div class="mt-1 flex flex-col gap-1 font-body-sm text-body-sm text-on-surface-variant">
                 <div class="flex justify-between">
-                  <span class="font-medium text-on-surface">{% trans "Lunes a Viernes:" %}</span>
+                  <span class="font-medium text-on-surface">{% trans "Monday to Friday:" %}</span>
                   <span>9:30 – 20:00 h</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="font-medium text-on-surface">{% trans "Sábados:" %}</span>
+                  <span class="font-medium text-on-surface">{% trans "Saturdays:" %}</span>
                   <span>10:00 – 15:00 h</span>
                 </div>
                 <div class="flex justify-between text-error font-medium">
@@ -521,14 +521,14 @@
              rel="noopener noreferrer"
              target="_blank">
             <span class="material-symbols-outlined text-[20px]">chat</span>
-            <span>{% trans "Escríbenos por WhatsApp" %}</span>
+            <span>{% trans "Message us on WhatsApp" %}</span>
           </a>
           <a class="w-full inline-flex items-center justify-center gap-space-xs bg-surface-container hover:bg-surface-container-high text-on-surface font-headline-sm text-headline-sm font-semibold py-3.5 rounded-xl transition-colors"
              href="{{ storefront.map_url }}"
              rel="noopener noreferrer"
              target="_blank">
             <span class="material-symbols-outlined text-[20px] text-primary">navigation</span>
-            <span>{% trans "Cómo llegar" %}</span>
+            <span>{% trans "How to get here" %}</span>
           </a>
         </div>
       </div>
@@ -562,7 +562,7 @@
              rel="noopener noreferrer"
              target="_blank">
             <span class="material-symbols-outlined text-[20px]">chat</span>
-            <span>{% trans "Escríbenos por WhatsApp" %}</span>
+            <span>{% trans "Message us on WhatsApp" %}</span>
           </a>
         </div>
       </div>
