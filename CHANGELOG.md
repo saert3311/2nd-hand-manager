@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-10-27
+
 ### Added
 - **Comprehensive UI/UX Design System, Usability & WCAG 2.1 AA Accessibility Audit & Remediation (Phase 39)**:
   - **Skip Links & Landmark Semantics (`[A-01]`, `[A-02]`)**: Added keyboard-accessible skip links (`<a href="#main-content">`) and `<main id="main-content" tabindex="-1">` targets in both [`inventory/templates/inventory/base.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/base.html) and [`storefront/templates/storefront/base_public.html`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/templates/storefront/base_public.html), plus explicit `aria-label` landmarks on primary navigation menus.
