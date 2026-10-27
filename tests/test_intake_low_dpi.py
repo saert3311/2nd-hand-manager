@@ -125,6 +125,12 @@ class IntakeLowDPITests(TestCase):
         self.assertIn('id="closeImageModalBtn"', html)
         self.assertIn('id="modalPrevBtn"', html)
         self.assertIn('id="modalNextBtn"', html)
+        self.assertIn('id="rotateLeftBtn"', html)
+        self.assertIn('id="rotateRightBtn"', html)
+        self.assertIn('id="applyCropBtn"', html)
+        self.assertIn("inventory/vendor/cropper.min.css", html)
+        self.assertIn("inventory/vendor/cropper.min.js", html)
+        self.assertIn("photo-edit-btn", html)
 
     def test_lightbox_modal_spanish_localization(self):
         """Verify Spanish translations for photo inspection, navigation, and preview helper text."""
@@ -141,6 +147,10 @@ class IntakeLowDPITests(TestCase):
             self.assertIn("Foto anterior", html)
             self.assertIn("Foto siguiente", html)
             self.assertIn("Cerrar", html)
+            self.assertIn("Girar 90° a la izquierda", html)
+            self.assertIn("Girar 90° a la derecha", html)
+            self.assertIn("Aplicar recorte y giro", html)
+            self.assertIn("Recortar o girar foto", html)
 
     def test_lightbox_modal_english_localization(self):
         """Verify English text for photo inspection, navigation, and preview helper text."""
@@ -157,6 +167,10 @@ class IntakeLowDPITests(TestCase):
             self.assertIn("Previous photo", html)
             self.assertIn("Next photo", html)
             self.assertIn("Close", html)
+            self.assertIn("Rotate left 90°", html)
+            self.assertIn("Rotate right 90°", html)
+            self.assertIn("Apply crop & rotate", html)
+            self.assertIn("Crop or rotate photo", html)
 
     def test_intake_submission_preserves_post_workflow(self):
         """Ensure form POST and image persistence continue working without regressions with the new miniature markup."""

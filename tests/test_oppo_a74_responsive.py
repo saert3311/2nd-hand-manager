@@ -292,10 +292,20 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 page.wait_for_load_state("networkidle")
                 self._assert_no_horizontal_overflow(page, f"dashboard_erased_{label}", width, height)
 
-                # 4. Staging Intake page
+                # 4. Staging Intake page + Photo Crop & Rotate Modal on mobile
                 page.goto(f"{self.live_server_url}{reverse('inventory:intake')}")
                 page.wait_for_load_state("networkidle")
                 self._assert_no_horizontal_overflow(page, f"intake_{label}", width, height)
+
+                # Attach photo, open Cropper.js modal via .photo-edit-btn, rotate 90 deg, and apply
+                page.set_input_files("#imageInput", os.path.join("tmp_test_images", "sample_jacket.jpg"))
+                page.wait_for_selector(".photo-edit-btn", timeout=5000)
+                page.click(".photo-edit-btn")
+                page.wait_for_selector("#imagePreviewModal:not(.hidden) .cropper-container", timeout=5000)
+                self._assert_no_horizontal_overflow(page, f"intake_crop_modal_{label}", width, height)
+                page.click("#rotateRightBtn")
+                page.click("#applyCropBtn")
+                page.wait_for_selector("#imagePreviewModal.hidden", state="attached", timeout=5000)
 
                 # 5. Staging Product Detail view
                 page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.p_active.pk})}")

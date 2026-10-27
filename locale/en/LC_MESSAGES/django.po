@@ -3158,3 +3158,14 @@ msgstr "Confirm Action"
 msgid "Confirm"
 msgstr "Confirm"
 
+msgid "Rotate left 90°"
+msgstr "Rotate left 90°"
+
+msgid "Rotate right 90°"
+msgstr "Rotate right 90°"
+
+msgid "Apply crop & rotate"
+msgstr "Apply crop & rotate"
+
+msgid "Crop or rotate photo"
+msgstr "Crop or rotate photo"

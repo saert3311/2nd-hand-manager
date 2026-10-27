@@ -3213,3 +3213,14 @@ msgstr "Confirmar acción"
 msgid "Confirm"
 msgstr "Confirmar"
 
+msgid "Rotate left 90°"
+msgstr "Girar 90° a la izquierda"
+
+msgid "Rotate right 90°"
+msgstr "Girar 90° a la derecha"
+
+msgid "Apply crop & rotate"
+msgstr "Aplicar recorte y giro"
+
+msgid "Crop or rotate photo"
+msgstr "Recortar o girar foto"

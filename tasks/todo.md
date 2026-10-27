@@ -3498,11 +3498,11 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 # Phase 41: On-Demand Mobile Photo Crop & Rotate in Intake
 
 ### Task 145: Vendor Cropper.js v1.6.2 & Upgrade Intake Lightbox with Crop & Rotate Controls (`inventory/static/inventory/vendor/`, `inventory/templates/inventory/intake.html`)
-- [ ] Vendor `cropper.min.js` and `cropper.min.css` (v1.6.2) in `inventory/static/inventory/vendor/`.
-- [ ] Add `.photo-edit-btn` (`✂️`) trigger on each 2-column preview card and initialize Cropper.js in `#imagePreviewModal` with `#rotateLeftBtn` (`↺ 90°`), `#rotateRightBtn` (`↻ 90°`), and `#applyCropBtn`.
-- [ ] Export cropped/rotated canvas to `.webp` (`max 2560px`, `0.82` quality), update `selectedFiles[idx]`, and call `syncFileInput()`.
+- [x] Vendor `cropper.min.js` and `cropper.min.css` (v1.6.2) in `inventory/static/inventory/vendor/`.
+- [x] Add `.photo-edit-btn` (`✂️`) trigger on each 2-column preview card and initialize Cropper.js in `#imagePreviewModal` with `#rotateLeftBtn` (`↺ 90°`), `#rotateRightBtn` (`↻ 90°`), and `#applyCropBtn`.
+- [x] Export cropped/rotated canvas to `.webp` (`max 2560px`, `0.82` quality), update `selectedFiles[idx]`, and call `syncFileInput()`.
 
 ### Task 146: Bilingual Localization, Tests & Mobile Responsive Verification (`locale/es/LC_MESSAGES/django.po`, `tests/test_intake_low_dpi.py`, `CHANGELOG.md`)
-- [ ] Add Spanish translations for crop/rotate UI strings and compile `.mo` catalogs.
-- [ ] Extend `tests/test_intake_low_dpi.py` and verify Playwright responsive tests (`320×711` and `360×800`).
-- [ ] Update `CHANGELOG.md` and pass `ruff check .`, `manage.py check`, and test suites.
+- [x] Add Spanish translations for crop/rotate UI strings and compile `.mo` catalogs.
+- [x] Extend `tests/test_intake_low_dpi.py` and verify Playwright responsive tests (`320×711` and `360×800`).
+- [x] Update `CHANGELOG.md` and pass `ruff check .`, `manage.py check`, and test suites.
