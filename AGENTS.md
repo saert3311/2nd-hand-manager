@@ -19,6 +19,8 @@ This file defines the mandatory operational rules, development workflow, archite
    - Use soft-deletion (`product.soft_delete()` / `is_deleted=True`) for removing products from active staging. Never drop database tables, delete migrations, or wipe media/backups without explicit user authorization.
 5. **Zero-Failure Quality Gate**
    - Every task and branch must pass 100% of the automated test suite (`manage.py test`), Django system checks (`manage.py check`), translation compilation (`manage.py compile_locales`), and Ruff linting (`ruff check .`) with zero errors or warnings before requesting a merge.
+6. **Low-DPI & Narrow Android Mobile Viewports (OPPO A74 Baseline)**
+   - Every page and UI component must render cleanly without horizontal overflow, clipped controls, or squished text on low-DPI and narrow Android mobile viewports such as the **OPPO A74** (`360×800` standard CSS viewport and `320×711` with Android display zoom / low effective DPI), not just `390×844` iPhone viewports.
 
 ---
 
@@ -118,6 +120,12 @@ Deliver code in atomic, logically scoped commits following Conventional Commits:
 - **URL Validation**: Always validate external marketplace URLs with `HTTP_URL_VALIDATOR` (`schemes=["http", "https"]`) to block `javascript:` or `data:` URI injection.
 
 ### Frontend, Mobile UX & Accessibility Conventions
+- **Low-DPI & Narrow Mobile Viewport Rule (OPPO A74 `360×800` & `320×711` Support)**:
+  - Do not assume a `390px` (iPhone) minimum mobile width. Devices like the **OPPO A74** operate at a `360×800` CSS viewport by default and drop to `320×711` (or `320×640`) when Android Display Size / Font Scaling or low-DPI modes are active.
+  - **Zero Horizontal Overflow**: All views must maintain `document.documentElement.scrollWidth <= document.documentElement.clientWidth` down to `320px`–`360px` viewport widths.
+  - **Fluid Flex/Grid & Spanish Text Expansion**: Always pair flex/grid children with `min-w-0`, `flex-wrap`, and `break-words` so longer Spanish labels (e.g., dual camera/gallery buttons, status pills, price benchmark badges) wrap gracefully instead of clipping off-screen. Use responsive compact padding (`px-3 sm:px-6`, `p-3.5 sm:p-6`) on narrow mobile screens.
+  - **Low-DPI Visual Clarity**: Avoid faint hairline borders and low-contrast muted text (`text-slate-400`) that blur on lower-DPI panels; enforce WCAG 2.1 AA contrast (`>= 4.5:1`) and distinct surface borders (`border-slate-200` / `border-slate-300`).
+  - **Playwright Viewport Matrix**: Include `360×800` (OPPO A74 mobile) and `320×711` (low-DPI / zoomed mobile) in automated Playwright responsive tests alongside `390×844`, `768×1024`, and `1440×900`.
 - **HTML5 `<input type="number">` Localization Gotcha**:
   - Under the Spanish locale (`es`), Django formats decimals with a comma (`35,50`), which causes browsers to sanitize `<input type="number">` values to `""` (wiping the price in the UI and on form submit).
   - **Rule**: Always `{% load l10n %}` and apply `|unlocalize` on numeric form input values (e.g., `value="{{ form.sale_price.value|unlocalize|default:'' }}"`).
