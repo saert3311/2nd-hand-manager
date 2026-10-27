@@ -1920,8 +1920,12 @@ msgstr "Guía"
 msgid "Physical Store & Online"
 msgstr "Tienda Física y Online"
 
-msgid "Your second-hand, vintage, and opportunity store in Alfafar (Valencia). Every item is inspected and photographed in-house."
-msgstr "Tu tienda de segunda mano, vintage y oportunidad en Alfafar (Valencia). Cada artículo es revisado y fotografiado en tienda."
+msgid ""
+"Your second-hand, vintage, and opportunity store in Alfafar (Valencia). "
+"Every item is inspected and photographed in-house."
+msgstr ""
+"Tu tienda de segunda mano, vintage y oportunidad en Alfafar (Valencia). Cada"
+" artículo es revisado y fotografiado en tienda."
 
 msgid "Address:"
 msgstr "Dirección:"
@@ -1971,14 +1975,21 @@ msgstr "Compra, Recogida y Garantía"
 msgid "How to buy, reserve & pick up? (Learn more)"
 msgstr "¿Cómo comprar, reservar y recoger? (Saber más)"
 
-msgid "24-hour reservation holds without upfront payment for in-person inspection in Alfafar."
-msgstr "Reservas válidas durante 24 horas sin compromiso de anticipo para comprobación en persona en Alfafar."
+msgid ""
+"24-hour reservation holds without upfront payment for in-person inspection "
+"in Alfafar."
+msgstr ""
+"Reservas válidas durante 24 horas sin compromiso de anticipo para "
+"comprobación en persona en Alfafar."
 
 msgid "Protected national shipping"
 msgstr "Envíos protegidos nacionales"
 
-msgid "Tracked shipments across Spain via Wallapop Envíos, Vinted, and Milanuncios."
-msgstr "Envíos nacionales con seguimiento y protección al comprador vía Wallapop Envíos, Vinted y Milanuncios."
+msgid ""
+"Tracked shipments across Spain via Wallapop Envíos, Vinted, and Milanuncios."
+msgstr ""
+"Envíos nacionales con seguimiento y protección al comprador vía Wallapop "
+"Envíos, Vinted y Milanuncios."
 
 msgid "Legal Notice"
 msgstr "Aviso Legal"
@@ -2058,8 +2069,12 @@ msgstr "Precio: mayor a menor"
 msgid "No items match your current filters"
 msgstr "No hay artículos que coincidan con tus filtros actuales"
 
-msgid "We update our catalog daily with new arrivals at our Alfafar store. Try clearing the filters or ask us directly via WhatsApp."
-msgstr "Actualizamos nuestro catálogo a diario con nuevas entradas en nuestra tienda de Alfafar. Prueba a limpiar los filtros o consúltanos por WhatsApp."
+msgid ""
+"We update our catalog daily with new arrivals at our Alfafar store. Try "
+"clearing the filters or ask us directly via WhatsApp."
+msgstr ""
+"Actualizamos nuestro catálogo a diario con nuevas entradas en nuestra tienda"
+" de Alfafar. Prueba a limpiar los filtros o consúltanos por WhatsApp."
 
 msgid "View all items"
 msgstr "Ver todos los artículos"
@@ -2073,8 +2088,12 @@ msgstr "TIENDA FÍSICA Y TALLER"
 msgid "Visit us in person in Alfafar"
 msgstr "Visítanos personalmente en Alfafar"
 
-msgid "You can inspect and test any item in our catalog with no obligation. Visit us at"
-msgstr "Puedes ver y probar cualquier artículo de nuestro catálogo sin compromiso. Te esperamos en"
+msgid ""
+"You can inspect and test any item in our catalog with no obligation. Visit "
+"us at"
+msgstr ""
+"Puedes ver y probar cualquier artículo de nuestro catálogo sin compromiso. "
+"Te esperamos en"
 
 msgid "Get directions (Google Maps)"
 msgstr "Cómo llegar (Google Maps)"
@@ -2124,8 +2143,10 @@ msgstr "Saber más"
 msgid "How to buy at Rápido Pack Alfafar?"
 msgstr "¿Cómo comprar en Rápido Pack Alfafar?"
 
-msgid "In-store pickup guide, 24h reservation & protected shipping across Spain"
-msgstr "Guía de recogida en tienda, reserva 24h y envíos protegidos a toda España"
+msgid ""
+"In-store pickup guide, 24h reservation & protected shipping across Spain"
+msgstr ""
+"Guía de recogida en tienda, reserva 24h y envíos protegidos a toda España"
 
 msgid "Option A: Free pickup at our physical store (Alfafar)"
 msgstr "Opción A: Recogida gratuita en nuestra tienda física (Alfafar)"
@@ -2175,8 +2196,11 @@ msgstr "Consultar guía de recogida en tienda, reserva 24h y envíos"
 msgid "Rápido Pack Verification Guarantee"
 msgstr "Certificado de Verificación Rápido Pack"
 
-msgid "Visual and functional inspection completed at our Alfafar (Valencia) store"
-msgstr "Inspección visual y funcional completada en nuestra tienda de Alfafar (Valencia)"
+msgid ""
+"Visual and functional inspection completed at our Alfafar (Valencia) store"
+msgstr ""
+"Inspección visual y funcional completada en nuestra tienda de Alfafar "
+"(Valencia)"
 
 msgid "Inspected in Store"
 msgstr "Revisado en Tienda"
@@ -2246,3 +2270,924 @@ msgstr "Envíos a toda España"
 
 msgid "View in Storefront"
 msgstr "Ver en Tienda Pública"
+
+msgid "Manager privileges required to access administration."
+msgstr "Se requieren privilegios de gestor para acceder a la administración."
+
+msgid "Members Count"
+msgstr "Número de Miembros"
+
+msgid "Notes"
+msgstr "Notas"
+
+msgid "Notified"
+msgstr "Notificado"
+
+msgid "---------"
+msgstr "---------"
+
+msgid ""
+"Add measurements, composition details, flaws, or inspection notes discovered"
+" after intake..."
+msgstr ""
+"Añade medidas, detalles de composición, defectos o notas de inspección "
+"descubiertas tras el intake..."
+
+msgid ""
+"Ask the assistant for missing info (e.g., 'Confirm pit-to-pit measurement or"
+" verify fabric composition tag')"
+msgstr ""
+"Pide al asistente los datos que faltan (ej. 'Confirmar medida sisa a sisa o "
+"verificar etiqueta de composición')"
+
+msgid ""
+"Cannot mark product as Ready to Publish while pending clarifications remain "
+"unresolved."
+msgstr ""
+"No se puede marcar el producto como Listo para Publicar mientras queden "
+"aclaraciones pendientes de resolver."
+
+msgid "Condition State"
+msgstr "Estado de Conservación"
+
+msgid "Featured (⭐)"
+msgstr "Destacado (⭐)"
+
+msgid "Provide measurements, material details, or condition observations..."
+msgstr "Indica medidas, detalles de materiales u observaciones del estado..."
+
+msgid "Question for Assistant"
+msgstr "Pregunta para el Asistente"
+
+msgid "Reserved (⏳)"
+msgstr "Reservado (⏳)"
+
+msgid "Storefront Category"
+msgstr "Categoría de Tienda"
+
+msgid "Visible in Public Storefront"
+msgstr "Visible en la Tienda Pública"
+
+msgid "— Select Category —"
+msgstr "— Seleccionar Categoría —"
+
+msgid "— Select Condition —"
+msgstr "— Seleccionar Estado —"
+
+msgid "Answered At"
+msgstr "Respondido el"
+
+msgid "Answered By"
+msgstr "Respondido por"
+
+msgid "Area of clarification"
+msgstr "Área de aclaración"
+
+msgid "Asked By"
+msgstr "Preguntado por"
+
+msgid "Categories"
+msgstr "Categorías"
+
+msgid "Category Name (EN)"
+msgstr "Nombre de Categoría (EN)"
+
+msgid "Category Name (ES)"
+msgstr "Nombre de Categoría (ES)"
+
+msgid "Category display name in English"
+msgstr "Nombre visible de la categoría en inglés"
+
+msgid "Client authentication secret (Base64URL)"
+msgstr "Secreto de autenticación del cliente (Base64URL)"
+
+msgid "Client public encryption key (Base64URL)"
+msgstr "Clave pública de cifrado del cliente (Base64URL)"
+
+msgid "Company NIF / CIF"
+msgstr "NIF / CIF de la Empresa"
+
+msgid "Condition"
+msgstr "Estado"
+
+msgid "Contact Email"
+msgstr "Correo de Contacto"
+
+msgid "Created At"
+msgstr "Creado el"
+
+msgid "Current lifecycle status of the product"
+msgstr "Estado actual del ciclo de vida del producto"
+
+msgid "Enter a valid URL starting with http:// or https://."
+msgstr "Introduce una URL válida que comience por http:// o https://."
+
+msgid "Flaws / Condition / Stains"
+msgstr "Defectos / Desgaste / Manchas"
+
+msgid "General Question"
+msgstr "Pregunta General"
+
+msgid "Google Maps URL"
+msgstr "URL de Google Maps"
+
+msgid "Highlight this item with a Featured badge and priority placement"
+msgstr ""
+"Destacar este artículo con insignia de Destacado y posición prioritaria"
+
+msgid "International format with country code, e.g. 34600000000"
+msgstr "Formato internacional con prefijo de país, ej. 34600000000"
+
+msgid "Marketplace"
+msgstr "Marketplace"
+
+msgid "Marketplace product category"
+msgstr "Categoría de producto en marketplace"
+
+msgid "Material Icon"
+msgstr "Icono de Material"
+
+msgid "Material Symbols Outlined icon name (e.g. pedal_bike, devices)"
+msgstr ""
+"Nombre de icono en Material Symbols Outlined (ej. pedal_bike, devices)"
+
+msgid "Measurements / Sizing"
+msgstr "Medidas / Tallas"
+
+msgid "Number of outbound WhatsApp inquiry clicks"
+msgstr "Número de clics salientes para consulta por WhatsApp"
+
+msgid "Number of public clicks to this marketplace listing"
+msgstr "Número de clics públicos a este enlace de marketplace"
+
+msgid "Number of public detail page views"
+msgstr "Número de visualizaciones públicas de la ficha"
+
+msgid "Opening Hours (EN)"
+msgstr "Horario de Apertura (EN)"
+
+msgid "Opening Hours (ES)"
+msgstr "Horario de Apertura (ES)"
+
+msgid "Optional expiration timestamp for reservation hold"
+msgstr "Fecha y hora límite opcional para la reserva"
+
+msgid "Outbound Clicks"
+msgstr "Clics Salientes"
+
+msgid "Physical Store Address"
+msgstr "Dirección de la Tienda Física"
+
+msgid "Physical condition state of the item"
+msgstr "Estado de conservación físico del artículo"
+
+msgid "Primary category display name in Spanish"
+msgstr "Nombre visible principal de la categoría en español"
+
+msgid "Public Views"
+msgstr "Visualizaciones Públicas"
+
+msgid "Question from manager regarding missing product details"
+msgstr "Pregunta del gestor sobre detalles pendientes del producto"
+
+msgid "Reserved Until"
+msgstr "Reservado hasta"
+
+msgid "Response from assistant"
+msgstr "Respuesta del asistente"
+
+msgid "Sorting order in storefront navigation"
+msgstr "Orden de clasificación en la navegación de la tienda"
+
+msgid "Store Domain"
+msgstr "Dominio de la Tienda"
+
+msgid "Store Name"
+msgstr "Nombre de la Tienda"
+
+msgid "Storefront Configuration"
+msgstr "Configuración de la Tienda"
+
+msgid "Tag / Brand / Composition"
+msgstr "Etiqueta / Marca / Composición"
+
+msgid "Tagline (EN)"
+msgstr "Eslogan (EN)"
+
+msgid "Tagline (ES)"
+msgstr "Eslogan (ES)"
+
+msgid "Tax identification number for legal notice (optional)"
+msgstr "Número de identificación fiscal para aviso legal (opcional)"
+
+msgid "Temporarily hold this item as Reserved in the public storefront"
+msgstr ""
+"Marcar temporalmente este artículo como Reservado en la tienda pública"
+
+msgid "Timestamp when product was moved to trash"
+msgstr "Fecha y hora en que el producto se movió a la papelera"
+
+msgid "URL-safe category identifier"
+msgstr "Identificador de categoría apto para URL"
+
+msgid "Unique browser push service endpoint URL"
+msgstr "URL de endpoint único del servicio push del navegador"
+
+msgid "Updated At"
+msgstr "Actualizado el"
+
+msgid "User"
+msgstr "Usuario"
+
+msgid "User who moved the product to trash"
+msgstr "Usuario que movió el producto a la papelera"
+
+msgid "WhatsApp Clicks"
+msgstr "Clics de WhatsApp"
+
+msgid "WhatsApp Phone Number"
+msgstr "Número de Teléfono WhatsApp"
+
+msgid "Whether this category is visible in the public storefront"
+msgstr "Indica si esta categoría es visible en la tienda pública"
+
+msgid ""
+"Whether this item is visible in the public storefront when Ready/Published"
+msgstr ""
+"Indica si este artículo es visible en la tienda pública al estar "
+"Listo/Publicado"
+
+msgid "Failed to process image '%(filename)s': %(error)s"
+msgstr "Error al procesar la imagen '%(filename)s': %(error)s"
+
+msgid ""
+"File '%(filename)s' is too large in pixel dimensions (possible decompression"
+" bomb)."
+msgstr ""
+"El archivo '%(filename)s' es demasiado grande en dimensiones de píxeles "
+"(posible bomba de descompresión)."
+
+msgid "Image '%(filename)s' is empty (0 bytes)."
+msgstr "La imagen '%(filename)s' está vacía (0 bytes)."
+
+msgid ""
+"Image format '%(format)s' is not supported. Please upload JPEG, PNG, or "
+"WebP."
+msgstr ""
+"El formato de imagen '%(format)s' no es compatible. Por favor sube JPEG, PNG"
+" o WebP."
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Home"
+msgstr "Inicio"
+
+msgid "Featured"
+msgstr "Destacados"
+
+msgid "Filter products by status"
+msgstr "Filtrar productos por estado"
+
+msgid "No products matched your search \"{{ query }}\". Try clearing the filter."
+msgstr ""
+"Ningún producto coincide con tu búsqueda \"{{ query }}\". Prueba a limpiar "
+"el filtro."
+
+msgid "Reserved"
+msgstr "Reservados"
+
+msgid "Search products by title, note, or date"
+msgstr "Buscar productos por título, nota o fecha"
+
+msgid ""
+"Showing <span class=\"font-bold text-slate-800\">{{ start }}</span> to <span"
+" class=\"font-bold text-slate-800\">{{ end }}</span> of <span class=\"font-"
+"bold text-slate-800\">{{ total }}</span> products"
+msgstr ""
+"Mostrando <span class=\"font-bold text-slate-800\">{{ start }}</span> a "
+"<span class=\"font-bold text-slate-800\">{{ end }}</span> de <span "
+"class=\"font-bold text-slate-800\">{{ total }}</span> productos"
+
+msgid "Estimated resale:"
+msgstr "Reventa estimada:"
+
+msgid "New Retail (MSRP):"
+msgstr "PVP Nuevo (MSRP):"
+
+msgid "Optional"
+msgstr "Opcional"
+
+msgid "Select up to {{ max }} photos (auto-optimized to WebP 2560px)"
+msgstr "Selecciona hasta {{ max }} fotos (auto-optimizadas a WebP 2560px)"
+
+msgid "Use estimated resale price"
+msgstr "Usar precio de reventa estimado"
+
+msgid "Apply resale (€{{ price }})"
+msgstr "Aplicar reventa (€{{ price }})"
+
+msgid "E.g., Pit-to-pit: 54cm, length: 70cm, YKK zipper, 100% heavy cotton."
+msgstr ""
+"Ej., Sisa a sisa: 54cm, largo: 70cm, cremallera YKK, 100% algodón grueso."
+
+msgid "E.g., Pit-to-pit: 54cm, length: 70cm, composition: 100% cotton."
+msgstr "Ej., Sisa a sisa: 54cm, largo: 70cm, composición: 100% algodón."
+
+msgid "Platform Clicks"
+msgstr "Clics en Plataforma"
+
+msgid "Public Storefront & Taxonomy (Rápido Pack)"
+msgstr "Tienda Pública y Taxonomía (Rápido Pack)"
+
+msgid "Update"
+msgstr "Actualizar"
+
+msgid "clicks"
+msgstr "clics"
+
+msgid "{{ available }} available ({{ count }}/10)"
+msgstr "{{ available }} disponibles ({{ count }}/10)"
+
+msgid "Catalog Dashboard"
+msgstr "Panel de Catálogo"
+
+msgid "Manager privileges required to ask clarifications."
+msgstr "Se requieren privilegios de gestor para formular dudas de aclaración."
+
+msgid "Legal Notice and Terms of Use"
+msgstr "Aviso Legal y Condiciones de Uso"
+
+msgid ""
+"Official Punto Pack & Multi-Carrier Parcel Hub (SEUR, GLS, InPost, Amazon, "
+"Kanguro, DHL)"
+msgstr ""
+"Punto Pack Oficial y Paquetería Multimarca (SEUR, GLS, InPost, Amazon, "
+"Kanguro, DHL)"
+
+msgid "Parcel Services, Punto Pack and Second-Hand Store"
+msgstr "Servicios de Paquetería, Punto Pack y Tienda de Segunda Mano"
+
+msgid "Parcel shipping, pickups, and returns in Alfafar"
+msgstr "Envíos, recepción y devoluciones de paquetes en Alfafar"
+
+msgid "Privacy Policy (GDPR)"
+msgstr "Política de Privacidad (RGPD)"
+
+msgid "Secondhand and opportunity store with verified items"
+msgstr "Tienda de segunda mano y oportunidad con artículos revisados"
+
+msgid "About Us"
+msgstr "Sobre nosotros"
+
+msgid "Carriers"
+msgstr "Agencias"
+
+msgid "Contact"
+msgstr "Contacto"
+
+msgid "Go to Panel"
+msgstr "Ir al Panel"
+
+msgid "How to Buy & Reserve"
+msgstr "¿Cómo comprar y reservar?"
+
+msgid "Legal"
+msgstr "Legal"
+
+msgid "Main navigation"
+msgstr "Navegación principal"
+
+msgid "Message us on WhatsApp"
+msgstr "Escríbenos por WhatsApp"
+
+msgid "Official Punto Pack · Multi-Carrier Parcel Hub · Store in Alfafar"
+msgstr "Punto Pack Oficial · Paquetería Multimarca · Tienda en Alfafar"
+
+msgid "Parcel Pickup"
+msgstr "Recepción de paquetes"
+
+msgid "Parcel Services"
+msgstr "Paquetería"
+
+msgid "Questions?"
+msgstr "¿Dudas?"
+
+msgid "Rapidez y confianza a la vuelta de la esquina."
+msgstr "Rapidez y confianza a la vuelta de la esquina."
+
+msgid "Returns"
+msgstr "Devoluciones"
+
+msgid "Second-Hand Store"
+msgstr "Tienda de segunda mano"
+
+msgid "Services"
+msgstr "Servicios"
+
+msgid "Shipping"
+msgstr "Envíos"
+
+msgid "Speed and trust right around the corner."
+msgstr "Rapidez y confianza a la vuelta de la esquina."
+
+msgid "Store"
+msgstr "Tienda"
+
+msgid "Store opening hours and physical location in Alfafar"
+msgstr "Horarios y ubicación física de la tienda en Alfafar"
+
+msgid "Toggle high contrast mode"
+msgstr "Alternar modo de alto contraste"
+
+msgid "Toggle theme"
+msgstr "Alternar tema"
+
+msgid "100% Inspected"
+msgstr "100% Verificados"
+
+msgid "6+ carriers"
+msgstr "+6 agencias"
+
+msgid "Address"
+msgstr "Dirección"
+
+msgid "Alfafar Service Point"
+msgstr "Punto de Atención Alfafar"
+
+msgid ""
+"Centralize all your parcel operations in one single local hub close to home,"
+" with extended hours and direct service."
+msgstr ""
+"Centraliza todas tus operaciones de paquetería en un solo punto cerca de "
+"casa, con horario amplio y atención directa."
+
+msgid "Closed"
+msgstr "Cerrado"
+
+msgid "Done in minutes, no queues."
+msgstr "Gestiones en minutos, sin colas."
+
+msgid "Done, with real-time tracking"
+msgstr "Listo, con seguimiento"
+
+msgid "Digital label, QR code, or ready-to-ship parcel."
+msgstr "Etiqueta digital, QR o paquete listo."
+
+msgid "Explore the store"
+msgstr "Explorar la tienda"
+
+msgid "Free"
+msgstr "Gratis"
+
+msgid "Fresh Arrivals"
+msgstr "Recién llegados"
+
+msgid "Giving a new chapter to products with a story."
+msgstr "Damos una nueva oportunidad a productos con historia."
+
+msgid "Have a package or looking for a great find? Visit us in Alfafar."
+msgstr "¿Tienes un paquete o buscas una oportunidad? Te esperamos en Alfafar."
+
+msgid "How it works"
+msgstr "Cómo funciona"
+
+msgid "How to get here"
+msgstr "Cómo llegar"
+
+msgid "Immediate assistance"
+msgstr "Atención inmediata"
+
+msgid "Immediate counter scanning."
+msgstr "Escaneo inmediato en mostrador."
+
+msgid "In-store pickup of purchases"
+msgstr "Recogida de compras en tienda"
+
+msgid "In-store review"
+msgstr "Revisión en tienda"
+
+msgid "Inquire about shipping"
+msgstr "Consultar envío"
+
+msgid "Inquire on WhatsApp"
+msgstr "Consultar por WhatsApp"
+
+msgid "Inspected items"
+msgstr "Artículos revisados"
+
+msgid "Inspected items and safely guarded parcels."
+msgstr "Artículos revisados y paquetes bien custodiados."
+
+msgid "Instant receipt with live tracking code."
+msgstr "Recibo al instante con código de seguimiento."
+
+msgid "Latest arrivals in our store"
+msgstr "Lo último en nuestra tienda"
+
+msgid "Local commerce, direct and friendly service."
+msgstr "Comercio local, trato directo y personal."
+
+msgid "Location & Opening Hours"
+msgstr "Ubicación y horarios"
+
+msgid "Monday to Friday:"
+msgstr "Lunes a Viernes:"
+
+msgid "More than a store, your local community hub"
+msgstr "Más que una tienda, tu punto de barrio"
+
+msgid ""
+"Multi-brand parcel hub, official Punto Pack, and second-hand opportunity "
+"shop with verified items in Alfafar (Valencia)."
+msgstr ""
+"Punto de paquetería multimarca, Punto Pack oficial y tienda de segunda mano "
+"con artículos revisados en Alfafar (Valencia)."
+
+msgid ""
+"Multi-Brand Parcel Point, Official Punto Pack & Second-Hand Store in Alfafar"
+msgstr "Paquetería Multimarca, Punto Pack y Tienda de Segunda Mano en Alfafar"
+
+msgid "Multi-carrier parcel hub, Punto Pack, and physical store"
+msgstr "Paquetería multimarca, Punto Pack y tienda física"
+
+msgid "Neighborhood store, professional service"
+msgstr "Comercio de barrio, servicio profesional"
+
+msgid "New opportunities daily at our Alfafar store"
+msgstr "Nuevas oportunidades cada día en nuestra tienda de Alfafar"
+
+msgid ""
+"No appointments or complicated procedures. Drop by the store today or ask us"
+" on WhatsApp."
+msgstr ""
+"Sin citas previas ni trámites complejos. Pásate hoy mismo por la tienda o "
+"pregúntanos por WhatsApp."
+
+msgid "Official"
+msgstr "Oficial"
+
+msgid "Official Punto Pack"
+msgstr "Punto Pack oficial"
+
+msgid "Opening hours"
+msgstr "Horario de apertura"
+
+msgid "Opening Hours"
+msgstr "Horario"
+
+msgid "Parcel Carriers"
+msgstr "Agencias de paquetería"
+
+msgid "Parcel Pickup & Reception"
+msgstr "Recepción y recogida"
+
+msgid "Process your returns for Amazon and other online retailers in minutes."
+msgstr ""
+"Gestiona tus devoluciones de Amazon y otras tiendas online en minutos."
+
+msgid "Punto Pack"
+msgstr "Punto Pack"
+
+msgid "Rápido Pack parcel counter and second-hand store in Alfafar"
+msgstr "Mostrador de paquetería y tienda Rápido Pack en Alfafar"
+
+msgid "Rápido Pack team and storefront in Alfafar, Valencia"
+msgstr "Equipo y fachada de Rápido Pack en Alfafar, Valencia"
+
+msgid ""
+"Rápido Pack was born in Alfafar with a simple mission: to make sending, "
+"receiving, or shopping fast and trustworthy. 'Rápido' because we value your "
+"time. 'Pack' because every parcel, whether you send it or bring an item "
+"home, deserves genuine care."
+msgstr ""
+"Rápido Pack nace en Alfafar con una idea sencilla: que enviar, recibir o "
+"comprar sea rápido y de confianza. 'Rápido' porque valoramos tu tiempo. "
+"'Pack' porque cada paquete, ya sea el que envías o el artículo que te "
+"llevas, merece el mismo cuidado."
+
+msgid ""
+"Receive your orders here and collect them whenever it suits you, without "
+"waiting at home."
+msgstr ""
+"Recibe tus pedidos aquí y recógelos cuando te venga bien, sin esperar en "
+"casa."
+
+msgid "Return a parcel"
+msgstr "Devolver paquete"
+
+msgid "Saturdays:"
+msgstr "Sábados:"
+
+msgid "Second Life"
+msgstr "Segunda vida"
+
+msgid "Ship, receive, and discover in Alfafar"
+msgstr "Envía, recibe y descubre en Alfafar"
+
+msgid "Ship, receive, and discover. All in one place."
+msgstr "Envía, recibe y descubre. Todo en un mismo sitio."
+
+msgid "Speed"
+msgstr "Rapidez"
+
+msgid "Sundays & holidays: Closed"
+msgstr "Domingos y festivos: Cerrado"
+
+msgid "Sundays:"
+msgstr "Domingos:"
+
+msgid ""
+"The 4 newest items in our store. One-of-a-kind finds: once they are gone, "
+"they are gone."
+msgstr ""
+"Los 4 artículos más nuevos de nuestra tienda. Piezas únicas: cuando se van, "
+"no vuelven."
+
+msgid "Trust"
+msgstr "Confianza"
+
+msgid "View all store items"
+msgstr "Ver toda la tienda"
+
+msgid "View online store"
+msgstr "Ver la tienda online"
+
+msgid "View parcel services"
+msgstr "Ver servicios de paquetería"
+
+msgid "View pickup hours"
+msgstr "Ver horarios de recogida"
+
+msgid "Visit us in Alfafar"
+msgstr "Visítanos en Alfafar"
+
+msgid "Warmth & Proximity"
+msgstr "Cercanía"
+
+msgid ""
+"We are a multi-brand parcel point (SEUR, GLS, InPost, Amazon, Kanguro, DHL),"
+" official Punto Pack, and second-hand shop with verified items in Alfafar, "
+"Valencia."
+msgstr ""
+"Somos punto de paquetería multimarca (SEUR, GLS, InPost, Amazon, Kanguro, "
+"DHL), Punto Pack oficial y tienda de segunda mano con artículos revisados en"
+" Alfafar, Valencia."
+
+msgid ""
+"We are a multi-brand parcel service point and Punto Pack, plus a curated "
+"second-hand store with inspected items. Fast, local, and hassle-free."
+msgstr ""
+"Somos punto de paquetería multimarca y Punto Pack, y además tenemos una "
+"tienda de segunda mano con artículos revisados. Rápido, cerca y sin "
+"complicaciones."
+
+msgid ""
+"We are an official Punto Pack: drop off or pick up your shipments quickly "
+"and securely."
+msgstr ""
+"Somos Punto Pack oficial: deja o recoge tus envíos de forma rápida y segura."
+
+msgid ""
+"We are constantly preparing inspected items. Explore the full catalog or "
+"contact us directly on WhatsApp."
+msgstr ""
+"Estamos preparando nuevos artículos revisados. Explora el catálogo completo "
+"o consúltanos directamente por WhatsApp."
+
+msgid ""
+"We are located in the heart of Alfafar, very close to the train station with"
+" convenient nearby parking."
+msgstr ""
+"Estamos en el corazón de Alfafar, muy cerca de la estación de tren y con "
+"fácil aparcamiento en la zona."
+
+msgid "We handle it instantly"
+msgstr "Lo gestionamos al momento"
+
+msgid "We manage your shipments, pickups, and returns with leading carriers"
+msgstr ""
+"Gestionamos tus envíos, recogidas y devoluciones de las principales agencias"
+
+msgid "Your parcels in good hands"
+msgstr "Tu paquete, en buenas manos"
+
+msgid "Your shipments and pickups in 3 simple steps:"
+msgstr "Tus envíos y recogidas en 3 pasos:"
+
+msgid "Your trusted local hub in Alfafar"
+msgstr "Tu punto de confianza en Alfafar"
+
+msgid "🚆 Very close to Alfafar-Benetússer station · Easy parking"
+msgstr "🚆 Muy cerca de la estación de Alfafar-Benetússer · Fácil aparcamiento"
+
+msgid ""
+"Bring your package and we will ship it with whichever carrier you need."
+msgstr "Trae tu paquete y lo enviamos con la agencia que necesites."
+
+msgid "Bring your package or code"
+msgstr "Trae tu paquete o código"
+
+msgid "24h no-commitment hold:"
+msgstr "Reserva 24h sin compromiso:"
+
+msgid "Accepted in-store payment methods:"
+msgstr "Métodos de pago aceptados en tienda:"
+
+msgid "Back to store"
+msgstr "Volver a la tienda"
+
+msgid "Cash, Bizum, or Debit/Credit Card at the counter."
+msgstr "Efectivo, Bizum o Tarjeta de débito/crédito en mostrador."
+
+msgid ""
+"Contact us via WhatsApp quoting the item reference (e.g. Ref. #1042) and we "
+"will hold it for 24 hours without upfront payment."
+msgstr ""
+"Escríbenos por WhatsApp indicando la referencia del artículo (ej. Ref. "
+"#1042) y te lo reservamos durante 24 horas sin pago por adelantado."
+
+msgid ""
+"Every item is photographed in our Alfafar staging studio and inspected "
+"before listing. Need an extra photo or video? Message us on WhatsApp and we "
+"will send it from the shop floor."
+msgstr ""
+"Cada artículo se fotografía en nuestro estudio de staging en Alfafar y se "
+"revisa antes de publicarse. ¿Necesitas una foto o vídeo adicional? "
+"Escríbenos por WhatsApp y te lo mandamos al momento desde la tienda."
+
+msgid "Explore the store catalog"
+msgstr "Explorar el catálogo de la tienda"
+
+msgid "If you live outside Valencia or prefer home delivery:"
+msgstr "Si vives fuera de Valencia o prefieres entrega a domicilio:"
+
+msgid "Inspect in person:"
+msgstr "Revisa en persona:"
+
+msgid "Location:"
+msgstr "Ubicación:"
+
+msgid ""
+"Professional shock-resistant packaging prepared directly by Rápido Pack."
+msgstr ""
+"Embalaje profesional y resistente a impactos preparado directamente por "
+"Rápido Pack."
+
+msgid ""
+"Shopping guide, 24-hour WhatsApp reservations, free store pickup in Alfafar,"
+" and protected delivery across Spain."
+msgstr ""
+"Guía de compra, reservas por WhatsApp durante 24h, recogida gratuita en "
+"Alfafar y envíos protegidos a toda España."
+
+msgid "View location and hours in Alfafar"
+msgstr "Ver ubicación y horarios en Alfafar"
+
+msgid ""
+"Visit our store in Alfafar, inspect the item closely, and test it before "
+"deciding."
+msgstr ""
+"Pásate por nuestra tienda en Alfafar, examina el artículo en detalle y "
+"pruébalo antes de decidirte."
+
+msgid ""
+"We ship via our official listings on Wallapop Envíos, Vinted, and "
+"Milanuncios, or direct shipment curated from our logistics center."
+msgstr ""
+"Enviamos a través de nuestros perfiles oficiales en Wallapop Envíos, Vinted "
+"y Milanuncios, o envío directo gestionado desde nuestro centro logístico."
+
+msgid ""
+"Your payment stays protected in escrow until you receive and verify the "
+"package."
+msgstr ""
+"Tu pago queda protegido en depósito de garantía hasta que recibes y "
+"compruebas el paquete."
+
+msgid "Back to catalog"
+msgstr "Volver al catálogo"
+
+msgid ""
+"Browsing the public catalog of Rápido Pack does not require user "
+"registration or the submission of personal forms on this website. When you "
+"contact us via WhatsApp, your inquiry is processed solely to answer your "
+"product availability or reservation request."
+msgstr ""
+"La navegación por el catálogo público de Rápido Pack no requiere registro de"
+" usuario ni el envío de formularios personales en esta web. Al contactar por"
+" WhatsApp, tu consulta se procesa únicamente para responder a tu solicitud "
+"de disponibilidad o reserva de productos."
+
+msgid "Data Protection (GDPR / LOPDGDD)"
+msgstr "Protección de Datos (RGPD / LOPDGDD)"
+
+msgid ""
+"In compliance with Spanish Law 34/2002 on Information Society Services and "
+"Electronic Commerce (LSSI-CE), this website is operated by:"
+msgstr ""
+"En cumplimiento de la Ley 34/2002 de Servicios de la Sociedad de la "
+"Información y de Comercio Electrónico (LSSI-CE), este sitio web es operado "
+"por:"
+
+msgid "Opening hours:"
+msgstr "Horario de apertura:"
+
+msgid "Purpose of the Catalog"
+msgstr "Finalidad del Catálogo"
+
+msgid "Store Identification"
+msgstr "Identificación de la Tienda"
+
+msgid "Technical Cookies Only"
+msgstr "Solo Cookies Técnicas"
+
+msgid ""
+"This public catalog displays second-hand, vintage, and opportunity items "
+"available at our physical store in Alfafar (Valencia) and across our "
+"official marketplace profiles (Wallapop, Vinted, Milanuncios). Reservations "
+"and inquiries are processed directly via WhatsApp or in store."
+msgstr ""
+"Este catálogo público muestra artículos de segunda mano, vintage y "
+"oportunidad disponibles en nuestra tienda física de Alfafar (Valencia) y en "
+"nuestros perfiles oficiales de marketplace (Wallapop, Vinted, Milanuncios). "
+"Las reservas y consultas se gestionan directamente por WhatsApp o en tienda."
+
+msgid ""
+"This storefront uses strictly necessary technical cookies (such as language "
+"preference ES/EN and CSRF security tokens) required for the basic operation "
+"of the website. No third-party advertising or behavioral tracking cookies "
+"are installed."
+msgstr ""
+"Esta tienda utiliza únicamente cookies técnicas estrictamente necesarias "
+"(como la preferencia de idioma ES/EN y tokens de seguridad CSRF) requeridas "
+"para el funcionamiento básico del sitio web. No se instalan cookies de "
+"publicidad de terceros ni de seguimiento comportamental."
+
+msgid "User Rights"
+msgstr "Derechos de las Personas Usuarias"
+
+msgid ""
+"You may exercise your rights of access, rectification, deletion, and "
+"opposition in person at our store in"
+msgstr ""
+"Puedes ejercer tus derechos de acceso, rectificación, supresión y oposición "
+"en persona en nuestra tienda de"
+
+msgid "or through our direct customer service channel."
+msgstr "o a través de nuestro canal directo de atención."
+
+msgid "physical establishment located at"
+msgstr "establecimiento físico ubicado en"
+
+msgid "Close dialog"
+msgstr "Cerrar ventana modal"
+
+msgid "Open full guide"
+msgstr "Abrir guía completa"
+
+msgid "Questions about an item or shipping? We reply fast during store hours."
+msgstr ""
+"¿Preguntas sobre un artículo o envío? Respondemos rápido en horario "
+"comercial."
+
+msgid "Automatic message with {{ ref }} ready to send"
+msgstr "Mensaje automático con {{ ref }} listo para enviar"
+
+msgid ""
+"Managed with buyer protection and tracking via Wallapop and Vinted, or "
+"direct contact."
+msgstr ""
+"Gestionado con protección al comprador y seguimiento vía Wallapop y Vinted, "
+"o contacto directo."
+
+msgid "Close zoom"
+msgstr "Cerrar ampliación"
+
+msgid ""
+"Every photo corresponds to the exact unit available in our Alfafar store."
+msgstr ""
+"Cada fotografía corresponde exactamente a la unidad disponible en nuestra "
+"tienda de Alfafar."
+
+msgid ""
+"Reserve via WhatsApp and inspect it in person in Alfafar before paying."
+msgstr "Reserva por WhatsApp y revísalo en persona en Alfafar antes de pagar."
+
+msgid "View photo"
+msgstr "Ver fotografía"
+
+msgid "Authorized Punto Pack"
+msgstr "Punto Pack homologado"
+
+msgid "Page {{ current }} of {{ total }}"
+msgstr "Página {{ current }} de {{ total }}"
+
+msgid "Quick navigation"
+msgstr "Navegación rápida"
+
+msgid "Search"
+msgstr "Buscar"
+
+msgid "WhatsApp →"
+msgstr "WhatsApp →"

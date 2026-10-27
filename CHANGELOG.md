@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-10-27
+
+### Added
+- **Comprehensive Bilingual Localization Audit & Catalog Completeness (Phase 38)**:
+  - **Template & Code English `msgid` Harmonization**: Standardized all source `msgid`s across public storefront templates ([`storefront/templates/storefront/home.html`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/templates/storefront/home.html), [`base_public.html`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/templates/storefront/base_public.html), [`how_to_buy.html`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/templates/storefront/how_to_buy.html)), staging templates ([`intake.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/intake.html), [`product_detail.html`](file:///C:/Users/Jose/antigravity/epic-tesla/inventory/templates/inventory/product_detail.html)), and views ([`storefront/views.py`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/views.py)) to standard English strings. This resolves the root cause where visitors selecting English were served raw Spanish text due to Spanish `msgid`s without an English catalog.
+  - **Complete Spanish Translation Catalog (`locale/es/LC_MESSAGES/django.po`)**: Audited all 859 unique translatable strings in the codebase and added 252 missing entries with verified Castilian Spanish phrasing covering public landing page sections, carrier descriptions, business hours, buying guide, legal disclosures, model field labels/help texts (`Category`, `StorefrontConfiguration`), forms, and image processing error messages.
+  - **Complete English Translation Catalog (`locale/en/LC_MESSAGES/django.po`)**: Authored and compiled a dedicated 936-entry English translation catalog (`locale/en/LC_MESSAGES/django.po` and `.mo`), providing formal bilingual coverage for all project text.
+  - **Zero-Missing Translation Quality Gate**: Verified 0 missing translations across the codebase via automated scanner and compiled both catalogs cleanly using `manage.py compile_locales`.
+  - **Bilingual Automated Test Suite & Browser Verification**:
+    - Added comprehensive bilingual tests in [`tests/test_i18n.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_i18n.py) verifying corporate landing page (`/`), how-to-buy (`/como-comprar/`), legal pages (`/aviso-legal/`, `/privacidad/`, `/cookies/`), and `compile_locales` management command in both `es` and `en`.
+    - Added Playwright real Chrome browser test `test_browser_bilingual_language_switching_in_chrome` in [`tests/test_browser_daily_workflow.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_browser_daily_workflow.py) verifying live UI language switcher interaction, DOM text updates, and visual proof screenshots (`daily_bilingual_01_es.png` through `04_htb_es.png`).
+
+
 ### Fixed
 - **CI Container Smoke Test Adaptation (Gate 6)**: Resolved smoke test expectation mismatch caused by the Phase 27 URL route restructuring (`/` -> corporate landing page, staff hub -> `/panel/`). Updated Gate 6 in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml) to independently smoke-test and verify:
   1. The public corporate landing page (`/`) and public catalog (`/tienda/`) for HTTP 200 and storefront identity content (`Rápido Pack`, paquetería, segunda mano).
@@ -15,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Translation Catalog Quality Gate (Gate 2b)**: Integrated `python manage.py compile_locales` into the `quality-gates` job in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml), enforcing `AGENTS.md` Rule 5 zero-failure translation compilation in CI before unit tests run.
-- **Semantic Version Resolution & Dockerfile Synchronization**: Added automated `app_version` resolution step in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml) to extract semantic version from `config/settings.py` (or release tag) during image builds instead of propagating branch names (`master`). Synchronized default `ARG APP_VERSION="2.1.0"` in [`Dockerfile`](file:///C:/Users/Jose/antigravity/epic-tesla/Dockerfile).
+- **Semantic Version Resolution & Dockerfile Synchronization**: Added automated `app_version` resolution step in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml) to extract semantic version from `config/settings.py` (or release tag) during image builds instead of propagating branch names (`master`). Synchronized default `ARG APP_VERSION="2.1.1"` in [`Dockerfile`](file:///C:/Users/Jose/antigravity/epic-tesla/Dockerfile).
 - **Release Tag Automation & GHCR Multi-Arch Publishing**: Expanded workflow triggers in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml) to listen on `tags: [ 'v*' ]`, enabling automated GHCR multi-arch container image builds and semantic tag publishing whenever a release tag is pushed.
 - **Least-Privilege Security Hardening**: Added explicit `permissions: contents: read` to `quality-gates` and `docker-build-and-smoke-test` jobs in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml).
 

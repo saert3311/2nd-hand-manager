@@ -2,7 +2,7 @@
 {% load i18n %}
 
 {% block title %}{{ page_title }} · {{ storefront.store_name }}{% endblock %}
-{% block meta_description %}{% trans "Guía de compra, reservas de 24 horas por WhatsApp, recogida gratuita en Alfafar y envíos protegidos en toda España." %}{% endblock %}
+{% block meta_description %}{% trans "Shopping guide, 24-hour WhatsApp reservations, free store pickup in Alfafar, and protected delivery across Spain." %}{% endblock %}
 
 {% block content %}
 <section class="w-full py-space-xl">
@@ -12,13 +12,13 @@
         <div>
           <a href="{% url 'storefront:catalog' %}" class="inline-flex items-center gap-1 text-primary font-label-md text-label-md hover:underline mb-space-xs">
             <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-            <span>{% trans "Volver a la tienda" %}</span>
+            <span>{% trans "Back to store" %}</span>
           </a>
           <h1 class="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl text-on-surface font-bold">
-            {% trans "¿Cómo comprar en Rápido Pack Alfafar?" %}
+            {% trans "How to buy at Rápido Pack Alfafar?" %}
           </h1>
           <p class="font-body-md text-body-md text-on-surface-variant mt-1">
-            {% trans "Reserva por WhatsApp, recogida gratuita en Alfafar y envíos protegidos a toda España" %}
+            {% trans "In-store pickup guide, 24h reservation & protected shipping across Spain" %}
           </p>
         </div>
         <a href="{% url 'storefront:go_whatsapp' %}"
@@ -26,7 +26,7 @@
            rel="noopener noreferrer"
            class="inline-flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white font-label-md text-label-md font-bold px-space-md py-2.5 rounded-xl shadow-sm shrink-0">
           <span class="material-symbols-outlined text-[18px]">chat</span>
-          <span>{% trans "Consultar por WhatsApp" %}</span>
+          <span>{% trans "Inquire on WhatsApp" %}</span>
         </a>
       </div>
 
@@ -35,27 +35,27 @@
         <div class="flex flex-wrap items-center justify-between gap-2">
           <span class="inline-flex items-center gap-1.5 font-label-md text-label-md text-primary font-bold">
             <span class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center text-[12px]">A</span>
-            <span>{% trans "Opción A: Recogida gratuita en nuestra tienda física (Alfafar)" %}</span>
+            <span>{% trans "Option A: Free pickup at our physical store (Alfafar)" %}</span>
           </span>
           <span class="font-label-sm text-label-sm text-[#16a34a] font-semibold bg-[#dcfce7] px-space-sm py-0.5 rounded-full">
-            {% trans "Recogida GRATIS · Sin comisiones" %}
+            {% trans "Free shipping / No fees" %}
           </span>
         </div>
         <p class="font-body-md text-body-md text-on-surface-variant">
-          {% trans "Dirección:" %} <strong>{{ storefront.address }}</strong> ({{ storefront.opening_hours }}).
+          {% trans "Location:" %} <strong>{{ storefront.address }}</strong> ({{ storefront.opening_hours }}).
         </p>
         <ul class="font-body-sm text-body-sm text-on-surface-variant space-y-1.5 list-disc list-inside">
           <li>
-            <strong>{% trans "Reserva gratuita durante 24 horas:" %}</strong>
-            {% trans "Escríbenos por WhatsApp indicando la referencia del artículo (ej. Ref. #1042) y te lo guardamos durante 24 horas sin compromiso." %}
+            <strong>{% trans "24h no-commitment hold:" %}</strong>
+            {% trans "Contact us via WhatsApp quoting the item reference (e.g. Ref. #1042) and we will hold it for 24 hours without upfront payment." %}
           </li>
           <li>
-            <strong>{% trans "Revisa y prueba en persona:" %}</strong>
-            {% trans "Ven a nuestra tienda en Alfafar, comprueba el estado del artículo en persona antes de decidir." %}
+            <strong>{% trans "Inspect in person:" %}</strong>
+            {% trans "Visit our store in Alfafar, inspect the item closely, and test it before deciding." %}
           </li>
           <li>
-            <strong>{% trans "Formas de pago en tienda:" %}</strong>
-            {% trans "Efectivo, Bizum o Tarjeta en mostrador." %}
+            <strong>{% trans "Accepted in-store payment methods:" %}</strong>
+            {% trans "Cash, Bizum, or Debit/Credit Card at the counter." %}
           </li>
         </ul>
       </div>
@@ -65,24 +65,24 @@
         <div class="flex flex-wrap items-center justify-between gap-2">
           <span class="inline-flex items-center gap-1.5 font-label-md text-label-md text-on-surface font-bold">
             <span class="w-6 h-6 rounded-full bg-on-surface text-surface-container-lowest flex items-center justify-center text-[12px]">B</span>
-            <span>{% trans "Opción B: Envíos a domicilio en toda España" %}</span>
+            <span>{% trans "Option B: Protected shipping across Spain" %}</span>
           </span>
           <span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-space-sm py-0.5 rounded-full">
-            {% trans "Envío con protección al comprador" %}
+            {% trans "Buyer protection" %}
           </span>
         </div>
         <p class="font-body-md text-body-md text-on-surface-variant">
-          {% trans "Si vives fuera de Valencia o prefieres recibirlo en casa:" %}
+          {% trans "If you live outside Valencia or prefer home delivery:" %}
         </p>
         <ul class="font-body-sm text-body-sm text-on-surface-variant space-y-1.5 list-disc list-inside">
           <li>
-            {% trans "Gestionamos los envíos con seguimiento y seguro a través de nuestros perfiles oficiales en Wallapop Envíos y Vinted, o mediante envío directo desde nuestro punto logístico." %}
+            {% trans "We ship via our official listings on Wallapop Envíos, Vinted, and Milanuncios, or direct shipment curated from our logistics center." %}
           </li>
           <li>
-            {% trans "Tu dinero permanece protegido hasta que recibes y compruebas el paquete." %}
+            {% trans "Your payment stays protected in escrow until you receive and verify the package." %}
           </li>
           <li>
-            {% trans "Embalaje profesional preparado directamente en nuestro centro de paquetería Rápido Pack." %}
+            {% trans "Professional shock-resistant packaging prepared directly by Rápido Pack." %}
           </li>
         </ul>
       </div>
@@ -92,14 +92,14 @@
         <div class="flex flex-wrap items-center justify-between gap-2">
           <span class="inline-flex items-center gap-1.5 font-label-md text-label-md text-secondary font-bold">
             <span class="w-6 h-6 rounded-full bg-secondary text-on-secondary flex items-center justify-center text-[12px]">C</span>
-            <span>{% trans "Opción C: Artículos 100% revisados y fotos reales" %}</span>
+            <span>{% trans "Option C: Verified condition & real photos" %}</span>
           </span>
           <span class="font-label-sm text-label-sm text-secondary bg-secondary-fixed px-space-sm py-0.5 rounded-full">
-            {% trans "100% Fotos Reales" %}
+            {% trans "100% Real Photos" %}
           </span>
         </div>
         <p class="font-body-sm text-body-sm text-on-surface-variant">
-          {% trans "Cada artículo es fotografiado y revisado en nuestra tienda de Alfafar antes de publicarse. ¿Necesitas una foto extra o medidas detalladas? Escríbenos por WhatsApp y te las enviamos al momento." %}
+          {% trans "Every item is photographed in our Alfafar staging studio and inspected before listing. Need an extra photo or video? Message us on WhatsApp and we will send it from the shop floor." %}
         </p>
       </div>
 
@@ -107,12 +107,12 @@
         <a href="{% url 'storefront:catalog' %}"
            class="inline-flex items-center gap-1.5 bg-primary text-on-primary font-label-md text-label-md font-bold px-space-md py-2.5 rounded-xl hover:bg-primary-container transition-colors">
           <span class="material-symbols-outlined text-[18px]">storefront</span>
-          <span>{% trans "Explorar el catálogo de la tienda" %}</span>
+          <span>{% trans "Explore the store catalog" %}</span>
         </a>
         <a href="{% url 'storefront:home' %}#contacto"
            class="inline-flex items-center gap-1 text-primary font-label-md text-label-md font-semibold hover:underline">
           <span class="material-symbols-outlined text-[18px]">location_on</span>
-          <span>{% trans "Ver ubicación y horarios en Alfafar" %}</span>
+          <span>{% trans "View location and hours in Alfafar" %}</span>
         </a>
       </div>
     </div>
