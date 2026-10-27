@@ -1,0 +1,300 @@
+{% extends "storefront/base_public.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="flex flex-col w-full">
+
+  <!-- 1. Compact Hero & Trust Strip (Above the fold) -->
+  <section class="relative w-full bg-gradient-to-b from-surface-container-low via-surface to-surface overflow-hidden">
+    <div class="absolute inset-0 opacity-[0.035] pointer-events-none bg-[radial-gradient(#0f766e_1px,transparent_1px)] [background-size:16px_16px]"></div>
+    <div class="relative max-w-7xl mx-auto px-margin lg:px-margin-desktop pt-space-lg pb-space-lg md:pt-space-xl md:pb-space-lg">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-lg">
+        <!-- Text & Value Proposition -->
+        <div class="max-w-3xl space-y-space-sm">
+          <div class="inline-flex items-center gap-space-xs bg-surface-container-lowest px-space-sm py-1 rounded-full shadow-sm text-primary font-label-sm text-label-sm border border-outline-variant/25">
+            <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+            <span>{% trans "Unique opportunities inspected daily in-store and online" %}</span>
+          </div>
+          <h1 class="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-on-surface tracking-tight leading-tight">
+            {{ storefront.hero_title }}
+          </h1>
+          <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+            {{ storefront.hero_subtitle }}
+          </p>
+        </div>
+
+        <!-- Metric Pill Summary Cards -->
+        <div class="flex sm:flex-col justify-start sm:justify-end gap-space-sm shrink-0">
+          <div class="bg-surface-container-lowest shadow-sm rounded-xl p-space-md flex items-center gap-space-md border border-outline-variant/25">
+            <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+              <span class="material-symbols-outlined text-[28px]">verified</span>
+            </div>
+            <div>
+              <div class="font-headline-md text-headline-md text-on-surface font-bold leading-none">100%</div>
+              <div class="font-label-sm text-label-sm text-on-surface-variant mt-1">{% trans "Technically audited" %}</div>
+            </div>
+          </div>
+          <div class="bg-surface-container-lowest shadow-sm rounded-xl p-space-md flex items-center gap-space-md border border-outline-variant/25">
+            <div class="w-12 h-12 rounded-lg bg-secondary-fixed/50 flex items-center justify-center text-secondary">
+              <span class="material-symbols-outlined text-[28px]">storefront</span>
+            </div>
+            <div>
+              <div class="font-headline-md text-headline-md text-on-surface font-bold leading-none">Alfafar</div>
+              <div class="font-label-sm text-label-sm text-on-surface-variant mt-1">{% trans "Free in-store pickup" %}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trust Badges Strip (4 Badges) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-sm mt-space-lg pt-space-sm">
+        <div class="bg-surface-container-lowest shadow-sm rounded-lg p-space-sm flex items-center gap-space-xs border border-outline-variant/20">
+          <span class="material-symbols-outlined text-primary text-[22px] shrink-0" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+          <span class="font-label-md text-label-md text-on-surface font-semibold">{% trans "Inspected & verified items" %}</span>
+        </div>
+        <div class="bg-surface-container-lowest shadow-sm rounded-lg p-space-sm flex items-center gap-space-xs border border-outline-variant/20">
+          <span class="material-symbols-outlined text-primary text-[22px] shrink-0" style="font-variation-settings: 'FILL' 1;">photo_camera</span>
+          <span class="font-label-md text-label-md text-on-surface font-semibold">{% trans "100% real product photos" %}</span>
+        </div>
+        <div class="bg-surface-container-lowest shadow-sm rounded-lg p-space-sm flex items-center gap-space-xs border border-outline-variant/20">
+          <span class="material-symbols-outlined text-secondary text-[22px] shrink-0" style="font-variation-settings: 'FILL' 1;">store</span>
+          <span class="font-label-md text-label-md text-on-surface font-semibold">{% trans "FREE store pickup (Alfafar)" %}</span>
+        </div>
+        <div class="bg-surface-container-lowest shadow-sm rounded-lg p-space-sm flex items-center gap-space-xs border border-outline-variant/20">
+          <span class="material-symbols-outlined text-[#25D366] text-[22px] shrink-0">chat</span>
+          <span class="font-label-md text-label-md text-on-surface font-semibold">{% trans "Direct contact & WhatsApp hold" %}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Horizontal Scrollable Category Rail (12 Official Categories + All) -->
+  <section class="w-full bg-surface-container-lowest shadow-sm border-y border-outline-variant/25 sticky top-[108px] z-30">
+    <div class="max-w-7xl mx-auto px-margin lg:px-margin-desktop py-space-xs">
+      <div class="flex items-center gap-space-xs overflow-x-auto no-scrollbar py-1" id="categoryRail">
+        <a href="{% url 'storefront:catalog' %}{% if search_query %}?q={{ search_query|urlencode }}{% endif %}"
+           class="inline-flex items-center gap-1.5 px-space-md py-space-xs rounded-full font-label-md text-label-md whitespace-nowrap transition-all {% if not active_category %}bg-primary text-on-primary shadow-sm{% else %}bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface{% endif %}">
+          <span class="material-symbols-outlined text-[16px]">grid_view</span>
+          <span>{% trans "All Categories" %}</span>
+        </a>
+        {% for cat in categories %}
+        <a href="{% url 'storefront:category' cat.slug %}{% if active_price or active_condition or search_query or active_sort != 'newest' %}?{% if active_price %}price={{ active_price }}&{% endif %}{% if active_condition %}condition={{ active_condition }}&{% endif %}{% if search_query %}q={{ search_query|urlencode }}&{% endif %}{% if active_sort %}sort={{ active_sort }}{% endif %}{% endif %}"
+           class="inline-flex items-center gap-1.5 px-space-md py-space-xs rounded-full font-label-md text-label-md whitespace-nowrap transition-all {% if active_category == cat.slug %}bg-primary text-on-primary shadow-sm{% else %}bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface{% endif %}">
+          <span class="material-symbols-outlined text-[16px]">{{ cat.icon }}</span>
+          <span>{{ cat.get_localized_name }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Filter & Sorting Toolbar -->
+  <section class="w-full bg-surface pt-space-md pb-space-sm">
+    <div class="max-w-7xl mx-auto px-margin lg:px-margin-desktop">
+      <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm border border-outline-variant/25 flex flex-col xl:flex-row xl:items-center justify-between gap-space-md">
+        <!-- Left: Filters (Price + Condition) -->
+        <div class="flex flex-wrap items-center gap-space-md">
+          <!-- Price Range Filter -->
+          <div class="flex flex-wrap items-center gap-space-xs">
+            <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mr-1">{% trans "Price:" %}</span>
+            <a href="{% url 'storefront:catalog' %}?{% if active_category %}category={{ active_category }}&{% endif %}{% if active_condition %}condition={{ active_condition }}&{% endif %}{% if search_query %}q={{ search_query|urlencode }}&{% endif %}sort={{ active_sort }}"
+               class="px-space-sm py-1 rounded-full font-label-sm text-label-sm transition-colors {% if not active_price %}bg-primary text-on-primary shadow-sm{% else %}bg-surface-container-low text-on-surface-variant hover:bg-surface-container{% endif %}">
+              {% trans "All" %}
+            </a>
+            <a href="{% url 'storefront:catalog' %}?{% if active_category %}category={{ active_category }}&{% endif %}price=under_20{% if active_condition %}&condition={{ active_condition }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}&sort={{ active_sort }}"
+               class="px-space-sm py-1 rounded-full font-label-sm text-label-sm transition-colors {% if active_price == 'under_20' %}bg-primary text-on-primary shadow-sm{% else %}bg-surface-container-low text-on-surface-variant hover:bg-surface-container{% endif %}">
+              {% trans "Under 20 €" %}
+            </a>
+            <a href="{% url 'storefront:catalog' %}?{% if active_category %}category={{ active_category }}&{% endif %}price=20_50{% if active_condition %}&condition={{ active_condition }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}&sort={{ active_sort }}"
+               class="px-space-sm py-1 rounded-full font-label-sm text-label-sm transition-colors {% if active_price == '20_50' %}bg-primary text-on-primary shadow-sm{% else %}bg-surface-container-low text-on-surface-variant hover:bg-surface-container{% endif %}">
+              20 € – 50 €
+            </a>
+            <a href="{% url 'storefront:catalog' %}?{% if active_category %}category={{ active_category }}&{% endif %}price=over_50{% if active_condition %}&condition={{ active_condition }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}&sort={{ active_sort }}"
+               class="px-space-sm py-1 rounded-full font-label-sm text-label-sm transition-colors {% if active_price == 'over_50' %}bg-primary text-on-primary shadow-sm{% else %}bg-surface-container-low text-on-surface-variant hover:bg-surface-container{% endif %}">
+              {% trans "Over 50 €" %}
+            </a>
+          </div>
+
+          <div class="hidden md:block w-px h-6 bg-outline-variant/40"></div>
+
+          <!-- Condition Filter Pills (4 Official States) -->
+          <div class="flex flex-wrap items-center gap-space-xs">
+            <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mr-1">{% trans "Condition:" %}</span>
+            <a href="{% url 'storefront:catalog' %}?{% if active_category %}category={{ active_category }}&{% endif %}{% if active_price %}price={{ active_price }}&{% endif %}{% if search_query %}q={{ search_query|urlencode }}&{% endif %}sort={{ active_sort }}"
+               class="px-space-sm py-1 rounded-full font-label-sm text-label-sm transition-colors {% if not active_condition %}bg-primary text-on-primary shadow-sm{% else %}bg-surface-container-low text-on-surface-variant hover:bg-surface-container{% endif %}">
+              {% trans "All" %}
+            </a>
+            {% for cond_val, cond_label in condition_choices %}
+            <a href="{% url 'storefront:catalog' %}?{% if active_category %}category={{ active_category }}&{% endif %}{% if active_price %}price={{ active_price }}&{% endif %}condition={{ cond_val }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}&sort={{ active_sort }}"
+               class="px-space-sm py-1 rounded-full font-label-sm text-label-sm transition-colors {% if active_condition == cond_val %}bg-primary text-on-primary shadow-sm font-semibold{% else %}bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface{% endif %}">
+              {{ cond_label }}
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Right: Counter + Sort Dropdown -->
+        <div class="flex items-center justify-between sm:justify-end gap-space-md pt-space-xs xl:pt-0">
+          <span class="font-label-md text-label-md text-on-surface-variant font-medium">
+            <strong class="text-on-surface font-bold">{{ total_count }}</strong> {% trans "items available" %}
+          </span>
+          <form method="get" action="{% url 'storefront:catalog' %}" class="flex items-center gap-space-xs">
+            {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
+            {% if active_price %}<input type="hidden" name="price" value="{{ active_price }}">{% endif %}
+            {% if active_condition %}<input type="hidden" name="condition" value="{{ active_condition }}">{% endif %}
+            {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
+            <label class="font-label-sm text-label-sm text-on-surface-variant" for="sortDropdown">{% trans "Sort:" %}</label>
+            <div class="relative inline-block">
+              <select id="sortDropdown"
+                      name="sort"
+                      onchange="this.form.submit()"
+                      class="appearance-none bg-surface-container-low text-on-surface font-label-md text-label-md rounded-lg pl-space-sm pr-8 py-1.5 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer border border-outline-variant/30">
+                <option value="newest" {% if active_sort == 'newest' %}selected{% endif %}>{% trans "Newest first" %}</option>
+                <option value="featured" {% if active_sort == 'featured' %}selected{% endif %}>{% trans "Featured ★" %}</option>
+                <option value="price_asc" {% if active_sort == 'price_asc' %}selected{% endif %}>{% trans "Price: low to high" %}</option>
+                <option value="price_desc" {% if active_sort == 'price_desc' %}selected{% endif %}>{% trans "Price: high to low" %}</option>
+              </select>
+              <span class="material-symbols-outlined pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[18px] text-outline">expand_more</span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Marketplace Product Grid (4 columns desktop, 2 columns tablet, 1 column mobile) -->
+  <section class="w-full bg-surface py-space-md">
+    <div class="max-w-7xl mx-auto px-margin lg:px-margin-desktop">
+      {% if products %}
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+        {% for product in products %}
+          {% include "storefront/partials/_product_card.html" with product=product is_lcp=forloop.first %}
+        {% endfor %}
+      </div>
+      {% else %}
+      <!-- Empty State -->
+      <div class="bg-surface-container-lowest rounded-2xl p-space-xl text-center shadow-sm border border-outline-variant/25 space-y-space-sm">
+        <div class="w-16 h-16 mx-auto rounded-full bg-surface-container flex items-center justify-center text-primary">
+          <span class="material-symbols-outlined text-3xl">inventory_2</span>
+        </div>
+        <h2 class="font-headline-md text-headline-md text-on-surface font-bold">
+          {% trans "No items match your current filters" %}
+        </h2>
+        <p class="font-body-md text-body-md text-on-surface-variant max-w-md mx-auto">
+          {% trans "We update our catalog daily with new arrivals at our Alfafar store. Try clearing the filters or ask us directly via WhatsApp." %}
+        </p>
+        <div class="pt-space-xs flex flex-wrap items-center justify-center gap-space-sm">
+          <a href="{% url 'storefront:catalog' %}"
+             class="px-space-md py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container transition-colors">
+            {% trans "View all items" %}
+          </a>
+          <a href="{{ storefront_whatsapp_url }}"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="px-space-md py-2 rounded-lg bg-[#25D366] text-white font-label-md text-label-md hover:bg-[#20ba5a] transition-colors flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">chat</span>
+            <span>{% trans "Ask on WhatsApp" %}</span>
+          </a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- 5. Clean Pagination Controls -->
+  {% if page_obj.paginator.num_pages > 1 %}
+  <section class="w-full bg-surface py-space-lg">
+    <div class="max-w-7xl mx-auto px-margin lg:px-margin-desktop">
+      <div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm border border-outline-variant/25 flex flex-col sm:flex-row items-center justify-between gap-space-md">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if active_category %}&category={{ active_category }}{% endif %}{% if active_price %}&price={{ active_price }}{% endif %}{% if active_condition %}&condition={{ active_condition }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}&sort={{ active_sort }}"
+           class="px-space-md py-2 rounded-lg bg-surface-container text-primary hover:bg-surface-container-high font-label-md text-label-md font-semibold flex items-center gap-1 transition-colors">
+          <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+          <span>{% trans "Previous" %}</span>
+        </a>
+        {% else %}
+        <span class="px-space-md py-2 rounded-lg bg-surface-container-low text-outline font-label-md text-label-md font-semibold cursor-not-allowed flex items-center gap-1">
+          <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+          <span>{% trans "Previous" %}</span>
+        </span>
+        {% endif %}
+
+        <div class="font-label-md text-label-md text-on-surface-variant">
+          {% blocktrans with current=page_obj.number total=page_obj.paginator.num_pages %}Page {{ current }} of {{ total }}{% endblocktrans %}
+        </div>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if active_category %}&category={{ active_category }}{% endif %}{% if active_price %}&price={{ active_price }}{% endif %}{% if active_condition %}&condition={{ active_condition }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}&sort={{ active_sort }}"
+           class="px-space-md py-2 rounded-lg bg-surface-container text-primary hover:bg-surface-container-high font-label-md text-label-md font-semibold flex items-center gap-1 transition-colors">
+          <span>{% trans "Next" %}</span>
+          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </a>
+        {% else %}
+        <span class="px-space-md py-2 rounded-lg bg-surface-container-low text-outline font-label-md text-label-md font-semibold cursor-not-allowed flex items-center gap-1">
+          <span>{% trans "Next" %}</span>
+          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </span>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- 6. Physical Store & Workshop Banner (Alfafar, Valencia) -->
+  <section class="w-full bg-surface py-space-md pb-space-lg">
+    <div class="max-w-7xl mx-auto px-margin lg:px-margin-desktop">
+      <div class="bg-surface-container-low rounded-2xl p-space-lg md:p-space-xl shadow-sm border border-outline-variant/30 flex flex-col lg:flex-row items-center justify-between gap-space-xl overflow-hidden relative">
+        <div class="flex-1 space-y-space-md z-10">
+          <div class="inline-flex items-center gap-space-xs text-primary font-label-sm text-label-sm uppercase tracking-wider font-bold">
+            <span class="material-symbols-outlined text-[18px]">store</span>
+            <span>{% trans "PHYSICAL STORE & STAGING STUDIO" %}</span>
+          </div>
+          <h2 class="font-headline-lg text-headline-lg md:text-headline-xl text-on-surface tracking-tight font-bold">
+            {% trans "Visit us in person in Alfafar" %}
+          </h2>
+          <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+            {% trans "You can inspect and test any item in our catalog with no obligation. Visit us at" %} {{ storefront.address }} ({{ storefront.opening_hours }}).
+          </p>
+          <div class="flex flex-wrap items-center gap-space-sm pt-space-xs">
+            <a href="{{ storefront.map_url }}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="inline-flex items-center gap-2 bg-primary text-on-primary px-space-md py-2.5 rounded-xl font-label-md text-label-md font-semibold hover:bg-primary-container transition-colors shadow-sm">
+              <span class="material-symbols-outlined text-[18px]">near_me</span>
+              <span>{% trans "Get directions (Google Maps)" %}</span>
+            </a>
+            <button type="button"
+                    onclick="openHowToBuyModal()"
+                    class="inline-flex items-center gap-2 bg-surface-container-lowest text-on-surface border border-outline-variant/40 px-space-md py-2.5 rounded-xl font-label-md text-label-md font-semibold hover:bg-surface-container hover:text-primary transition-colors shadow-sm">
+              <span class="material-symbols-outlined text-[18px] text-primary">schedule</span>
+              <span>{% trans "How to reserve & store hours" %}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="w-full lg:w-5/12 shrink-0 z-10">
+          <div class="relative rounded-xl overflow-hidden bg-surface-container shadow-md border border-outline-variant/30">
+            <div class="aspect-[16/10] w-full relative bg-surface-variant flex items-center justify-center overflow-hidden">
+              <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#005c55_1.5px,transparent_1.5px)] [background-size:20px_20px]"></div>
+              <div class="relative z-20 flex flex-col items-center text-center p-space-md">
+                <div class="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg mb-2">
+                  <span class="material-symbols-outlined text-[24px]">location_on</span>
+                </div>
+                <div class="bg-surface-container-lowest/95 backdrop-blur-md px-space-md py-space-xs rounded-lg shadow-sm border border-outline-variant/40 max-w-xs text-left">
+                  <div class="font-label-sm text-label-sm font-bold text-primary flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[15px]">pin_drop</span>
+                    <span>{{ storefront.store_name }}</span>
+                  </div>
+                  <div class="font-body-sm text-body-sm text-on-surface mt-0.5">{{ storefront.address }}</div>
+                  <div class="font-label-sm text-label-sm text-on-surface-variant text-[11px]">{{ storefront.opening_hours }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

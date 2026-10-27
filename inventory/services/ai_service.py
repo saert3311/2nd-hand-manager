@@ -1,15 +1,40 @@
 import json
 import logging
-from typing import Dict, Optional, Tuple
+from typing import Dict, Literal, Optional, Tuple
 
 from django.conf import settings
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
-from inventory.models import ClarificationStatus, Product
+from inventory.models import OFFICIAL_CATEGORIES, ClarificationStatus, Product, ProductCondition
 
 logger = logging.getLogger(__name__)
+
+VALID_CATEGORY_SLUGS = {item[0] for item in OFFICIAL_CATEGORIES}
+VALID_CONDITION_CODES = {choice[0] for choice in ProductCondition.choices}
+
+OfficialCategorySlug = Literal[
+    "motor-y-accesorios",
+    "moda-y-accesorios",
+    "tecnologia-y-electronica",
+    "deporte-y-ocio",
+    "bicicletas",
+    "hogar-y-jardin",
+    "electrodomesticos",
+    "cine-libros-y-musica",
+    "ninos-y-bebes",
+    "coleccionismo",
+    "construccion-y-reformas",
+    "industria-y-agricultura",
+]
+
+OfficialConditionCode = Literal[
+    "new_with_tags",
+    "very_good",
+    "good",
+    "vintage",
+]
 
 DEFAULT_MODEL_NAME = "gemini-2.5-flash"
 INTAKE_IDENTIFICATION_MODEL_NAME = getattr(settings, "GEMINI_INTAKE_MODEL_NAME", "gemini-flash-latest")
@@ -44,11 +69,27 @@ class AIServiceError(Exception):
 class ProductListingSchema(BaseModel):
     title: str = Field(description="Catchy, SEO-optimized title with brand, model, color, and size")
     description: str = Field(description="Structured sales description highlighting features, condition, and flaws")
+    category_slug: Optional[OfficialCategorySlug] = Field(
+        default=None,
+        description="Official Rápido Pack category slug that best matches the product",
+    )
+    condition: Optional[OfficialConditionCode] = Field(
+        default=None,
+        description="Official physical condition state: new_with_tags, very_good, good, or vintage",
+    )
 
 
 class IntakePreflightSchema(BaseModel):
     identified_title: str = Field(description="Detected product brand, model, and item type")
     category: str = Field(description="High-level product category")
+    category_slug: Optional[OfficialCategorySlug] = Field(
+        default=None,
+        description="Official Rápido Pack category slug that best matches the product",
+    )
+    condition: Optional[OfficialConditionCode] = Field(
+        default=None,
+        description="Official physical condition state: new_with_tags, very_good, good, or vintage",
+    )
     detected_attributes: list[str] = Field(default_factory=list, description="Visible attributes such as color, materials, logos")
     missing_or_recommended_info: list[str] = Field(default_factory=list, description="Actionable checklist of missing tags, size labels, flaws, or angles")
     suggested_note: str = Field(description="Draft summary suitable for intake notes")
@@ -60,6 +101,49 @@ class IntakePreflightSchema(BaseModel):
         default=None,
         description="Estimated realistic secondhand market resale value in Euros (€) considering condition in Spain/Europe. Null if impossible to estimate."
     )
+
+
+_CATEGORY_KEYWORD_MAP: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("moda-y-accesorios", ("camiseta", "chaqueta", "biker", "gabardina", "pantalon", "pantalón", "vaquero", "levi", "nike", "adidas", "zara", "burberry", "vestido", "abrigo", "bolso", "zapatilla", "zapato", "bota", "sudadera", "reloj", "seiko", "gafas", "cinturon", "cinturón", "shirt", "jacket", "jeans", "sneakers", "dress", "hoodie", "tee")),
+    ("bicicletas", ("bici", "bicicleta", "orbea", "shimano", "trek", "bh ", "mtb", "ciclismo", "casco de bicicleta", "bicycle", "brompton")),
+    ("electrodomesticos", ("lavadora", "nevera", "frigorifico", "frigorífico", "microondas", "aspiradora", "robot", "cafetera", "horno", "tostadora", "sandwichera", "freidora", "plancha", "ventilador", "calefactor", "termoventilador", "olla", "moldeador", "cortapelos", "irrigador", "batidora", "dyson", "cecotec", "rowenta", "philips", "braun", "tristar")),
+    ("tecnologia-y-electronica", ("iphone", "samsung", "sony", "consola", "ps5", "ps4", "nintendo", "switch", "gamepad", "mando", "portatil", "portátil", "macbook", "ipad", "camara", "cámara", "olympus", "leica", "canon", "nikon", "objetivo", "prismaticos", "prismáticos", "auriculares", "altavoz", "marshall", "teclado", "keychron", "walkman", "televisor", "monitor", "telefono", "teléfono", "gigaset", "hikvision", "estacion", "estación", "bateria", "batería", "laptop", "tablet", "phone", "camera")),
+    ("cine-libros-y-musica", ("libro", "novela", "vinilo", "tocadiscos", "audio-technica", "disco", "guitarra", "yamaha", "amplificador", "dvd", "bluray", "blu-ray", "cd ", "pelicula", "película", "teclado musical", "book", "vinyl")),
+    ("deporte-y-ocio", ("raqueta", "padel", "pádel", "tenis", "pesa", "mancuerna", "patinete", "monopatin", "monopatín", "surfskate", "carver", "mochila", "osprey", "camping", "tienda de campaña", "esqui", "esquí", "surf", "balon", "balón", "deporte", "gym", "fitness")),
+    ("motor-y-accesorios", ("moto", "casco de moto", "coche", "neumatico", "neumático", "llanta", "carburador", "escape", "scooter")),
+    ("ninos-y-bebes", ("bebe", "bebé", "carrito", "cuna", "juguete", "lego", "playmobil", "infantil", "trona", "baby", "stroller")),
+    ("coleccionismo", ("coleccion", "colección", "antiguo", "antigüedad", "moneda", "sello", "figura", "funko", "murano", "pluma estilografica", "pluma estilográfica", "pelikan", "coleccionismo", "collectible")),
+    ("construccion-y-reformas", ("taladro", "sierra", "radial", "bosch", "makita", "dewalt", "herramienta", "escalera", "compresor", "soldador", "reforma", "bricolaje")),
+    ("industria-y-agricultura", ("industrial", "agricola", "agrícola", "generador", "motobomba", "desbrozadora", "motosierra", "maquinaria", "transpaleta")),
+    ("hogar-y-jardin", ("mesa", "silla", "herman miller", "sofa", "sofá", "armario", "lampara", "lámpara", "espejo", "estanteria", "estantería", "alfombra", "jardin", "jardín", "mueble", "ceramica", "cerámica", "decoracion", "decoración")),
+)
+
+
+def infer_taxonomy_heuristically(*texts: str) -> Tuple[str, str]:
+    """
+    Deterministic keyword heuristic fallback for classifying a product into one of the
+    12 official Rápido Pack category slugs and 4 official condition states.
+    """
+    lowered = " ".join(t for t in texts if t).lower()
+
+    category_slug = "moda-y-accesorios"
+    for slug, keywords in _CATEGORY_KEYWORD_MAP:
+        if any(kw in lowered for kw in keywords):
+            category_slug = slug
+            break
+    else:
+        category_slug = "hogar-y-jardin"
+
+    if any(kw in lowered for kw in ("nuevo con etiqueta", "new with tag", "precintado", "a estrenar", "brand new", "nwt", "sin abrir")):
+        condition = ProductCondition.NEW_WITH_TAGS
+    elif any(kw in lowered for kw in ("vintage", "años 80", "años 90", "80s", "90s", "199", "198", "retro", "clásico", "clasico")):
+        condition = ProductCondition.VINTAGE
+    elif any(kw in lowered for kw in ("perfecto estado", "como nuevo", "muy buen estado", "impecable", "excelente", "very good", "like new", "great condition")):
+        condition = ProductCondition.VERY_GOOD
+    else:
+        condition = ProductCondition.GOOD
+
+    return category_slug, condition
 
 
 PREFLIGHT_ES_INSTRUCTION = (
@@ -207,16 +291,24 @@ def generate_product_listing(
 
         if hasattr(response, "parsed") and response.parsed:
             parsed = response.parsed
+            raw_cat = (getattr(parsed, "category_slug", None) or "").strip()
+            raw_cond = (getattr(parsed, "condition", None) or "").strip()
             return {
                 "title": getattr(parsed, "title", "").strip(),
                 "description": getattr(parsed, "description", "").strip(),
+                "category_slug": raw_cat if raw_cat in VALID_CATEGORY_SLUGS else "",
+                "condition": raw_cond if raw_cond in VALID_CONDITION_CODES else "",
             }
 
         # Fallback to json text parsing
         data = json.loads(response.text)
+        raw_cat = str(data.get("category_slug") or "").strip()
+        raw_cond = str(data.get("condition") or "").strip()
         return {
             "title": data.get("title", "").strip(),
             "description": data.get("description", "").strip(),
+            "category_slug": raw_cat if raw_cat in VALID_CATEGORY_SLUGS else "",
+            "condition": raw_cond if raw_cond in VALID_CONDITION_CODES else "",
         }
 
     except Exception as exc:
@@ -307,10 +399,14 @@ def identify_intake_product(
 
         if hasattr(response, "parsed") and response.parsed:
             parsed = response.parsed
+            raw_cat = (getattr(parsed, "category_slug", None) or "").strip()
+            raw_cond = (getattr(parsed, "condition", None) or "").strip()
             return {
                 "success": True,
                 "identified_title": getattr(parsed, "identified_title", "").strip(),
                 "category": getattr(parsed, "category", "").strip(),
+                "category_slug": raw_cat if raw_cat in VALID_CATEGORY_SLUGS else "",
+                "condition": raw_cond if raw_cond in VALID_CONDITION_CODES else "",
                 "detected_attributes": list(getattr(parsed, "detected_attributes", []) or []),
                 "missing_or_recommended_info": list(getattr(parsed, "missing_or_recommended_info", []) or []),
                 "suggested_note": getattr(parsed, "suggested_note", "").strip(),
@@ -320,10 +416,14 @@ def identify_intake_product(
 
         # Fallback to json text parsing
         data = json.loads(response.text)
+        raw_cat = str(data.get("category_slug") or "").strip()
+        raw_cond = str(data.get("condition") or "").strip()
         return {
             "success": True,
             "identified_title": str(data.get("identified_title", "")).strip(),
             "category": str(data.get("category", "")).strip(),
+            "category_slug": raw_cat if raw_cat in VALID_CATEGORY_SLUGS else "",
+            "condition": raw_cond if raw_cond in VALID_CONDITION_CODES else "",
             "detected_attributes": list(data.get("detected_attributes", []) or []),
             "missing_or_recommended_info": list(data.get("missing_or_recommended_info", []) or []),
             "suggested_note": str(data.get("suggested_note", "")).strip(),

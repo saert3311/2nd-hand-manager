@@ -1,0 +1,121 @@
+{% extends "storefront/base_public.html" %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} · {{ storefront.store_name }}{% endblock %}
+{% block meta_description %}{% trans "Guía de compra, reservas de 24 horas por WhatsApp, recogida gratuita en Alfafar y envíos protegidos en toda España." %}{% endblock %}
+
+{% block content %}
+<section class="w-full py-space-xl">
+  <div class="max-w-4xl mx-auto px-margin lg:px-margin-desktop">
+    <div class="bg-surface-container-lowest rounded-2xl p-space-lg md:p-space-xl shadow-sm border border-outline-variant/25 space-y-space-lg">
+      <div class="border-b border-outline-variant/25 pb-space-md flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+        <div>
+          <a href="{% url 'storefront:catalog' %}" class="inline-flex items-center gap-1 text-primary font-label-md text-label-md hover:underline mb-space-xs">
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span>{% trans "Volver a la tienda" %}</span>
+          </a>
+          <h1 class="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl text-on-surface font-bold">
+            {% trans "¿Cómo comprar en Rápido Pack Alfafar?" %}
+          </h1>
+          <p class="font-body-md text-body-md text-on-surface-variant mt-1">
+            {% trans "Reserva por WhatsApp, recogida gratuita en Alfafar y envíos protegidos a toda España" %}
+          </p>
+        </div>
+        <a href="{% url 'storefront:go_whatsapp' %}"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="inline-flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white font-label-md text-label-md font-bold px-space-md py-2.5 rounded-xl shadow-sm shrink-0">
+          <span class="material-symbols-outlined text-[18px]">chat</span>
+          <span>{% trans "Consultar por WhatsApp" %}</span>
+        </a>
+      </div>
+
+      <!-- Option A: Free In-Store Pickup in Alfafar -->
+      <div class="bg-surface-container-low p-space-md rounded-xl space-y-space-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="inline-flex items-center gap-1.5 font-label-md text-label-md text-primary font-bold">
+            <span class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center text-[12px]">A</span>
+            <span>{% trans "Opción A: Recogida gratuita en nuestra tienda física (Alfafar)" %}</span>
+          </span>
+          <span class="font-label-sm text-label-sm text-[#16a34a] font-semibold bg-[#dcfce7] px-space-sm py-0.5 rounded-full">
+            {% trans "Recogida GRATIS · Sin comisiones" %}
+          </span>
+        </div>
+        <p class="font-body-md text-body-md text-on-surface-variant">
+          {% trans "Dirección:" %} <strong>{{ storefront.address }}</strong> ({{ storefront.opening_hours }}).
+        </p>
+        <ul class="font-body-sm text-body-sm text-on-surface-variant space-y-1.5 list-disc list-inside">
+          <li>
+            <strong>{% trans "Reserva gratuita durante 24 horas:" %}</strong>
+            {% trans "Escríbenos por WhatsApp indicando la referencia del artículo (ej. Ref. #1042) y te lo guardamos durante 24 horas sin compromiso." %}
+          </li>
+          <li>
+            <strong>{% trans "Revisa y prueba en persona:" %}</strong>
+            {% trans "Ven a nuestra tienda en Alfafar, comprueba el estado del artículo en persona antes de decidir." %}
+          </li>
+          <li>
+            <strong>{% trans "Formas de pago en tienda:" %}</strong>
+            {% trans "Efectivo, Bizum o Tarjeta en mostrador." %}
+          </li>
+        </ul>
+      </div>
+
+      <!-- Option B: Protected Shipping via Wallapop / Vinted -->
+      <div class="bg-surface-container-low p-space-md rounded-xl space-y-space-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="inline-flex items-center gap-1.5 font-label-md text-label-md text-on-surface font-bold">
+            <span class="w-6 h-6 rounded-full bg-on-surface text-surface-container-lowest flex items-center justify-center text-[12px]">B</span>
+            <span>{% trans "Opción B: Envíos a domicilio en toda España" %}</span>
+          </span>
+          <span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-space-sm py-0.5 rounded-full">
+            {% trans "Envío con protección al comprador" %}
+          </span>
+        </div>
+        <p class="font-body-md text-body-md text-on-surface-variant">
+          {% trans "Si vives fuera de Valencia o prefieres recibirlo en casa:" %}
+        </p>
+        <ul class="font-body-sm text-body-sm text-on-surface-variant space-y-1.5 list-disc list-inside">
+          <li>
+            {% trans "Gestionamos los envíos con seguimiento y seguro a través de nuestros perfiles oficiales en Wallapop Envíos y Vinted, o mediante envío directo desde nuestro punto logístico." %}
+          </li>
+          <li>
+            {% trans "Tu dinero permanece protegido hasta que recibes y compruebas el paquete." %}
+          </li>
+          <li>
+            {% trans "Embalaje profesional preparado directamente en nuestro centro de paquetería Rápido Pack." %}
+          </li>
+        </ul>
+      </div>
+
+      <!-- Option C: Verified Inspection & Support -->
+      <div class="bg-surface-container-low p-space-md rounded-xl space-y-space-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="inline-flex items-center gap-1.5 font-label-md text-label-md text-secondary font-bold">
+            <span class="w-6 h-6 rounded-full bg-secondary text-on-secondary flex items-center justify-center text-[12px]">C</span>
+            <span>{% trans "Opción C: Artículos 100% revisados y fotos reales" %}</span>
+          </span>
+          <span class="font-label-sm text-label-sm text-secondary bg-secondary-fixed px-space-sm py-0.5 rounded-full">
+            {% trans "100% Fotos Reales" %}
+          </span>
+        </div>
+        <p class="font-body-sm text-body-sm text-on-surface-variant">
+          {% trans "Cada artículo es fotografiado y revisado en nuestra tienda de Alfafar antes de publicarse. ¿Necesitas una foto extra o medidas detalladas? Escríbenos por WhatsApp y te las enviamos al momento." %}
+        </p>
+      </div>
+
+      <div class="pt-space-sm flex flex-wrap items-center justify-between gap-space-sm border-t border-outline-variant/25">
+        <a href="{% url 'storefront:catalog' %}"
+           class="inline-flex items-center gap-1.5 bg-primary text-on-primary font-label-md text-label-md font-bold px-space-md py-2.5 rounded-xl hover:bg-primary-container transition-colors">
+          <span class="material-symbols-outlined text-[18px]">storefront</span>
+          <span>{% trans "Explorar el catálogo de la tienda" %}</span>
+        </a>
+        <a href="{% url 'storefront:home' %}#contacto"
+           class="inline-flex items-center gap-1 text-primary font-label-md text-label-md font-semibold hover:underline">
+          <span class="material-symbols-outlined text-[18px]">location_on</span>
+          <span>{% trans "Ver ubicación y horarios en Alfafar" %}</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

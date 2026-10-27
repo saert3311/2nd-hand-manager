@@ -1,0 +1,55 @@
+{% extends "storefront/base_public.html" %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} · {{ storefront.store_name }}{% endblock %}
+
+{% block content %}
+<section class="w-full py-space-xl">
+  <div class="max-w-4xl mx-auto px-margin lg:px-margin-desktop">
+    <div class="bg-surface-container-lowest rounded-2xl p-space-lg md:p-space-xl shadow-sm border border-outline-variant/25 space-y-space-md">
+      <div class="border-b border-outline-variant/25 pb-space-md">
+        <a href="{% url 'storefront:catalog' %}" class="inline-flex items-center gap-1 text-primary font-label-md text-label-md hover:underline mb-space-xs">
+          <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+          <span>{% trans "Back to catalog" %}</span>
+        </a>
+        <h1 class="font-headline-lg text-headline-lg text-on-surface font-bold">{{ page_title }}</h1>
+        <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+          {{ storefront.store_name }} ({{ storefront.domain }}) · {{ storefront.address }}
+        </p>
+      </div>
+
+      {% if page_type == 'legal_notice' %}
+      <div class="space-y-space-sm font-body-md text-body-md text-on-surface-variant leading-relaxed">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">1. {% trans "Store Identification" %}</h2>
+        <p>
+          {% trans "In compliance with Spanish Law 34/2002 on Information Society Services and Electronic Commerce (LSSI-CE), this website is operated by:" %}
+          <strong>{{ storefront.store_name }}</strong> ({{ storefront.domain }}), {% trans "physical establishment located at" %} <strong>{{ storefront.address }}</strong> ({% trans "Opening hours:" %} {{ storefront.opening_hours }}).
+        </p>
+        <h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">2. {% trans "Purpose of the Catalog" %}</h2>
+        <p>
+          {% trans "This public catalog displays second-hand, vintage, and opportunity items available at our physical store in Alfafar (Valencia) and across our official marketplace profiles (Wallapop, Vinted, Milanuncios). Reservations and inquiries are processed directly via WhatsApp or in store." %}
+        </p>
+      </div>
+      {% elif page_type == 'privacy' or page_type == 'privacy_policy' %}
+      <div class="space-y-space-sm font-body-md text-body-md text-on-surface-variant leading-relaxed">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">1. {% trans "Data Protection (GDPR / LOPDGDD)" %}</h2>
+        <p>
+          {% trans "Browsing the public catalog of Rápido Pack does not require user registration or the submission of personal forms on this website. When you contact us via WhatsApp, your inquiry is processed solely to answer your product availability or reservation request." %}
+        </p>
+        <h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">2. {% trans "User Rights" %}</h2>
+        <p>
+          {% trans "You may exercise your rights of access, rectification, deletion, and opposition in person at our store in" %} {{ storefront.address }} {% trans "or through our direct customer service channel." %}
+        </p>
+      </div>
+      {% else %}
+      <div class="space-y-space-sm font-body-md text-body-md text-on-surface-variant leading-relaxed">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">1. {% trans "Technical Cookies Only" %}</h2>
+        <p>
+          {% trans "This storefront uses strictly necessary technical cookies (such as language preference ES/EN and CSRF security tokens) required for the basic operation of the website. No third-party advertising or behavioral tracking cookies are installed." %}
+        </p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

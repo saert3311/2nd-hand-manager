@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'storages',
     'inventory.apps.InventoryConfig',
+    'storefront.apps.StorefrontConfig',
 ]
 
 MIDDLEWARE = [
@@ -64,6 +65,7 @@ TEMPLATES = [
                 'inventory.context_processors.turnstile',
                 'inventory.context_processors.pwa_push',
                 'inventory.context_processors.build_info',
+                'storefront.context_processors.storefront_config',
             ],
         },
     },
@@ -103,10 +105,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = 'en'
+IS_TESTING = 'test' in sys.argv or os.getenv('TESTING') == 'True'
+LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', 'en' if IS_TESTING else 'es')
 LANGUAGES = [
-    ('en', _('English')),
     ('es', _('Spanish')),
+    ('en', _('English')),
 ]
 
 TIME_ZONE = 'UTC'
@@ -139,8 +142,6 @@ if not OCI_STORAGE_ENDPOINT_URL and OCI_STORAGE_NAMESPACE and OCI_STORAGE_REGION
     OCI_STORAGE_ENDPOINT_URL = (
         f"https://{OCI_STORAGE_NAMESPACE}.compat.objectstorage.{OCI_STORAGE_REGION}.oraclecloud.com"
     )
-
-IS_TESTING = 'test' in sys.argv or os.getenv('TESTING') == 'True'
 
 if IS_TESTING:
     STORAGES = {
@@ -237,7 +238,7 @@ except (TypeError, ValueError):
 # Compilation & Build Metadata
 APP_BUILD_TIME = os.getenv('APP_BUILD_TIME', '').strip()
 APP_BUILD_COMMIT = os.getenv('APP_BUILD_COMMIT', '').strip()
-APP_VERSION = os.getenv('APP_VERSION', '1.11.0').strip()
+APP_VERSION = os.getenv('APP_VERSION', '2.1.0').strip()
 APP_ENV = os.getenv('APP_ENV', '').strip()
 
 

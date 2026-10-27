@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-10-27
+
+### Added
+- **Corporate Business Landing Page (`/`), Revised Marketplace URLs (`/tienda/`) & Staff Router (`/panel/`) (Phase 37)**:
+  - **Corporate Business Landing Page (`/`, `storefront:home`)**: Implemented [`storefront/templates/storefront/home.html`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/templates/storefront/home.html) and `home_view` in [`storefront/views.py`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/views.py) based on the Stitch reference screen (`docs/stitch_references/landing_page.html`), featuring:
+    1. Sticky header with corporate navigation (`Paquetería`, `Punto Pack`, `Tienda`, `Sobre nosotros`, `Contacto`) and direct WhatsApp CTA (`/go/whatsapp/`).
+    2. Split Hero section with LCP-prioritized photo (`fetchpriority="high"` on `hero_counter.webp`), live business hours pill, and dual CTAs (`/tienda/`, `/#paqueteria`).
+    3. Official carrier strip (`SEUR`, `GLS`, `InPost`, `Amazon Hub`, `Kanguro`, `DHL`, `Punto Pack Oficial`).
+    4. 4 Parcel & Logistics service cards (`#paqueteria`, `#punto-pack`) + 3-step visual workflow.
+    5. Brand Identity (*"Más que una tienda, tu punto de barrio"*, `#quienes-somos`) with lazy-loaded team photo (`shop_team.webp`) and 4 value pillars.
+    6. Featured Products (*"Recién llegados"*) displaying the 4 newest available products (`is_sold=False, is_reserved=False`) via `_product_card.html` with strict `SAFE_PUBLIC_PRODUCT_FIELDS` projection.
+    7. Trust Stats band, Alfafar Location & Contact card (`#contacto`), Final CTA banner, 4-column Footer, and `Schema.org/LocalBusiness` JSON-LD.
+  - **Revised Public & Staff URL Architecture**:
+    - `/` $\to$ `storefront:home` (Corporate Landing Page)
+    - `/tienda/` $\to$ `storefront:catalog` (Marketplace Catalog, supporting Spanish query parameters `?estado=`, `?precio=`, `?orden=`, `?categoria=` alongside English aliases)
+    - `/tienda/categoria/<slug:category_slug>/` $\to$ `storefront:category` (SEO Category Catalog)
+    - `/tienda/producto/<slug:slug>-<int:pk>/` $\to$ `storefront:product_detail` (with **HTTP 301** permanent redirect on non-canonical slugs and legacy `/p/<slug>-<pk>/` URLs)
+    - `/como-comprar/` $\to$ `storefront:how_to_buy` (Standalone shareable non-JS guide page [`storefront/templates/storefront/how_to_buy.html`](file:///C:/Users/Jose/antigravity/epic-tesla/storefront/templates/storefront/how_to_buy.html))
+    - `/go/whatsapp/`, `/go/whatsapp/<int:pk>/`, `/go/link/<int:link_pk>/` $\to$ `storefront:go_whatsapp`, `storefront:go_whatsapp_product`, `storefront:go_listing`
+    - `/aviso-legal/`, `/privacidad/`, `/cookies/` $\to$ `storefront:legal_notice`, `storefront:privacy`, `storefront:cookies`
+    - `/panel/` $\to$ `inventory:root` (Staff entry router preserving `name="root"`)
+    - Updated `/sitemap.xml` and `/robots.txt` (`Allow: /tienda/`, `Disallow: /panel/`).
+
+## [2.0.0] - 2026-10-27
+
+### Added
+- **Public Marketplace Storefront Transformation — Rápido Pack (`rapidopack.es`, Phase 36)**:
+  - **Domain Models & Official 12-Category Taxonomy**: Added `Category`, `StorefrontConfiguration` singleton (`get_solo()`), and `ProductCondition` (`new_with_tags`, `very_good`, `good`, `vintage`) in `inventory/models.py`, extended `Product` with `category`, `condition`, `is_public`, `is_featured`, `is_reserved`, `reserved_until`, `views_count`, and `whatsapp_clicks`, added `ProductListingLink.clicks_count`, and implemented `ProductQuerySet.public_visible()` with 7-day `SOLD` social proof retention. Seeded all 12 official Rápido Pack categories and default `StorefrontConfiguration` (`Carrer del Comte Ronrée, 8, 46910 Alfafar, Valencia`) in migration `0021_marketplace_storefront.py`.
+  - **SQLite WAL Mode & Concurrency Tuning**: Enabled `PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;` on SQLite connections in `inventory/apps.py`.
+  - **AI Taxonomy Auto-Classification & `classify_products` Command**: Extended `ProductListingSchema` and `IntakePreflightSchema` in `inventory/services/ai_service.py` with `category_slug` and `condition`, plus deterministic keyword fallback `infer_taxonomy_heuristically()`. Added `python manage.py classify_products` CLI command to classify existing products.
+  - **Dedicated `storefront` Application & Stitch Design System**: Created `storefront/` app serving `/` (`storefront:catalog`), `/p/<slug>-<pk>/` (`storefront:product_detail`), `/go/whatsapp/<pk>/` (`storefront:go_whatsapp`), `/go/link/<link_pk>/` (`storefront:go_marketplace_link`), `/sitemap.xml`, `/robots.txt`, and RGPD/LSSI legal pages (`/legal/aviso-legal/`, `/legal/privacidad/`, `/legal/cookies/`). Moved internal staff root redirect to `/staff/` (`inventory:root`).
+  - **Defense-in-Depth Public Data Firewall**: Enforced `.only(...)` SQL projection and `_sanitize_public_product()` in-memory clearing in `storefront/views.py` so `raw_note`, `ProductClarification`, and `created_by` are never exposed in public HTML, search, OpenGraph tags, JSON-LD, or sitemaps.
+  - **Bilingual Localization & Automated Test Suite**: Updated `locale/es/LC_MESSAGES/django.po` and compiled `django.mo`. Added `tests/test_storefront.py` verifying visibility rules, 7-day sold retention, non-leak security firewall, catalog filters, click counters, SEO metadata, and AI taxonomy classification.
+
 ## [1.11.0] - 2026-10-26
 
 ### Added

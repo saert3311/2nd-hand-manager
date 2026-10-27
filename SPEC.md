@@ -31,6 +31,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 27. **Photo Reordering in Intake and Detail Workspaces:** Intuitive, mobile-first photo reordering across both `/intake/` (hybrid button controls, cover promotion, and desktop HTML5 drag-and-drop with `DataTransfer` synchronization) and `/products/<pk>/` (manager-only asynchronous reorder endpoint with atomic DB ordering and live cover photo preview) ([`docs/prds/PRD-photo-reordering.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-photo-reordering.md)).
 28. **Low-DPI Intake Photo Miniatures & Delete Controls Optimization:** High-density 3-column mobile preview grid (`grid-cols-3 sm:grid-cols-4 md:grid-cols-5`), high-contrast unambiguous delete buttons with white isolation ring, streamlined non-obstructive sequence badges, and a tap-to-inspect full-size lightbox modal tailored for low-DPI (1x) handheld warehouse scanners and compact smartphones ([`docs/prds/PRD-intake-low-dpi-miniatures.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-intake-low-dpi-miniatures.md)).
 29. **Published Product Modifications & Platform Sync Tracking:** Full editing of published products (copywriting, price adjustments, supplemental clarifications, and staging photo upload/delete/reorder) coupled with an orthogonal synchronization engine (`needs_platform_sync`, `last_platform_synced_at`), workspace warning banners, 1-click sync clearance (`POST /products/<pk>/mark-synced/`), and dashboard sub-filtering (`?status=published&sync=out_of_sync`) ([`docs/prds/PRD-published-product-modifications-and-platform-sync.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-published-product-modifications-and-platform-sync.md)).
+30. **Public Marketplace Storefront Transformation & Corporate Landing Page — Rápido Pack (`rapidopack.es`, Phase 1 → Phase 2 Ready):** Dedicated `storefront` Django application transforming the internal staging hub into a bilingual (ES/EN), SEO-optimized corporate landing page and public marketplace for **Rápido Pack** (`Carrer del Comte Ronrée, 8, 46910 Alfafar, Valencia`). Features a Stitch-designed corporate business landing page (`/`, `storefront:home` showcasing multi-carrier parcel point services for SEUR, GLS, InPost, Amazon Hub, Kanguro, DHL, Punto Pack, brand story, and 4 newest products), full filterable marketplace catalog (`/tienda/`, `storefront:catalog` and `/tienda/categoria/<slug>/`, `storefront:category`), 60/40 product detail view (`/tienda/producto/<slug>-<pk>/`, `storefront:product_detail` with 301 canonical slug redirect), standalone shareable how-to-buy guide (`/como-comprar/`, `storefront:how_to_buy`), 12 official categories and 4 condition states auto-classified by Gemini Multimodal Vision AI, a 7-day `SOLD` social proof retention rule (`ProductQuerySet.public_visible()`), configurable direct WhatsApp conversion (`/go/whatsapp/` and `/go/whatsapp/<pk>/`) + tracked Wallapop/Vinted outbound links (`/go/link/<link_pk>/`), an interactive *"Saber más"* modal, a strict internal data firewall (`raw_note` and `clarifications` never exposed), `Schema.org/LocalBusiness` + `Schema.org/Product` JSON-LD, OpenGraph tags, `/sitemap.xml`, `/robots.txt`, RGPD/LSSI legal pages (`/aviso-legal/`, `/privacidad/`, `/cookies/`), internal staff root moved to `/panel/` (`inventory:root`), and Phase 2 cart/checkout readiness hooks (`is_reserved`, `reserved_until`, `_purchase_box.html`) ([`docs/prds/PRD-public-marketplace-storefront.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-public-marketplace-storefront.md)).
 
 ---
 
@@ -1150,101 +1151,10 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
     - **Option B (Manual "Finish Batch" Button on Mobile):** Assistant must remember to tap a "Finish Sourcing Session" button after uploading their items.
     *Which session completion pattern do you prefer?*
     - **Decision:** Option A approved — Database-backed 15-minute sliding inactivity debounce window.
-30. **Sale Channel Selection UX & Legacy Product Handling:**
-    - When a manager marks a product as sold on `/products/<pk>/`:
-    - **Option A (Recommended — Explicit Selection with Quick-Picks):** The channel dropdown defaults to an unselected placeholder (`--- Seleccionar canal ---`) requiring deliberate choice. If the product was previously published to one or more marketplace links (e.g. Wallapop, Vinted), one-click shortcut pills are rendered above the dropdown alongside a quick "Tienda física" button. Legacy sold products with no recorded channel display `-` and are not broken.
-    - **Option B (Auto-Default to In-Store):** The channel dropdown automatically selects "Tienda física / In-Store" by default unless changed.
-    *Which sale channel interaction pattern do you prefer?*
-
-31. **Product Soft-Delete, Archival & "Erased" Trash Category Architecture:**
-    - When a product is removed or disabled on `/products/<pk>/`:
-    - **Option A (Recommended & Selected — Non-Destructive Soft-Delete with Restore Capability):**
-      Add `is_deleted`, `deleted_at`, and `deleted_by` to `Product`. Hide erased items by default from all active catalog tabs and counters. Isolate them in a dedicated `?status=erased` ("🗑️ Eliminados") dashboard tab. Provide an accessible confirmation modal in `/products/<pk>/` to move to trash, and a 1-click "Restaurar producto" button to restore back to its previous lifecycle status (`draft`, `ready`, `sold`, etc.) without loss of photos, pricing, or audit history. Restricted to `ROLE_MANAGER`.
-    - **Option B (Permanent Hard Deletion):**
-      Permanently delete the database row and call OCI Object Storage to purge image files. Risk of irreversible data loss, broken audit history, and orphaned references.
-    *Which archival and deletion architecture do you prefer?*
-    - **Decision:** Option A approved — Non-destructive soft-delete with dedicated erased category and full restoration capability.
-
-32. **Product Detail Clarifications Hub Architecture & Placement:**
-    - How should product clarifications and post-intake supplemental notes be supported and positioned in `/products/<pk>/`?
-    - **Option A (Recommended & Selected — Dual-Mode Hub in Left Column):**
-      Support both **Direct Clarifications/Notes** (instant info discovered after intake by assistants or managers without blocking status) and **Manager Doubt Inquiries** (Q&A transitioning to `AWAITING_INFO`), located in the Left Column directly below "Preserved Intake Notes" to form a cohesive factual details hub.
-    - **Option B (Direct Clarifications Only):** Only allow notes without pending Q&A doubt state.
-    - **Option C (Q&A Doubts Only):** Only allow manager questions requiring assistant answers.
-    *Decision:* Option A approved — Dual-mode clarifications hub (direct notes + Q&A) in the left column below intake notes with role-appropriate permissions.
-
-33. **Intake Mandatory Pre-flight Identification Gate Architecture:**
-    - How should the Save button gating and pre-flight identification enforcement behave on `/intake/`?
-    - **Option A (Recommended & Selected — Resilient UI Gate with Identification Requirement):**
-      Initialize the Save button (`#submitBtn`) as disabled with guidance text requiring AI identification before saving. Once identification is executed (or in the event of an API error/timeout fallback), unlock the Save button. Retain the unlocked state if photos are modified, but reset to disabled if all photos are removed.
-    - **Option B (Strict Success Only):**
-      Require `data.success === true` before enabling the Save button, permanently blocking saving if the API is offline.
-    *Decision:* Option A approved — Resilient UI gate unlocking on identification attempt with offline fallback and photo reset tracking.
-
-34. **Photo Reordering Architecture & Usability Standards:**
-    - How should photo reordering operate across the intake form (`/intake/`) and the product detail workspace (`/products/<pk>/`)?
-    - **Option A (Recommended & Selected — Hybrid Mobile-First Controls + Drag-and-Drop):**
-      - In `/intake/`: Client-side hybrid controls (Move Left/Right, 1-click "Set as Cover", and HTML5 drag-and-drop) with immediate `DataTransfer` synchronization and identification gate preservation.
-      - In `/products/<pk>/`: Manager-only asynchronous reorder endpoint (`POST /products/<pk>/images/reorder/`) with atomic database ordering, live featured image updates, and accessible toast notifications.
-    - **Option B (Drag-and-Drop Only):** Rely exclusively on mouse drag-and-drop, risking touch gesture collisions with vertical scrolling on mobile devices.
-    - **Option C (Buttons Only):** Restrict to button clicks without desktop drag-and-drop capability.
-    *Decision:* Option A approved — Hybrid mobile-first controls with drag-and-drop, manager-only detail permissions, and identification gate preservation.
-
-35. **Low-DPI Intake Photo Miniatures & Delete Controls Architecture:**
-    - How should photo previews and controls be adapted for low-DPI (1x) handheld warehouse terminals and compact smartphones?
-    - **Option A (Recommended & Selected — High-Density Responsive Grid + High-Contrast Controls + Lightbox Modal):**
-      - Grid: 3 columns on compact mobile (`grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-2.5`), scaling down cards to ~90px–115px to prevent vertical page hijacking.
-      - Delete Button: High-contrast rose badge with bold SVG cross and white isolation ring (`ring-1 ring-white/90`) to eliminate subpixel blur and background blending on 1x DPI screens.
-      - Inspection: Full-screen lightbox modal (`#imagePreviewModal`) accessible on thumbnail click to verify sharpness and item details before saving.
-    - **Option B (Maintain 2-Column Grid with Larger Text):** Retain `grid-cols-2`, continuing to take up most of the mobile viewport with large thumbnail cards.
-    *Decision:* Option A approved — High-density 3-column mobile grid with high-contrast delete button and tap-to-inspect lightbox modal.
-
-36. **Published Product Modifications & Platform Synchronization Architecture:**
-    - How should modifications to already-published products be handled across the state machine, photo pipeline, and external marketplace listings?
-    - **Option A (Recommended & Selected — Orthogonal Sync State + Detail Photo Management + 1-Click Clearance):**
-      - Retain primary lifecycle status `PUBLISHED` (`🚀 Publicado`) so items remain active in catalog statistics, external URL navigation, and sales attribution.
-      - Add orthogonal boolean `needs_platform_sync` (indexed) and `last_platform_synced_at` to `Product`.
-      - Automatically flag `needs_platform_sync = True` whenever price, title, description, photos, or clarifications change on a published product.
-      - Enable full photo management (uploading new photos with Pillow WebP compression up to 10 photos, deleting photos, and reordering) in `/products/<pk>/`.
-      - Render workspace alert banner and 1-click clearance button (`POST /products/<pk>/mark-synced/`) with audit trail logging.
-      - Add dashboard sub-filter `?status=published&sync=out_of_sync` with live badge count.
-    - **Option B (New Primary State `UPDATE_PENDING`):**
-      - Transition the product out of `PUBLISHED` into a separate state, hiding it from published listings until verified. Risk of broken external ad tracking and incorrect inventory counts.
-    *Decision:* Option A approved — Orthogonal sync state with detail photo management, 1-click clearance, and dashboard sub-filter.
-
-
-37. **Detail View Photo Upload Component System Architecture:**
-    - How should the photo upload interface in `/products/<pk>/` be structured to achieve parity with the Intake flow?
-    - **Option A (Recommended & Selected — Unified Mobile-First Intake Component Parity):**
-      - Implement the exact Intake upload architecture in `/products/<pk>/`:
-        - Dashed drag-and-drop dropzone (`#detailDropZone`) with desktop dragover feedback.
-        - Dual mobile-first action buttons: dedicated camera capture (`#detailCameraInput` with `capture="environment"`) and multi-file gallery selection (`#detailImageInput`).
-        - Client-side Canvas downscaling to max 2560px WebP (quality 0.82) with hardware EXIF orientation handling, preventing Android LMK memory crashes and speeding up uploads.
-        - Live thumbnail preview queue (`#detailPendingGrid`) with index badges, remove buttons (✕), and clear-all action before submitting.
-        - Dynamic capacity counter (`X available / max 10`) dynamically respecting already-attached photos ($10 - N_{existing}$).
-        - Submission via `DataTransfer` form integration into existing `product_upload_images_view` with defense-in-depth server validation.
-    - **Option B (Maintain Minimal Native File Input):**
-      - Keep the simple `<input type="file">` selector. Lacks mobile camera shortcut, client-side compression, drag-and-drop, and preview queue.
-    *Decision:* Option A approved — Unified mobile-first photo upload component system with drag-and-drop, dual camera/gallery actions, client-side WebP compression, and pre-upload preview queue.
-
-38. **Out-of-Sync Product Web Push Notification Architecture:**
-    - How should store managers be alerted when a published product undergoes post-publication modifications and becomes out of sync?
-    - **Option A (Recommended & Selected — Real-Time Web Push to Managers with Edge-Transition Guard):**
-      - Track _initial_needs_platform_sync in Product.__init__ and compute _previous_needs_platform_sync in Product.save().
-      - Hook into the post_save lifecycle signal receiver (notify_managers_on_product_lifecycle_save).
-      - Fire strictly on edge transition (False -> True) on non-deleted products:
-        - Dispatch encrypted Web Push via VAPID and pywebpush to all active Store Managers (ROLE_MANAGER + active staff/superusers).
-        - Payload:
-          - Title: _('⚠️ Product Out of Sync: %(title)s') % {'title': product.display_title}
-          - Body: _('Modifications detected on published item. External platform listings require updating.')
-          - URL: /products/<pk>/ (deep link straight to product detail with warning banner and 1-click clearance button).
-          - Tag: product-out-of-sync-<pk> (collapses successive notifications for the same product in OS drawer).
-      - Suppress notification on subsequent edits while needs_platform_sync is already True (anti-spam).
-      - Suppress notification on platform sync clearance (mark_platform_synced()).
-      - Gate with PUSH_NOTIFICATIONS_LIVE_SIGNALS for environment and test isolation.
-    - **Option B (Poll-Based Periodic Batch Notification):**
-      - Debounce out-of-sync products into a cron batch similar to intake sessions. Delays critical pricing/photo discrepancy alerts by 15+ minutes.
-    - **Option C (Email Notification Only):**
-      - Send emails instead of Web Push. Higher latency, lower mobile immediacy.
-    *Decision:* Option A approved — Real-time Web Push notification to Store Managers on False -> True edge transitions with anti-spam suppression, deep-linking, and PUSH_NOTIFICATIONS_LIVE_SIGNALS gating.
+39. **Public Marketplace Storefront & Corporate Landing Page Architecture (Phase 1 → Phase 2):**
+    - **App Separation:** Dedicated `storefront/` app consuming `inventory.models` with independent `base_public.html` (Stitch *Rápido Pack Curation System*: `Outfit` + `Hanken Grotesk`, Primary Teal `#005c55`/`#0f766e`, Secondary Amber `#904d00`/`#F59E0B`, WhatsApp `#25D366`).
+    - **URL Routing:** `/` (`storefront:home` corporate landing page), `/tienda/` (`storefront:catalog`), `/tienda/categoria/<slug>/` (`storefront:category`), `/tienda/producto/<slug>-<pk>/` (`storefront:product_detail` with 301 canonical slug redirect), `/como-comprar/` (`storefront:how_to_buy`), `/go/whatsapp/` (`storefront:go_whatsapp`), `/go/whatsapp/<pk>/` (`storefront:go_whatsapp_product`), `/go/link/<link_pk>/` (`storefront:go_listing`), `/sitemap.xml`, `/robots.txt`, `/aviso-legal/`, `/privacidad/`, `/cookies/`; internal staff root moved to `/panel/` (`inventory:root`); `/dashboard/`, `/intake/`, and `/products/<pk>/` preserved intact.
+    - **Taxonomy & AI:** `Category` model pre-seeded with 12 official Rápido Pack categories + `ProductCondition` (4 states) auto-extracted by Gemini in `ai_service.py` + `StorefrontConfiguration` singleton.
+    - **Visibility & Security Firewall:** `Product.objects.public_visible()` shows `READY`/`PUBLISHED` (`is_public=True`, `sale_price > 0`, non-empty `ai_title`) and retains `SOLD` items for 7 days at the end of the catalog; landing page *"Recién llegados"* shows `Product.objects.public_visible().filter(is_sold=False, is_reserved=False).order_by("-created_at")[:4]`; `raw_note`, `clarifications`, `created_by`, and `status_logs` are strictly excluded and verified via automated non-leak tests.
+    - **Decision:** Approved per [`docs/questionnaires/client-storefront-questionnaire-es.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/questionnaires/client-storefront-questionnaire-es.md), [`docs/questionnaires/developer-storefront-architecture-questionnaire.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/questionnaires/developer-storefront-architecture-questionnaire.md), and [`docs/prds/PRD-public-marketplace-storefront.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-public-marketplace-storefront.md).
 

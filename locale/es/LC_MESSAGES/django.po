@@ -1868,3 +1868,381 @@ msgid ""
 msgstr ""
 "Cambios detectados en producto publicado. Se requiere actualizar las "
 "plataformas externas."
+
+msgid "New with tags"
+msgstr "Nuevo con etiquetas"
+
+msgid "Very good"
+msgstr "Muy bueno"
+
+msgid "Good condition"
+msgstr "Buen estado"
+
+msgid "Vintage"
+msgstr "Vintage"
+
+msgid "Storefront"
+msgstr "Tienda"
+
+msgid "Public Storefront"
+msgstr "Tienda Pública"
+
+msgid "Second-Hand & Opportunity Store in Valencia & Online"
+msgstr "Tu tienda de segunda mano y oportunidad en Valencia y online"
+
+msgid "Staff Mode"
+msgstr "Modo Equipo"
+
+msgid "Staging Dashboard"
+msgstr "Panel de Staging"
+
+msgid "Protected shipping across Spain & Free pickup in Alfafar"
+msgstr "Envíos protegidos a toda España y recogida GRATIS en Alfafar"
+
+msgid "Search items, brands, categories, Ref #..."
+msgstr "Buscar artículos, marcas, categorías, Ref #..."
+
+msgid "Search items, categories, Ref #..."
+msgstr "Buscar artículos, categorías, Ref #..."
+
+msgid "Search catalog"
+msgstr "Buscar en el catálogo"
+
+msgid "How to buy"
+msgstr "Cómo comprar"
+
+msgid "Direct contact"
+msgstr "Contacto directo"
+
+msgid "Guide"
+msgstr "Guía"
+
+msgid "Physical Store & Online"
+msgstr "Tienda Física y Online"
+
+msgid "Your second-hand, vintage, and opportunity store in Alfafar (Valencia). Every item is inspected and photographed in-house."
+msgstr "Tu tienda de segunda mano, vintage y oportunidad en Alfafar (Valencia). Cada artículo es revisado y fotografiado en tienda."
+
+msgid "Address:"
+msgstr "Dirección:"
+
+msgid "Hours:"
+msgstr "Horario:"
+
+msgid "Open in Google Maps"
+msgstr "Abrir en Google Maps"
+
+msgid "Featured Categories"
+msgstr "Categorías Destacadas"
+
+msgid "Tech & Electronics"
+msgstr "Tecnología y electrónica"
+
+msgid "Home & Garden"
+msgstr "Hogar y jardín"
+
+msgid "Appliances"
+msgstr "Electrodomésticos"
+
+msgid "Bicycles"
+msgstr "Bicicletas"
+
+msgid "Collectibles"
+msgstr "Coleccionismo"
+
+msgid "Sports & Leisure"
+msgstr "Deporte y ocio"
+
+msgid "Fashion & Vintage"
+msgstr "Moda y vintage"
+
+msgid "Books, Film & Music"
+msgstr "Cine, libros y música"
+
+msgid "Have a question about an item?"
+msgstr "¿Tienes dudas sobre un artículo?"
+
+msgid "WhatsApp Store →"
+msgstr "WhatsApp Tienda →"
+
+msgid "How to Buy, Pickup & Guarantee"
+msgstr "Compra, Recogida y Garantía"
+
+msgid "How to buy, reserve & pick up? (Learn more)"
+msgstr "¿Cómo comprar, reservar y recoger? (Saber más)"
+
+msgid "24-hour reservation holds without upfront payment for in-person inspection in Alfafar."
+msgstr "Reservas válidas durante 24 horas sin compromiso de anticipo para comprobación en persona en Alfafar."
+
+msgid "Protected national shipping"
+msgstr "Envíos protegidos nacionales"
+
+msgid "Tracked shipments across Spain via Wallapop Envíos, Vinted, and Milanuncios."
+msgstr "Envíos nacionales con seguimiento y protección al comprador vía Wallapop Envíos, Vinted y Milanuncios."
+
+msgid "Legal Notice"
+msgstr "Aviso Legal"
+
+msgid "Privacy Policy"
+msgstr "Política de Privacidad"
+
+msgid "Cookies Policy"
+msgstr "Política de Cookies"
+
+msgid "Staff Access"
+msgstr "Acceso Equipo"
+
+msgid "All rights reserved."
+msgstr "Todos los derechos reservados."
+
+msgid "Circular economy & transparent local commerce"
+msgstr "Economía circular y comercio local transparente"
+
+msgid "Unique opportunities inspected daily in-store and online"
+msgstr "Oportunidades únicas revisadas a diario en tienda y online"
+
+msgid "Technically audited"
+msgstr "Auditado técnicamente"
+
+msgid "Free in-store pickup"
+msgstr "Recogida sin coste"
+
+msgid "Inspected & verified items"
+msgstr "Artículos revisados y verificados"
+
+msgid "100% real product photos"
+msgstr "Fotos 100% reales del producto"
+
+msgid "FREE store pickup (Alfafar)"
+msgstr "Recogida GRATIS en tienda (Alfafar)"
+
+msgid "Direct contact & WhatsApp hold"
+msgstr "Trato directo y reserva por WhatsApp"
+
+msgid "All Categories"
+msgstr "Todo"
+
+msgid "Price:"
+msgstr "Precio:"
+
+msgid "All"
+msgstr "Todos"
+
+msgid "Under 20 €"
+msgstr "Menos de 20 €"
+
+msgid "Over 50 €"
+msgstr "Más de 50 €"
+
+msgid "Condition:"
+msgstr "Estado:"
+
+msgid "items available"
+msgstr "artículos disponibles"
+
+msgid "Sort:"
+msgstr "Ordenar:"
+
+msgid "Newest first"
+msgstr "Novedades primero"
+
+msgid "Featured ★"
+msgstr "Destacados ★"
+
+msgid "Price: low to high"
+msgstr "Precio: menor a mayor"
+
+msgid "Price: high to low"
+msgstr "Precio: mayor a menor"
+
+msgid "No items match your current filters"
+msgstr "No hay artículos que coincidan con tus filtros actuales"
+
+msgid "We update our catalog daily with new arrivals at our Alfafar store. Try clearing the filters or ask us directly via WhatsApp."
+msgstr "Actualizamos nuestro catálogo a diario con nuevas entradas en nuestra tienda de Alfafar. Prueba a limpiar los filtros o consúltanos por WhatsApp."
+
+msgid "View all items"
+msgstr "Ver todos los artículos"
+
+msgid "Ask on WhatsApp"
+msgstr "Consultar por WhatsApp"
+
+msgid "PHYSICAL STORE & STAGING STUDIO"
+msgstr "TIENDA FÍSICA Y TALLER"
+
+msgid "Visit us in person in Alfafar"
+msgstr "Visítanos personalmente en Alfafar"
+
+msgid "You can inspect and test any item in our catalog with no obligation. Visit us at"
+msgstr "Puedes ver y probar cualquier artículo de nuestro catálogo sin compromiso. Te esperamos en"
+
+msgid "Get directions (Google Maps)"
+msgstr "Cómo llegar (Google Maps)"
+
+msgid "How to reserve & store hours"
+msgstr "Cómo reservar y horarios"
+
+msgid "SOLD"
+msgstr "VENDIDO"
+
+msgid "RESERVED"
+msgstr "RESERVADO"
+
+msgid "FEATURED"
+msgstr "DESTACADO"
+
+msgid "Delivered in Alfafar"
+msgstr "Entregado en Alfafar"
+
+msgid "Opportunity"
+msgstr "Oportunidad"
+
+msgid "Ask for price"
+msgstr "Consultar precio"
+
+msgid "Recently sold at Alfafar store"
+msgstr "Vendido recientemente en tienda Alfafar"
+
+msgid "Active 24h hold for in-store check"
+msgstr "Reserva 24h activa para prueba en tienda"
+
+msgid "In store Alfafar · Available today"
+msgstr "En tienda Alfafar · Disponible hoy"
+
+msgid "See similar items"
+msgstr "Ver artículos similares"
+
+msgid "Temporarily reserved (In Store)"
+msgstr "Reservado temporalmente (Tienda)"
+
+msgid "Interested? Ask about waiting list"
+msgstr "¿Interesado? Consultar lista de espera"
+
+msgid "Details"
+msgstr "Saber más"
+
+msgid "How to buy at Rápido Pack Alfafar?"
+msgstr "¿Cómo comprar en Rápido Pack Alfafar?"
+
+msgid "In-store pickup guide, 24h reservation & protected shipping across Spain"
+msgstr "Guía de recogida en tienda, reserva 24h y envíos protegidos a toda España"
+
+msgid "Option A: Free pickup at our physical store (Alfafar)"
+msgstr "Opción A: Recogida gratuita en nuestra tienda física (Alfafar)"
+
+msgid "Free shipping / No fees"
+msgstr "Sin gastos de envío"
+
+msgid "Option B: Protected shipping across Spain"
+msgstr "Opción B: Compra con envío protegido (Toda España)"
+
+msgid "Buyer protection"
+msgstr "Protección al comprador"
+
+msgid "Option C: Verified condition & real photos"
+msgstr "Opción C: Estado verificado y fotos reales"
+
+msgid "100% Real Photos"
+msgstr "Fotos 100% Reales"
+
+msgid "Got it, back to store"
+msgstr "Entendido, volver a la tienda"
+
+msgid "Edit in Staging"
+msgstr "Editar en Staging"
+
+msgid "Catalog"
+msgstr "Catálogo"
+
+msgid "Verified in Alfafar"
+msgstr "Verificado en Alfafar"
+
+msgid "SINGLE PIECE AVAILABLE"
+msgstr "PIEZA ÚNICA DISPONIBLE"
+
+msgid "Zoom photo"
+msgstr "Ampliar fotografía"
+
+msgid "100% real photograph of the item in stock (Alfafar Studio)"
+msgstr "Fotografía 100% real del artículo en stock (Taller Alfafar)"
+
+msgid "Product Description & Details"
+msgstr "Descripción y detalles del artículo"
+
+msgid "View store pickup, 24h hold & shipping guide"
+msgstr "Consultar guía de recogida en tienda, reserva 24h y envíos"
+
+msgid "Rápido Pack Verification Guarantee"
+msgstr "Certificado de Verificación Rápido Pack"
+
+msgid "Visual and functional inspection completed at our Alfafar (Valencia) store"
+msgstr "Inspección visual y funcional completada en nuestra tienda de Alfafar (Valencia)"
+
+msgid "Inspected in Store"
+msgstr "Revisado en Tienda"
+
+msgid "Real Studio Photographs"
+msgstr "Fotografías Reales de Estudio"
+
+msgid "24h Free In-Store Hold"
+msgstr "Reserva Gratuita 24h en Tienda"
+
+msgid "Keep exploring"
+msgstr "Sigue explorando"
+
+msgid "Related Opportunities"
+msgstr "Oportunidades Relacionadas"
+
+msgid "View full catalog"
+msgstr "Ver catálogo completo"
+
+msgid "Available (Single item)"
+msgstr "Disponible (Pieza única)"
+
+msgid "Inspected at Alfafar store · Real item in stock"
+msgstr "Inspeccionado en tienda Alfafar · Unidad real en stock"
+
+msgid "Unified price in-store and online"
+msgstr "Precio único en tienda y online"
+
+msgid "Free store pickup"
+msgstr "Recogida gratis en tienda"
+
+msgid "This item has been sold"
+msgstr "Este artículo ya ha sido vendido"
+
+msgid "See similar items in catalog"
+msgstr "Ver artículos similares en el catálogo"
+
+msgid "Temporarily reserved for in-store check (24h hold)"
+msgstr "Reservado temporalmente para prueba en tienda (24h)"
+
+msgid "Join waiting list via WhatsApp"
+msgstr "Consultar lista de espera por WhatsApp"
+
+msgid "Buy / Ask via WhatsApp"
+msgstr "Comprar / Consultar por WhatsApp"
+
+msgid "Automatic message with %(ref)s ready to send"
+msgstr "Mensaje automático con %(ref)s listo para enviar"
+
+msgid "Learn more about free pickup in Alfafar & shipping"
+msgstr "Saber más sobre recogida gratis en Alfafar y envíos"
+
+msgid "Also available with protected shipping on:"
+msgstr "También disponible con envío protegido en:"
+
+msgid "Protected shipping"
+msgstr "Envío protegido"
+
+msgid "FREE pickup at Alfafar store"
+msgstr "Recogida GRATIS en tienda Alfafar"
+
+msgid "In-store payments: Cash, Bizum, or Card."
+msgstr "Pagos en tienda: Efectivo, Bizum o Tarjeta."
+
+msgid "Shipping across Spain"
+msgstr "Envíos a toda España"
+
+msgid "View in Storefront"
+msgstr "Ver en Tienda Pública"

@@ -1,0 +1,127 @@
+{% load i18n %}
+<!-- How to Buy / Shipping / Store Pickup Modal (Native <dialog closedby="any"> + JS light-dismiss fallback) -->
+<dialog id="how-to-buy-dialog"
+        closedby="any"
+        aria-labelledby="how-to-buy-title"
+        class="w-full max-w-3xl bg-surface-container-lowest rounded-xl shadow-2xl p-0 backdrop:bg-on-surface/60 backdrop:backdrop-blur-sm text-on-surface overflow-hidden">
+  <!-- Modal Header -->
+  <div class="px-space-md lg:px-space-lg py-space-md bg-surface-container-low flex items-center justify-between border-b border-outline-variant/30">
+    <div class="flex items-center gap-space-sm">
+      <div class="w-9 h-9 rounded-full bg-primary text-on-primary flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-[20px]">help_outline</span>
+      </div>
+      <div>
+        <h3 id="how-to-buy-title" class="font-headline-sm text-headline-sm text-on-surface">
+          {% trans "How to buy at Rápido Pack Alfafar?" %}
+        </h3>
+        <p class="font-body-sm text-body-sm text-on-surface-variant">
+          {% trans "In-store pickup guide, 24h reservation & protected shipping across Spain" %}
+        </p>
+      </div>
+    </div>
+    <button type="button"
+            onclick="document.getElementById('how-to-buy-dialog').close()"
+            class="w-9 h-9 rounded-full bg-surface-container hover:bg-surface-container-highest text-on-surface flex items-center justify-center transition-colors"
+            aria-label="{% trans 'Close dialog' %}">
+      <span class="material-symbols-outlined text-[20px]">close</span>
+    </button>
+  </div>
+
+  <!-- Modal Body (3 Options) -->
+  <div class="p-space-md lg:p-space-lg max-h-[75vh] overflow-y-auto space-y-space-md">
+    <!-- Option A: Free In-Store Pickup in Alfafar -->
+    <div class="bg-surface-container-low p-space-md rounded-xl space-y-space-xs">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="inline-flex items-center gap-1.5 font-label-md text-label-md text-primary font-bold">
+          <span class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center text-[12px]">A</span>
+          <span>{% trans "Option A: Free pickup at our physical store (Alfafar)" %}</span>
+        </span>
+        <span class="font-label-sm text-label-sm text-[#16a34a] font-semibold bg-[#dcfce7] px-space-sm py-0.5 rounded-full">
+          {% trans "Free shipping / No fees" %}
+        </span>
+      </div>
+      <p class="font-body-md text-body-md text-on-surface-variant">
+        {% trans "Location:" %} <strong>{{ storefront.address }}</strong> ({{ storefront.opening_hours }}).
+      </p>
+      <ul class="font-body-sm text-body-sm text-on-surface-variant space-y-1 list-disc list-inside">
+        <li>
+          <strong>{% trans "24h no-commitment hold:" %}</strong>
+          {% trans "Contact us via WhatsApp quoting the item reference (e.g. Ref. #1042) and we will hold it for 24 hours without upfront payment." %}
+        </li>
+        <li>
+          <strong>{% trans "Inspect in person:" %}</strong>
+          {% trans "Visit our store in Alfafar, inspect the item closely, and test it before deciding." %}
+        </li>
+        <li>
+          <strong>{% trans "Accepted in-store payment methods:" %}</strong>
+          {% trans "Cash, Bizum, or Debit/Credit Card at the counter." %}
+        </li>
+      </ul>
+    </div>
+
+    <!-- Option B: Protected Shipping via Wallapop / Vinted / Milanuncios -->
+    <div class="bg-surface-container-low p-space-md rounded-xl space-y-space-xs">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="inline-flex items-center gap-1.5 font-label-md text-label-md text-on-surface font-bold">
+          <span class="w-6 h-6 rounded-full bg-on-surface text-surface-container-lowest flex items-center justify-center text-[12px]">B</span>
+          <span>{% trans "Option B: Protected shipping across Spain" %}</span>
+        </span>
+        <span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-space-sm py-0.5 rounded-full">
+          {% trans "Buyer protection" %}
+        </span>
+      </div>
+      <p class="font-body-md text-body-md text-on-surface-variant">
+        {% trans "If you live outside Valencia or prefer home delivery:" %}
+      </p>
+      <ul class="font-body-sm text-body-sm text-on-surface-variant space-y-1 list-disc list-inside">
+        <li>
+          {% trans "We ship via our official listings on Wallapop Envíos, Vinted, and Milanuncios, or direct shipment curated from our logistics center." %}
+        </li>
+        <li>
+          {% trans "Your payment stays protected in escrow until you receive and verify the package." %}
+        </li>
+        <li>
+          {% trans "Professional shock-resistant packaging prepared directly by Rápido Pack." %}
+        </li>
+      </ul>
+    </div>
+
+    <!-- Option C: Verified Inspection & Support -->
+    <div class="bg-surface-container-low p-space-md rounded-xl space-y-space-xs">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="inline-flex items-center gap-1.5 font-label-md text-label-md text-secondary font-bold">
+          <span class="w-6 h-6 rounded-full bg-secondary text-on-secondary flex items-center justify-center text-[12px]">C</span>
+          <span>{% trans "Option C: Verified condition & real photos" %}</span>
+        </span>
+        <span class="font-label-sm text-label-sm text-secondary bg-secondary-fixed px-space-sm py-0.5 rounded-full">
+          {% trans "100% Real Photos" %}
+        </span>
+      </div>
+      <p class="font-body-sm text-body-sm text-on-surface-variant">
+        {% trans "Every item is photographed in our Alfafar staging studio and inspected before listing. Need an extra photo or video? Message us on WhatsApp and we will send it from the shop floor." %}
+      </p>
+    </div>
+  </div>
+
+  <!-- Modal Footer -->
+  <div class="px-space-md lg:px-space-lg py-space-sm bg-surface-container flex flex-col sm:flex-row items-center justify-between gap-space-sm">
+    <span class="font-body-sm text-body-sm text-on-surface-variant text-center sm:text-left">
+      {% trans "Questions about an item or shipping? We reply fast during store hours." %}
+      <a href="{% url 'storefront:how_to_buy' %}" class="text-primary underline ml-1">{% trans "Open full guide" %}</a>
+    </span>
+    <div class="flex items-center gap-space-xs w-full sm:w-auto">
+      <button type="button"
+              onclick="document.getElementById('how-to-buy-dialog').close()"
+              class="flex-1 sm:flex-none px-space-md py-space-xs rounded-lg bg-surface-container-lowest text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors">
+        {% trans "Got it, back to store" %}
+      </button>
+      <a href="{{ storefront_whatsapp_url }}"
+         target="_blank"
+         rel="noopener noreferrer"
+         class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-space-md py-space-xs rounded-lg bg-[#25D366] text-white font-label-md text-label-md hover:bg-[#20ba5a] transition-colors">
+        <span class="material-symbols-outlined text-[16px]">chat</span>
+        <span>{% trans "Ask on WhatsApp" %}</span>
+      </a>
+    </div>
+  </div>
+</dialog>
