@@ -1165,3 +1165,8 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
     - Verified by automated tests (`tests/test_i18n.py`, `tests/test_storefront.py`) and Playwright real-browser assertions (`tests/test_browser_daily_workflow.py`).
     - **Decision:** Approved per [`docs/prds/PRD-translation-audit-and-completeness.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-translation-audit-and-completeness.md).
 
+41. **On-Demand Mobile Photo Crop & Rotate in Intake:**
+    - Locally vendored **Cropper.js v1.6.2** (`inventory/static/inventory/vendor/cropper.min.js` & `cropper.min.css`) integrated into `#imagePreviewModal` on `/intake/`.
+    - Accessible via tapping any photo thumbnail or its `.photo-edit-btn` (`✂️`) button in the 2-column `#previewGrid`.
+    - Provides 90° left/right rotation (`#rotateLeftBtn`, `#rotateRightBtn`), freeform touch crop (`autoCropArea: 1`, `viewMode: 1`), and in-place `.webp` (`max 2560px`, quality `0.82`) replacement via `#applyCropBtn` without horizontal overflow on `320×711` / `360×800` viewports.
+    - **Decision:** Approved per [`docs/ideas/intake-photo-crop-rotate.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/ideas/intake-photo-crop-rotate.md) and [`docs/prds/PRD-intake-photo-crop-rotate.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-intake-photo-crop-rotate.md).
