@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **CI Test Isolation for AI Services**: Decorated `test_ai_copywriting_prompt_formats_direct_notes` in [`tests/test_clarifications_hub.py`](file:///C:/Users/Jose/antigravity/epic-tesla/tests/test_clarifications_hub.py) with `@override_settings(GEMINI_API_KEY="test-key")` to prevent failures in clean CI runner environments lacking local `.env` secrets. Hardened Gate 3 in [`.github/workflows/ci.yml`](file:///C:/Users/Jose/antigravity/epic-tesla/.github/workflows/ci.yml) with a dummy fallback `GEMINI_API_KEY`.
+
 ## [2.1.0] - 2026-10-27
 
 ### Added

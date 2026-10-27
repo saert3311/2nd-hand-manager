@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -219,6 +219,7 @@ class ProductClarificationsHubTests(TestCase):
         self.assertRedirects(response, reverse("inventory:product_detail", kwargs={"pk": self.product.pk}))
         self.assertFalse(ProductClarification.objects.filter(pk=clarif.pk).exists())
 
+    @override_settings(GEMINI_API_KEY="test-key")
     def test_ai_copywriting_prompt_formats_direct_notes(self):
         """generate_product_listing prompt includes direct notes formatted as Note / Nota."""
         ProductClarification.objects.create(
