@@ -182,3 +182,81 @@ class InternationalizationTests(TestCase):
             self.assertEqual(_("Price Pending"), "Precio pendiente")
             self.assertEqual(_("Published"), "Publicado")
             self.assertEqual(_("Identified Title"), "Título identificado")
+
+    def test_storefront_home_renders_bilingual_correctly(self):
+        # 1. Spanish mode
+        self.client.cookies["django_language"] = "es"
+        response = self.client.get(reverse("storefront:home"))
+        self.assertEqual(response.status_code, 200)
+        content_es = response.content.decode("utf-8")
+        self.assertIn("Tu punto de confianza en Alfafar", content_es)
+        self.assertIn("Servicios de paquetería", content_es)
+        self.assertIn("Lo último en nuestra tienda", content_es)
+        self.assertIn("Visítanos en Alfafar", content_es)
+        self.assertIn("Paquetería", content_es)
+        self.assertIn("Tienda", content_es)
+
+        # 2. English mode
+        self.client.cookies["django_language"] = "en"
+        response = self.client.get(reverse("storefront:home"))
+        self.assertEqual(response.status_code, 200)
+        content_en = response.content.decode("utf-8")
+        self.assertIn("Your trusted local hub in Alfafar", content_en)
+        self.assertIn("Parcel Services", content_en)
+        self.assertIn("Latest arrivals in our store", content_en)
+        self.assertIn("Visit us in Alfafar", content_en)
+        self.assertIn("Store", content_en)
+        # Ensure Spanish raw source is not displayed in English mode
+        self.assertNotIn("Tu punto de confianza en Alfafar", content_en)
+
+    def test_storefront_how_to_buy_renders_bilingual_correctly(self):
+        # 1. Spanish mode
+        self.client.cookies["django_language"] = "es"
+        response = self.client.get(reverse("storefront:how_to_buy"))
+        self.assertEqual(response.status_code, 200)
+        content_es = response.content.decode("utf-8")
+        self.assertIn("¿Cómo comprar en Rápido Pack Alfafar?", content_es)
+        self.assertIn("Reserva 24h sin compromiso:", content_es)
+        self.assertIn("Efectivo, Bizum o Tarjeta de débito/crédito en mostrador.", content_es)
+
+        # 2. English mode
+        self.client.cookies["django_language"] = "en"
+        response = self.client.get(reverse("storefront:how_to_buy"))
+        self.assertEqual(response.status_code, 200)
+        content_en = response.content.decode("utf-8")
+        self.assertIn("How to buy at Rápido Pack Alfafar?", content_en)
+        self.assertIn("24h no-commitment hold:", content_en)
+        self.assertIn("Cash, Bizum, or Debit/Credit Card at the counter.", content_en)
+        self.assertNotIn("¿Cómo comprar en Rápido Pack Alfafar?", content_en)
+
+    def test_storefront_legal_pages_render_bilingual_correctly(self):
+        pages = [
+            ("storefront:legal_notice", "Identificación de la Tienda", "Store Identification"),
+            ("storefront:privacy", "Protección de Datos (RGPD / LOPDGDD)", "Data Protection (GDPR / LOPDGDD)"),
+            ("storefront:cookies", "Solo Cookies Técnicas", "Technical Cookies Only"),
+        ]
+        for url_name, expected_es, expected_en in pages:
+            # Spanish
+            self.client.cookies["django_language"] = "es"
+            resp_es = self.client.get(reverse(url_name))
+            self.assertEqual(resp_es.status_code, 200)
+            self.assertIn(expected_es, resp_es.content.decode("utf-8"))
+
+            # English
+            self.client.cookies["django_language"] = "en"
+            resp_en = self.client.get(reverse(url_name))
+            self.assertEqual(resp_en.status_code, 200)
+            content_en = resp_en.content.decode("utf-8")
+            self.assertIn(expected_en, content_en)
+            self.assertNotIn(expected_es, content_en)
+
+    def test_compile_locales_management_command(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        out = StringIO()
+        call_command("compile_locales", stdout=out)
+        output = out.getvalue()
+        self.assertIn("Successfully compiled 2 catalog(s).", output)
+

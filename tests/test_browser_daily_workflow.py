@@ -482,3 +482,66 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             print("\n==================================================================")
             print("FULL DAILY WORKFLOW VERIFICATION IN REAL CHROME PASSED 100%!")
             print("==================================================================")
+
+    def test_browser_bilingual_language_switching_in_chrome(self):
+        """
+        Verify live language switching (ES <-> EN) in real Chrome browser:
+        - Asserts proper Spanish strings on initial page load.
+        - Clicks English language button, waits for navigation/networkidle.
+        - Asserts translated English strings appear and Spanish raw strings are absent.
+        - Navigates across pages (How to Buy) and switches back to Spanish.
+        - Captures visual evidence screenshots.
+        """
+        with sync_playwright() as p:
+            browser = p.chromium.launch(channel="chrome", headless=True)
+            context = browser.new_context(viewport={"width": 1280, "height": 850}, locale="es-ES")
+            page = context.new_page()
+
+            # 1. Visit storefront home in Spanish
+            page.goto(f"{self.live_server_url}{reverse('storefront:home')}")
+            page.wait_for_selector("#paqueteria")
+
+            page_text_es = page.content()
+            self.assertIn("Tu punto de confianza en Alfafar", page_text_es)
+            self.assertIn("Servicios de paquetería", page_text_es)
+            self.assertIn("Lo último en nuestra tienda", page_text_es)
+            page.screenshot(path="screenshots/daily_bilingual_01_es.png")
+
+            # 2. Click English switcher button 'EN'
+            en_btn = page.locator('button[name="language"][value="en"]').first
+            self.assertTrue(en_btn.is_visible())
+            en_btn.click()
+            page.wait_for_load_state("networkidle")
+
+            # Verify English strings in DOM
+            page_text_en = page.content()
+            self.assertIn("Your trusted local hub in Alfafar", page_text_en)
+            self.assertIn("Parcel Services", page_text_en)
+            self.assertIn("Latest arrivals in our store", page_text_en)
+            self.assertNotIn("Tu punto de confianza en Alfafar", page_text_en)
+            page.screenshot(path="screenshots/daily_bilingual_02_en.png")
+
+            # 3. Navigate to How to Buy in English
+            page.goto(f"{self.live_server_url}{reverse('storefront:how_to_buy')}")
+            page.wait_for_load_state("networkidle")
+            htb_text_en = page.content()
+            self.assertIn("How to buy at Rápido Pack Alfafar?", htb_text_en)
+            self.assertIn("24h no-commitment hold:", htb_text_en)
+            self.assertIn("Cash, Bizum, or Debit/Credit Card at the counter.", htb_text_en)
+            page.screenshot(path="screenshots/daily_bilingual_03_htb_en.png")
+
+            # 4. Switch back to Spanish
+            es_btn = page.locator('button[name="language"][value="es"]').first
+            self.assertTrue(es_btn.is_visible())
+            es_btn.click()
+            page.wait_for_load_state("networkidle")
+
+            htb_text_es = page.content()
+            self.assertIn("¿Cómo comprar en Rápido Pack Alfafar?", htb_text_es)
+            self.assertIn("Reserva 24h sin compromiso:", htb_text_es)
+            self.assertIn("Efectivo, Bizum o Tarjeta de débito/crédito en mostrador.", htb_text_es)
+            page.screenshot(path="screenshots/daily_bilingual_04_htb_es.png")
+
+            context.close()
+            browser.close()
+            print("BILINGUAL REAL CHROME BROWSER TEST PASSED!")
