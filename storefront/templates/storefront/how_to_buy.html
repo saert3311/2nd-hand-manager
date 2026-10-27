@@ -11,7 +11,7 @@
       <div class="border-b border-outline-variant/25 pb-space-md flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
         <div>
           <a href="{% url 'storefront:catalog' %}" class="inline-flex items-center gap-1 text-primary font-label-md text-label-md hover:underline mb-space-xs">
-            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span class="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_back</span>
             <span>{% trans "Back to store" %}</span>
           </a>
           <h1 class="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl text-on-surface font-bold">
@@ -24,8 +24,8 @@
         <a href="{% url 'storefront:go_whatsapp' %}"
            target="_blank"
            rel="noopener noreferrer"
-           class="inline-flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white font-label-md text-label-md font-bold px-space-md py-2.5 rounded-xl shadow-sm shrink-0">
-          <span class="material-symbols-outlined text-[18px]">chat</span>
+           class="inline-flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-slate-950 font-label-md text-label-md font-bold px-space-md py-2.5 rounded-xl shadow-sm shrink-0">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">chat</span>
           <span>{% trans "Inquire on WhatsApp" %}</span>
         </a>
       </div>
@@ -106,12 +106,12 @@
       <div class="pt-space-sm flex flex-wrap items-center justify-between gap-space-sm border-t border-outline-variant/25">
         <a href="{% url 'storefront:catalog' %}"
            class="inline-flex items-center gap-1.5 bg-primary text-on-primary font-label-md text-label-md font-bold px-space-md py-2.5 rounded-xl hover:bg-primary-container transition-colors">
-          <span class="material-symbols-outlined text-[18px]">storefront</span>
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">storefront</span>
           <span>{% trans "Explore the store catalog" %}</span>
         </a>
         <a href="{% url 'storefront:home' %}#contacto"
            class="inline-flex items-center gap-1 text-primary font-label-md text-label-md font-semibold hover:underline">
-          <span class="material-symbols-outlined text-[18px]">location_on</span>
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">location_on</span>
           <span>{% trans "View location and hours in Alfafar" %}</span>
         </a>
       </div>

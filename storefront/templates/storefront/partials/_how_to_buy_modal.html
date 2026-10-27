@@ -8,12 +8,12 @@
   <div class="px-space-md lg:px-space-lg py-space-md bg-surface-container-low flex items-center justify-between border-b border-outline-variant/30">
     <div class="flex items-center gap-space-sm">
       <div class="w-9 h-9 rounded-full bg-primary text-on-primary flex items-center justify-center shrink-0">
-        <span class="material-symbols-outlined text-[20px]">help_outline</span>
+        <span class="material-symbols-outlined text-[20px]" aria-hidden="true">help_outline</span>
       </div>
       <div>
-        <h3 id="how-to-buy-title" class="font-headline-sm text-headline-sm text-on-surface">
+        <h2 id="how-to-buy-title" class="font-headline-sm text-headline-sm text-on-surface">
           {% trans "How to buy at Rápido Pack Alfafar?" %}
-        </h3>
+        </h2>
         <p class="font-body-sm text-body-sm text-on-surface-variant">
           {% trans "In-store pickup guide, 24h reservation & protected shipping across Spain" %}
         </p>
@@ -21,9 +21,9 @@
     </div>
     <button type="button"
             onclick="document.getElementById('how-to-buy-dialog').close()"
-            class="w-9 h-9 rounded-full bg-surface-container hover:bg-surface-container-highest text-on-surface flex items-center justify-center transition-colors"
+            class="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-surface-container hover:bg-surface-container-highest text-on-surface flex items-center justify-center transition-colors"
             aria-label="{% trans 'Close dialog' %}">
-      <span class="material-symbols-outlined text-[20px]">close</span>
+      <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
     </button>
   </div>
 
@@ -112,14 +112,14 @@
     <div class="flex items-center gap-space-xs w-full sm:w-auto">
       <button type="button"
               onclick="document.getElementById('how-to-buy-dialog').close()"
-              class="flex-1 sm:flex-none px-space-md py-space-xs rounded-lg bg-surface-container-lowest text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors">
+              class="flex-1 sm:flex-none px-space-md py-2 min-h-[40px] rounded-lg bg-surface-container-lowest text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors">
         {% trans "Got it, back to store" %}
       </button>
       <a href="{{ storefront_whatsapp_url }}"
          target="_blank"
          rel="noopener noreferrer"
-         class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-space-md py-space-xs rounded-lg bg-[#25D366] text-white font-label-md text-label-md hover:bg-[#20ba5a] transition-colors">
-        <span class="material-symbols-outlined text-[16px]">chat</span>
+         class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-space-md py-2 min-h-[40px] rounded-lg bg-[#25D366] text-slate-950 font-label-md text-label-md font-bold hover:bg-[#20ba5a] transition-colors">
+        <span class="material-symbols-outlined text-[16px]" aria-hidden="true">chat</span>
         <span>{% trans "Ask on WhatsApp" %}</span>
       </a>
     </div>

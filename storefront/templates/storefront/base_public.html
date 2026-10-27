@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="text-scale" content="scale">
   <title>{% block title %}{{ storefront.store_name }} · {% trans "Second-Hand & Opportunity Store in Valencia & Online" %}{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}{{ storefront.hero_subtitle }}{% endblock %}">
   <link rel="icon" type="image/png" sizes="192x192" href="{% static 'inventory/icons/icon-192.png' %}">
@@ -111,25 +112,35 @@
             "label-md": ["Hanken Grotesk", "sans-serif"]
           },
           fontSize: {
-            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
-            "price-display-lg": ["36px", { "lineHeight": "40px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
-            "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
-            "headline-md": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
-            "headline-xl-mobile": ["30px", { "lineHeight": "36px", "letterSpacing": "-0.015em", "fontWeight": "700" }],
-            "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400" }],
-            "headline-lg-mobile": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
-            "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
-            "headline-lg": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
-            "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
-            "headline-sm": ["16px", { "lineHeight": "22px", "letterSpacing": "0em", "fontWeight": "600" }],
-            "price-display": ["24px", { "lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
-            "label-md": ["13px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }]
+            "label-sm": ["0.75rem", { "lineHeight": "1rem", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "price-display-lg": ["2.25rem", { "lineHeight": "2.5rem", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "body-md": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0em", "fontWeight": "400" }],
+            "headline-md": ["1.25rem", { "lineHeight": "1.625rem", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "headline-xl-mobile": ["1.875rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.015em", "fontWeight": "700" }],
+            "body-sm": ["0.75rem", { "lineHeight": "1rem", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "headline-lg-mobile": ["1.375rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-xl": ["2.5rem", { "lineHeight": "3rem", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-lg": ["1.75rem", { "lineHeight": "2.125rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-lg": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "400" }],
+            "headline-sm": ["1rem", { "lineHeight": "1.375rem", "letterSpacing": "0em", "fontWeight": "600" }],
+            "price-display": ["1.5rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "label-md": ["0.8125rem", { "lineHeight": "1rem", "letterSpacing": "0.02em", "fontWeight": "600" }]
           }
         }
       }
     };
   </script>
   <style>
+    body {
+      -webkit-tap-highlight-color: transparent;
+    }
+    @media (max-width: 640px) {
+      input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+      select,
+      textarea {
+        font-size: 1rem !important;
+      }
+    }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     dialog::backdrop {
@@ -140,6 +151,12 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased flex flex-col min-h-full">
+
+  <!-- Skip to Main Content Link (WCAG 2.4.1) -->
+  <a href="#main-content"
+     class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-primary focus:text-on-primary focus:font-bold focus:rounded-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+    {% trans "Skip to main content" %}
+  </a>
 
   {% if user.is_authenticated %}
   <!-- Staff Quick Bar (Visible only to logged-in staff/assistants) -->
@@ -167,13 +184,13 @@
       <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between font-label-sm text-label-sm gap-space-xs">
         <div class="flex items-center gap-space-sm">
           <span class="flex items-center gap-1">
-            <span class="material-symbols-outlined text-[15px] text-primary-fixed">storefront</span>
+            <span class="material-symbols-outlined text-[15px] text-primary-fixed" aria-hidden="true">storefront</span>
             <span>{{ storefront.store_name }} · {{ storefront.address }} ({{ storefront.opening_hours }})</span>
           </span>
         </div>
         <div class="hidden sm:flex items-center gap-space-md">
           <span class="flex items-center gap-1">
-            <span class="material-symbols-outlined text-[15px] text-primary-fixed">inventory_2</span>
+            <span class="material-symbols-outlined text-[15px] text-primary-fixed" aria-hidden="true">inventory_2</span>
             <span>{% trans "Official Punto Pack · Multi-Carrier Parcel Hub · Store in Alfafar" %}</span>
           </span>
         </div>
@@ -187,12 +204,12 @@
         <div class="flex items-center gap-space-md shrink-0">
           <a href="{% url 'storefront:home' %}" class="flex items-center gap-space-sm group">
             <div class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-primary-container text-on-primary shadow-sm group-hover:bg-primary transition-colors">
-              <span class="material-symbols-outlined text-[24px]">inventory_2</span>
-              <span class="material-symbols-outlined absolute -bottom-1 -right-1 text-secondary-container text-[16px] drop-shadow-sm">bolt</span>
+              <span class="material-symbols-outlined text-[24px]" aria-hidden="true">inventory_2</span>
+              <span class="material-symbols-outlined absolute -bottom-1 -right-1 text-secondary-container text-[16px] drop-shadow-sm" aria-hidden="true">bolt</span>
             </div>
             <div class="flex flex-col">
               <div class="flex items-center font-headline-md text-headline-md tracking-tight font-bold leading-none">
-                <span class="text-primary-container">Rápido</span><span class="text-secondary-container ml-1">Pack</span>
+                <span class="text-primary-container">Rápido</span><span class="text-secondary ml-1">Pack</span>
               </div>
               <span class="font-label-sm text-label-sm text-on-surface-variant font-medium tracking-wide uppercase mt-0.5">Alfafar · Valencia</span>
             </div>
@@ -205,7 +222,7 @@
           <a href="{% url 'storefront:home' %}#paqueteria" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg">{% trans "Parcel Services" %}</a>
           <a href="{% url 'storefront:home' %}#punto-pack" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg">{% trans "Punto Pack" %}</a>
           <a href="{% url 'storefront:catalog' %}" class="font-label-md text-label-md text-primary font-bold hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg flex items-center gap-1">
-            <span class="material-symbols-outlined text-[16px]">storefront</span>
+            <span class="material-symbols-outlined text-[16px]" aria-hidden="true">storefront</span>
             <span>{% trans "Store" %}</span>
           </a>
           <a href="{% url 'storefront:home' %}#quienes-somos" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg">{% trans "About Us" %}</a>
@@ -221,7 +238,7 @@
           <form action="{% url 'storefront:catalog' %}" method="get" class="relative flex-1 flex items-center">
             {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
             <div class="w-full flex items-center bg-surface-container-lowest rounded-full pl-space-md pr-space-xs py-space-xs shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-outline-variant/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-              <span class="material-symbols-outlined text-outline mr-space-xs text-[20px]">search</span>
+              <span class="material-symbols-outlined text-outline mr-space-xs text-[20px]" aria-hidden="true">search</span>
               <input type="search"
                      name="q"
                      value="{{ search_query|default:'' }}"
@@ -231,7 +248,7 @@
               <button type="submit"
                       class="bg-primary text-on-primary rounded-full px-space-md py-space-xs font-label-md text-label-md flex items-center gap-1 hover:bg-primary-container transition-colors shrink-0">
                 <span>{% trans "Search" %}</span>
-                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                <span class="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>
               </button>
             </div>
           </form>
@@ -245,15 +262,15 @@
             {% csrf_token %}
             <input name="next" type="hidden" value="{{ request.get_full_path }}">
             {% get_current_language as CURRENT_LANG %}
-            <div class="flex items-center bg-surface-container-low px-space-sm py-space-xs rounded-full font-label-sm text-label-sm text-on-surface-variant gap-1 border border-outline-variant/30">
+            <div class="flex items-center bg-surface-container-low p-0.5 rounded-full font-label-sm text-label-sm text-on-surface-variant gap-0.5 border border-outline-variant/30">
               <button type="submit" name="language" value="es"
-                      class="px-1.5 py-0.5 rounded-full transition {% if CURRENT_LANG == 'es' %}font-bold bg-primary text-on-primary{% else %}text-outline hover:text-on-surface{% endif %}"
+                      class="px-2.5 py-1 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-full transition {% if CURRENT_LANG == 'es' %}font-bold bg-primary text-on-primary{% else %}text-on-surface-variant hover:text-on-surface{% endif %}"
                       title="Español">
                 ES
               </button>
-              <span class="text-outline-variant">|</span>
+              <span class="text-outline-variant" aria-hidden="true">|</span>
               <button type="submit" name="language" value="en"
-                      class="px-1.5 py-0.5 rounded-full transition {% if CURRENT_LANG == 'en' %}font-bold bg-primary text-on-primary{% else %}text-outline hover:text-on-surface{% endif %}"
+                      class="px-2.5 py-1 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-full transition {% if CURRENT_LANG == 'en' %}font-bold bg-primary text-on-primary{% else %}text-on-surface-variant hover:text-on-surface{% endif %}"
                       title="English">
                 EN
               </button>
@@ -263,8 +280,8 @@
           <!-- How to Buy Modal Trigger -->
           <button type="button"
                   onclick="openHowToBuyModal()"
-                  class="hidden lg:flex items-center gap-1 px-space-sm py-space-xs rounded-full bg-surface-container-lowest text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors font-label-md text-label-md shadow-[0_1px_3px_rgba(0,0,0,0.03)] border border-outline-variant/30">
-            <span class="material-symbols-outlined text-[17px] text-primary">help_outline</span>
+                  class="hidden lg:flex items-center gap-1 px-space-sm py-1.5 min-h-[38px] rounded-full bg-surface-container-lowest text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors font-label-md text-label-md shadow-[0_1px_3px_rgba(0,0,0,0.03)] border border-outline-variant/30">
+            <span class="material-symbols-outlined text-[17px] text-primary" aria-hidden="true">help_outline</span>
             <span>{% trans "How to buy" %}</span>
           </button>
 
@@ -272,8 +289,8 @@
           <a href="{% url 'storefront:go_whatsapp' %}"
              target="_blank"
              rel="noopener noreferrer"
-             class="inline-flex items-center gap-space-xs bg-[#25D366] hover:bg-[#20ba59] text-on-primary font-label-md text-label-md font-bold px-space-md py-2.5 rounded-xl shadow-sm transition-all shrink-0">
-            <span class="material-symbols-outlined text-[18px]">chat</span>
+             class="inline-flex items-center gap-space-xs bg-[#25D366] hover:bg-[#20ba59] text-slate-950 font-label-md text-label-md font-bold px-space-md py-2.5 min-h-[40px] rounded-xl shadow-sm transition-all shrink-0">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">chat</span>
             <span class="hidden sm:inline">{% trans "Message us on WhatsApp" %}</span>
           </a>
         </div>
@@ -284,11 +301,11 @@
     <!-- Mobile Quick Links Bar on Landing Page (< 1024px) -->
     <div class="lg:hidden px-margin py-space-xs bg-surface-container-lowest border-b border-outline-variant/25 overflow-x-auto no-scrollbar">
       <div class="flex items-center gap-space-xs whitespace-nowrap font-label-sm text-label-sm">
-        <a href="#paqueteria" class="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "Parcel Services" %}</a>
-        <a href="#punto-pack" class="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "Punto Pack" %}</a>
-        <a href="{% url 'storefront:catalog' %}" class="px-2.5 py-1 rounded-full bg-primary text-on-primary font-bold">{% trans "Store" %}</a>
-        <a href="#quienes-somos" class="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "About Us" %}</a>
-        <a href="#contacto" class="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "Contact" %}</a>
+        <a href="#paqueteria" class="px-3 py-1.5 min-h-[36px] inline-flex items-center rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "Parcel Services" %}</a>
+        <a href="#punto-pack" class="px-3 py-1.5 min-h-[36px] inline-flex items-center rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "Punto Pack" %}</a>
+        <a href="{% url 'storefront:catalog' %}" class="px-3 py-1.5 min-h-[36px] inline-flex items-center rounded-full bg-primary text-on-primary font-bold">{% trans "Store" %}</a>
+        <a href="#quienes-somos" class="px-3 py-1.5 min-h-[36px] inline-flex items-center rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "About Us" %}</a>
+        <a href="#contacto" class="px-3 py-1.5 min-h-[36px] inline-flex items-center rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "Contact" %}</a>
       </div>
     </div>
     {% else %}
@@ -296,8 +313,8 @@
     <div class="md:hidden px-margin py-space-xs bg-surface-container-lowest border-b border-outline-variant/25">
       <form action="{% url 'storefront:catalog' %}" method="get" class="flex items-center gap-2">
         {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
-        <div class="flex-1 flex items-center bg-surface-container-low rounded-full px-space-sm py-1.5 border border-outline-variant/30">
-          <span class="material-symbols-outlined text-outline mr-1.5 text-[18px]">search</span>
+        <div class="flex-1 flex items-center bg-surface-container-low rounded-full px-space-sm py-1.5 min-h-[38px] border border-outline-variant/30 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+          <span class="material-symbols-outlined text-outline mr-1.5 text-[18px]" aria-hidden="true">search</span>
           <input type="search"
                  name="q"
                  value="{{ search_query|default:'' }}"
@@ -307,8 +324,8 @@
         </div>
         <button type="button"
                 onclick="openHowToBuyModal()"
-                class="px-space-sm py-1.5 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm border border-outline-variant/30 shrink-0 flex items-center gap-1">
-          <span class="material-symbols-outlined text-[16px]">help_outline</span>
+                class="px-3 py-1.5 min-h-[38px] rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm border border-outline-variant/30 shrink-0 flex items-center gap-1">
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">help_outline</span>
           <span>{% trans "Guide" %}</span>
         </button>
       </form>
@@ -317,7 +334,7 @@
   </header>
 
   <!-- Main Content -->
-  <main class="flex-1 w-full bg-surface">
+  <main id="main-content" tabindex="-1" class="flex-1 w-full bg-surface focus:outline-none">
     {% block content %}{% endblock %}
   </main>
 
@@ -330,10 +347,10 @@
         <div class="lg:col-span-4 flex flex-col gap-space-sm">
           <a href="{% url 'storefront:home' %}" class="flex items-center gap-space-sm">
             <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-container text-on-primary">
-              <span class="material-symbols-outlined text-[20px]">inventory_2</span>
+              <span class="material-symbols-outlined text-[20px]" aria-hidden="true">inventory_2</span>
             </div>
             <div class="font-headline-sm text-headline-sm tracking-tight font-bold">
-              <span class="text-primary-container">Rápido</span><span class="text-secondary-container ml-1">Pack</span>
+              <span class="text-primary-container">Rápido</span><span class="text-secondary ml-1">Pack</span>
             </div>
           </a>
           <p class="font-body-md text-body-md text-on-surface-variant max-w-sm">
@@ -341,11 +358,11 @@
           </p>
           <div class="flex flex-col gap-space-xs mt-space-xs text-on-surface-variant font-body-sm text-body-sm">
             <div class="flex items-start gap-space-xs">
-              <span class="material-symbols-outlined text-primary text-[18px] mt-0.5">location_on</span>
+              <span class="material-symbols-outlined text-primary text-[18px] mt-0.5" aria-hidden="true">location_on</span>
               <span>{{ storefront.address }}</span>
             </div>
             <div class="flex items-start gap-space-xs">
-              <span class="material-symbols-outlined text-primary text-[18px] mt-0.5">schedule</span>
+              <span class="material-symbols-outlined text-primary text-[18px] mt-0.5" aria-hidden="true">schedule</span>
               <span>{{ storefront.opening_hours }}</span>
             </div>
             <div class="pt-1">
@@ -353,7 +370,7 @@
                  target="_blank"
                  rel="noopener noreferrer"
                  class="inline-flex items-center gap-1 text-primary font-label-sm text-label-sm hover:underline">
-                <span class="material-symbols-outlined text-[15px]">directions</span>
+                <span class="material-symbols-outlined text-[15px]" aria-hidden="true">directions</span>
                 <span>{% trans "Open in Google Maps" %}</span>
               </a>
             </div>
@@ -410,7 +427,7 @@
       <div class="bg-surface-container rounded-xl px-space-md py-space-sm flex flex-col md:flex-row items-center justify-between gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
         <span>© {% now "Y" %} {{ storefront.store_name }} · {{ storefront.domain }} · {{ storefront.address }}. {% trans "All rights reserved." %}</span>
         <span class="flex items-center gap-1 font-semibold text-primary">
-          <span class="material-symbols-outlined text-[16px]">eco</span>
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">eco</span>
           <span>{% trans "Circular economy & transparent local commerce" %}</span>
         </span>
       </div>

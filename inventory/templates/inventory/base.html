@@ -57,6 +57,12 @@
 </head>
 <body class="flex flex-col min-h-full">
 
+  <!-- Skip to Main Content Link (WCAG 2.4.1) -->
+  <a href="#main-content"
+     class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-emerald-700 focus:text-white focus:font-bold focus:rounded-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+    {% trans "Skip to main content" %}
+  </a>
+
   <!-- Main Navigation Header -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -98,25 +104,25 @@
           </form>
 
           {% if user.is_authenticated %}
-          <nav id="desktop-nav" class="flex items-center gap-2 sm:gap-3">
+          <nav id="desktop-nav" class="flex items-center gap-2 sm:gap-3" aria-label="{% trans 'Primary' %}">
             <a href="{% url 'inventory:intake' %}" class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition border border-emerald-200">
-              <span>📷</span>
+              <span aria-hidden="true">📷</span>
               <span>{% trans "New Intake" %}</span>
             </a>
             <a href="{% url 'inventory:dashboard' %}" class="px-3 py-1.5 text-sm font-medium text-slate-700 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition">
               {% trans "Dashboard" %}
             </a>
             <a href="{% url 'storefront:catalog' %}" class="px-3 py-1.5 text-sm font-medium text-slate-700 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition">
-              🏪 {% trans "Storefront" %}
+              <span aria-hidden="true">🏪</span> {% trans "Storefront" %}
             </a>
             {% if pending_clarifications_count > 0 %}
             <a href="{% url 'inventory:dashboard' %}?status=awaiting_info"
                id="badge-pending-clarifications"
                class="badge-pending-clarifications flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300 transition shadow-sm animate-pulse"
                title="{% trans 'Pending clarifications from manager' %}">
-              <span>❓</span>
+              <span aria-hidden="true">❓</span>
               <span>{% trans "Doubts" %}</span>
-              <span class="bg-amber-600 text-white text-[11px] font-extrabold px-1.5 py-0.2 rounded-full">{{ pending_clarifications_count }}</span>
+              <span class="bg-amber-700 text-white text-xs font-extrabold px-1.5 py-0.5 rounded-full">{{ pending_clarifications_count }}</span>
             </a>
             {% endif %}
             {% if user.is_staff %}
@@ -290,7 +296,7 @@
 
       <!-- Mobile Web Push Notifications Toggle -->
       <div class="pt-2 border-t border-slate-100 space-y-2">
-        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">
           {% trans "Push Notifications" %}
         </div>
         <div class="flex items-center gap-2">
@@ -298,7 +304,7 @@
                   id="mobile-push-toggle-btn"
                   data-subscribed="{% if user_has_push_subscription %}true{% else %}false{% endif %}"
                   class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-semibold rounded-lg border transition min-h-[44px] {% if user_has_push_subscription %}bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100{% else %}bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200{% endif %}">
-            <span class="push-toggle-icon">{% if user_has_push_subscription %}🔔{% else %}🔕{% endif %}</span>
+            <span class="push-toggle-icon" aria-hidden="true">{% if user_has_push_subscription %}🔔{% else %}🔕{% endif %}</span>
             <span class="push-toggle-label">
               {% if user_has_push_subscription %}{% trans "Alerts Active" %}{% else %}{% trans "Enable Alerts" %}{% endif %}
             </span>
@@ -314,7 +320,7 @@
 
       <!-- Segmented Bilingual Language Switcher -->
       <div class="pt-2 border-t border-slate-100">
-        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
           {% trans "Language" %}
         </div>
         <form action="{% url 'set_language' %}" method="post" class="w-full">
@@ -356,10 +362,13 @@
   </header>
 
   <!-- Global Push Status Banner (Desktop & Mobile Feedback) -->
-  <div id="global-push-banner" class="hidden max-w-4xl mx-auto px-4 mt-3 w-full">
+  <div id="global-push-banner" role="status" aria-live="polite" class="hidden max-w-4xl mx-auto px-4 mt-3 w-full">
     <div class="p-3 rounded-lg text-xs font-medium flex items-center justify-between shadow-sm bg-emerald-50 text-emerald-800 border border-emerald-200">
       <span id="global-push-banner-text"></span>
-      <button type="button" onclick="document.getElementById('global-push-banner').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 ml-3 text-base leading-none">&times;</button>
+      <button type="button"
+              onclick="document.getElementById('global-push-banner').classList.add('hidden')"
+              aria-label="{% trans 'Dismiss notification' %}"
+              class="min-w-[36px] min-h-[36px] inline-flex items-center justify-center rounded-md text-slate-500 hover:text-slate-800 hover:bg-emerald-100/60 ml-3 text-base leading-none transition">&times;</button>
     </div>
   </div>
 
@@ -367,46 +376,51 @@
   {% if messages %}
   <div id="flash-messages" class="max-w-4xl mx-auto px-4 mt-4 w-full">
     {% for message in messages %}
-    <div class="flash-message p-3.5 mb-2 rounded-lg text-sm font-medium flex items-center justify-between shadow-sm
+    <div role="{% if message.tags == 'error' %}alert{% else %}status{% endif %}"
+         aria-live="polite"
+         class="flash-message p-3.5 mb-2 rounded-lg text-sm font-medium flex items-center justify-between shadow-sm
       {% if message.tags == 'error' %} bg-rose-50 text-rose-800 border border-rose-200
       {% elif message.tags == 'success' %} bg-emerald-50 text-emerald-800 border border-emerald-200
       {% elif message.tags == 'warning' %} bg-amber-50 text-amber-800 border border-amber-200
       {% else %} bg-sky-50 text-sky-800 border border-sky-200 {% endif %}">
       <span>{{ message }}</span>
-      <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-700 ml-3 text-lg leading-none">&times;</button>
+      <button type="button"
+              onclick="this.parentElement.remove()"
+              aria-label="{% trans 'Dismiss notification' %}"
+              class="min-w-[36px] min-h-[36px] inline-flex items-center justify-center rounded-md text-slate-500 hover:text-slate-800 ml-3 text-lg leading-none transition">&times;</button>
     </div>
     {% endfor %}
   </div>
   {% endif %}
 
   <!-- Main Content Body -->
-  <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+  <main id="main-content" tabindex="-1" class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full focus:outline-none">
     {% block content %}{% endblock %}
   </main>
 
   <!-- Application Footer with Compilation & Build Metadata -->
-  <footer class="bg-white border-t border-slate-200 py-4 px-4 text-center text-xs text-slate-400 space-y-1.5" role="contentinfo">
+  <footer class="bg-white border-t border-slate-200 py-4 px-4 text-center text-xs text-slate-500 space-y-1.5" role="contentinfo">
     <div>
       {% trans "2ndHand Product Intake & Staging Hub • Powered by Django & Gemini Vision" %}
     </div>
     {% if build_info %}
-    <div class="flex items-center justify-center flex-wrap gap-x-2 gap-y-1 text-slate-500 text-[11px] sm:text-xs">
+    <div class="flex items-center justify-center flex-wrap gap-x-2 gap-y-1 text-slate-500 text-xs">
       <span class="inline-flex items-center gap-1 font-mono">
         <span aria-hidden="true">⏱️</span>
-        <span class="text-slate-400">{% trans "Build:" %}</span>
+        <span class="text-slate-500">{% trans "Build:" %}</span>
         <span class="font-medium text-slate-600" id="footer-build-time">{{ build_info.build_time }}</span>
       </span>
       {% if build_info.commit_short %}
       <span class="text-slate-300" aria-hidden="true">•</span>
       <span class="inline-flex items-center gap-1 font-mono">
         <span aria-hidden="true">🔖</span>
-        <span class="text-slate-400">{% trans "Commit:" %}</span>
+        <span class="text-slate-500">{% trans "Commit:" %}</span>
         <span class="font-medium text-slate-600" id="footer-build-sha">{{ build_info.commit_short }}</span>
       </span>
       {% endif %}
       {% if build_info.environment_badge %}
       <span class="text-slate-300" aria-hidden="true">•</span>
-      <span class="px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider {{ build_info.badge_css }}" id="footer-build-env">
+      <span class="px-1.5 py-0.5 rounded text-xs font-bold tracking-wider {{ build_info.badge_css }}" id="footer-build-env">
         {{ build_info.environment_badge }}
       </span>
       {% endif %}

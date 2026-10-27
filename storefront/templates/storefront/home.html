@@ -35,17 +35,17 @@
         <div class="flex flex-wrap items-center gap-space-sm pt-space-xs">
           <a class="inline-flex items-center justify-center gap-space-xs bg-primary-container text-on-primary font-label-md text-label-md px-6 py-3.5 rounded-xl shadow-md hover:bg-primary transition-all duration-200"
              href="#paqueteria">
-            <span class="material-symbols-outlined text-[20px]">local_shipping</span>
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">local_shipping</span>
             <span>{% trans "View parcel services" %}</span>
           </a>
           <a class="inline-flex items-center justify-center gap-space-xs bg-surface-container-lowest text-on-surface font-label-md text-label-md px-6 py-3.5 rounded-xl shadow-sm border border-outline-variant/40 hover:bg-surface-container hover:shadow transition-all duration-200"
              href="{% url 'storefront:catalog' %}">
-            <span class="material-symbols-outlined text-[20px] text-primary">storefront</span>
+            <span class="material-symbols-outlined text-[20px] text-primary" aria-hidden="true">storefront</span>
             <span>{% trans "Explore the store" %}</span>
           </a>
         </div>
         <div class="flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md pt-space-xs">
-          <span class="material-symbols-outlined text-primary text-[20px]">schedule</span>
+          <span class="material-symbols-outlined text-primary text-[20px]" aria-hidden="true">schedule</span>
           <span>{{ storefront.opening_hours }}</span>
         </div>
       </div>
@@ -120,7 +120,7 @@
         </div>
         <!-- Punto Pack Official Pill -->
         <a href="#punto-pack" class="bg-primary-container text-on-primary px-5 py-2.5 rounded-xl shadow font-headline-sm text-headline-sm font-bold flex items-center gap-2 hover:bg-primary transition-colors">
-          <span class="material-symbols-outlined text-[18px]">verified</span>
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">verified</span>
           <span>{% trans "Punto Pack" %}</span>
         </a>
       </div>
@@ -147,7 +147,7 @@
       <div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group border border-outline-variant/20">
         <div>
           <div class="w-12 h-12 rounded-xl bg-surface-container-low text-primary flex items-center justify-center mb-space-sm group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
-            <span class="material-symbols-outlined text-[28px]">outbox</span>
+            <span class="material-symbols-outlined text-[28px]" aria-hidden="true">outbox</span>
           </div>
           <h3 class="font-headline-md text-headline-md text-on-surface font-bold mb-space-xs">
             📦 {% trans "Shipping" %}
@@ -158,7 +158,7 @@
         </div>
         <a href="#contacto" class="mt-space-md pt-space-xs text-primary font-label-md text-label-md flex items-center gap-1 hover:underline">
           <span>{% trans "Inquire about shipping" %}</span>
-          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>
         </a>
       </div>
 
@@ -166,7 +166,7 @@
       <div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group border border-outline-variant/20">
         <div>
           <div class="w-12 h-12 rounded-xl bg-surface-container-low text-primary flex items-center justify-center mb-space-sm group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
-            <span class="material-symbols-outlined text-[28px]">move_to_inbox</span>
+            <span class="material-symbols-outlined text-[28px]" aria-hidden="true">move_to_inbox</span>
           </div>
           <h3 class="font-headline-md text-headline-md text-on-surface font-bold mb-space-xs">
             📥 {% trans "Parcel Pickup & Reception" %}
@@ -177,7 +177,7 @@
         </div>
         <a href="#contacto" class="mt-space-md pt-space-xs text-primary font-label-md text-label-md flex items-center gap-1 hover:underline">
           <span>{% trans "View pickup hours" %}</span>
-          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>
         </a>
       </div>
 
@@ -185,7 +185,7 @@
       <div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group border border-outline-variant/20">
         <div>
           <div class="w-12 h-12 rounded-xl bg-surface-container-low text-primary flex items-center justify-center mb-space-sm group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
-            <span class="material-symbols-outlined text-[28px]">replay</span>
+            <span class="material-symbols-outlined text-[28px]" aria-hidden="true">replay</span>
           </div>
           <h3 class="font-headline-md text-headline-md text-on-surface font-bold mb-space-xs">
             ↩️ {% trans "Returns" %}
@@ -196,7 +196,7 @@
         </div>
         <a href="#contacto" class="mt-space-md pt-space-xs text-primary font-label-md text-label-md flex items-center gap-1 hover:underline">
           <span>{% trans "Return a parcel" %}</span>
-          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>
         </a>
       </div>
 
@@ -204,7 +204,7 @@
       <div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group border border-outline-variant/20 scroll-mt-28" id="punto-pack">
         <div>
           <div class="w-12 h-12 rounded-xl bg-surface-container-low text-primary flex items-center justify-center mb-space-sm group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
-            <span class="material-symbols-outlined text-[28px]">store</span>
+            <span class="material-symbols-outlined text-[28px]" aria-hidden="true">store</span>
           </div>
           <h3 class="font-headline-md text-headline-md text-on-surface font-bold mb-space-xs">
             🏪 {% trans "Punto Pack" %}
@@ -215,7 +215,7 @@
         </div>
         <div class="mt-space-md pt-space-xs text-primary font-label-md text-label-md flex items-center gap-1">
           <span>{% trans "Official Punto Pack" %}</span>
-          <span class="material-symbols-outlined text-[16px]">verified</span>
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">verified</span>
         </div>
       </div>
     </div>
@@ -292,7 +292,7 @@
             <!-- Rapidez -->
             <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-start gap-space-sm">
               <div class="w-10 h-10 rounded-lg bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined text-[22px]">bolt</span>
+                <span class="material-symbols-outlined text-[22px]" aria-hidden="true">bolt</span>
               </div>
               <div>
                 <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">⚡ {% trans "Speed" %}</h3>
@@ -302,7 +302,7 @@
             <!-- Cercanía -->
             <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-start gap-space-sm">
               <div class="w-10 h-10 rounded-lg bg-primary-fixed text-on-primary-fixed flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined text-[22px]">handshake</span>
+                <span class="material-symbols-outlined text-[22px]" aria-hidden="true">handshake</span>
               </div>
               <div>
                 <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">🤝 {% trans "Warmth & Proximity" %}</h3>
@@ -312,7 +312,7 @@
             <!-- Confianza -->
             <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-start gap-space-sm">
               <div class="w-10 h-10 rounded-lg bg-surface-container-high text-primary flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined text-[22px]">verified_user</span>
+                <span class="material-symbols-outlined text-[22px]" aria-hidden="true">verified_user</span>
               </div>
               <div>
                 <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">✅ {% trans "Trust" %}</h3>
@@ -322,7 +322,7 @@
             <!-- Segunda vida -->
             <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-start gap-space-sm">
               <div class="w-10 h-10 rounded-lg bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined text-[22px]">recycling</span>
+                <span class="material-symbols-outlined text-[22px]" aria-hidden="true">recycling</span>
               </div>
               <div>
                 <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">♻️ {% trans "Second Life" %}</h3>
@@ -340,7 +340,7 @@
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-space-sm mb-space-lg">
       <div>
         <div class="inline-flex items-center gap-1 text-secondary font-label-md text-label-md font-bold mb-1 uppercase">
-          <span class="material-symbols-outlined text-[16px]">local_fire_department</span>
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">local_fire_department</span>
           <span>{% trans "Latest arrivals in our store" %}</span>
         </div>
         <h2 class="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl text-on-surface font-bold tracking-tight">
@@ -353,7 +353,7 @@
       <a class="inline-flex items-center gap-1 font-label-md text-label-md text-primary font-bold hover:text-primary-container transition-colors shrink-0"
          href="{% url 'storefront:catalog' %}">
         <span>{% trans "View all store items" %}</span>
-        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_forward</span>
       </a>
     </div>
 
@@ -366,7 +366,7 @@
     {% else %}
     <div class="bg-surface-container-lowest rounded-2xl p-space-xl text-center shadow-sm border border-outline-variant/25 space-y-space-sm">
       <div class="w-14 h-14 mx-auto rounded-full bg-surface-container flex items-center justify-center text-primary">
-        <span class="material-symbols-outlined text-3xl">storefront</span>
+        <span class="material-symbols-outlined text-3xl" aria-hidden="true">storefront</span>
       </div>
       <h3 class="font-headline-md text-headline-md text-on-surface font-bold">
         {% trans "New opportunities daily at our Alfafar store" %}
@@ -382,8 +382,8 @@
         <a href="{% url 'storefront:go_whatsapp' %}"
            target="_blank"
            rel="noopener noreferrer"
-           class="px-space-md py-2.5 rounded-xl bg-[#25D366] text-white font-label-md text-label-md hover:bg-[#20ba5a] transition-colors inline-flex items-center gap-1">
-          <span class="material-symbols-outlined text-[16px]">chat</span>
+           class="px-space-md py-2.5 rounded-xl bg-[#25D366] text-slate-950 font-label-md text-label-md font-bold hover:bg-[#20ba5a] transition-colors inline-flex items-center gap-1">
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">chat</span>
           <span>{% trans "Inquire on WhatsApp" %}</span>
         </a>
       </div>
@@ -398,7 +398,7 @@
         <!-- Stat 1 -->
         <div class="flex flex-col items-center">
           <div class="w-12 h-12 rounded-xl bg-on-primary/10 flex items-center justify-center mb-space-xs">
-            <span class="material-symbols-outlined text-[28px] text-primary-fixed">local_shipping</span>
+            <span class="material-symbols-outlined text-[28px] text-primary-fixed" aria-hidden="true">local_shipping</span>
           </div>
           <span class="font-headline-xl text-headline-xl font-extrabold text-on-primary">+6</span>
           <span class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider mt-1">{% trans "Parcel Carriers" %}</span>
@@ -406,7 +406,7 @@
         <!-- Stat 2 -->
         <div class="flex flex-col items-center">
           <div class="w-12 h-12 rounded-xl bg-on-primary/10 flex items-center justify-center mb-space-xs">
-            <span class="material-symbols-outlined text-[28px] text-primary-fixed">verified</span>
+            <span class="material-symbols-outlined text-[28px] text-primary-fixed" aria-hidden="true">verified</span>
           </div>
           <span class="font-headline-xl text-headline-xl font-extrabold text-on-primary">{% trans "Official" %}</span>
           <span class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider mt-1">{% trans "Authorized Punto Pack" %}</span>
@@ -414,7 +414,7 @@
         <!-- Stat 3 -->
         <div class="flex flex-col items-center">
           <div class="w-12 h-12 rounded-xl bg-on-primary/10 flex items-center justify-center mb-space-xs">
-            <span class="material-symbols-outlined text-[28px] text-primary-fixed">shopping_bag</span>
+            <span class="material-symbols-outlined text-[28px] text-primary-fixed" aria-hidden="true">shopping_bag</span>
           </div>
           <span class="font-headline-xl text-headline-xl font-extrabold text-on-primary">{% trans "Free" %}</span>
           <span class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider mt-1">{% trans "In-store pickup of purchases" %}</span>
@@ -422,7 +422,7 @@
         <!-- Stat 4 -->
         <div class="flex flex-col items-center">
           <div class="w-12 h-12 rounded-xl bg-on-primary/10 flex items-center justify-center mb-space-xs">
-            <span class="material-symbols-outlined text-[28px] text-primary-fixed">check_circle</span>
+            <span class="material-symbols-outlined text-[28px] text-primary-fixed" aria-hidden="true">check_circle</span>
           </div>
           <span class="font-headline-xl text-headline-xl font-extrabold text-on-primary">100%</span>
           <span class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider mt-1">{% trans "Inspected items" %}</span>
@@ -451,7 +451,7 @@
         <div class="w-full flex-1 min-h-[320px] sm:min-h-[380px] bg-surface-variant relative flex items-center justify-center overflow-hidden">
           <div class="absolute inset-0 opacity-25 bg-[radial-gradient(#005c55_1.5px,transparent_1.5px)] [background-size:20px_20px]"></div>
           <div class="relative z-10 bg-surface-container-lowest px-5 py-4 rounded-xl shadow-xl flex items-center gap-3 border-2 border-primary-container">
-            <span class="material-symbols-outlined text-primary-container text-[32px]">pin_drop</span>
+            <span class="material-symbols-outlined text-primary-container text-[32px]" aria-hidden="true">pin_drop</span>
             <div class="flex flex-col">
               <span class="font-headline-sm text-headline-sm text-on-surface font-bold leading-tight">{{ storefront.store_name }} Alfafar</span>
               <span class="font-body-sm text-body-sm text-on-surface-variant">{{ storefront.address }}</span>
@@ -460,7 +460,7 @@
         </div>
         <div class="p-space-md bg-surface-container-low flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-2 text-on-surface font-body-sm text-body-sm">
-            <span class="material-symbols-outlined text-primary text-[18px]">train</span>
+            <span class="material-symbols-outlined text-primary text-[18px]" aria-hidden="true">train</span>
             <span class="font-medium">{% trans "🚆 Very close to Alfafar-Benetússer station · Easy parking" %}</span>
           </div>
           <span class="font-label-sm text-label-sm text-primary font-bold bg-surface-container px-2.5 py-1 rounded-full">L'Horta Sud</span>
@@ -472,7 +472,7 @@
         <div class="flex flex-col gap-space-md">
           <div class="flex items-center gap-space-sm pb-space-sm">
             <div class="w-12 h-12 rounded-xl bg-primary text-on-primary flex items-center justify-center">
-              <span class="material-symbols-outlined text-[24px]">storefront</span>
+              <span class="material-symbols-outlined text-[24px]" aria-hidden="true">storefront</span>
             </div>
             <div>
               <h3 class="font-headline-md text-headline-md text-on-surface font-bold">{% trans "Alfafar Service Point" %}</h3>
@@ -482,7 +482,7 @@
 
           <!-- Address -->
           <div class="flex items-start gap-space-sm bg-surface-container-low p-space-md rounded-xl">
-            <span class="material-symbols-outlined text-primary text-[24px] mt-0.5">location_on</span>
+            <span class="material-symbols-outlined text-primary text-[24px] mt-0.5" aria-hidden="true">location_on</span>
             <div>
               <span class="font-headline-sm text-headline-sm text-on-surface font-bold block">{% trans "Address" %}</span>
               <p class="font-body-md text-body-md text-on-surface-variant mt-0.5">
@@ -493,7 +493,7 @@
 
           <!-- Hours -->
           <div class="flex items-start gap-space-sm bg-surface-container-low p-space-md rounded-xl">
-            <span class="material-symbols-outlined text-primary text-[24px] mt-0.5">schedule</span>
+            <span class="material-symbols-outlined text-primary text-[24px] mt-0.5" aria-hidden="true">schedule</span>
             <div class="w-full">
               <span class="font-headline-sm text-headline-sm text-on-surface font-bold block">{% trans "Opening hours" %}</span>
               <div class="mt-1 flex flex-col gap-1 font-body-sm text-body-sm text-on-surface-variant">
@@ -516,18 +516,18 @@
 
         <!-- Action Buttons -->
         <div class="flex flex-col gap-space-xs mt-space-md pt-space-xs">
-          <a class="w-full inline-flex items-center justify-center gap-space-xs bg-[#25D366] hover:bg-[#20ba59] text-on-primary font-headline-sm text-headline-sm font-bold py-3.5 rounded-xl shadow-md transition-colors"
+          <a class="w-full inline-flex items-center justify-center gap-space-xs bg-[#25D366] hover:bg-[#20ba59] text-slate-950 font-headline-sm text-headline-sm font-bold py-3.5 rounded-xl shadow-md transition-colors"
              href="{% url 'storefront:go_whatsapp' %}"
              rel="noopener noreferrer"
              target="_blank">
-            <span class="material-symbols-outlined text-[20px]">chat</span>
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">chat</span>
             <span>{% trans "Message us on WhatsApp" %}</span>
           </a>
           <a class="w-full inline-flex items-center justify-center gap-space-xs bg-surface-container hover:bg-surface-container-high text-on-surface font-headline-sm text-headline-sm font-semibold py-3.5 rounded-xl transition-colors"
              href="{{ storefront.map_url }}"
              rel="noopener noreferrer"
              target="_blank">
-            <span class="material-symbols-outlined text-[20px] text-primary">navigation</span>
+            <span class="material-symbols-outlined text-[20px] text-primary" aria-hidden="true">navigation</span>
             <span>{% trans "How to get here" %}</span>
           </a>
         </div>
@@ -554,14 +554,14 @@
         <div class="flex flex-col sm:flex-row items-center gap-space-sm shrink-0 w-full lg:w-auto">
           <a class="w-full sm:w-auto inline-flex items-center justify-center gap-space-xs bg-surface-container-lowest text-on-surface font-label-md text-label-md font-bold px-6 py-3.5 rounded-xl shadow hover:bg-surface-container transition-all"
              href="{% url 'storefront:catalog' %}">
-            <span class="material-symbols-outlined text-[20px] text-primary">storefront</span>
+            <span class="material-symbols-outlined text-[20px] text-primary" aria-hidden="true">storefront</span>
             <span>{% trans "View online store" %}</span>
           </a>
-          <a class="w-full sm:w-auto inline-flex items-center justify-center gap-space-xs bg-[#25D366] hover:bg-[#20ba59] text-on-primary font-label-md text-label-md font-bold px-6 py-3.5 rounded-xl shadow transition-all"
+          <a class="w-full sm:w-auto inline-flex items-center justify-center gap-space-xs bg-[#25D366] hover:bg-[#20ba59] text-slate-950 font-label-md text-label-md font-bold px-6 py-3.5 rounded-xl shadow transition-all"
              href="{% url 'storefront:go_whatsapp' %}"
              rel="noopener noreferrer"
              target="_blank">
-            <span class="material-symbols-outlined text-[20px]">chat</span>
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">chat</span>
             <span>{% trans "Message us on WhatsApp" %}</span>
           </a>
         </div>

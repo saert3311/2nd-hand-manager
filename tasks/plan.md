@@ -433,3 +433,14 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - [ ] **Task 139:** Automated Bilingual Test Suites (`tests/test_i18n.py`, `tests/test_storefront.py`) & Playwright Chrome Real-Browser Verification (`tests/test_browser_daily_workflow.py`).
 - [ ] **Task 140:** Quality Gate, Bilingual Documentation, Changelog & User Merge Gate (`CHANGELOG.md`, `tasks/todo.md`).
 - [ ] **Checkpoint 38 (Bilingual Localization & Project Texts Audit Complete):** All project texts are 100% localized, source strings follow standard English `msgid` convention, Spanish catalog is 100% complete with 0 empty translations, English catalog is present and compiled, Playwright and Django tests assert exact translations in both `es` and `en`, Ruff and system checks pass with zero warnings.
+
+
+---
+
+### Phase 39: Comprehensive UI/UX Design System, Usability & Accessibility (WCAG 2.1 AA) Audit & Remediation (Vertical Slice 35)
+- [x] **Task 141:** Global App Shells, Skip Links, Landmarks, Typography (`rem` & `text-scale`), & Contrast Hardening (`inventory/base.html`, `storefront/base_public.html`, `registration/login.html`).
+- [x] **Task 142:** Storefront Visual Contrast, Decorative Icon Hiding (`aria-hidden="true"`), Sticky Layout Offset & Touch Target Sizing (`storefront/templates/...`).
+- [x] **Task 143:** Staff Dashboard & Intake Accessibility: Heading Hierarchy, Micro-Font Elimination, Keyboard Focus & Lightbox Focus Management (`inventory/dashboard.html`, `inventory/intake.html`).
+- [x] **Task 144:** Product Detail Workspace UX & Accessibility: Eliminate Native `alert()`/`confirm()` with Accessible Confirmation Modal, Form Error Rendering, Explicit `<label for>` Associations & Keyboard Gallery Navigation (`inventory/product_detail.html`, `inventory/forms.py`).
+- [x] **Task 145:** Bilingual Localization (`es`/`en`), Automated Accessibility & UI Test Suite (`tests/test_ui_accessibility.py`), Linter & Full Regression Gate.
+- [x] **Checkpoint 39 (UI/UX & Accessibility Remediation Complete):** Zero WCAG AA contrast failures (`#25D366`, `#F59E0B`, `#FE932C`, `text-slate-400` remediated); zero sub-12px micro-fonts or fixed `px` font tokens; zero native `alert()`/`confirm()` dialogs; 100% explicit `<label>`/input associations, keyboard-accessible modals/galleries, skip links, and `aria-hidden="true"` decorative icons; 100% automated tests and Ruff checks pass.

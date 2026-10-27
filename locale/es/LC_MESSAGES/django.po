@@ -3191,3 +3191,25 @@ msgstr "Buscar"
 
 msgid "WhatsApp →"
 msgstr "WhatsApp →"
+
+msgid "Skip to main content"
+msgstr "Saltar al contenido principal"
+
+msgid "Primary"
+msgstr "Principal"
+
+msgid "Dismiss notification"
+msgstr "Cerrar notificación"
+
+msgid "Answer to clarification question"
+msgstr "Respuesta a la pregunta de aclaración"
+
+msgid "Listing URL for"
+msgstr "URL del anuncio en"
+
+msgid "Confirm Action"
+msgstr "Confirmar acción"
+
+msgid "Confirm"
+msgstr "Confirmar"
+
