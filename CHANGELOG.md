@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **On-Demand Mobile Photo Crop & Rotate in Intake (Phase 41)**:
+  - Vendored **Cropper.js v1.6.2** locally in `inventory/static/inventory/vendor/` (`cropper.min.js` & `cropper.min.css`) for offline/PWA reliability.
+  - Upgraded `#imagePreviewModal` in `inventory/templates/inventory/intake.html` with interactive freeform touch cropping (`autoCropArea: 1`, `viewMode: 1`), 90° left/right rotation controls (`#rotateLeftBtn`, `#rotateRightBtn`), a thumbnail edit shortcut button (`.photo-edit-btn` `✂️`), and in-place `.webp` (`max 2560px`, quality `0.82`) replacement via `#applyCropBtn`.
+  - Added bilingual (`en`/`es`) localization and automated tests in `tests/test_intake_low_dpi.py`.
+
 ## [2.2.0] - 2026-10-27
 
 ### Added

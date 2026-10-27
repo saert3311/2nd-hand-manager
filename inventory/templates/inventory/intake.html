@@ -1,7 +1,16 @@
 {% extends "inventory/base.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}{% trans "Quick Intake - 2ndHand Staging" %}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'inventory/vendor/cropper.min.css' %}">
+<style>
+  #imagePreviewModal .cropper-container {
+    touch-action: none;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="max-w-2xl mx-auto space-y-6">
@@ -299,22 +308,45 @@
           ✕
         </button>
       </div>
-      <div class="p-2 sm:p-3 flex items-center justify-center bg-black/50 overflow-hidden flex-1 min-h-0">
-        <img id="modalPreviewImg" src="" alt="{% trans 'Full photo inspection' %}"
-             class="max-h-[70vh] sm:max-h-[75vh] w-auto max-w-full object-contain rounded-lg shadow-md select-none">
+      <div class="p-2 sm:p-3 flex items-center justify-center bg-black/80 overflow-hidden flex-1 min-h-[220px] max-h-[58vh] sm:max-h-[65vh] w-full">
+        <div class="w-full h-[48vh] sm:h-[58vh] max-h-[460px] flex items-center justify-center overflow-hidden">
+          <img id="modalPreviewImg" src="" alt="{% trans 'Full photo inspection' %}"
+               class="max-h-full max-w-full object-contain rounded-lg shadow-md select-none block">
+        </div>
       </div>
-      <div class="px-4 py-2.5 bg-slate-800/90 border-t border-slate-700 flex items-center justify-between text-xs text-slate-300">
-        <div class="flex items-center gap-2">
+      <!-- Crop & Rotate Action Bar -->
+      <div class="px-3 sm:px-4 py-2 bg-slate-800 border-t border-slate-700 flex flex-wrap items-center justify-between gap-2 text-xs text-white">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <button type="button" id="rotateLeftBtn"
+                  class="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white font-bold text-xs inline-flex items-center gap-1 transition cursor-pointer"
+                  title="{% trans 'Rotate left 90°' %}" aria-label="{% trans 'Rotate left 90°' %}">
+            <span>↺</span> <span>90°</span>
+          </button>
+          <button type="button" id="rotateRightBtn"
+                  class="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white font-bold text-xs inline-flex items-center gap-1 transition cursor-pointer"
+                  title="{% trans 'Rotate right 90°' %}" aria-label="{% trans 'Rotate right 90°' %}">
+            <span>↻</span> <span>90°</span>
+          </button>
+        </div>
+        <button type="button" id="applyCropBtn"
+                class="px-3 py-1.5 min-h-[36px] rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs transition cursor-pointer">
+          <span>✂️</span>
+          <span id="applyCropBtnText">{% trans "Apply crop & rotate" %}</span>
+        </button>
+      </div>
+      <!-- Navigation & Close Footer -->
+      <div class="px-3 sm:px-4 py-2 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-2 text-xs text-slate-300">
+        <div class="flex items-center gap-1.5 min-w-0">
           <button type="button" id="modalPrevBtn"
-                  class="p-1.5 px-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white font-bold text-xs disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
+                  class="p-1.5 px-2.5 min-h-[34px] rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white font-bold text-xs disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
                   title="{% trans 'Previous photo' %}">◀</button>
-          <span id="modalPhotoCounter" class="font-medium text-slate-300"></span>
+          <span id="modalPhotoCounter" class="font-medium text-slate-300 truncate"></span>
           <button type="button" id="modalNextBtn"
-                  class="p-1.5 px-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white font-bold text-xs disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
+                  class="p-1.5 px-2.5 min-h-[34px] rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white font-bold text-xs disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
                   title="{% trans 'Next photo' %}">▶</button>
         </div>
         <button type="button" id="closeImageModalBtnBottom"
-                class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-slate-100 text-xs font-semibold rounded-lg transition cursor-pointer">
+                class="px-3 py-1.5 min-h-[34px] bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 text-xs font-semibold rounded-lg transition cursor-pointer shrink-0">
           {% trans "Close" %}
         </button>
       </div>
@@ -324,6 +356,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{% static 'inventory/vendor/cropper.min.js' %}"></script>
 <script>
   const intakeForm = document.getElementById('intakeForm');
   const dropZone = document.getElementById('dropZone');
@@ -645,6 +678,21 @@
       });
       controlsBar.appendChild(moveLeftBtn);
 
+      // Edit / Crop & Rotate Button
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'photo-edit-btn px-1.5 h-6 rounded bg-indigo-500/80 hover:bg-indigo-500 active:bg-indigo-600 text-white flex items-center justify-center text-xs font-bold transition disabled:opacity-20 disabled:pointer-events-none active:scale-95 cursor-pointer';
+      editBtn.disabled = (formState !== 'idle');
+      editBtn.setAttribute('aria-label', `{% trans "Crop or rotate photo" %} #${idx + 1}`);
+      editBtn.title = `{% trans "Crop or rotate photo" %}`;
+      editBtn.innerHTML = '✂️';
+      editBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        ev.preventDefault();
+        openLightbox(idx);
+      });
+      controlsBar.appendChild(editBtn);
+
       // Set as Cover Button (only on items > 0)
       if (idx > 0) {
         const coverBtn = document.createElement('button');
@@ -692,7 +740,7 @@
   function setFormState(newState) {
     formState = newState;
     const deleteButtons = document.querySelectorAll('.photo-delete-btn');
-    const reorderButtons = document.querySelectorAll('.photo-reorder-btn, .photo-make-cover-btn');
+    const reorderButtons = document.querySelectorAll('.photo-reorder-btn, .photo-make-cover-btn, .photo-edit-btn');
 
     if (newState === 'identifying') {
       // Disable identify button with spinner
@@ -758,6 +806,10 @@
                 btnTriggerGallery.classList.remove('opacity-50', 'pointer-events-none');
       }
       deleteButtons.forEach(btn => {
+        btn.disabled = false;
+        btn.classList.remove('pointer-events-none', 'opacity-50');
+      });
+      document.querySelectorAll('.photo-edit-btn, .photo-make-cover-btn').forEach(btn => {
         btn.disabled = false;
         btn.classList.remove('pointer-events-none', 'opacity-50');
       });
@@ -1288,7 +1340,7 @@
       hideClientAlert();
     });
   }
-  // Lightbox Modal for Full-Size Thumbnail Inspection
+  // Lightbox Modal for Full-Size Thumbnail Inspection + Crop & Rotate (Cropper.js)
   const imagePreviewModal = document.getElementById('imagePreviewModal');
   const modalPreviewImg = document.getElementById('modalPreviewImg');
   const modalPhotoTitle = document.getElementById('modalPhotoTitle');
@@ -1298,9 +1350,46 @@
   const closeImageModalBtnBottom = document.getElementById('closeImageModalBtnBottom');
   const modalPrevBtn = document.getElementById('modalPrevBtn');
   const modalNextBtn = document.getElementById('modalNextBtn');
+  const rotateLeftBtn = document.getElementById('rotateLeftBtn');
+  const rotateRightBtn = document.getElementById('rotateRightBtn');
+  const applyCropBtn = document.getElementById('applyCropBtn');
+  const applyCropBtnText = document.getElementById('applyCropBtnText');
   let currentLightboxIndex = 0;
   let activeModalObjectUrl = null;
   let lastLightboxTrigger = null;
+  let activeCropper = null;
+
+  function destroyActiveCropper() {
+    if (activeCropper) {
+      try {
+        activeCropper.destroy();
+      } catch (err) {
+        console.warn('Cropper destroy warning:', err);
+      }
+      activeCropper = null;
+    }
+  }
+
+  function initCropperOnModalImage() {
+    destroyActiveCropper();
+    if (typeof Cropper !== 'function' || !modalPreviewImg || !imagePreviewModal || imagePreviewModal.classList.contains('hidden')) {
+      return;
+    }
+    activeCropper = new Cropper(modalPreviewImg, {
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 1,
+      responsive: true,
+      restore: false,
+      guides: true,
+      center: true,
+      highlight: false,
+      cropBoxMovable: true,
+      cropBoxResizable: true,
+      toggleDragModeOnDblclick: false,
+      checkOrientation: false,
+    });
+  }
 
   function openLightbox(idx) {
     if (idx < 0 || idx >= selectedFiles.length) return;
@@ -1312,10 +1401,18 @@
     const file = selectedFiles[idx];
     if (!imagePreviewModal || !modalPreviewImg) return;
 
+    destroyActiveCropper();
     if (activeModalObjectUrl) {
       URL.revokeObjectURL(activeModalObjectUrl);
     }
     activeModalObjectUrl = URL.createObjectURL(file);
+
+    imagePreviewModal.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+
+    modalPreviewImg.onload = function() {
+      initCropperOnModalImage();
+    };
     modalPreviewImg.src = activeModalObjectUrl;
 
     if (modalPhotoTitle) {
@@ -1338,8 +1435,6 @@
       modalNextBtn.disabled = (idx === selectedFiles.length - 1);
     }
 
-    imagePreviewModal.classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
     if (wasHidden && closeImageModalBtn) {
       closeImageModalBtn.focus();
     }
@@ -1348,17 +1443,75 @@
   function closeLightbox() {
     if (!imagePreviewModal) return;
     const wasOpen = !imagePreviewModal.classList.contains('hidden');
+    destroyActiveCropper();
     imagePreviewModal.classList.add('hidden');
     document.body.classList.remove('overflow-hidden');
     if (activeModalObjectUrl) {
       URL.revokeObjectURL(activeModalObjectUrl);
       activeModalObjectUrl = null;
     }
-    if (modalPreviewImg) modalPreviewImg.src = '';
+    if (modalPreviewImg) {
+      modalPreviewImg.onload = null;
+      modalPreviewImg.src = '';
+    }
     if (wasOpen && lastLightboxTrigger && typeof lastLightboxTrigger.focus === 'function') {
       lastLightboxTrigger.focus();
       lastLightboxTrigger = null;
     }
+  }
+
+  if (rotateLeftBtn) {
+    rotateLeftBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (activeCropper) activeCropper.rotate(-90);
+    });
+  }
+  if (rotateRightBtn) {
+    rotateRightBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (activeCropper) activeCropper.rotate(90);
+    });
+  }
+  if (applyCropBtn) {
+    applyCropBtn.addEventListener('click', async function(e) {
+      e.stopPropagation();
+      if (!activeCropper || currentLightboxIndex < 0 || currentLightboxIndex >= selectedFiles.length) return;
+      const currentFile = selectedFiles[currentLightboxIndex];
+      const canvas = activeCropper.getCroppedCanvas({
+        maxWidth: 2560,
+        maxHeight: 2560,
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'high',
+      });
+      if (!canvas) return;
+      applyCropBtn.disabled = true;
+      try {
+        const blob = await new Promise((resolve) => {
+          canvas.toBlob((b) => {
+            if (b && b.type === 'image/webp' && b.size > 0) {
+              resolve(b);
+            } else {
+              canvas.toBlob((fallbackBlob) => resolve(fallbackBlob || null), 'image/jpeg', 0.85);
+            }
+          }, 'image/webp', 0.82);
+        });
+        if (blob) {
+          const origName = (currentFile && currentFile.name) ? currentFile.name : `photo_${currentLightboxIndex + 1}.webp`;
+          const cleanStem = origName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_\-]/g, '_') || 'photo';
+          const ext = (blob.type === 'image/webp') ? '.webp' : '.jpg';
+          const editedFile = new File([blob], `${cleanStem}${ext}`, {
+            type: blob.type,
+            lastModified: Date.now(),
+          });
+          selectedFiles[currentLightboxIndex] = editedFile;
+          syncFileInput();
+          renderPreviews();
+        }
+        closeLightbox();
+      } finally {
+        applyCropBtn.disabled = false;
+      }
+    });
   }
 
   function updateLightboxPhoto(delta) {

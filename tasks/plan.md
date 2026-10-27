@@ -444,3 +444,20 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - [x] **Task 144:** Product Detail Workspace UX & Accessibility: Eliminate Native `alert()`/`confirm()` with Accessible Confirmation Modal, Form Error Rendering, Explicit `<label for>` Associations & Keyboard Gallery Navigation (`inventory/product_detail.html`, `inventory/forms.py`).
 - [x] **Task 145:** Bilingual Localization (`es`/`en`), Automated Accessibility & UI Test Suite (`tests/test_ui_accessibility.py`), Linter & Full Regression Gate.
 - [x] **Checkpoint 39 (UI/UX & Accessibility Remediation Complete):** Zero WCAG AA contrast failures (`#25D366`, `#F59E0B`, `#FE932C`, `text-slate-400` remediated); zero sub-12px micro-fonts or fixed `px` font tokens; zero native `alert()`/`confirm()` dialogs; 100% explicit `<label>`/input associations, keyboard-accessible modals/galleries, skip links, and `aria-hidden="true"` decorative icons; 100% automated tests and Ruff checks pass.
+
+
+---
+
+## Phase 41: On-Demand Mobile Photo Crop & Rotate in Intake (`intake-photo-crop-rotate`)
+
+### Technical Design
+1. **Static Asset Vendoring**:
+   - Store `cropper.min.js` and `cropper.min.css` (Cropper.js v1.6.2) in `inventory/static/inventory/vendor/` so the editor works offline/PWA-ready and in local Playwright test suites without external network requests.
+2. **Thumbnail Edit Entry Point**:
+   - In `renderPreviews()` (`inventory/templates/inventory/intake.html`), add a `.photo-edit-btn` (`✂️`) button inside the bottom floating control bar (`controlsBar`) of each 2-column thumbnail card, alongside the existing `img` click handler (`openLightbox(idx)`).
+3. **Interactive Crop & Rotate Modal (`#imagePreviewModal`)**:
+   - Load `cropper.min.css` in `{% block extra_head %}` and `cropper.min.js` in `{% block extra_scripts %}`.
+   - Initialize `new Cropper(modalPreviewImg, { viewMode: 1, dragMode: 'move', autoCropArea: 1, responsive: true, restore: false, guides: true, center: true, highlight: false, cropBoxMovable: true, cropBoxResizable: true, toggleDragModeOnDblclick: false, checkOrientation: false })` whenever `openLightbox(idx)` opens a photo.
+   - Add `#rotateLeftBtn` (`↺ 90°`), `#rotateRightBtn` (`↻ 90°`), and `#applyCropBtn` (`✓ Apply` / `✓ Aplicar`) in the modal footer while preserving `#modalPrevBtn`, `#modalNextBtn`, `#modalPhotoCounter`, and `#closeImageModalBtn` / `#closeImageModalBtnBottom`.
+   - Clicking `#applyCropBtn` extracts `cropper.getCroppedCanvas({ maxWidth: 2560, maxHeight: 2560, imageSmoothingEnabled: true, imageSmoothingQuality: 'high' })`, encodes to `image/webp` (`0.82` quality), replaces `selectedFiles[currentLightboxIndex]`, calls `syncFileInput()` and `renderPreviews()`, and closes the modal.
+   - Strictly destroy `activeCropper` and revoke temporary `ObjectURL`s on modal close or slide navigation to prevent memory leaks on Android.
