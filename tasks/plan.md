@@ -415,3 +415,21 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 - [x] **Task 131:** SEO & Legal Compliance: OpenGraph + WhatsApp Rich Previews, `Schema.org/Product` JSON-LD, `/sitemap.xml`, `/robots.txt` & RGPD/LSSI Legal Pages (`/legal/aviso-legal/`, `/legal/privacidad/`, `/legal/cookies/`) (`storefront/views.py`, `storefront/urls.py`, `storefront/templates/storefront/legal_page.html`).
 - [x] **Task 132:** Bilingual Localization (`es`/`en`), Comprehensive Storefront & Security Firewall Test Suite (`tests/test_storefront.py`) & Full Regression Verification (`locale/es/LC_MESSAGES/django.po`, `locale/es/LC_MESSAGES/django.mo`, `tests/test_storefront.py`, `CHANGELOG.md`).
 - [x] **Checkpoint 36 (Public Marketplace Storefront Complete):** `/` serves the Stitch-designed Rápido Pack marketplace homepage; `/p/<slug>-<pk>/` renders the 60/40 product detail view with OpenGraph and JSON-LD; `public_visible()` enforces 7-day `SOLD` social proof retention and strict internal data firewall (`raw_note` and `clarifications` never leaked); click tracking increments counters for WhatsApp and Wallapop/Vinted; Gemini auto-classifies categories and conditions; `classify_products` command works; all existing and new tests pass with 0 regressions.
+
+---
+
+### Phase 37: Corporate Business Landing Page (`/`) & URL Routing (Vertical Slice 33)
+- [x] **Task 133:** Root URL Routing & View Delegation (`storefront/urls.py`, `storefront/views.py`, `config/urls.py`).
+- [x] **Task 134:** Stitch Corporate Landing Page Template (`storefront/templates/storefront/home.html`).
+- [x] **Task 135:** Standalone How-to-Buy Guide & Dedicated Category Routes (`/como-comprar/`, `/tienda/categoria/<slug>/`).
+- [x] **Task 136:** Bilingual Localization, Automated & Browser Tests, Regression Verification (`locale/es/LC_MESSAGES/django.po`, `tests/test_storefront.py`, `tests/test_browser_daily_workflow.py`).
+- [x] **Checkpoint 37 (Corporate Landing Page Complete):** `/` serves corporate landing page with multi-carrier parcel services and 4 newest arrivals; staff redirected to `/panel/`; direct category routes work; 100% tests pass.
+
+---
+
+### Phase 38: Comprehensive Project Texts & Bilingual Localization Audit & Fixes (Vertical Slice 34)
+- [ ] **Task 137:** Audit & Harmonize Template Text & Python Code to English Source `msgid`s (`storefront/templates/`, `storefront/views.py`, `inventory/templates/`).
+- [ ] **Task 138:** Complete Bilingual Translation Catalogs (`locale/es/LC_MESSAGES/django.po`, `locale/en/LC_MESSAGES/django.po`, and binary `.mo` compilation).
+- [ ] **Task 139:** Automated Bilingual Test Suites (`tests/test_i18n.py`, `tests/test_storefront.py`) & Playwright Chrome Real-Browser Verification (`tests/test_browser_daily_workflow.py`).
+- [ ] **Task 140:** Quality Gate, Bilingual Documentation, Changelog & User Merge Gate (`CHANGELOG.md`, `tasks/todo.md`).
+- [ ] **Checkpoint 38 (Bilingual Localization & Project Texts Audit Complete):** All project texts are 100% localized, source strings follow standard English `msgid` convention, Spanish catalog is 100% complete with 0 empty translations, English catalog is present and compiled, Playwright and Django tests assert exact translations in both `es` and `en`, Ruff and system checks pass with zero warnings.

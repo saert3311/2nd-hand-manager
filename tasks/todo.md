@@ -3273,6 +3273,98 @@ uff.exe check .
 - [x] `/panel/` routes staff (`name="root"` preserved).
 - [x] Full automated test suite and `ruff check .` pass with 0 errors.
 
+---
+
+## Phase 38: Comprehensive Project Texts & Bilingual Localization Audit & Fixes (Vertical Slice 34)
+
+### Task 137: Audit & Harmonize Template Text & Python Code to English Source `msgid`s
+**Description:** Harmonize mixed Spanish/English `msgid`s across storefront templates (`storefront/templates/storefront/home.html`, `how_to_buy.html`, `_how_to_buy_modal.html`, `base_public.html`, `legal_page.html`, `_purchase_box.html`, etc.) and `storefront/views.py` to use clean, natural English `msgid`s following standard Django gettext conventions. Wrap any remaining hardcoded strings in `{% trans %}` or `_()`.
+**Acceptance criteria:**
+- [ ] Storefront templates and views use English `msgid`s.
+- [ ] Any previously hardcoded customer-facing or staff-facing strings wrapped in translation tags.
+- [ ] No syntax errors or broken template tags.
+**Verification:**
+- [ ] `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** None
+**Files likely touched:**
+- `storefront/templates/storefront/home.html`
+- `storefront/templates/storefront/how_to_buy.html`
+- `storefront/templates/storefront/base_public.html`
+- `storefront/templates/storefront/legal_page.html`
+- `storefront/templates/storefront/partials/_how_to_buy_modal.html`
+- `storefront/templates/storefront/partials/_purchase_box.html`
+- `storefront/views.py`
+- `inventory/templates/inventory/product_detail.html`
+- `inventory/templates/inventory/dashboard.html`
+**Estimated scope:** Medium to Large (8-10 files)
+
+---
+
+### Task 138: Complete Bilingual Translation Catalogs (`es` and `en`)
+**Description:** Update `locale/es/LC_MESSAGES/django.po` with 100% complete, verified Spanish translations for all English `msgid`s in the project (including newly harmonized storefront texts, `inventory/models.py`, `inventory/forms.py`, `inventory/views.py`, `inventory/services/image_service.py`, and `inventory/admin.py`). Fix the empty translation entry `'You have %(count)s product clarification awaiting your answer.'`. Create and populate `locale/en/LC_MESSAGES/django.po`. Compile both catalogs using `python manage.py compile_locales`.
+**Acceptance criteria:**
+- [ ] `locale/es/LC_MESSAGES/django.po` contains 0 untranslated entries and 0 fuzzy entries.
+- [ ] `locale/en/LC_MESSAGES/django.po` created and populated.
+- [ ] `python manage.py compile_locales` successfully compiles both `.mo` catalogs without errors.
+**Verification:**
+- [ ] `.venv\Scripts\python.exe manage.py compile_locales`
+- [ ] `.venv\Scripts\python.exe -c "import polib; po_es = polib.pofile('locale/es/LC_MESSAGES/django.po'); assert len(po_es.untranslated_entries()) == 0; print('ES Untranslated:', len(po_es.untranslated_entries()))"`
+**Dependencies:** Task 137
+**Files likely touched:**
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/es/LC_MESSAGES/django.mo`
+- `locale/en/LC_MESSAGES/django.po`
+- `locale/en/LC_MESSAGES/django.mo`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 139: Automated Bilingual Test Suites & Playwright Real-Browser Verification
+**Description:** Extend `tests/test_i18n.py` and `tests/test_storefront.py` to assert that all storefront and staging endpoints render accurately in both Spanish (`es`) and English (`en`), verifying language switcher cookies and `Accept-Language` headers. Update `tests/test_browser_daily_workflow.py` with Playwright assertions in real Google Chrome verifying bilingual display and live language toggling.
+**Acceptance criteria:**
+- [ ] `tests/test_i18n.py` tests storefront views (`/`, `/tienda/`, `/como-comprar/`, legal pages) in both `es` and `en`.
+- [ ] `tests/test_browser_daily_workflow.py` verifies bilingual rendering in real Chrome.
+- [ ] All automated tests pass 100% (`manage.py test`).
+**Verification:**
+- [ ] `.venv\Scripts\python.exe manage.py test tests.test_i18n`
+- [ ] `.venv\Scripts\python.exe manage.py test tests.test_storefront`
+- [ ] `.venv\Scripts\python.exe manage.py test tests.test_browser_daily_workflow`
+**Dependencies:** Task 138
+**Files likely touched:**
+- `tests/test_i18n.py`
+- `tests/test_storefront.py`
+- `tests/test_browser_daily_workflow.py`
+**Estimated scope:** Medium (3 files)
+
+---
+
+### Task 140: Quality Gate, Changelog & Release Preparation
+**Description:** Run full test suite, system check, translation compilation, and Ruff linter with 0 errors/warnings. Update `CHANGELOG.md` detailing the comprehensive bilingual localization audit. Prepare release notes and stop before merge to await user authorization.
+**Acceptance criteria:**
+- [ ] `python manage.py check` passes with 0 issues.
+- [ ] `ruff check .` passes with 0 warnings.
+- [ ] `python manage.py test` passes 100%.
+- [ ] `CHANGELOG.md` updated.
+- [ ] User approval requested before any merge into `master`.
+**Verification:**
+- [ ] `.venv\Scripts\ruff.exe check .`
+- [ ] `.venv\Scripts\python.exe manage.py test`
+**Dependencies:** Task 139
+**Files likely touched:**
+- `CHANGELOG.md`
+- `tasks/todo.md`
+**Estimated scope:** Small (2 files)
+
+---
+
+## Checkpoint 38: Comprehensive Project Texts & Bilingual Localization Complete
+- [ ] All storefront, staging, model, form, error, and admin texts follow standard English `msgid` convention.
+- [ ] Spanish catalog (`locale/es/LC_MESSAGES/django.po` and `.mo`) is 100% translated with 0 empty entries.
+- [ ] English catalog (`locale/en/LC_MESSAGES/django.po` and `.mo`) is present and cleanly compiled.
+- [ ] Chrome browser tests verify bilingual rendering across landing page, catalog, details, and modals.
+- [ ] 100% tests pass and clean linter.
+
+
 
 
 
