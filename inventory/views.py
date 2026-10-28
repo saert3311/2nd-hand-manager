@@ -423,6 +423,15 @@ def product_detail_view(request, pk):
         for s in active_sites
     ]
     active_site_ids = {s.id for s in active_sites}
+    active_listing_links = [
+        links_by_site[s.id]
+        for s in active_sites
+        if s.id in links_by_site and links_by_site[s.id].is_active
+    ]
+    unlinked_sites = [
+        s for s in active_sites
+        if s.id not in links_by_site or not links_by_site[s.id].is_active
+    ]
     extra_inactive_links = [
         link for link in product.listing_links.all()
         if link.site_id not in active_site_ids
@@ -440,6 +449,8 @@ def product_detail_view(request, pk):
         "can_manage": can_manage,
         "available_slots": available_slots,
         "site_links_data": site_links_data,
+        "active_listing_links": active_listing_links,
+        "unlinked_sites": unlinked_sites,
         "extra_inactive_links": extra_inactive_links,
         "pending_clarifications": pending_clarifications,
         "resolved_clarifications": resolved_clarifications,

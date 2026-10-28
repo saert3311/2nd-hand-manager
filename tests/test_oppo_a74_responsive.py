@@ -15,6 +15,7 @@ from inventory.models import (
     Product,
     ProductCondition,
     ProductImage,
+    ProductListingLink,
     ProductStatus,
     StorefrontConfiguration,
 )
@@ -84,6 +85,10 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
         )
 
         # Marketplace site
+        self.site_wallapop, _ = MarketplaceSite.objects.get_or_create(
+            slug="wallapop",
+            defaults={"name": "Wallapop", "order": 2, "is_active": True},
+        )
         self.site_vinted, _ = MarketplaceSite.objects.get_or_create(
             slug="vinted",
             defaults={"name": "Vinted", "order": 1, "is_active": True},
@@ -117,6 +122,14 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 image=ContentFile(f.read(), name="sample_jacket.webp"),
                 order=1,
             )
+
+        ProductListingLink.objects.create(
+            product=self.p_active,
+            site=self.site_vinted,
+            url="https://www.vinted.es/items/123-vintage-jacket",
+            clicks_count=5,
+            is_active=True,
+        )
 
         # Price Pending Product
         self.p_price_pending = Product.objects.create(
@@ -322,6 +335,20 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                     self.assertLess(ai_box["y"], gallery_box["y"])
 
                 # Test Detail View Add More Photos & Lightbox Cropper on Mobile
+                # 6. Test Marketplace Links Mobile Redesign: Active Tiles & Modals
+                self.assertTrue(page.locator('[data-site-slug="vinted"]').is_visible())
+                page.click("#openAddListingBtn")
+                page.wait_for_selector("#addListingModal:not(.hidden)", timeout=5000)
+                self._assert_no_horizontal_overflow(page, f"add_listing_modal_{label}", width, height)
+                page.keyboard.press("Escape")
+                page.wait_for_selector("#addListingModal.hidden", state="attached", timeout=5000)
+
+                page.click('[data-site-slug="vinted"] button[title*="Edit"]')
+                page.wait_for_selector("#editListingModal:not(.hidden)", timeout=5000)
+                self._assert_no_horizontal_overflow(page, f"edit_listing_modal_{label}", width, height)
+                page.keyboard.press("Escape")
+                page.wait_for_selector("#editListingModal.hidden", state="attached", timeout=5000)
+
                 page.set_input_files("#detailImageInput", os.path.join("tmp_test_images", "sample_jacket.jpg"))
                 page.wait_for_selector("#detailPendingGrid .photo-edit-btn", timeout=5000)
                 page.click("#detailPendingGrid .photo-edit-btn")

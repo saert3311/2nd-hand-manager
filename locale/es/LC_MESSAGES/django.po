@@ -3248,3 +3248,56 @@ msgstr "Nueva foto"
 
 msgid "Click to inspect photo"
 msgstr "Haz clic para inspeccionar la foto"
+
+msgid "Track and share active listings across external resale platforms."
+msgstr ""
+"Rastrea y comparte anuncios activos en plataformas externas de reventa."
+
+msgid "No marketplace links active yet."
+msgstr "No hay enlaces de marketplace activos todavía."
+
+msgid ""
+"Add links to external listings to track clicks and enable 1-tap quick "
+"sharing with buyers."
+msgstr ""
+"Añade enlaces a anuncios externos para registrar clics y compartirlos "
+"rápidamente con compradores."
+
+msgid "All platforms linked"
+msgstr "Todas las plataformas vinculadas"
+
+msgid "Add Marketplace Link"
+msgstr "Vincular Marketplace"
+
+msgid "Paste"
+msgstr "Pegar"
+
+msgid "Save Listing Link"
+msgstr "Guardar Enlace"
+
+msgid "Manage Listing Link"
+msgstr "Gestionar Enlace"
+
+msgid "Update URL"
+msgstr "Actualizar URL"
+
+msgid "Want to disconnect this link?"
+msgstr "¿Deseas desvincular este enlace?"
+
+msgid "Are you sure you want to remove this marketplace link?"
+msgstr "¿Seguro que deseas eliminar este enlace de marketplace?"
+
+msgid "Remove Link"
+msgstr "Eliminar Enlace"
+
+msgid "Copy listing URL to clipboard"
+msgstr "Copiar URL del anuncio al portapapeles"
+
+msgid "Open external listing in new tab"
+msgstr "Abrir anuncio externo en nueva pestaña"
+
+msgid "Edit or remove listing link"
+msgstr "Editar o eliminar enlace del anuncio"
+
+msgid "Manage link for"
+msgstr "Gestionar enlace de"

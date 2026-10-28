@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Marketplace Links Mobile Redesign: Active Listing Hub (Phase 42)**:
+  - **Active Listing Tiles**: Replaced verbose marketplace cards with compact, tactile cards for each active listing displaying brand name, click count, 1-tap copy link button (`min-h-[40px]`), direct view button (`↗ Ver`), and settings button (`⚙️`).
+  - **Progressive Disclosure & Zero-Height Inactive Rows**: Eliminated redundant pre-filled URL inputs and empty input cards for unlisted platforms. Added progressive disclosure `[ ➕ Add Marketplace Link ]` button when unlinked sites exist, and a compact empty state when no listings are active.
+  - **Accessible Listing Modals**: Implemented accessible `#addListingModal` (site selector, URL input with clipboard paste button) and `#editListingModal` (edit URL or remove link) with ARIA dialog roles, focus management, and Escape key dismissal.
+  - **Context Partitioning**: Supplied partitioned `active_listing_links` and `unlinked_sites` in `product_detail_view` without extra database queries.
+  - **Bilingual Localization & Automated Tests**: Added Spanish and English translations in `locale/` and automated tests in `tests/test_marketplace_links_mobile.py` and `tests/test_oppo_a74_responsive.py`.
 - **Streamlined Product Detail Mobile UI/UX & On-Demand Photo Editing**:
   - **In-Place Photo Crop & Rotate**: Added Cropper.js controls to the staging product detail workspace (`inventory/templates/inventory/product_detail.html`), enabling 90° rotation and freeform touch cropping for both saved gallery photos (via AJAX to new `product_edit_image_view` endpoint) and pending upload photos with WebP compression.
   - **2-Column Mobile Previews**: Switched saved gallery thumbnails and pending uploads from cramped 4-column layout to a finger-friendly 2-column mobile grid (`grid-cols-2 sm:grid-cols-4 md:grid-cols-5`) with touch-accessible crop and inspection buttons.

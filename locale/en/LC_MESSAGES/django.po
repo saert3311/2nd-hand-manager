@@ -3169,3 +3169,55 @@ msgstr "Apply crop & rotate"
 
 msgid "Crop or rotate photo"
 msgstr "Crop or rotate photo"
+
+msgid "Track and share active listings across external resale platforms."
+msgstr "Track and share active listings across external resale platforms."
+
+msgid "No marketplace links active yet."
+msgstr "No marketplace links active yet."
+
+msgid ""
+"Add links to external listings to track clicks and enable 1-tap quick "
+"sharing with buyers."
+msgstr ""
+"Add links to external listings to track clicks and enable 1-tap quick "
+"sharing with buyers."
+
+msgid "All platforms linked"
+msgstr "All platforms linked"
+
+msgid "Add Marketplace Link"
+msgstr "Add Marketplace Link"
+
+msgid "Paste"
+msgstr "Paste"
+
+msgid "Save Listing Link"
+msgstr "Save Listing Link"
+
+msgid "Manage Listing Link"
+msgstr "Manage Listing Link"
+
+msgid "Update URL"
+msgstr "Update URL"
+
+msgid "Want to disconnect this link?"
+msgstr "Want to disconnect this link?"
+
+msgid "Are you sure you want to remove this marketplace link?"
+msgstr "Are you sure you want to remove this marketplace link?"
+
+msgid "Remove Link"
+msgstr "Remove Link"
+
+msgid "Copy listing URL to clipboard"
+msgstr "Copy listing URL to clipboard"
+
+msgid "Open external listing in new tab"
+msgstr "Open external listing in new tab"
+
+msgid "Edit or remove listing link"
+msgstr "Edit or remove listing link"
+
+msgid "Manage link for"
+msgstr "Manage link for"
