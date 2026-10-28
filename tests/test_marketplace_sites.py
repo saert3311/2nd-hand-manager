@@ -147,7 +147,17 @@ class ProductDetailLinksViewTests(TestCase):
         self.assertContains(response, "Marketplace Listing Links")
         self.assertContains(response, "Wallapop")
         self.assertContains(response, "Vinted")
-        self.assertContains(response, "Not Listed")
+        self.assertContains(response, "No marketplace links active yet")
+
+        # When a platform is linked, it renders the active tile with 'Listed' badge
+        ProductListingLink.objects.create(
+            product=self.product,
+            site=self.wallapop,
+            url="https://es.wallapop.com/item/vintage-camera-12345",
+            is_active=True,
+        )
+        response_with_link = self.client.get(reverse("inventory:product_detail", kwargs={"pk": self.product.pk}))
+        self.assertContains(response_with_link, "Listed")
 
     def test_manager_saves_valid_marketplace_link(self):
         self.client.login(username="store_mgr", password="pw")

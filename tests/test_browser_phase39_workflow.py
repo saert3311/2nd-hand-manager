@@ -222,8 +222,12 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
             wallapop_row = page.locator('div[data-site-slug="wallapop"]')
             self.assertTrue(wallapop_row.is_visible())
 
+            # Click Manage link button -> opens #editListingModal
+            wallapop_row.locator('button[onclick*="openEditListingModal"]').click()
+            page.wait_for_selector("#editListingModal:not(.hidden)")
+
             # Click Remove link button -> opens #actionConfirmModal
-            delete_btn = wallapop_row.locator('form:has(input[value="delete"]) button[type="submit"]')
+            delete_btn = page.locator('#deleteListingForm button[type="submit"]')
             delete_btn.click()
 
             modal = page.locator("#actionConfirmModal")

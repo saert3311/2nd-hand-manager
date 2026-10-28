@@ -1719,12 +1719,12 @@
     }
   }
 
-  document.querySelectorAll("form[data-confirm-message]").forEach(form => {
-    form.addEventListener("submit", function(e) {
-      if (form.dataset.confirmed === "true") return;
-      e.preventDefault();
-      openActionConfirmModal(form, form.getAttribute("data-confirm-message"), e.submitter || document.activeElement);
-    });
+  document.addEventListener("submit", function(e) {
+    const form = e.target.closest("form[data-confirm-message]");
+    if (!form) return;
+    if (form.dataset.confirmed === "true") return;
+    e.preventDefault();
+    openActionConfirmModal(form, form.getAttribute("data-confirm-message"), e.submitter || document.activeElement);
   });
 
   document.addEventListener("keydown", function(e) {
@@ -2624,7 +2624,7 @@
 {% endif %}
 
 <!-- Reusable Action Confirmation Modal -->
-<div id="actionConfirmModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="actionConfirmModalTitle" onclick="if (event.target === this) closeActionConfirmModal()">
+<div id="actionConfirmModal" class="fixed inset-0 z-[70] hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="actionConfirmModalTitle" onclick="if (event.target === this) closeActionConfirmModal()">
   <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
     <div class="flex items-start gap-3">
       <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0 text-xl text-rose-600" aria-hidden="true">

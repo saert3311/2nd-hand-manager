@@ -179,10 +179,11 @@ class BrowserRefinedLifecycleTests(StaticLiveServerTestCase):
             page.screenshot(path="screenshots/06_staging_ready.png")
 
             # 8. Add Marketplace Listing Link -> Auto-transitions to PUBLISHED
-            wallapop_row = page.locator('div[data-site-slug="wallapop"]')
-            self.assertTrue(wallapop_row.is_visible())
-            wallapop_row.locator('input[name="url"]').fill("https://es.wallapop.com/item/vintage-nike-acg-102938475")
-            wallapop_row.locator('form:has(input[value="save"]) button[type="submit"]').click()
+            page.click("#openAddListingBtn")
+            page.wait_for_selector("#addListingModal:not(.hidden)")
+            page.select_option("#addModalSiteSelect", label="Wallapop")
+            page.fill("#addModalUrlInput", "https://es.wallapop.com/item/vintage-nike-acg-102938475")
+            page.click('#addListingModal button[type="submit"]')
             page.wait_for_load_state("networkidle")
 
             product.refresh_from_db()
@@ -193,8 +194,10 @@ class BrowserRefinedLifecycleTests(StaticLiveServerTestCase):
 
             # 9. Deactivate/Delete Marketplace Link -> Auto-reverts to READY
             wallapop_row = page.locator('div[data-site-slug="wallapop"]')
-            delete_btn = wallapop_row.locator('form:has(input[value="delete"]) button[type="submit"]')
-            delete_btn.click()
+            self.assertTrue(wallapop_row.is_visible())
+            wallapop_row.locator('button[onclick*="openEditListingModal"]').click()
+            page.wait_for_selector("#editListingModal:not(.hidden)")
+            page.click('#deleteListingForm button[type="submit"]')
             page.wait_for_selector("#actionConfirmModal:not(.hidden)")
             page.click("#btnProceedActionConfirm")
             page.wait_for_load_state("networkidle")

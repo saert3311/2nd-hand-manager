@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Action Confirmation Event Delegation & Modal Layering**: Switched `form[data-confirm-message]` binding in `inventory/templates/inventory/product_detail.html` to document-level submit event delegation so forms declared late in the DOM (such as `#deleteListingForm` in `#editListingModal`) trigger `#actionConfirmModal`. Raised `#actionConfirmModal` z-index to `z-[70]` so confirmation dialogs properly stack over parent modal dialogs without pointer event blockage.
+- **Test Suite Alignment for Marketplace Links Redesign**: Updated `test_product_detail_renders_all_active_platforms`, `test_full_daily_workflow_in_real_chrome`, and `test_daily_workflow_with_accessibility_in_real_chrome` to navigate through `#openAddListingBtn`, `#addListingModal`, and `#editListingModal` reflecting the mobile-first active listing hub.
+
 ### Added
 - **Marketplace Links Mobile Redesign: Active Listing Hub (Phase 42)**:
   - **Active Listing Tiles**: Replaced verbose marketplace cards with compact, tactile cards for each active listing displaying brand name, click count, 1-tap copy link button (`min-h-[40px]`), direct view button (`↗ Ver`), and settings button (`⚙️`).
