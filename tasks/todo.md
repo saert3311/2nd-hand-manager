@@ -3506,3 +3506,30 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 - [x] Add Spanish translations for crop/rotate UI strings and compile `.mo` catalogs.
 - [x] Extend `tests/test_intake_low_dpi.py` and verify Playwright responsive tests (`320×711` and `360×800`).
 - [x] Update `CHANGELOG.md` and pass `ruff check .`, `manage.py check`, and test suites.
+
+---
+
+# Phase 42: Marketplace Links Mobile Redesign: Active Listing Hub
+
+### Task 147: View Context & Partitioned Listing Data (`inventory/views.py`)
+- [x] In `product_detail_view`, calculate and supply `active_listing_links` and `unlinked_sites` in context alongside existing `site_links_data` (for backwards compatibility).
+- [x] Verify manager permission enforcement and POST link handling in `product_manage_link_view`.
+
+### Task 148: Active Listing Hub, Quick-Action Tiles & Progressive Disclosure Modals (`inventory/templates/inventory/product_detail.html`)
+- [x] Replace cluttered marketplace rows with compact Active Listing Tiles: brand name, click badge, 1-tap copy button (`min-h-[40px]`), direct link (`↗ Ver`), and settings button (`⚙️`).
+- [x] Implement empty state and progressive disclosure `[ ➕ Vincular Marketplace ]` button when unlinked sites exist.
+- [x] Implement accessible `#addListingModal` for picking an unlinked site and pasting a URL.
+- [x] Implement accessible `#editListingModal` for editing URL or deleting a link with CSRF and confirm prompt.
+- [x] Ensure mobile touch targets `>= 40px` and zero horizontal overflow on `360×800` and `320×711` viewports.
+
+### Task 149: Bilingual Translations, Automated Tests & Verification Gate (`locale/`, `tests/`, `CHANGELOG.md`)
+- [x] Add Spanish and English translations in `locale/` and compile `.mo` catalogs via `compile_locales`.
+- [x] Create automated test suite `tests/test_marketplace_links_mobile.py` covering context partitioning, active tiles, add modal, edit/delete modal, and permissions.
+- [x] Update `tests/test_oppo_a74_responsive.py` with Playwright assertions for zero horizontal overflow and modal interaction.
+- [x] Update `CHANGELOG.md`, run `ruff check .`, `manage.py check`, and test suite.
+
+### Checkpoint 42: Marketplace Links Mobile Redesign Complete
+- [x] Zero duplicate input boxes when listings exist.
+- [x] Unlisted platforms take zero default vertical height; 100% accessible modals for adding/editing.
+- [x] 100% of automated tests and responsive checks pass.
+

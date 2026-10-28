@@ -461,3 +461,30 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
    - Add `#rotateLeftBtn` (`↺ 90°`), `#rotateRightBtn` (`↻ 90°`), and `#applyCropBtn` (`✓ Apply` / `✓ Aplicar`) in the modal footer while preserving `#modalPrevBtn`, `#modalNextBtn`, `#modalPhotoCounter`, and `#closeImageModalBtn` / `#closeImageModalBtnBottom`.
    - Clicking `#applyCropBtn` extracts `cropper.getCroppedCanvas({ maxWidth: 2560, maxHeight: 2560, imageSmoothingEnabled: true, imageSmoothingQuality: 'high' })`, encodes to `image/webp` (`0.82` quality), replaces `selectedFiles[currentLightboxIndex]`, calls `syncFileInput()` and `renderPreviews()`, and closes the modal.
    - Strictly destroy `activeCropper` and revoke temporary `ObjectURL`s on modal close or slide navigation to prevent memory leaks on Android.
+
+---
+
+## Phase 42: Marketplace Links Mobile Redesign: Active Listing Hub (`marketplace-links-mobile-redesign`)
+
+### Technical Design
+1. **View Context Optimization (`inventory/views.py`)**:
+   - Provide cleanly partitioned context variables in `product_detail_view`:
+     - `active_listing_links`: `product.listing_links.filter(site__is_active=True).select_related('site').order_by('site__order', 'site__name')`
+     - `unlinked_sites`: `MarketplaceSite.objects.filter(is_active=True).exclude(id__in=[l.site_id for l in active_listing_links]).order_by('order', 'name')`
+     - `extra_inactive_links`: `product.listing_links.exclude(site__is_active=True).select_related('site')`
+2. **Active Listing Tiles UI (`inventory/templates/inventory/product_detail.html`)**:
+   - For each active link in `active_listing_links`, render a compact white card (`p-3 rounded-xl border border-slate-200 shadow-xs`) with:
+     - Platform Name + active pulse dot + click counter badge (`X clicks`).
+     - 1-Tap Copy button (`min-h-[40px]`) with inline feedback ("¡Copiado! ✓").
+     - Direct external link button (`↗ Ver`).
+     - Manage/Edit button (`⚙️`) triggering `#editListingModal`.
+   - Remove duplicate raw URL strings and duplicate pre-filled input boxes.
+3. **Progressive Disclosure & Modals**:
+   - When `unlinked_sites` has items, show a clean `[ ➕ Vincular Marketplace ]` button that opens `#addListingModal` (`role="dialog"`).
+   - `#addListingModal`: Platform selector (dropdown or chips), URL input with clipboard paste button, and submit button.
+   - `#editListingModal`: Allows updating the URL or removing the link via `inventory:manage_link`.
+   - Accessible focus entry, focus trap, and Escape key dismissal.
+4. **Mobile Ergonomics & Responsive Verification**:
+   - All touch targets `>= 40px`.
+   - Zero horizontal overflow (`scrollWidth <= clientWidth`) on OPPO A74 viewports (`360×800` and `320×711`).
+
