@@ -331,8 +331,11 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 # Verify mobile order: Gemini AI banner appears before photo gallery on mobile
                 ai_box = page.locator("#aiForm").bounding_box()
                 gallery_box = page.locator("#galleryThumbnailsGrid").bounding_box()
+                marketplace_box = page.locator("#marketplaceLinksCard").bounding_box()
                 if ai_box and gallery_box:
                     self.assertLess(ai_box["y"], gallery_box["y"])
+                if gallery_box and marketplace_box:
+                    self.assertLess(gallery_box["y"], marketplace_box["y"])
 
                 # Test Detail View Add More Photos & Lightbox Cropper on Mobile
                 # 6. Test Marketplace Links Mobile Redesign: Active Tiles & Modals

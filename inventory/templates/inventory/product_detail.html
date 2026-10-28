@@ -345,6 +345,150 @@
         {% endif %}
       </div>
 
+      <!-- Marketplace Links Card -->
+      <div id="marketplaceLinksCard" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-6 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-base sm:text-lg" aria-hidden="true">🔗</span>
+            <div>
+              <h2 class="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider">
+                {% trans "Marketplace Listing Links" %}
+              </h2>
+              <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+                {% trans "Track and share active listings across external resale platforms." %}
+              </p>
+            </div>
+          </div>
+          <span id="activeLinksCountBadge" class="text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
+            {{ active_listing_links|length }} {% trans "published" %}
+          </span>
+        </div>
+
+        {% if product.status == 'awaiting_info' or product.status == 'blocked' %}
+        <!-- Publishing Gate Caution -->
+        <div class="publishing-gate-caution bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-3.5 flex items-start gap-2.5 text-xs sm:text-sm">
+          <span class="text-base shrink-0" aria-hidden="true">⚠️</span>
+          <div>
+            <span class="font-bold">
+              {% if product.status == 'awaiting_info' %}{% trans "Caution: Product has pending clarifications" %}{% else %}{% trans "Caution: Product is blocked" %}{% endif %}
+            </span>
+            <p class="text-amber-800 mt-0.5">
+              {% trans "Resolve pending doubts or unblock before publishing listings to external marketplaces to avoid inaccurate product claims." %}
+            </p>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Active Listing Tiles -->
+        {% if active_listing_links %}
+        <div class="space-y-3" id="activeListingTilesList">
+          {% for link in active_listing_links %}
+          <div data-site-slug="{{ link.site.slug }}" data-link-id="{{ link.id }}"
+               class="p-3 sm:p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition shadow-xs space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" aria-hidden="true"></span>
+                <span class="font-bold text-sm text-slate-900 truncate">{{ link.site.name }}</span>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
+                  {{ link.clicks_count }} {% trans "clicks" %}
+                </span>
+                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
+                  {% trans "Listed" %}
+                </span>
+              </div>
+            </div>
+
+            <!-- Action Bar (min-h-[40px] tap targets for mobile) -->
+            <div class="flex items-center gap-1.5 sm:gap-2 pt-0.5">
+              <button type="button" onclick="copyLinkUrl('{{ link.url|escapejs }}', this)"
+                      class="flex-1 min-w-0 py-2 px-3 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 min-h-[40px] transition cursor-pointer"
+                      title="{% trans 'Copy listing URL to clipboard' %}" aria-label="{% trans 'Copy URL for' %} {{ link.site.name }}">
+                <span aria-hidden="true">📋</span>
+                <span class="truncate">{% trans "Copy Link" %}</span>
+              </button>
+              <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+                 class="py-2 px-3.5 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 text-emerald-800 border border-emerald-200/80 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1 min-h-[40px] transition shrink-0"
+                 title="{% trans 'Open external listing in new tab' %}" aria-label="{% trans 'Open listing for' %} {{ link.site.name }}">
+                <span aria-hidden="true">↗</span>
+                <span>{% trans "View" %}</span>
+              </a>
+              {% if can_manage %}
+              <button type="button" onclick="openEditListingModal('{{ link.id }}', '{{ link.site.id }}', '{{ link.site.name|escapejs }}', '{{ link.url|escapejs }}')"
+                      class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 active:bg-slate-200 rounded-lg min-h-[40px] min-w-[40px] flex items-center justify-center transition border border-slate-200 shrink-0 cursor-pointer"
+                      title="{% trans 'Edit or remove listing link' %}" aria-label="{% trans 'Manage link for' %} {{ link.site.name }}">
+                <span aria-hidden="true">⚙️</span>
+              </button>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <!-- Compact Empty State -->
+        <div id="noActiveLinksState" class="p-5 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-1.5">
+          <span class="text-2xl block select-none" aria-hidden="true">🌐</span>
+          <p class="text-xs sm:text-sm font-bold text-slate-700">
+            {% trans "No marketplace links active yet." %}
+          </p>
+          <p class="text-xs text-slate-500 max-w-sm mx-auto">
+            {% trans "Add links to external listings to track clicks and enable 1-tap quick sharing with buyers." %}
+          </p>
+        </div>
+        {% endif %}
+
+        <!-- Progressive Disclosure: Add Marketplace Link Trigger -->
+        {% if can_manage %}
+        <div class="pt-1 flex flex-col sm:flex-row items-center justify-between gap-2">
+          {% if unlinked_sites %}
+          <button type="button" id="openAddListingBtn" onclick="openAddListingModal()"
+                  class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-xs cursor-pointer min-h-[40px]">
+            <span aria-hidden="true">➕</span>
+            <span>{% trans "Add Marketplace Link" %}</span>
+          </button>
+          {% else %}
+          <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+            <span class="text-emerald-600 font-bold" aria-hidden="true">✓</span>
+            {% trans "All platforms linked" %} ({{ active_listing_links|length }}/{{ active_listing_links|length }})
+          </span>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if extra_inactive_links %}
+        <!-- Inactive/Archived Platforms with Existing Links (Collapsible) -->
+        <details class="pt-2 border-t border-slate-100 group">
+          <summary class="text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer select-none hover:text-slate-800 transition py-1 flex items-center justify-between">
+            <span>{% trans "Archived / Deactivated Marketplace Links" %} ({{ extra_inactive_links|length }})</span>
+            <span class="text-slate-400 group-open:rotate-180 transition-transform" aria-hidden="true">&darr;</span>
+          </summary>
+          <div class="pt-2 space-y-2">
+            {% for link in extra_inactive_links %}
+            <div class="p-2.5 rounded-lg border border-amber-200 bg-amber-50/50 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="font-bold text-slate-700 shrink-0">{{ link.site.name }}</span>
+                <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="text-emerald-700 hover:underline truncate max-w-[200px] sm:max-w-none">
+                  {{ link.url }}
+                </a>
+              </div>
+              {% if can_manage %}
+              <form method="post" action="{% url 'inventory:manage_link' product.pk %}" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="link_id" value="{{ link.id }}">
+                <button type="submit" class="text-rose-600 hover:text-rose-800 font-bold p-1 cursor-pointer">{% trans "Delete" %}</button>
+              </form>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </details>
+        {% endif %}
+
+      </div>
+
       <!-- Preserved Raw Notes Card (Hidden on Mobile) -->
       <div class="hidden lg:block bg-amber-50/60 rounded-2xl border border-amber-200 p-5 space-y-2">
         <div class="flex items-center justify-between">
@@ -1059,150 +1203,6 @@
           {% endif %}
 
         </form>
-      </div>
-
-            <!-- Marketplace Links Card -->
-      <div id="marketplaceLinksCard" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-6 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-          <div class="flex items-center gap-2">
-            <span class="text-base sm:text-lg" aria-hidden="true">🔗</span>
-            <div>
-              <h2 class="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider">
-                {% trans "Marketplace Listing Links" %}
-              </h2>
-              <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
-                {% trans "Track and share active listings across external resale platforms." %}
-              </p>
-            </div>
-          </div>
-          <span id="activeLinksCountBadge" class="text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
-            {{ active_listing_links|length }} {% trans "published" %}
-          </span>
-        </div>
-
-        {% if product.status == 'awaiting_info' or product.status == 'blocked' %}
-        <!-- Publishing Gate Caution -->
-        <div class="publishing-gate-caution bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-3.5 flex items-start gap-2.5 text-xs sm:text-sm">
-          <span class="text-base shrink-0" aria-hidden="true">⚠️</span>
-          <div>
-            <span class="font-bold">
-              {% if product.status == 'awaiting_info' %}{% trans "Caution: Product has pending clarifications" %}{% else %}{% trans "Caution: Product is blocked" %}{% endif %}
-            </span>
-            <p class="text-amber-800 mt-0.5">
-              {% trans "Resolve pending doubts or unblock before publishing listings to external marketplaces to avoid inaccurate product claims." %}
-            </p>
-          </div>
-        </div>
-        {% endif %}
-
-        <!-- Active Listing Tiles -->
-        {% if active_listing_links %}
-        <div class="space-y-3" id="activeListingTilesList">
-          {% for link in active_listing_links %}
-          <div data-site-slug="{{ link.site.slug }}" data-link-id="{{ link.id }}"
-               class="p-3 sm:p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition shadow-xs space-y-2.5">
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" aria-hidden="true"></span>
-                <span class="font-bold text-sm text-slate-900 truncate">{{ link.site.name }}</span>
-              </div>
-              <div class="flex items-center gap-1.5 shrink-0">
-                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
-                  {{ link.clicks_count }} {% trans "clicks" %}
-                </span>
-                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
-                  {% trans "Listed" %}
-                </span>
-              </div>
-            </div>
-
-            <!-- Action Bar (min-h-[40px] tap targets for mobile) -->
-            <div class="flex items-center gap-1.5 sm:gap-2 pt-0.5">
-              <button type="button" onclick="copyLinkUrl('{{ link.url|escapejs }}', this)"
-                      class="flex-1 min-w-0 py-2 px-3 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 min-h-[40px] transition cursor-pointer"
-                      title="{% trans 'Copy listing URL to clipboard' %}" aria-label="{% trans 'Copy URL for' %} {{ link.site.name }}">
-                <span aria-hidden="true">📋</span>
-                <span class="truncate">{% trans "Copy Link" %}</span>
-              </button>
-              <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
-                 class="py-2 px-3.5 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 text-emerald-800 border border-emerald-200/80 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1 min-h-[40px] transition shrink-0"
-                 title="{% trans 'Open external listing in new tab' %}" aria-label="{% trans 'Open listing for' %} {{ link.site.name }}">
-                <span aria-hidden="true">↗</span>
-                <span>{% trans "View" %}</span>
-              </a>
-              {% if can_manage %}
-              <button type="button" onclick="openEditListingModal('{{ link.id }}', '{{ link.site.id }}', '{{ link.site.name|escapejs }}', '{{ link.url|escapejs }}')"
-                      class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 active:bg-slate-200 rounded-lg min-h-[40px] min-w-[40px] flex items-center justify-center transition border border-slate-200 shrink-0 cursor-pointer"
-                      title="{% trans 'Edit or remove listing link' %}" aria-label="{% trans 'Manage link for' %} {{ link.site.name }}">
-                <span aria-hidden="true">⚙️</span>
-              </button>
-              {% endif %}
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-        {% else %}
-        <!-- Compact Empty State -->
-        <div id="noActiveLinksState" class="p-5 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-1.5">
-          <span class="text-2xl block select-none" aria-hidden="true">🌐</span>
-          <p class="text-xs sm:text-sm font-bold text-slate-700">
-            {% trans "No marketplace links active yet." %}
-          </p>
-          <p class="text-xs text-slate-500 max-w-sm mx-auto">
-            {% trans "Add links to external listings to track clicks and enable 1-tap quick sharing with buyers." %}
-          </p>
-        </div>
-        {% endif %}
-
-        <!-- Progressive Disclosure: Add Marketplace Link Trigger -->
-        {% if can_manage %}
-        <div class="pt-1 flex flex-col sm:flex-row items-center justify-between gap-2">
-          {% if unlinked_sites %}
-          <button type="button" id="openAddListingBtn" onclick="openAddListingModal()"
-                  class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-xs cursor-pointer min-h-[40px]">
-            <span aria-hidden="true">➕</span>
-            <span>{% trans "Add Marketplace Link" %}</span>
-          </button>
-          {% else %}
-          <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full inline-flex items-center gap-1">
-            <span class="text-emerald-600 font-bold" aria-hidden="true">✓</span>
-            {% trans "All platforms linked" %} ({{ active_listing_links|length }}/{{ active_listing_links|length }})
-          </span>
-          {% endif %}
-        </div>
-        {% endif %}
-
-        {% if extra_inactive_links %}
-        <!-- Inactive/Archived Platforms with Existing Links (Collapsible) -->
-        <details class="pt-2 border-t border-slate-100 group">
-          <summary class="text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer select-none hover:text-slate-800 transition py-1 flex items-center justify-between">
-            <span>{% trans "Archived / Deactivated Marketplace Links" %} ({{ extra_inactive_links|length }})</span>
-            <span class="text-slate-400 group-open:rotate-180 transition-transform" aria-hidden="true">&darr;</span>
-          </summary>
-          <div class="pt-2 space-y-2">
-            {% for link in extra_inactive_links %}
-            <div class="p-2.5 rounded-lg border border-amber-200 bg-amber-50/50 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="font-bold text-slate-700 shrink-0">{{ link.site.name }}</span>
-                <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="text-emerald-700 hover:underline truncate max-w-[200px] sm:max-w-none">
-                  {{ link.url }}
-                </a>
-              </div>
-              {% if can_manage %}
-              <form method="post" action="{% url 'inventory:manage_link' product.pk %}" class="inline">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="link_id" value="{{ link.id }}">
-                <button type="submit" class="text-rose-600 hover:text-rose-800 font-bold p-1 cursor-pointer">{% trans "Delete" %}</button>
-              </form>
-              {% endif %}
-            </div>
-            {% endfor %}
-          </div>
-        </details>
-        {% endif %}
-
       </div>
 
     </div>
