@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Streamlined Product Detail Mobile UI/UX & On-Demand Photo Editing**:
+  - **In-Place Photo Crop & Rotate**: Added Cropper.js controls to the staging product detail workspace (`inventory/templates/inventory/product_detail.html`), enabling 90° rotation and freeform touch cropping for both saved gallery photos (via AJAX to new `product_edit_image_view` endpoint) and pending upload photos with WebP compression.
+  - **2-Column Mobile Previews**: Switched saved gallery thumbnails and pending uploads from cramped 4-column layout to a finger-friendly 2-column mobile grid (`grid-cols-2 sm:grid-cols-4 md:grid-cols-5`) with touch-accessible crop and inspection buttons.
+  - **Mobile Noise Reduction**: Hidden preserved intake field notes, lifecycle status audit history (`#status-history-section`), and public store taxonomy/visibility controls on viewports `< 1024px` (`hidden lg:block`), decluttering mobile staging flow.
+  - **Mobile Visual Reordering**: Reordered staging content on mobile to place Gemini AI vision identification and listing copywriting/pricing details at the top (`order-1 lg:order-2`), followed by photo gallery and clarifications (`order-2 lg:order-1`).
+  - **Decluttered Responsive Header Actions**: Refactored top action buttons ("View in Storefront", "Download All Photos (.ZIP)", "Move to Trash" / "Restore") into compact, touch-accessible flex buttons with abbreviated mobile labels, eliminating UI clutter and horizontal overflow down to 320px viewport width (tested against OPPO A74 baseline).
+  - **Bilingual Localization & Automated Tests**: Added Spanish translations in `locale/es/` and comprehensive unit, permission, and Playwright responsive tests in `tests/test_product_detail_mobile_ux.py` and `tests/test_oppo_a74_responsive.py`.
 - **On-Demand Mobile Photo Crop & Rotate in Intake (Phase 41)**:
   - Vendored **Cropper.js v1.6.2** locally in `inventory/static/inventory/vendor/` (`cropper.min.js` & `cropper.min.css`) for offline/PWA reliability.
   - Upgraded `#imagePreviewModal` in `inventory/templates/inventory/intake.html` with interactive freeform touch cropping (`autoCropArea: 1`, `viewMode: 1`), 90° left/right rotation controls (`#rotateLeftBtn`, `#rotateRightBtn`), a thumbnail edit shortcut button (`.photo-edit-btn` `✂️`), and in-place `.webp` (`max 2560px`, quality `0.82`) replacement via `#applyCropBtn`.
