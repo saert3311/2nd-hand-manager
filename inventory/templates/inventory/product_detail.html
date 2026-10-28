@@ -1,7 +1,21 @@
 {% extends "inventory/base.html" %}
-{% load i18n l10n %}
+{% load i18n l10n static %}
 
 {% block title %}{{ product.display_title }} - {% trans "Staging" %}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'inventory/vendor/cropper.min.css' %}">
+<style>
+  #imagePreviewModal .cropper-container {
+    max-height: 58vh;
+  }
+  @media (min-width: 640px) {
+    #imagePreviewModal .cropper-container {
+      max-height: 65vh;
+    }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
@@ -42,33 +56,42 @@
         {% endif %}
       </div>
 
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="flex items-center gap-1.5 w-full sm:w-auto sm:gap-2">
         <!-- Public Storefront Preview Button -->
         <a href="{{ product.get_public_url }}" target="_blank" rel="noopener noreferrer"
-           class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition">
-          <span aria-hidden="true">🏪</span> {% trans "View in Storefront" %}
+           class="flex-1 min-w-0 sm:flex-initial inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2.5 bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition text-center min-h-[38px]">
+          <span aria-hidden="true">🏪</span>
+          <span class="sm:hidden">{% trans "Store" %}</span>
+          <span class="hidden sm:inline">{% trans "View in Storefront" %}</span>
         </a>
+
         <!-- ZIP Download Button -->
         {% if product.images.exists %}
         <a href="{% url 'inventory:download_zip' product.pk %}"
-           class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition">
-          <span aria-hidden="true">💾</span> {% trans "Download All Photos (.ZIP)" %}
+           class="flex-1 min-w-0 sm:flex-initial inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition text-center min-h-[38px]">
+          <span aria-hidden="true">💾</span>
+          <span class="sm:hidden">{% trans "ZIP" %}</span>
+          <span class="hidden sm:inline">{% trans "Download All Photos (.ZIP)" %}</span>
         </a>
         {% endif %}
 
         {% if can_manage %}
           {% if product.is_deleted %}
-          <form method="post" action="{% url 'inventory:product_restore' product.pk %}" class="inline">
+          <form method="post" action="{% url 'inventory:product_restore' product.pk %}" class="flex-1 min-w-0 sm:flex-initial inline-flex">
             {% csrf_token %}
             <button type="submit" id="btnRestoreProductTop"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer">
-              <span aria-hidden="true">♻️</span> {% trans "Restore Product" %}
+                    class="w-full inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer text-center min-h-[38px]">
+              <span aria-hidden="true">♻️</span>
+              <span class="sm:hidden">{% trans "Restore" %}</span>
+              <span class="hidden sm:inline">{% trans "Restore Product" %}</span>
             </button>
           </form>
           {% else %}
           <button type="button" id="btnOpenDeleteModal" onclick="openDeleteModal()"
-                  class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer">
-            <span aria-hidden="true">🗑️</span> {% trans "Move to Trash" %}
+                  class="flex-1 min-w-0 sm:flex-initial inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer text-center min-h-[38px]">
+            <span aria-hidden="true">🗑️</span>
+            <span class="sm:hidden">{% trans "Trash" %}</span>
+            <span class="hidden sm:inline">{% trans "Move to Trash" %}</span>
           </button>
           {% endif %}
         {% endif %}
@@ -138,11 +161,11 @@
   </div>
   {% endif %}
 
-  <!-- Main Staging Grid -->
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+  <!-- Main Staging Grid: Responsive Mobile Ordering (Gemini & Listing first on mobile) -->
+  <div class="flex flex-col lg:grid lg:grid-cols-12 gap-6">
 
     <!-- Left Column: Gallery & Raw Field Notes (5 cols) -->
-    <div class="lg:col-span-5 space-y-6">
+    <div class="order-2 lg:order-1 lg:col-span-5 space-y-6">
       
       <!-- Photo Gallery Card -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
@@ -169,7 +192,7 @@
 
         {% if product.images.exists %}
         <!-- Featured Image Container -->
-        <div class="aspect-square bg-slate-100 rounded-xl overflow-hidden border border-slate-200 relative group">
+        <div id="featuredImageWrapper" class="aspect-square bg-slate-100 rounded-xl overflow-hidden border border-slate-200 relative group cursor-pointer" title="{% trans 'Click to inspect photo' %}">
           <img id="mainImage" src="{{ product.primary_image.image.url }}" alt="{{ product.display_title }}" class="w-full h-full object-contain">
           <span id="mainCoverBadge" class="absolute top-2 left-2 bg-amber-400 text-slate-950 text-xs font-black px-2 py-0.5 rounded-md shadow-sm flex items-center gap-1 pointer-events-none select-none">
             ⭐ {% trans "Cover Photo" %}
@@ -177,7 +200,7 @@
         </div>
 
         <!-- Thumbnails Strip -->
-        <div id="galleryThumbnailsGrid" class="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-56 overflow-y-auto p-1">
+        <div id="galleryThumbnailsGrid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5 max-h-72 overflow-y-auto p-1">
           {% for img_obj in product.images.all %}
           <div class="gallery-thumb-item gallery-thumb-btn relative aspect-square rounded-xl overflow-hidden border-2 {% if forloop.first %}border-amber-400 shadow-sm{% else %}border-slate-200{% endif %} bg-slate-100 group transition-all"
                data-image-id="{{ img_obj.id }}"
@@ -203,6 +226,14 @@
               </button>
             </form>
             {% endif %}
+
+            <!-- Photo Inspect / Edit Button -->
+            <button type="button"
+                    class="photo-edit-btn absolute bottom-1 right-1 z-20 px-1.5 py-1 min-w-[28px] min-h-[28px] rounded-md bg-slate-900/80 hover:bg-slate-900 active:bg-slate-700 text-white flex items-center justify-center text-xs font-bold shadow-sm transition active:scale-90 cursor-pointer"
+                    title="{% if can_manage %}{% trans 'Crop or rotate photo' %}{% else %}{% trans 'Inspect photo' %}{% endif %}"
+                    aria-label="{% if can_manage %}{% trans 'Crop or rotate photo' %}{% else %}{% trans 'Inspect photo' %}{% endif %}">
+              {% if can_manage %}✂️{% else %}🔍{% endif %}
+            </button>
 
             {% if can_manage %}
             <!-- Reorder Controls Bar (shown when reorder mode is active) -->
@@ -292,7 +323,7 @@
                 {% trans "Clear All" %}
               </button>
             </div>
-            <div id="detailPendingGrid" class="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-48 overflow-y-auto p-1.5 bg-slate-50/80 rounded-xl border border-slate-200"></div>
+            <div id="detailPendingGrid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5 max-h-56 overflow-y-auto p-1.5 bg-slate-50/80 rounded-xl border border-slate-200"></div>
           </div>
 
           <!-- Upload Action Form -->
@@ -314,8 +345,8 @@
         {% endif %}
       </div>
 
-      <!-- Preserved Raw Notes Card -->
-      <div class="bg-amber-50/60 rounded-2xl border border-amber-200 p-5 space-y-2">
+      <!-- Preserved Raw Notes Card (Hidden on Mobile) -->
+      <div class="hidden lg:block bg-amber-50/60 rounded-2xl border border-amber-200 p-5 space-y-2">
         <div class="flex items-center justify-between">
           <h3 class="text-xs sm:text-sm font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
             <span>📝</span> {% trans "Preserved Intake Notes" %}
@@ -593,8 +624,8 @@
         {% endif %}
       </div>
 
-      <!-- Product State Change History / Audit Trail Card -->
-      <div id="status-history-section" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+      <!-- Product State Change History / Audit Trail Card (Hidden on Mobile) -->
+      <div id="status-history-section" class="hidden lg:block bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <div class="flex items-center gap-2">
             <span class="text-base sm:text-lg">📜</span>
@@ -713,7 +744,7 @@
     </div>
 
     <!-- Right Column: Staging, AI Generator & Sales Form (7 cols) -->
-    <div class="lg:col-span-7 space-y-6">
+    <div class="order-1 lg:order-2 lg:col-span-7 space-y-6">
 
       {% if has_unapplied_clarifications %}
       <!-- AI Regeneration Callout -->
@@ -754,8 +785,8 @@
       </div>
 
       <!-- Listing Staging Form Card -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-6 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <h2 class="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider">{% trans "Marketplace Listing Copy" %}</h2>
           <div class="flex items-center gap-2">
             {% if product.sale_price is not None %}
@@ -960,8 +991,8 @@
             </div>
           </div>
 
-          <!-- Public Storefront Taxonomy & Visibility Controls -->
-          <div class="pt-4 border-t border-slate-100 space-y-4">
+          <!-- Public Storefront Taxonomy & Visibility Controls (Hidden on Mobile) -->
+          <div class="hidden lg:block pt-4 border-t border-slate-100 space-y-4">
             <input type="hidden" name="storefront_controls_present" value="1">
             <div class="flex items-center justify-between">
               <h3 class="text-xs sm:text-sm font-bold text-teal-900 uppercase tracking-wider flex items-center gap-1.5">
@@ -1031,8 +1062,8 @@
       </div>
 
       <!-- Marketplace Links Card -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-6 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <div class="flex items-center gap-2">
             <span class="text-base sm:text-lg">🔗</span>
             <div>
@@ -1067,18 +1098,18 @@
         {% if site_links_data %}
         <div class="space-y-4">
           {% for row in site_links_data %}
-          <div data-site-slug="{{ row.site.slug }}" class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition space-y-2.5">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
+          <div data-site-slug="{{ row.site.slug }}" class="p-3 sm:p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition space-y-2.5">
+            <div class="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+              <div class="flex items-center gap-1.5 min-w-0 flex-wrap">
                 <span class="font-bold text-sm text-slate-800">{{ row.site.name }}</span>
                 {% if row.site.base_url %}
                 <a href="{{ row.site.base_url }}" target="_blank" rel="noopener noreferrer"
-                   class="text-xs text-slate-400 hover:text-slate-600 transition" title="{% trans 'Visit platform home' %}">
+                   class="text-xs text-slate-400 hover:text-slate-600 transition truncate max-w-[140px] sm:max-w-none" title="{% trans 'Visit platform home' %}">
                   ({{ row.site.base_url|truncatechars:30 }})
                 </a>
                 {% endif %}
               </div>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {% if row.link %}
                 <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
                   {{ row.link.clicks_count }} {% trans "clicks" %}
@@ -1182,10 +1213,77 @@
 
   </div>
 
+<!-- Full-Size Image Inspection Lightbox Modal with Cropper.js (Parity with Intake) -->
+<div id="imagePreviewModal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
+     role="dialog" aria-modal="true" aria-labelledby="modalPhotoTitle">
+  <div class="bg-slate-900 rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-700/80 overflow-hidden flex flex-col max-h-[92vh]">
+    <div class="px-4 py-3 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between text-white">
+      <div class="flex items-center gap-2">
+        <span id="modalCoverBadge" class="hidden bg-amber-400 text-slate-950 text-xs font-black px-1.5 py-0.5 rounded shadow-xs">
+          ⭐ {% trans "Cover" %}
+        </span>
+        <h2 id="modalPhotoTitle" class="text-xs sm:text-sm font-bold text-slate-100">
+          {% trans "Photo Inspection" %}
+        </h2>
+      </div>
+      <button type="button" id="closeImageModalBtn"
+              class="w-9 h-9 min-w-[36px] min-h-[36px] rounded-lg bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-slate-200 hover:text-white flex items-center justify-center text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              title="{% trans 'Close preview' %}" aria-label="{% trans 'Close preview' %}">
+        ✕
+      </button>
+    </div>
+    <div class="p-2 sm:p-3 flex items-center justify-center bg-black/80 overflow-hidden flex-1 min-h-[220px] max-h-[58vh] sm:max-h-[65vh] w-full">
+      <div class="w-full h-[48vh] sm:h-[58vh] max-h-[460px] flex items-center justify-center overflow-hidden">
+        <img id="modalPreviewImg" src="" alt="{% trans 'Full photo inspection' %}"
+             class="max-h-full max-w-full object-contain rounded-lg shadow-md select-none block">
+      </div>
+    </div>
+    <!-- Crop & Rotate Action Bar -->
+    {% if can_manage %}
+    <div id="modalCropBar" class="px-3 sm:px-4 py-2 bg-slate-800 border-t border-slate-700 flex flex-wrap items-center justify-between gap-2 text-xs text-white">
+      <div class="flex items-center gap-1.5 min-w-0">
+        <button type="button" id="rotateLeftBtn"
+                class="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white font-bold text-xs inline-flex items-center gap-1 transition cursor-pointer"
+                title="{% trans 'Rotate left 90°' %}" aria-label="{% trans 'Rotate left 90°' %}">
+          <span>↺</span> <span>90°</span>
+        </button>
+        <button type="button" id="rotateRightBtn"
+                class="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white font-bold text-xs inline-flex items-center gap-1 transition cursor-pointer"
+                title="{% trans 'Rotate right 90°' %}" aria-label="{% trans 'Rotate right 90°' %}">
+          <span>↻</span> <span>90°</span>
+        </button>
+      </div>
+      <button type="button" id="applyCropBtn"
+              class="px-3 py-1.5 min-h-[36px] rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs transition cursor-pointer">
+        <span>✂️</span>
+        <span id="applyCropBtnText">{% trans "Apply crop & rotate" %}</span>
+      </button>
+    </div>
+    {% endif %}
+    <!-- Navigation & Close Footer -->
+    <div class="px-3 sm:px-4 py-2 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-2 text-xs text-slate-300">
+      <div class="flex items-center gap-1.5 min-w-0">
+        <button type="button" id="modalPrevBtn"
+                class="p-1.5 px-2.5 min-h-[34px] rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white font-bold text-xs disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
+                title="{% trans 'Previous photo' %}">◀</button>
+        <span id="modalPhotoCounter" class="font-medium text-slate-300 truncate"></span>
+        <button type="button" id="modalNextBtn"
+                class="p-1.5 px-2.5 min-h-[34px] rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white font-bold text-xs disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
+                title="{% trans 'Next photo' %}">▶</button>
+      </div>
+      <button type="button" id="closeImageModalBtnBottom"
+              class="px-3 py-1.5 min-h-[34px] bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 text-xs font-semibold rounded-lg transition cursor-pointer shrink-0">
+        {% trans "Close" %}
+      </button>
+    </div>
+  </div>
+</div>
+
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{% static 'inventory/vendor/cropper.min.js' %}"></script>
 <script>
   function setMainImage(url) {
     const mainImg = document.getElementById('mainImage');
@@ -1921,6 +2019,23 @@
       });
       card.appendChild(delBtn);
 
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'photo-edit-btn absolute bottom-1 right-1 px-1.5 py-1 min-w-[28px] min-h-[28px] rounded-md bg-slate-900/80 hover:bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-sm transition active:scale-90 cursor-pointer';
+      editBtn.title = "{% trans 'Crop or rotate photo' %}";
+      editBtn.setAttribute('aria-label', "{% trans 'Crop or rotate photo' %}");
+      editBtn.textContent = '✂️';
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openPendingLightbox(index);
+      });
+      card.appendChild(editBtn);
+
+      img.classList.add('cursor-pointer');
+      img.addEventListener('click', () => {
+        openPendingLightbox(index);
+      });
+
       detailPendingGrid.appendChild(card);
     });
   }
@@ -2026,6 +2141,385 @@
     });
   }
 
+  // =========================================================================
+  // Lightbox Modal for Photo Inspection + Crop & Rotate (Cropper.js Parity)
+  // =========================================================================
+  const imagePreviewModal = document.getElementById('imagePreviewModal');
+  const modalPreviewImg = document.getElementById('modalPreviewImg');
+  const modalPhotoTitle = document.getElementById('modalPhotoTitle');
+  const modalPhotoCounter = document.getElementById('modalPhotoCounter');
+  const modalCoverBadge = document.getElementById('modalCoverBadge');
+  const closeImageModalBtn = document.getElementById('closeImageModalBtn');
+  const closeImageModalBtnBottom = document.getElementById('closeImageModalBtnBottom');
+  const modalPrevBtn = document.getElementById('modalPrevBtn');
+  const modalNextBtn = document.getElementById('modalNextBtn');
+  const rotateLeftBtn = document.getElementById('rotateLeftBtn');
+  const rotateRightBtn = document.getElementById('rotateRightBtn');
+  const applyCropBtn = document.getElementById('applyCropBtn');
+  const applyCropBtnText = document.getElementById('applyCropBtnText');
+
+  let currentLightboxMode = 'existing'; // 'existing' | 'pending'
+  let currentLightboxIndex = 0;
+  let activeModalObjectUrl = null;
+  let lastLightboxTrigger = null;
+  let activeCropper = null;
+
+  function destroyActiveCropper() {
+    if (activeCropper) {
+      try {
+        activeCropper.destroy();
+      } catch (err) {
+        console.warn('Cropper destroy warning:', err);
+      }
+      activeCropper = null;
+    }
+  }
+
+  function initCropperOnModalImage() {
+    destroyActiveCropper();
+    {% if not can_manage %}
+    return;
+    {% else %}
+    if (typeof Cropper !== 'function' || !modalPreviewImg || !imagePreviewModal || imagePreviewModal.classList.contains('hidden')) {
+      return;
+    }
+    activeCropper = new Cropper(modalPreviewImg, {
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 1,
+      responsive: true,
+      restore: false,
+      guides: true,
+      center: true,
+      highlight: false,
+      cropBoxMovable: true,
+      cropBoxResizable: true,
+      toggleDragModeOnDblclick: false,
+      checkOrientation: false,
+    });
+    {% endif %}
+  }
+
+  function getExistingThumbItems() {
+    return Array.from(document.querySelectorAll('#galleryThumbnailsGrid .gallery-thumb-item'));
+  }
+
+  function openExistingLightbox(idx) {
+    if (typeof isReorderMode !== 'undefined' && isReorderMode) return;
+    const items = getExistingThumbItems();
+    if (idx < 0 || idx >= items.length) return;
+
+    const wasHidden = imagePreviewModal && imagePreviewModal.classList.contains('hidden');
+    if (wasHidden) {
+      lastLightboxTrigger = document.activeElement;
+    }
+    currentLightboxMode = 'existing';
+    currentLightboxIndex = idx;
+    const item = items[idx];
+    const url = item.getAttribute('data-image-url');
+
+    destroyActiveCropper();
+    if (activeModalObjectUrl) {
+      URL.revokeObjectURL(activeModalObjectUrl);
+      activeModalObjectUrl = null;
+    }
+
+    imagePreviewModal.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+
+    modalPreviewImg.onload = function() {
+      initCropperOnModalImage();
+    };
+    modalPreviewImg.src = url;
+    if (modalPreviewImg.complete && modalPreviewImg.naturalWidth > 0) {
+      initCropperOnModalImage();
+    }
+
+    if (modalPhotoTitle) {
+      modalPhotoTitle.textContent = `{% trans "Photo" %} #${idx + 1}`;
+    }
+    if (modalPhotoCounter) {
+      modalPhotoCounter.textContent = `{% trans "Photo" %} ${idx + 1} {% trans "of" %} ${items.length}`;
+    }
+    if (modalCoverBadge) {
+      if (idx === 0) {
+        modalCoverBadge.classList.remove('hidden');
+      } else {
+        modalCoverBadge.classList.add('hidden');
+      }
+    }
+    if (modalPrevBtn) {
+      modalPrevBtn.disabled = (idx === 0);
+    }
+    if (modalNextBtn) {
+      modalNextBtn.disabled = (idx === items.length - 1);
+    }
+    if (wasHidden && closeImageModalBtn) {
+      closeImageModalBtn.focus();
+    }
+  }
+
+  function openPendingLightbox(idx) {
+    if (typeof detailPendingFiles === 'undefined' || idx < 0 || idx >= detailPendingFiles.length) return;
+    const wasHidden = imagePreviewModal && imagePreviewModal.classList.contains('hidden');
+    if (wasHidden) {
+      lastLightboxTrigger = document.activeElement;
+    }
+    currentLightboxMode = 'pending';
+    currentLightboxIndex = idx;
+    const file = detailPendingFiles[idx];
+
+    destroyActiveCropper();
+    if (activeModalObjectUrl) {
+      URL.revokeObjectURL(activeModalObjectUrl);
+    }
+    activeModalObjectUrl = URL.createObjectURL(file);
+
+    imagePreviewModal.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+
+    modalPreviewImg.onload = function() {
+      initCropperOnModalImage();
+    };
+    modalPreviewImg.src = activeModalObjectUrl;
+    if (modalPreviewImg.complete && modalPreviewImg.naturalWidth > 0) {
+      initCropperOnModalImage();
+    }
+
+    if (modalPhotoTitle) {
+      modalPhotoTitle.textContent = `{% trans "New Photo" %} #${idx + 1}`;
+    }
+    if (modalPhotoCounter) {
+      modalPhotoCounter.textContent = `{% trans "Photo" %} ${idx + 1} {% trans "of" %} ${detailPendingFiles.length}`;
+    }
+    if (modalCoverBadge) {
+      modalCoverBadge.classList.add('hidden');
+    }
+    if (modalPrevBtn) {
+      modalPrevBtn.disabled = (idx === 0);
+    }
+    if (modalNextBtn) {
+      modalNextBtn.disabled = (idx === detailPendingFiles.length - 1);
+    }
+    if (wasHidden && closeImageModalBtn) {
+      closeImageModalBtn.focus();
+    }
+  }
+
+  function closeLightbox() {
+    if (!imagePreviewModal) return;
+    const wasOpen = !imagePreviewModal.classList.contains('hidden');
+    destroyActiveCropper();
+    imagePreviewModal.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+    if (activeModalObjectUrl) {
+      URL.revokeObjectURL(activeModalObjectUrl);
+      activeModalObjectUrl = null;
+    }
+    if (modalPreviewImg) {
+      modalPreviewImg.onload = null;
+      modalPreviewImg.src = '';
+    }
+    if (wasOpen && lastLightboxTrigger && typeof lastLightboxTrigger.focus === 'function') {
+      lastLightboxTrigger.focus();
+      lastLightboxTrigger = null;
+    }
+  }
+
+  function updateLightboxPhoto(delta) {
+    const newIdx = currentLightboxIndex + delta;
+    if (currentLightboxMode === 'existing') {
+      const items = getExistingThumbItems();
+      if (newIdx >= 0 && newIdx < items.length) {
+        openExistingLightbox(newIdx);
+      }
+    } else {
+      if (typeof detailPendingFiles !== 'undefined' && newIdx >= 0 && newIdx < detailPendingFiles.length) {
+        openPendingLightbox(newIdx);
+      }
+    }
+  }
+
+  if (rotateLeftBtn) {
+    rotateLeftBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (activeCropper) activeCropper.rotate(-90);
+    });
+  }
+  if (rotateRightBtn) {
+    rotateRightBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (activeCropper) activeCropper.rotate(90);
+    });
+  }
+
+  if (applyCropBtn) {
+    applyCropBtn.addEventListener('click', async function(e) {
+      e.stopPropagation();
+      if (!activeCropper) return;
+
+      const canvas = activeCropper.getCroppedCanvas({
+        maxWidth: 2560,
+        maxHeight: 2560,
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'high',
+      });
+      if (!canvas) return;
+
+      applyCropBtn.disabled = true;
+      if (applyCropBtnText) applyCropBtnText.textContent = "{% trans 'Saving...' %}";
+
+      try {
+        const blob = await new Promise((resolve) => {
+          canvas.toBlob((b) => {
+            if (b && b.type === 'image/webp' && b.size > 0) {
+              resolve(b);
+            } else {
+              canvas.toBlob((fallbackBlob) => resolve(fallbackBlob || null), 'image/jpeg', 0.85);
+            }
+          }, 'image/webp', 0.82);
+        });
+
+        if (!blob) return;
+
+        if (currentLightboxMode === 'existing') {
+          const items = getExistingThumbItems();
+          const item = items[currentLightboxIndex];
+          if (!item) return;
+          const imageId = item.getAttribute('data-image-id');
+          const editUrl = `/products/{{ product.pk }}/images/${imageId}/edit/`;
+
+          const formData = new FormData();
+          formData.append('image', blob, 'edited.webp');
+          formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+          const response = await fetch(editUrl, {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+              const freshUrl = data.image_url + (data.image_url.includes('?') ? '&' : '?') + 't=' + Date.now();
+              item.setAttribute('data-image-url', freshUrl);
+              const thumbImg = item.querySelector('img');
+              if (thumbImg) thumbImg.src = freshUrl;
+              if (data.is_primary || currentLightboxIndex === 0) {
+                setMainImage(freshUrl);
+              }
+              if (typeof showReorderFeedback === 'function') {
+                showReorderFeedback("{% trans 'Photo updated successfully.' %}", true);
+              }
+              closeLightbox();
+            } else {
+              if (typeof showReorderFeedback === 'function') {
+                showReorderFeedback(data.error || "{% trans 'Error updating photo.' %}", false);
+              }
+            }
+          } else {
+            if (typeof showReorderFeedback === 'function') {
+              showReorderFeedback("{% trans 'Error updating photo.' %}", false);
+            }
+          }
+        } else {
+          // Pending mode
+          const currentFile = detailPendingFiles[currentLightboxIndex];
+          const origName = (currentFile && currentFile.name) ? currentFile.name : `photo_${currentLightboxIndex + 1}.webp`;
+          const cleanStem = origName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_\-]/g, '_') || 'photo';
+          const ext = (blob.type === 'image/webp') ? '.webp' : '.jpg';
+          const editedFile = new File([blob], `${cleanStem}${ext}`, {
+            type: blob.type,
+            lastModified: Date.now(),
+          });
+          detailPendingFiles[currentLightboxIndex] = editedFile;
+          syncDetailFileInput();
+          renderDetailPendingPreviews();
+          closeLightbox();
+        }
+      } catch (err) {
+        console.error('Error applying crop:', err);
+      } finally {
+        applyCropBtn.disabled = false;
+        if (applyCropBtnText) applyCropBtnText.textContent = "{% trans 'Apply crop & rotate' %}";
+      }
+    });
+  }
+
+  if (closeImageModalBtn) {
+    closeImageModalBtn.addEventListener('click', closeLightbox);
+  }
+  if (closeImageModalBtnBottom) {
+    closeImageModalBtnBottom.addEventListener('click', closeLightbox);
+  }
+  if (modalPrevBtn) {
+    modalPrevBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      updateLightboxPhoto(-1);
+    });
+  }
+  if (modalNextBtn) {
+    modalNextBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      updateLightboxPhoto(1);
+    });
+  }
+  if (imagePreviewModal) {
+    imagePreviewModal.addEventListener('click', function(e) {
+      if (e.target === imagePreviewModal) {
+        closeLightbox();
+      }
+    });
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && imagePreviewModal && !imagePreviewModal.classList.contains('hidden')) {
+      closeLightbox();
+    } else if (imagePreviewModal && !imagePreviewModal.classList.contains('hidden')) {
+      if (e.key === 'ArrowLeft') {
+        updateLightboxPhoto(-1);
+      } else if (e.key === 'ArrowRight') {
+        updateLightboxPhoto(1);
+      }
+    }
+  });
+
+  // Attach lightbox triggers to existing thumbnails
+  function attachExistingThumbnailTriggers() {
+    const items = getExistingThumbItems();
+    items.forEach((item, idx) => {
+      const editBtn = item.querySelector('.photo-edit-btn');
+      if (editBtn) {
+        editBtn.onclick = function(e) {
+          e.stopPropagation();
+          openExistingLightbox(idx);
+        };
+      }
+    });
+  }
+  attachExistingThumbnailTriggers();
+
+  // Featured image click to inspect
+  const featuredImageWrapper = document.getElementById('featuredImageWrapper');
+  if (featuredImageWrapper) {
+    featuredImageWrapper.addEventListener('click', function(e) {
+      if (typeof isReorderMode !== 'undefined' && isReorderMode) return;
+      const mainImg = document.getElementById('mainImage');
+      const items = getExistingThumbItems();
+      let matchIdx = 0;
+      if (mainImg && mainImg.src) {
+        const found = items.findIndex(it => {
+          const u = it.getAttribute('data-image-url');
+          return u && mainImg.src.includes(u.split('?')[0]);
+        });
+        if (found !== -1) matchIdx = found;
+      }
+      openExistingLightbox(matchIdx);
+    });
+  }
+
 </script>
 
 {% if can_manage and not product.is_deleted %}
@@ -2085,5 +2579,7 @@
     </div>
   </div>
 </div>
+
+
 
 {% endblock %}

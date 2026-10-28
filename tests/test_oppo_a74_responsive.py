@@ -312,6 +312,25 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 page.wait_for_load_state("networkidle")
                 self._assert_no_horizontal_overflow(page, f"staging_detail_{label}", width, height)
 
+                # Verify hidden sections on narrow mobile viewports (notes, history)
+                self.assertFalse(page.locator("#status-history-section").is_visible())
+
+                # Verify mobile order: Gemini AI banner appears before photo gallery on mobile
+                ai_box = page.locator("#aiForm").bounding_box()
+                gallery_box = page.locator("#galleryThumbnailsGrid").bounding_box()
+                if ai_box and gallery_box:
+                    self.assertLess(ai_box["y"], gallery_box["y"])
+
+                # Test Detail View Add More Photos & Lightbox Cropper on Mobile
+                page.set_input_files("#detailImageInput", os.path.join("tmp_test_images", "sample_jacket.jpg"))
+                page.wait_for_selector("#detailPendingGrid .photo-edit-btn", timeout=5000)
+                page.click("#detailPendingGrid .photo-edit-btn")
+                page.wait_for_selector("#imagePreviewModal:not(.hidden) .cropper-container", timeout=5000)
+                self._assert_no_horizontal_overflow(page, f"detail_crop_modal_{label}", width, height)
+                page.click("#rotateRightBtn")
+                page.click("#applyCropBtn")
+                page.wait_for_selector("#imagePreviewModal.hidden", state="attached", timeout=5000)
+
                 context.close()
 
             browser.close()

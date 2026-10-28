@@ -3224,3 +3224,27 @@ msgstr "Aplicar recorte y giro"
 
 msgid "Crop or rotate photo"
 msgstr "Recortar o girar foto"
+
+msgid "Photo updated successfully."
+msgstr "Foto actualizada correctamente."
+
+msgid "Error updating photo."
+msgstr "Error al actualizar la foto."
+
+msgid "No image file provided."
+msgstr "No se ha proporcionado ningún archivo de imagen."
+
+msgid "Saving..."
+msgstr "Guardando..."
+
+msgid "ZIP"
+msgstr "ZIP"
+
+msgid "Restore"
+msgstr "Restaurar"
+
+msgid "New Photo"
+msgstr "Nueva foto"
+
+msgid "Click to inspect photo"
+msgstr "Haz clic para inspeccionar la foto"

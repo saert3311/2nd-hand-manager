@@ -1088,6 +1088,56 @@ def product_delete_image_view(request, pk, image_id):
 @login_required
 @manager_required
 @require_POST
+def product_edit_image_view(request, pk, image_id):
+    """
+    Allows managers to crop and rotate an existing photo on a product.
+    Accepts multipart/form-data with an 'image' file, processes it into WebP,
+    replaces the file in image_obj, and flags needs_platform_sync = True if published.
+    Returns JSON response with success status and new image URL.
+    """
+    product = get_object_or_404(Product, pk=pk)
+    image_obj = get_object_or_404(ProductImage, id=image_id, product=product)
+
+    uploaded_file = request.FILES.get("image")
+    if not uploaded_file:
+        return JsonResponse({"success": False, "error": _("No image file provided.")}, status=400)
+
+    try:
+        webp_file = process_and_convert_to_webp(uploaded_file)
+        old_image_name = image_obj.image.name if image_obj.image else None
+        image_obj.image.save(webp_file.name, webp_file, save=True)
+        if old_image_name and old_image_name != image_obj.image.name:
+            try:
+                from django.core.files.storage import default_storage
+
+                default_storage.delete(old_image_name)
+            except Exception:
+                pass
+
+        is_published = (
+            product.status == ProductStatus.PUBLISHED
+            or product.listing_links.filter(is_active=True).exists()
+        )
+        if is_published and not product.needs_platform_sync:
+            product.needs_platform_sync = True
+            product.save(update_fields=["needs_platform_sync"])
+
+        primary_id = product.primary_image.id if product.primary_image else None
+        return JsonResponse({
+            "success": True,
+            "image_id": image_obj.id,
+            "image_url": image_obj.image.url,
+            "is_primary": (primary_id == image_obj.id),
+        })
+    except ValidationError as ve:
+        return JsonResponse({"success": False, "error": str(ve.message if hasattr(ve, "message") else ve)}, status=400)
+    except Exception as exc:
+        return JsonResponse({"success": False, "error": str(exc)}, status=500)
+
+
+@login_required
+@manager_required
+@require_POST
 def product_mark_platform_synced_view(request, pk):
     """
     Allows managers to mark a published product's external listings as synchronized.
