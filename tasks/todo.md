@@ -3566,3 +3566,42 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 - [x] `Active` tab is replaced by `✨ Ready to Publish` (`?status=ready`) with accurate `({{ ready_count }})` count and `?status=active` aliasing.
 - [x] Automatic phase transitions deterministically assign `DRAFT`, `PRICE_PENDING`, `AWAITING_INFO`, `READY`, `PUBLISHED`, `BLOCKED`, and `SOLD` without getting stuck in `AWAITING_INFO`.
 - [x] 100% of automated tests pass, zero warnings in Ruff and Django checks, zero horizontal tab wrapping on OPPO A74 mobile viewports.
+
+---
+
+# Phase 44: Granular Out-of-Sync Change Tracking
+
+### Task 154: Domain Layer & Schema: PlatformSyncReason, platform_sync_reasons & Model Methods (`inventory/models.py`, `inventory/migrations/`, `inventory/admin.py`)
+- [ ] Add `PlatformSyncReason` enum (`photos`, `title`, `description`, `price`, `other`).
+- [ ] Add `Product.platform_sync_reasons = models.JSONField(default=list, blank=True)`.
+- [ ] Add `Product.add_platform_sync_reasons(*reasons, user=None, commit=True)` with canonical sorting and duplicate deduplication.
+- [ ] Add `Product.platform_sync_reason_badges` property returning icon, code, and localized label.
+- [ ] Update `Product.save()` to detect changes on published products (`price`, `title`, `description`, `other` for `is_reserved`) and accumulate reasons into `platform_sync_reasons`.
+- [ ] Update `Product.mark_platform_synced()` to clear `platform_sync_reasons` to `[]`, set `needs_platform_sync = False`, and record the resolved reasons in `ProductStatusLog`.
+- [ ] Generate and apply migrations (`makemigrations` & `migrate`) and register in `inventory/admin.py`.
+- [ ] Verification: `.venv\Scripts\python.exe manage.py test tests.test_published_platform_sync`
+
+### Task 155: Signal & Endpoint Integration for Image & Clarification Operations (`inventory/views.py`, `inventory/models.py`)
+- [ ] In `inventory/views.py`, update `product_upload_images_view`, `product_delete_image_view`, `product_reorder_images_view`, `product_edit_image_view`, and `product_detail_view` to call `product.add_platform_sync_reasons(PlatformSyncReason.PHOTOS, user=request.user)`.
+- [ ] In `inventory/models.py`, update `sync_product_on_clarification_save` to call `product.add_platform_sync_reasons(PlatformSyncReason.OTHER, user=acting_user)` when clarifications (doubts or direct notes) are opened or answered on published products.
+- [ ] Verification: `.venv\Scripts\python.exe manage.py test tests.test_published_platform_sync tests.test_clarifications`
+
+### Task 156: Push Notification Enhancement (`inventory/services/push_service.py`)
+- [ ] In `send_out_of_sync_notification()`, format human-readable reason labels (e.g., `"Updated: Photos, Price"`) into the push body text.
+- [ ] Verification: `.venv\Scripts\python.exe manage.py test tests.test_out_of_sync_notifications`
+
+### Task 157: User Interface & Mobile Badges (`inventory/templates/inventory/product_detail.html`, `inventory/templates/inventory/dashboard.html`)
+- [ ] In `product_detail.html`: Inside `#platformSyncBanner`, render distinct, tactile category badge pills (`📷 Photos`, `🏷️ Title`, `📝 Description`, `💰 Price`, `📌 Other`) using wrapping flex.
+- [ ] In `dashboard.html`: Display compact change category icons within the `⚠️ Update Platforms` badge with accessible tooltip and ARIA labels.
+- [ ] Verification: `.venv\Scripts\python.exe manage.py test tests.test_dashboard tests.test_dashboard_responsive`
+
+### Task 158: Bilingual Translations, Automated Tests, Documentation & Quality Gate (`locale/`, `tests/`, `CHANGELOG.md`, `tasks/todo.md`)
+- [ ] Add Spanish translations in `locale/es/LC_MESSAGES/django.po` and compile `.mo` catalogs via `manage.py compile_locales`.
+- [ ] Author comprehensive test suite in `tests/test_published_platform_sync.py` covering all triggers, multi-edit accumulation, sync clearing, and responsive rendering on `320×711` & `360×800` (OPPO A74).
+- [ ] Update `CHANGELOG.md` under `## [Unreleased]`.
+- [ ] Run full quality gate: `ruff check .`, `manage.py check`, `manage.py compile_locales`, and `manage.py test`.
+
+### Checkpoint 44: Granular Out-of-Sync Change Tracking Complete
+- [ ] Store Managers see exactly what was modified on published items across Detail Banner, Dashboard Cards, Push Alerts, and Audit Trail.
+- [ ] Edits across photos, title, description, price, and reservations/doubts accumulate deterministically without losing previous reasons.
+- [ ] 100% of automated tests pass, zero warnings in Ruff and Django checks, zero horizontal overflow on OPPO A74 mobile viewports.

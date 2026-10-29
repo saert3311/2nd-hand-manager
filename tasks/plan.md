@@ -518,3 +518,27 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
    - Compile translation catalogs for `Ready to Publish` $\to$ `Listo para publicar`.
    - Unit tests in `tests/test_lifecycle.py` and view tests in `tests/test_dashboard.py` asserting filter behavior, counts, and aliases.
    - Playwright responsive tests in `tests/test_dashboard_responsive.py` verifying no horizontal tab wrapping (*apilación*) or overflow across `320×711`, `360×800`, `390×844`, `768×1024`, and `1440×900`.
+
+---
+
+## Phase 44: Granular Out-of-Sync Change Tracking (`platform-sync-change-tracking`)
+
+### Technical Design
+1. **Domain Layer & Schema (`inventory/models.py`, `inventory/migrations/`)**:
+   - Add `PlatformSyncReason` enum (`TextChoices`: `PHOTOS`, `TITLE`, `DESCRIPTION`, `PRICE`, `OTHER`).
+   - Add `Product.platform_sync_reasons = models.JSONField(default=list, blank=True)`.
+   - Add `Product.add_platform_sync_reasons(*reasons, user=None, commit=True)` ensuring canonical ordering and duplicate-free accumulation.
+   - Add `Product.platform_sync_reason_badges` property returning localized metadata (`code`, `icon`, `label`).
+   - In `Product.save()`: Detect changed fields (`sale_price` -> `price`, `ai_title` -> `title`, `ai_description` -> `description`, `is_reserved` -> `other`) on published items and accumulate reasons into `platform_sync_reasons`.
+   - In `Product.mark_platform_synced()`: Clear `platform_sync_reasons` to `[]`, set `needs_platform_sync = False`, and record the resolved reasons in `ProductStatusLog`.
+2. **Signal & View Synchronization (`inventory/views.py`, `inventory/models.py`)**:
+   - Image endpoints (`product_upload_images_view`, `product_delete_image_view`, `product_reorder_images_view`, `product_edit_image_view`, and `product_detail_view` batch upload): Call `product.add_platform_sync_reasons(PlatformSyncReason.PHOTOS, user=request.user)`.
+   - Clarifications signal (`sync_product_on_clarification_save` for doubts & direct notes on published items): Call `product.add_platform_sync_reasons(PlatformSyncReason.OTHER, user=acting_user)`.
+3. **Push Notification Enhancement (`inventory/services/push_service.py`)**:
+   - In `send_out_of_sync_notification()`: Include human-readable updated categories in the push notification body text.
+4. **User Interface & Mobile Ergonomics (`product_detail.html`, `dashboard.html`)**:
+   - In `product_detail.html`: Inside `#platformSyncBanner`, render high-contrast category badges (`📷 Photos`, `🏷️ Title`, `📝 Description`, `💰 Price`, `📌 Other`) using wrapping flex layout.
+   - In `dashboard.html`: Inside product cards, display compact category icons within the `⚠️ Update Platforms` badge, ensuring zero horizontal overflow on `320×711` & `360×800` (OPPO A74).
+5. **Bilingual Localization & Comprehensive Test Suite (`locale/`, `tests/`)**:
+   - Add Spanish and English translations in `locale/` and compile `.mo` catalogs.
+   - Add test cases covering accumulation, field change triggers, photo edits, sync clearance, push notification copy, and responsive layouts.
