@@ -78,7 +78,7 @@ class InternationalizationTests(TestCase):
         self.assertIn("Panel de Control", content)
         self.assertIn("Catálogo de Inventario", content)
         self.assertIn("Todos", content)
-        self.assertIn("Activo", content)
+        self.assertIn("Listo para Publicar", content)
         self.assertIn("Vendido", content)
         self.assertIn("Nueva Entrada", content)
 
