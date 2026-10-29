@@ -117,6 +117,17 @@
         <p class="text-xs sm:text-sm text-amber-900 mt-1">
           {% trans "This product was modified after publication. External listings (Wallapop, Vinted, etc.) may have outdated details or photos." %}
         </p>
+        {% if product.platform_sync_reason_badges %}
+        <div class="mt-2.5 flex flex-wrap items-center gap-1.5" id="platformSyncReasonsList">
+          <span class="text-xs font-semibold text-amber-950 mr-1">{% trans "Changed:" %}</span>
+          {% for badge in product.platform_sync_reason_badges %}
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white border border-amber-300 text-amber-900 shadow-2xs">
+            <span aria-hidden="true">{{ badge.icon }}</span>
+            <span>{{ badge.label }}</span>
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
         {% if product.last_platform_synced_at %}
         <p class="text-xs text-amber-700 mt-0.5">
           {% trans "Last marked as synchronized:" %} {{ product.last_platform_synced_at|date:"Y-m-d H:i" }}

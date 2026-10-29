@@ -298,8 +298,8 @@
             🚀 {% trans "Published" %}
           </span>
           {% if product.needs_platform_sync %}
-          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-amber-400 text-slate-950 flex items-center gap-1 animate-pulse" title="{% trans 'Out of sync with external platforms' %}">
-            ⚠️ {% trans "Update Platforms" %}
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-amber-400 text-slate-950 flex items-center gap-1 animate-pulse" title="{% trans 'Out of sync with external platforms' %}{% if product.platform_sync_reason_badges %}: {% for b in product.platform_sync_reason_badges %}{{ b.label }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}">
+            ⚠️ {% trans "Update Platforms" %}{% if product.platform_sync_reason_badges %} <span class="tracking-tighter font-normal text-slate-900" aria-label="{% for b in product.platform_sync_reason_badges %}{{ b.label }}{% if not forloop.last %}, {% endif %}{% endfor %}">({% for b in product.platform_sync_reason_badges %}{{ b.icon }}{% endfor %})</span>{% endif %}
           </span>
           {% endif %}
           {% elif product.status == 'ready' %}
@@ -331,8 +331,8 @@
           </span>
           {% endif %}
           {% if product.needs_platform_sync and product.status != 'published' %}
-          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-amber-400 text-slate-950 flex items-center gap-1" title="{% trans 'Out of sync with external platforms' %}">
-            ⚠️ {% trans "Update Platforms" %}
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-amber-400 text-slate-950 flex items-center gap-1" title="{% trans 'Out of sync with external platforms' %}{% if product.platform_sync_reason_badges %}: {% for b in product.platform_sync_reason_badges %}{{ b.label }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}">
+            ⚠️ {% trans "Update Platforms" %}{% if product.platform_sync_reason_badges %} <span class="tracking-tighter font-normal text-slate-900" aria-label="{% for b in product.platform_sync_reason_badges %}{{ b.label }}{% if not forloop.last %}, {% endif %}{% endfor %}">({% for b in product.platform_sync_reason_badges %}{{ b.icon }}{% endfor %})</span>{% endif %}
           </span>
           {% endif %}
           {% for link in product.listing_links.all %}
