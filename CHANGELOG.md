@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-10-29
+
 ### Fixed
 - **Stuck `AWAITING_INFO` State Healing**: Fixed `Product.save()` so existing products transition out of `AWAITING_INFO` via `compute_lifecycle_status()` once clarification doubts are answered or deleted, instead of remaining locked in `AWAITING_INFO`. Removed hardcoded `ProductStatus.READY` overwrites in clarification views, refreshing lifecycle status accurately from database state and emitting status-congruent flash messages.
 - **Action Confirmation Event Delegation & Modal Layering**: Switched `form[data-confirm-message]` binding in `inventory/templates/inventory/product_detail.html` to document-level submit event delegation so forms declared late in the DOM (such as `#deleteListingForm` in `#editListingModal`) trigger `#actionConfirmModal`. Raised `#actionConfirmModal` z-index to `z-[70]` so confirmation dialogs properly stack over parent modal dialogs without pointer event blockage.
