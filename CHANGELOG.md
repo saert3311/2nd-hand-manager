@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-10-29
+
 ### Added
 - **Granular Out-of-Sync Change Tracking (Phase 44)**:
   - **Categorized Out-of-Sync Tracking**: Added `PlatformSyncReason` enum (`photos`, `title`, `description`, `price`, `other`) and `Product.platform_sync_reasons` JSONField to track exactly which product attributes were modified after publication.

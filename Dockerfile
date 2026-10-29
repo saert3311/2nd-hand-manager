@@ -38,7 +38,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Build metadata arguments
 ARG BUILD_TIME=""
 ARG BUILD_COMMIT=""
-ARG APP_VERSION="2.3.0"
+ARG APP_VERSION="2.4.0"
 
 ENV APP_BUILD_TIME=${BUILD_TIME} \
     APP_BUILD_COMMIT=${BUILD_COMMIT} \
