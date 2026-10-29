@@ -40,14 +40,16 @@
           </span>
         </a>
 
-        <!-- Active -->
-        <a href="?status=active{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <!-- Ready to Publish -->
+        <a href="?status=ready{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
-           aria-selected="{% if status_filter == 'active' %}true{% else %}false{% endif %}"
-           class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'active' %}bg-white text-emerald-800 shadow-xs ring-1 ring-emerald-200 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
-          <span>{% trans "Active" %}</span>
-          <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs {% if status_filter == 'active' %}bg-emerald-100 text-emerald-800 font-bold{% else %}bg-slate-200/80 text-slate-600{% endif %}">
-            ({{ active_count }})
+           id="tab-ready"
+           aria-selected="{% if status_filter == 'ready' %}true{% else %}false{% endif %}"
+           class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'ready' %}bg-white text-emerald-800 shadow-xs ring-1 ring-emerald-200 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
+          <span aria-hidden="true">✨</span>
+          <span>{% trans "Ready to Publish" %}</span>
+          <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs {% if status_filter == 'ready' %}bg-emerald-100 text-emerald-800 font-bold{% else %}bg-slate-200/80 text-slate-600{% endif %}">
+            ({{ ready_count }})
           </span>
         </a>
 
@@ -302,7 +304,7 @@
           {% endif %}
           {% elif product.status == 'ready' %}
           <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-emerald-600 text-white">
-            ✨ {% trans "Ready" %}
+            ✨ {% trans "Ready to Publish" %}
           </span>
           {% elif product.status == 'draft' %}
           <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow-sm bg-slate-600 text-white">

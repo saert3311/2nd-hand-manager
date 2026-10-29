@@ -3533,3 +3533,36 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 - [x] Unlisted platforms take zero default vertical height; 100% accessible modals for adding/editing.
 - [x] 100% of automated tests and responsive checks pass.
 
+
+
+---
+
+# Phase 43: Ready to Publish Dashboard Filter & Automated Phase Transition Revision
+
+### Task 150: Domain Layer Lifecycle State Machine & Save Hook Hardening (`inventory/models.py`)
+- [x] Refine `Product.compute_lifecycle_status()` to cleanly check `ai_title`, `ai_description`, `sale_price > 0`, pending doubts, and active platform links.
+- [x] Fix `Product.save()` on existing products (`not is_adding`) so products never remain stuck in `AWAITING_INFO` once clarifications are resolved.
+- [x] Connect `ProductImage` post-save and post-delete signals to re-sync lifecycle status.
+- [x] Verification: `.venv\Scripts\python.exe manage.py test tests.test_lifecycle`
+
+### Task 151: Clarification Views Status Calculation & Flash Message Alignment (`inventory/views.py`)
+- [x] Remove hardcoded `product.status = ProductStatus.READY` in `product_answer_clarification_view` and `product_delete_clarification_view`.
+- [x] Refresh product state from DB after clarification resolution/deletion and emit status-accurate feedback messages.
+- [x] Verification: `.venv\Scripts\python.exe manage.py test tests.test_clarifications`
+
+### Task 152: Dashboard Filter Replacement, Query Aggregation & Template UI (`inventory/views.py`, `inventory/templates/inventory/dashboard.html`)
+- [x] In `dashboard_view`, support `?status=ready` as primary filter, preserve `?status=active` backward compatibility, filter by `status=ProductStatus.READY`, and calculate `ready_count` in aggregation.
+- [x] In `inventory/templates/inventory/dashboard.html`, replace the `Active` tab in the segmented status rail with `✨ Ready to Publish` (`#tab-ready`, `({{ ready_count }})`).
+- [x] Update product card badge from `✨ Ready` to `✨ Ready to Publish`.
+- [x] Verification: `.venv\Scripts\python.exe manage.py test tests.test_dashboard`
+
+### Task 153: Bilingual Translations, Automated Tests, Documentation & Quality Gate (`locale/`, `tests/`, `CHANGELOG.md`, `tasks/todo.md`)
+- [x] Update `locale/es/LC_MESSAGES/django.po` and `locale/en/LC_MESSAGES/django.po` with `Ready to Publish` / `Listo para publicar` and compile `.mo` catalogs via `compile_locales`.
+- [x] Update unit and integration tests in `tests/test_lifecycle.py`, `tests/test_dashboard.py`, and `tests/test_dashboard_responsive.py`.
+- [x] Update `CHANGELOG.md` and check off tasks in `tasks/todo.md`.
+- [x] Run full quality gate: `ruff check .`, `manage.py check`, `manage.py compile_locales`, and `manage.py test`.
+
+### Checkpoint 43: Ready to Publish Filter & Automated Phase Transitions Complete
+- [x] `Active` tab is replaced by `✨ Ready to Publish` (`?status=ready`) with accurate `({{ ready_count }})` count and `?status=active` aliasing.
+- [x] Automatic phase transitions deterministically assign `DRAFT`, `PRICE_PENDING`, `AWAITING_INFO`, `READY`, `PUBLISHED`, `BLOCKED`, and `SOLD` without getting stuck in `AWAITING_INFO`.
+- [x] 100% of automated tests pass, zero warnings in Ruff and Django checks, zero horizontal tab wrapping on OPPO A74 mobile viewports.

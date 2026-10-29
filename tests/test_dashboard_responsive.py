@@ -38,21 +38,31 @@ class DashboardResponsiveUITests(StaticLiveServerTestCase):
         )
 
         # Create products in each distinct state so all tabs appear with counts
-        p_active = Product.objects.create(
+        p_published = Product.objects.create(
             ai_title="Vintage Leather Jacket",
+            ai_description="Classic black leather jacket in great condition.",
             sale_price=Decimal("89.99"),
             status=ProductStatus.READY,
             is_sold=False,
         )
         ProductListingLink.objects.create(
-            product=p_active,
+            product=p_published,
             site=self.site_vinted,
             url="https://vinted.es/items/123",
             is_active=True,
         )
 
         Product.objects.create(
+            ai_title="Ready Designer Sunglasses",
+            ai_description="UV protection, like new with protective case.",
+            sale_price=Decimal("49.99"),
+            status=ProductStatus.READY,
+            is_sold=False,
+        )
+
+        Product.objects.create(
             ai_title="Nike Air Max Sneakers",
+            ai_description="Comfortable running shoes, size 42.",
             sale_price=None,
             status=ProductStatus.PRICE_PENDING,
             is_sold=False,
@@ -99,6 +109,8 @@ class DashboardResponsiveUITests(StaticLiveServerTestCase):
             page.wait_for_load_state("networkidle")
 
             viewports = [
+                ("320x711_oppo_a74_zoomed", 320, 711),
+                ("360x800_oppo_a74_standard", 360, 800),
                 ("390x844_mobile", 390, 844),
                 ("768x1024_tablet", 768, 1024),
                 ("1024x768_laptop", 1024, 768),
@@ -113,6 +125,10 @@ class DashboardResponsiveUITests(StaticLiveServerTestCase):
                 # Verify status tab rail exists
                 tablist = page.locator('nav[role="tablist"]')
                 self.assertTrue(tablist.is_visible(), f"Status tablist must be visible at {label}")
+
+                # Verify Ready to Publish tab exists
+                ready_tab = page.locator("#tab-ready")
+                self.assertTrue(ready_tab.count() > 0, f"Ready to Publish tab must exist at {label}")
 
                 # Verify all tabs exist in the DOM
                 tabs = tablist.locator('a[role="tab"]').all()

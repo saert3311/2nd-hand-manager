@@ -7,11 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-10-29
+
 ### Fixed
+- **Stuck `AWAITING_INFO` State Healing**: Fixed `Product.save()` so existing products transition out of `AWAITING_INFO` via `compute_lifecycle_status()` once clarification doubts are answered or deleted, instead of remaining locked in `AWAITING_INFO`. Removed hardcoded `ProductStatus.READY` overwrites in clarification views, refreshing lifecycle status accurately from database state and emitting status-congruent flash messages.
 - **Action Confirmation Event Delegation & Modal Layering**: Switched `form[data-confirm-message]` binding in `inventory/templates/inventory/product_detail.html` to document-level submit event delegation so forms declared late in the DOM (such as `#deleteListingForm` in `#editListingModal`) trigger `#actionConfirmModal`. Raised `#actionConfirmModal` z-index to `z-[70]` so confirmation dialogs properly stack over parent modal dialogs without pointer event blockage.
 - **Test Suite Alignment for Marketplace Links Redesign**: Updated `test_product_detail_renders_all_active_platforms`, `test_full_daily_workflow_in_real_chrome`, and `test_daily_workflow_with_accessibility_in_real_chrome` to navigate through `#openAddListingBtn`, `#addListingModal`, and `#editListingModal` reflecting the mobile-first active listing hub.
 
 ### Added
+- **Ready to Publish Dashboard Filter & Automated Phase Transitions (Phase 43)**:
+  - **`Ready to Publish` Filter & Badge**: Replaced the ambiguous `Active` filter in the dashboard status rail with `✨ Ready to Publish` (`#tab-ready`, `?status=ready`), backed by accurate aggregation (`ready_count`) and backward-compatible support for `?status=active`. Updated product card badges to `✨ Ready to Publish`.
+  - **Deterministic Lifecycle State Transitions**: Hardened `Product.compute_lifecycle_status()` to require both title (`ai_title`) and listing description (`ai_description`), positive price (`sale_price > 0`), zero pending doubts, and zero marketplace listing links before reaching `READY`.
+  - **Product Image Signals**: Connected post-save and post-delete signals on `ProductImage` to trigger `product.sync_lifecycle_status()`, keeping status synchronized as media is attached or removed.
+  - **Bilingual Translations & Responsive Verification**: Added full Spanish translations (`Listo para publicar`) and verified zero horizontal tab overflow across low-DPI mobile viewports (`320×711` and `360×800`).
 - **Marketplace Links Mobile Redesign: Active Listing Hub (Phase 42)**:
   - **Active Listing Tiles**: Replaced verbose marketplace cards with compact, tactile cards for each active listing displaying brand name, click count, 1-tap copy link button (`min-h-[40px]`), direct view button (`↗ Ver`), and settings button (`⚙️`).
   - **Progressive Disclosure & Zero-Height Inactive Rows**: Eliminated redundant pre-filled URL inputs and empty input cards for unlisted platforms. Added progressive disclosure `[ ➕ Add Marketplace Link ]` button when unlinked sites exist, and a compact empty state when no listings are active.

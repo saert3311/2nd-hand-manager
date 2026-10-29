@@ -731,6 +731,9 @@ msgstr "Please provide a valid question and category."
 msgid "All doubts resolved! Product marked as ready to publish."
 msgstr "All doubts resolved! Product marked as ready to publish."
 
+msgid "All doubts resolved! Product is waiting for sale price."
+msgstr "All doubts resolved! Product is waiting for sale price."
+
 msgid "Answer saved. %d doubts still pending."
 msgstr "Answer saved. %d doubts still pending."
 

@@ -41,7 +41,7 @@
           {% else %}bg-slate-100 text-slate-700 border border-slate-300{% endif %}">
           {% if product.is_deleted %}🗑️ {% trans "Erased" %}
           {% elif product.status == 'awaiting_info' %}❓ {% trans "Awaiting Info" %}
-          {% elif product.status == 'ready' %}✅ {% trans "Ready" %}
+          {% elif product.status == 'ready' %}✅ {% trans "Ready to Publish" %}
           {% elif product.status == 'price_pending' %}🏷️ {% trans "Price Pending" %}
           {% elif product.status == 'published' %}🚀 {% trans "Published" %}
           {% elif product.status == 'blocked' %}⛔ {% trans "Blocked" %}

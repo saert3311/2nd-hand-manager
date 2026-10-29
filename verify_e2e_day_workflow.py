@@ -588,29 +588,29 @@ def run_full_browser_verification():
             print("Captured screenshot: 23_dashboard_combined_wallapop_all.png")
 
             # Check counters
-            tabs_text = page.locator('a[href*="status="], a[href*="status=active"], a[href*="status=sold"]').all_inner_texts()
+            tabs_text = page.locator('a[href*="status="], a[href*="status=published"], a[href*="status=sold"]').all_inner_texts()
             full_tabs_text = " ".join(tabs_text)
             print(f"Status counters on wallapop=all: {full_tabs_text}")
             assert "(2)" in full_tabs_text  # Total
-            assert "(1)" in full_tabs_text  # Active & Sold
+            assert "(1)" in full_tabs_text  # Published & Sold
 
             # Check displayed cards count: exactly 2
             cards_count = page.locator(".grid > div, .grid > a").count()
             print(f"Cards visible for wallapop all: {cards_count}")
             assert cards_count == 2
 
-            # 8.8 Condition: platform=wallapop + status=active
-            print("[8.8] Testing combined condition: platform=wallapop, status=active...")
-            active_tab = page.locator('a[href*="status=active"]').first
-            active_tab.click()
-            page.wait_for_url(lambda u: "status=active" in u and "platform=wallapop" in u)
+            # 8.8 Condition: platform=wallapop + status=published
+            print("[8.8] Testing combined condition: platform=wallapop, status=published...")
+            published_tab = page.locator('#tab-published, a[href*="status=published"]').first
+            published_tab.click()
+            page.wait_for_url(lambda u: "status=published" in u and "platform=wallapop" in u)
             page.wait_for_load_state("networkidle")
-            page.screenshot(path=str(SCREENSHOTS_DIR / "24_dashboard_combined_wallapop_active.png"))
-            print("Captured screenshot: 24_dashboard_combined_wallapop_active.png")
+            page.screenshot(path=str(SCREENSHOTS_DIR / "24_dashboard_combined_wallapop_published.png"))
+            print("Captured screenshot: 24_dashboard_combined_wallapop_published.png")
 
-            cards_active = page.locator(".grid > div, .grid > a").count()
-            print(f"Cards visible for wallapop active: {cards_active}")
-            assert cards_active == 1
+            cards_published = page.locator(".grid > div, .grid > a").count()
+            print(f"Cards visible for wallapop published: {cards_published}")
+            assert cards_published == 1
             # Product 1 (Schott - Sold) should not appear
             assert "Schott" not in page.locator(".grid").inner_text()
 
@@ -644,17 +644,17 @@ def run_full_browser_verification():
             page_text = page.content()
             assert "No se encontraron productos" in page_text or "No products found" in page_text
 
-            # 8.11 Condition: platform=milanuncios + status=active
-            print("[8.11] Testing combined condition: platform=milanuncios, status=active...")
-            page.locator('a[href*="status=active"]').first.click()
-            page.wait_for_url(lambda u: "status=active" in u and "platform=milanuncios" in u)
+            # 8.11 Condition: platform=milanuncios + status=published
+            print("[8.11] Testing combined condition: platform=milanuncios, status=published...")
+            page.locator('#tab-published, a[href*="status=published"]').first.click()
+            page.wait_for_url(lambda u: "status=published" in u and "platform=milanuncios" in u)
             page.wait_for_load_state("networkidle")
-            page.screenshot(path=str(SCREENSHOTS_DIR / "27_dashboard_combined_milanuncios_active.png"))
-            print("Captured screenshot: 27_dashboard_combined_milanuncios_active.png")
+            page.screenshot(path=str(SCREENSHOTS_DIR / "27_dashboard_combined_milanuncios_published.png"))
+            print("Captured screenshot: 27_dashboard_combined_milanuncios_published.png")
 
-            cards_mil_active = page.locator(".grid > div, .grid > a").count()
-            print(f"Cards visible for milanuncios active: {cards_mil_active}")
-            assert cards_mil_active == 2
+            cards_mil_published = page.locator(".grid > div, .grid > a").count()
+            print(f"Cards visible for milanuncios published: {cards_mil_published}")
+            assert cards_mil_published == 2
 
             # 8.12 Condition: platform=vinted + search q=Schott
             print("[8.12] Testing combined condition: platform=vinted, search q=Schott...")

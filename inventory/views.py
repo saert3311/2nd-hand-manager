@@ -262,6 +262,7 @@ def dashboard_view(request):
 
     counts = counts_qs.aggregate(
         total_count=Count("id", filter=Q(is_deleted=False), distinct=True),
+        ready_count=Count("id", filter=Q(status=ProductStatus.READY, is_deleted=False), distinct=True),
         active_count=Count("id", filter=Q(is_sold=False, is_deleted=False), distinct=True),
         price_pending_count=Count("id", filter=Q(status=ProductStatus.PRICE_PENDING, is_deleted=False), distinct=True),
         awaiting_info_count=Count(
@@ -323,6 +324,7 @@ def dashboard_view(request):
         "platform_filter": platform_filter,
         "available_platforms": available_platforms,
         "total_count": counts["total_count"] or 0,
+        "ready_count": counts["ready_count"] or 0,
         "active_count": counts["active_count"] or 0,
         "price_pending_count": counts["price_pending_count"] or 0,
         "awaiting_info_count": counts["awaiting_info_count"] or 0,
@@ -553,12 +555,15 @@ def product_answer_clarification_view(request, pk, clarification_pk):
         clarification.resolve(answer=answer_text, answered_by=request.user)
 
         # Check if any pending questions remain
-        remaining_pending = product.clarifications.filter(status=ClarificationStatus.PENDING).count()
+        remaining_pending = product.clarifications.filter(status=ClarificationStatus.PENDING, is_direct_note=False).count()
         if remaining_pending == 0:
-            if product.status != ProductStatus.SOLD:
-                product.status = ProductStatus.READY
-                product.save(update_fields=["status"])
-            messages.success(request, _("All doubts resolved! Product marked as ready to publish."))
+            product.refresh_from_db()
+            if product.status == ProductStatus.READY:
+                messages.success(request, _("All doubts resolved! Product marked as ready to publish."))
+            elif product.status == ProductStatus.PRICE_PENDING:
+                messages.success(request, _("All doubts resolved! Product is waiting for sale price."))
+            else:
+                messages.success(request, _("All doubts resolved!"))
         else:
             messages.success(request, _("Answer saved. %d doubts still pending.") % remaining_pending)
     else:
@@ -583,11 +588,10 @@ def product_delete_clarification_view(request, pk, clarification_pk):
     clarification = get_object_or_404(ProductClarification, pk=clarification_pk, product=product)
     clarification.delete()
 
-    # If no pending questions left and was awaiting info, revert to ready
-    remaining_pending = product.clarifications.filter(status=ClarificationStatus.PENDING).count()
-    if remaining_pending == 0 and product.status == ProductStatus.AWAITING_INFO:
-        product.status = ProductStatus.READY
-        product.save(update_fields=["status"])
+    # If no pending questions left, refresh product state
+    remaining_pending = product.clarifications.filter(status=ClarificationStatus.PENDING, is_direct_note=False).count()
+    if remaining_pending == 0:
+        product.refresh_from_db()
 
     messages.success(request, _("Clarification removed."))
     return redirect("inventory:product_detail", pk=pk)

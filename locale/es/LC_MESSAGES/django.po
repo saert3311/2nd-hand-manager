@@ -748,6 +748,10 @@ msgid "All doubts resolved! Product marked as ready to publish."
 msgstr ""
 "¡Todas las dudas resueltas! Producto marcado como listo para publicar."
 
+msgid "All doubts resolved! Product is waiting for sale price."
+msgstr ""
+"¡Todas las dudas resueltas! El producto está pendiente de asignar precio de venta."
+
 msgid "Answer saved. %d doubts still pending."
 msgstr "Respuesta guardada. %d dudas aún pendientes."
 

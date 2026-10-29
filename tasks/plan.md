@@ -488,3 +488,33 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
    - All touch targets `>= 40px`.
    - Zero horizontal overflow (`scrollWidth <= clientWidth`) on OPPO A74 viewports (`360×800` and `320×711`).
 
+
+
+---
+
+## Phase 43: Ready to Publish Dashboard Filter & Automated Phase Transition Revision (`ready-to-publish-phase-and-filter`)
+
+### Technical Design
+1. **Domain Lifecycle State Machine & Save Hook Hardening (`inventory/models.py`)**:
+   - `Product.compute_lifecycle_status()`:
+     - 1. `SOLD` if `is_sold=True`.
+     - 2. `BLOCKED` if `status == ProductStatus.BLOCKED`.
+     - 3. `AWAITING_INFO` if `pk` exists and pending clarifications (`status=PENDING`, `is_direct_note=False`) exist.
+     - 4. `PUBLISHED` if `pk` exists and active marketplace links (`listing_links__is_active=True`) exist.
+     - 5. `DRAFT` if `ai_description` or `ai_title` is missing/blank.
+     - 6. `PRICE_PENDING` if `ai_title` and `ai_description` exist, but `sale_price` is missing or `<= 0.00`.
+     - 7. `READY` (`Ready to Publish` / `Listo para publicar`) if `ai_title`, `ai_description`, and `sale_price > 0.00` exist, with zero pending clarifications and zero active marketplace links.
+   - `Product.save()`: Ensure existing products (`not is_adding`) never remain stuck in `AWAITING_INFO` when no pending doubts exist. Evaluate `compute_lifecycle_status()` for all non-sold, non-blocked records.
+   - Re-evaluate product status on `ProductImage` post-save and post-delete signals.
+2. **Clarification Resolution Views Alignment (`inventory/views.py`)**:
+   - In `product_answer_clarification_view` and `product_delete_clarification_view`, eliminate the hardcoded `product.status = ProductStatus.READY; product.save(update_fields=["status"])` override.
+   - Rely on `sync_product_on_clarification_save` / `sync_product_on_clarification_delete` signal synchronization, refresh `product`, and show a status-accurate flash message.
+3. **Dashboard Filter Replacement (`inventory/views.py` & `inventory/templates/inventory/dashboard.html`)**:
+   - In `dashboard_view`, alias legacy `?status=active` to `status_filter = "ready"`.
+   - Calculate `ready_count` in aggregation for non-sold, non-deleted items with `status=ProductStatus.READY`.
+   - In `dashboard.html`, replace the `Active` tab in `nav[role="tablist"]` with `✨ Ready to Publish` (`✨ Listo para publicar`, `?status=ready`, `#tab-ready`) showing `({{ ready_count }})`.
+   - On product cards, display `✨ Ready to Publish` (`✨ Listo para publicar`) when `product.status == 'ready'`.
+4. **Bilingual Localization & Comprehensive Tests (`locale/`, `tests/`)**:
+   - Compile translation catalogs for `Ready to Publish` $\to$ `Listo para publicar`.
+   - Unit tests in `tests/test_lifecycle.py` and view tests in `tests/test_dashboard.py` asserting filter behavior, counts, and aliases.
+   - Playwright responsive tests in `tests/test_dashboard_responsive.py` verifying no horizontal tab wrapping (*apilación*) or overflow across `320×711`, `360×800`, `390×844`, `768×1024`, and `1440×900`.
