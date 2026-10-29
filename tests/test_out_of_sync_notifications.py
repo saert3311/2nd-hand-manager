@@ -94,6 +94,24 @@ class OutOfSyncNotificationServiceTests(TestCase):
         self.assertIn("⚠️ Producto desincronizado:", kwargs["title"])
         self.assertIn("Cambios detectados en producto publicado", kwargs["body"])
 
+    @patch("inventory.services.push_service.send_push_to_group")
+    def test_send_out_of_sync_notification_with_change_reasons(self, mock_push):
+        mock_push.return_value = 1
+        self.product.needs_platform_sync = True
+        self.product.platform_sync_reasons = ["photos", "price"]
+
+        # English
+        with translation.override("en"):
+            send_out_of_sync_notification(self.product)
+        _, kwargs_en = mock_push.call_args
+        self.assertIn("Updated: Photos, Price. External platform listings require updating.", kwargs_en["body"])
+
+        # Spanish
+        with translation.override("es"):
+            send_out_of_sync_notification(self.product)
+        _, kwargs_es = mock_push.call_args
+        self.assertIn("Actualizado: Fotos, Precio. Se requiere actualizar las plataformas externas.", kwargs_es["body"])
+
 
 @override_settings(
     PUSH_NOTIFICATIONS_LIVE_SIGNALS=True,

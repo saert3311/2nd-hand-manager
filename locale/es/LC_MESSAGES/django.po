@@ -3305,3 +3305,25 @@ msgstr "Editar o eliminar enlace del anuncio"
 
 msgid "Manage link for"
 msgstr "Gestionar enlace de"
+
+msgid "Title"
+msgstr "Título"
+
+msgid "Description"
+msgstr "Descripción"
+
+msgid "Price"
+msgstr "Precio"
+
+msgid "Platform Sync Reasons"
+msgstr "Motivos de desincronización"
+
+msgid "List of change categories that triggered out-of-sync status"
+msgstr "Lista de categorías de cambios que provocaron el estado de desincronización"
+
+msgid "Updated: %(reasons)s. External platform listings require updating."
+msgstr "Actualizado: %(reasons)s. Se requiere actualizar las plataformas externas."
+
+msgid "Changed:"
+msgstr "Modificado:"
+

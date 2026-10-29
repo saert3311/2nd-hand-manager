@@ -12,11 +12,13 @@ from inventory.models import (
     ClarificationCategory,
     ClarificationStatus,
     MarketplaceSite,
+    PlatformSyncReason,
     Product,
     ProductClarification,
     ProductImage,
     ProductListingLink,
     ProductStatus,
+    ProductStatusLog,
 )
 from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
 
@@ -340,3 +342,145 @@ class PublishedProductPlatformSyncTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Actualización requerida en plataformas")
         self.assertContains(response, "Marcar plataformas como actualizadas")
+
+    def test_granular_sync_reasons_detection_on_save(self):
+        # 1. Price change triggers PlatformSyncReason.PRICE
+        self.product.sale_price = Decimal("299.00")
+        self.product.save()
+        self.product.refresh_from_db()
+        self.assertTrue(self.product.needs_platform_sync)
+        self.assertIn(PlatformSyncReason.PRICE, self.product.platform_sync_reasons)
+
+        # Clear sync
+        self.product.mark_platform_synced(user=self.manager)
+        self.product.refresh_from_db()
+        self.assertFalse(self.product.needs_platform_sync)
+        self.assertEqual(self.product.platform_sync_reasons, [])
+
+        # 2. Title change triggers PlatformSyncReason.TITLE
+        self.product.ai_title = "Schott Leather Moto Jacket Size 44 Updated"
+        self.product.save()
+        self.product.refresh_from_db()
+        self.assertTrue(self.product.needs_platform_sync)
+        self.assertEqual(self.product.platform_sync_reasons, [PlatformSyncReason.TITLE])
+
+        # Clear sync
+        self.product.mark_platform_synced(user=self.manager)
+
+        # 3. Description change triggers PlatformSyncReason.DESCRIPTION
+        self.product.ai_description = "Updated description with new details."
+        self.product.save()
+        self.product.refresh_from_db()
+        self.assertTrue(self.product.needs_platform_sync)
+        self.assertEqual(self.product.platform_sync_reasons, [PlatformSyncReason.DESCRIPTION])
+
+        # Clear sync
+        self.product.mark_platform_synced(user=self.manager)
+
+        # 4. Reservation change triggers PlatformSyncReason.OTHER
+        self.product.is_reserved = True
+        self.product.save()
+        self.product.refresh_from_db()
+        self.assertTrue(self.product.needs_platform_sync)
+        self.assertEqual(self.product.platform_sync_reasons, [PlatformSyncReason.OTHER])
+
+    def test_multi_edit_accumulation_and_canonical_sorting(self):
+        # Edit price first
+        self.product.sale_price = Decimal("310.00")
+        self.product.save()
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.platform_sync_reasons, [PlatformSyncReason.PRICE])
+
+        # Then upload another photo via the view endpoint
+        upload_url = reverse("inventory:product_upload_images", kwargs={"pk": self.product.pk})
+        extra_img = create_test_image("extra.png", "purple")
+        response = self.client_mgr.post(upload_url, {"images": [extra_img]}, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        self.product.refresh_from_db()
+        self.assertTrue(self.product.needs_platform_sync)
+        # Should contain both PHOTOS and PRICE in canonical order [photos, price]
+        self.assertEqual(
+            self.product.platform_sync_reasons,
+            [PlatformSyncReason.PHOTOS, PlatformSyncReason.PRICE],
+        )
+
+        # Then add clarification note (OTHER)
+        ProductClarification.objects.create(
+            product=self.product,
+            is_direct_note=True,
+            question="Client asked about jacket zipper brand",
+            asked_by=self.assistant,
+        )
+        self.product.refresh_from_db()
+        self.assertEqual(
+            self.product.platform_sync_reasons,
+            [PlatformSyncReason.PHOTOS, PlatformSyncReason.PRICE, PlatformSyncReason.OTHER],
+        )
+
+    def test_mark_platform_synced_resets_reasons_and_logs_audit(self):
+        self.product.sale_price = Decimal("199.00")
+        self.product.ai_title = "Schott Special Edition"
+        self.product.save()
+        self.product.refresh_from_db()
+        self.assertEqual(
+            self.product.platform_sync_reasons,
+            [PlatformSyncReason.TITLE, PlatformSyncReason.PRICE],
+        )
+
+        url = reverse("inventory:product_mark_platform_synced", kwargs={"pk": self.product.pk})
+        response = self.client_mgr.post(url, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        self.product.refresh_from_db()
+        self.assertFalse(self.product.needs_platform_sync)
+        self.assertEqual(self.product.platform_sync_reasons, [])
+
+        # Check audit log entry
+        log_entry = ProductStatusLog.objects.filter(
+            product=self.product,
+            trigger="platform_sync_cleared",
+        ).latest("created_at")
+        self.assertIn("Marketplace listings verified as synchronized", log_entry.notes)
+        self.assertIn("Title", log_entry.notes)
+        self.assertIn("Price", log_entry.notes)
+
+    def test_badges_property_and_template_rendering(self):
+        self.product.sale_price = Decimal("220.00")
+        self.product.save()
+        self.product.add_platform_sync_reasons(PlatformSyncReason.PHOTOS, commit=True)
+        self.product.refresh_from_db()
+
+        badges = self.product.platform_sync_reason_badges
+        self.assertEqual(len(badges), 2)
+        codes = [b["code"] for b in badges]
+        self.assertEqual(codes, ["photos", "price"])
+
+        # Check product detail page renders reason list and pills
+        url = reverse("inventory:product_detail", kwargs={"pk": self.product.pk})
+        response = self.client_mgr.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="platformSyncReasonsList"')
+        self.assertContains(response, "📷")
+        self.assertContains(response, "💰")
+        self.assertContains(response, "Photos")
+        self.assertContains(response, "Price")
+
+        # Check dashboard product card displays compact icons
+        dash_url = reverse("inventory:dashboard") + "?status=published"
+        dash_res = self.client_mgr.get(dash_url)
+        self.assertEqual(dash_res.status_code, 200)
+        self.assertContains(dash_res, "(📷💰)")
+
+    def test_spanish_localization_of_reasons_and_push(self):
+        self.product.sale_price = Decimal("230.00")
+        self.product.save()
+        self.product.refresh_from_db()
+
+        self.client_mgr.cookies.load({"django_language": "es"})
+        url = reverse("inventory:product_detail", kwargs={"pk": self.product.pk})
+        response = self.client_mgr.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Precio")
+        self.assertContains(response, "Modificado:")
+

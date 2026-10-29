@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Granular Out-of-Sync Change Tracking (Phase 44)**:
+  - **Categorized Out-of-Sync Tracking**: Added `PlatformSyncReason` enum (`photos`, `title`, `description`, `price`, `other`) and `Product.platform_sync_reasons` JSONField to track exactly which product attributes were modified after publication.
+  - **Sequential Multi-Edit Accumulation**: Implemented `Product.add_platform_sync_reasons()` ensuring multi-step edits across forms, image uploads/reordering/cropping/deletion, and clarification doubts/direct notes accumulate cumulatively in canonical order (`[photos, title, description, price, other]`) without overwriting or duplicate entries.
+  - **Product Detail Tactile Category Pills**: Updated warning banner `#platformSyncBanner` to display wrapping category pills (`#platformSyncReasonsList`) highlighting which areas need synchronization (`📷 Photos`, `🏷️ Title`, `📝 Description`, `💰 Price`, `📌 Other`).
+  - **Dashboard Product Card Change Icons**: Displayed compact change icons in the `⚠️ Update Platforms` card badge with accessible ARIA label and informative tooltip.
+  - **Web Push Notifications**: Enhanced out-of-sync manager push alerts to format human-readable reason badges in the notification body (e.g., `Updated: Photos, Price`).
+  - **Lifecycle Audit Logging**: Updated `mark_platform_synced()` to record resolved reason categories in `ProductStatusLog` audit notes upon clearing sync.
+  - **Bilingual Localization**: Added Spanish translations for all new enums, badges, and push templates.
+
 ## [2.3.0] - 2026-10-29
 
 ### Fixed
