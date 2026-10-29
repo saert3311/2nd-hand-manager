@@ -187,3 +187,56 @@ class ProductLifecycleStateTests(TestCase):
         self.assertEqual(product.status, ProductStatus.BLOCKED)
         product.save()
         self.assertEqual(product.status, ProductStatus.BLOCKED)
+
+    def test_item_missing_title_remains_draft(self):
+        """A product with description and price but empty title remains DRAFT."""
+        product = Product.objects.create(
+            ai_title="",
+            ai_description="Great condition, size L, black leather.",
+            sale_price=Decimal("120.00"),
+        )
+        self.assertEqual(product.status, ProductStatus.DRAFT)
+
+    def test_saving_product_without_pending_clarifications_leaves_awaiting_info(self):
+        """A product saved after all clarifications are resolved automatically transitions out of AWAITING_INFO."""
+        product = Product.objects.create(
+            ai_title="Vintage Schott Leather Jacket",
+            ai_description="Great condition, size L, black leather.",
+            sale_price=Decimal("120.00"),
+        )
+        clarif = ProductClarification.objects.create(
+            product=product,
+            category=ClarificationCategory.MEASUREMENTS,
+            question="Check armpit measurement",
+            asked_by=self.user,
+        )
+        product.refresh_from_db()
+        self.assertEqual(product.status, ProductStatus.AWAITING_INFO)
+
+        # Direct deletion of clarification
+        clarif.delete()
+        # Save product directly to verify save hook does not stay stuck in AWAITING_INFO
+        product.save()
+        self.assertEqual(product.status, ProductStatus.READY)
+
+    def test_resolving_clarification_on_price_pending_item_reverts_to_price_pending(self):
+        """Resolving clarification on an item without price transitions to PRICE_PENDING, not READY."""
+        product = Product.objects.create(
+            ai_title="Vintage Schott Leather Jacket",
+            ai_description="Great condition, size L, black leather.",
+            sale_price=None,
+        )
+        self.assertEqual(product.status, ProductStatus.PRICE_PENDING)
+
+        clarif = ProductClarification.objects.create(
+            product=product,
+            category=ClarificationCategory.MEASUREMENTS,
+            question="Check size tag",
+            asked_by=self.user,
+        )
+        product.refresh_from_db()
+        self.assertEqual(product.status, ProductStatus.AWAITING_INFO)
+
+        clarif.resolve(answer="Tag says Size 40", answered_by=self.user)
+        product.refresh_from_db()
+        self.assertEqual(product.status, ProductStatus.PRICE_PENDING)

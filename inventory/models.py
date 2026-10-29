@@ -607,14 +607,11 @@ class Product(models.Model):
             except (ValueError, TypeError, ArithmeticError):
                 has_price = False
 
-        if not has_description:
+        if not has_description or not has_title:
             return ProductStatus.DRAFT
-        if has_title and has_description and not has_price:
+        if not has_price:
             return ProductStatus.PRICE_PENDING
-        if has_title and has_description and has_price:
-            return ProductStatus.READY
-
-        return ProductStatus.DRAFT
+        return ProductStatus.READY
 
     def sync_lifecycle_status(self, user=None, trigger=None, notes=None, commit=True):
         computed = self.compute_lifecycle_status()
@@ -746,9 +743,17 @@ class Product(models.Model):
                 else:
                     self.status = self.compute_lifecycle_status()
             else:
-                if self.status not in (ProductStatus.SOLD, ProductStatus.BLOCKED, ProductStatus.AWAITING_INFO):
+                if self.status == ProductStatus.SOLD:
+                    self.is_sold = True
+                elif self.status == ProductStatus.BLOCKED:
+                    self.is_sold = False
+                elif self.status == ProductStatus.AWAITING_INFO:
+                    self.is_sold = False
+                    if self.pk and not self.clarifications.filter(status=ClarificationStatus.PENDING, is_direct_note=False).exists():
+                        self.status = self.compute_lifecycle_status()
+                else:
                     self.status = self.compute_lifecycle_status()
-                self.is_sold = (self.status == ProductStatus.SOLD)
+                    self.is_sold = (self.status == ProductStatus.SOLD)
 
         if "update_fields" in kwargs and kwargs["update_fields"] is not None:
             fields = set(kwargs["update_fields"])
@@ -1436,6 +1441,31 @@ def sync_product_on_listing_link_delete(sender, instance, **kwargs):
     site_name = instance.site.name if instance.site else "Marketplace"
     notes = f"Marketplace link deleted ({site_name})"
     product.sync_lifecycle_status(trigger="marketplace_link_removed", notes=notes)
+
+
+@receiver(post_save, sender=ProductImage)
+def sync_product_on_image_save(sender, instance, created=False, **kwargs):
+    if kwargs.get("raw", False):
+        return
+    product = instance.product
+    if product.is_sold or product.status in (ProductStatus.SOLD, ProductStatus.BLOCKED, ProductStatus.AWAITING_INFO):
+        return
+    product.sync_lifecycle_status(trigger="image_added" if created else "image_updated")
+
+
+@receiver(post_delete, sender=ProductImage)
+def sync_product_on_image_delete(sender, instance, **kwargs):
+    if kwargs.get("raw", False):
+        return
+    if is_product_deleting(instance.product_id):
+        return
+    try:
+        product = instance.product
+    except Product.DoesNotExist:
+        return
+    if product.is_sold or product.status in (ProductStatus.SOLD, ProductStatus.BLOCKED, ProductStatus.AWAITING_INFO):
+        return
+    product.sync_lifecycle_status(trigger="image_deleted")
 
 
 class DatabaseBackupLog(models.Model):
