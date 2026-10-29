@@ -31,6 +31,7 @@ from .models import (
     ClarificationCategory,
     ClarificationStatus,
     MarketplaceSite,
+    PlatformSyncReason,
     Product,
     ProductClarification,
     ProductCondition,
@@ -405,13 +406,12 @@ def product_detail_view(request, pk):
                                 image=webp_file,
                                 order=start_order + idx,
                             )
-                        is_published = (
-                            product.status == ProductStatus.PUBLISHED
-                            or product.listing_links.filter(is_active=True).exists()
-                        )
-                        if is_published and not product.needs_platform_sync:
-                            product.needs_platform_sync = True
-                            product.save(update_fields=["needs_platform_sync"])
+                        if files:
+                            product.add_platform_sync_reasons(
+                                PlatformSyncReason.PHOTOS,
+                                user=request.user,
+                                commit=True,
+                            )
 
             messages.success(request, _("Product listing updated successfully."))
             return redirect("inventory:product_detail", pk=pk)
@@ -984,14 +984,12 @@ def product_reorder_images_view(request, pk):
         for order_idx, img_id in enumerate(image_ids):
             ProductImage.objects.filter(id=img_id, product=product).update(order=order_idx)
 
-        is_published = (
-            product.status == ProductStatus.PUBLISHED
-            or product.listing_links.filter(is_active=True).exists()
-        )
-        if is_published and image_ids and image_ids[0] != initial_primary_id:
-            if not product.needs_platform_sync:
-                product.needs_platform_sync = True
-                product.save(update_fields=["needs_platform_sync"])
+        if image_ids and image_ids[0] != initial_primary_id:
+            product.add_platform_sync_reasons(
+                PlatformSyncReason.PHOTOS,
+                user=request.user,
+                commit=True,
+            )
 
     # Return updated list and new primary image url
     primary_image = product.images.order_by("order", "id").first()
@@ -1039,13 +1037,12 @@ def product_upload_images_view(request, pk):
                     order=start_order + idx,
                 )
 
-            is_published = (
-                product.status == ProductStatus.PUBLISHED
-                or product.listing_links.filter(is_active=True).exists()
-            )
-            if is_published and not product.needs_platform_sync:
-                product.needs_platform_sync = True
-                product.save(update_fields=["needs_platform_sync"])
+            if files:
+                product.add_platform_sync_reasons(
+                    PlatformSyncReason.PHOTOS,
+                    user=request.user,
+                    commit=True,
+                )
 
         messages.success(
             request,
@@ -1088,13 +1085,11 @@ def product_delete_image_view(request, pk, image_id):
             if img.order != idx:
                 ProductImage.objects.filter(id=img.id).update(order=idx)
 
-        is_published = (
-            product.status == ProductStatus.PUBLISHED
-            or product.listing_links.filter(is_active=True).exists()
+        product.add_platform_sync_reasons(
+            PlatformSyncReason.PHOTOS,
+            user=request.user,
+            commit=True,
         )
-        if is_published and not product.needs_platform_sync:
-            product.needs_platform_sync = True
-            product.save(update_fields=["needs_platform_sync"])
 
     messages.success(request, _("Photo deleted successfully."))
     return redirect("inventory:product_detail", pk=pk)
@@ -1129,13 +1124,11 @@ def product_edit_image_view(request, pk, image_id):
             except Exception:
                 pass
 
-        is_published = (
-            product.status == ProductStatus.PUBLISHED
-            or product.listing_links.filter(is_active=True).exists()
+        product.add_platform_sync_reasons(
+            PlatformSyncReason.PHOTOS,
+            user=request.user,
+            commit=True,
         )
-        if is_published and not product.needs_platform_sync:
-            product.needs_platform_sync = True
-            product.save(update_fields=["needs_platform_sync"])
 
         primary_id = product.primary_image.id if product.primary_image else None
         return JsonResponse({

@@ -193,7 +193,14 @@ def send_out_of_sync_notification(product, trigger_reason: str | None = None) ->
         return 0
 
     title = str(_("⚠️ Product Out of Sync: %(title)s") % {"title": product.display_title})
-    body = str(_("Modifications detected on published item. External platform listings require updating."))
+    badges = getattr(product, "platform_sync_reason_badges", [])
+    if badges:
+        reason_labels = ", ".join(str(b["label"]) for b in badges)
+        body = str(_("Updated: %(reasons)s. External platform listings require updating.")) % {
+            "reasons": reason_labels
+        }
+    else:
+        body = str(_("Modifications detected on published item. External platform listings require updating."))
     url = f"/products/{product.pk}/"
     tag = f"product-out-of-sync-{product.pk}"
 
