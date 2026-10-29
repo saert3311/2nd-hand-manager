@@ -176,7 +176,7 @@ def run_browser_verification():
         content = page.content()
         assert "Catálogo de Inventario" in content or "Panel de Control" in content, "Expected Spanish Dashboard title!"
         assert "Todos" in content, "Expected 'Todos' tab in Spanish!"
-        assert "Activo" in content, "Expected 'Activo' tab in Spanish!"
+        assert "Listo para Publicar" in content, "Expected 'Listo para Publicar' tab in Spanish!"
         assert "Vendido" in content, "Expected 'Vendido' tab in Spanish!"
         assert "Olympus" in content, "Newly cataloged Olympus item not found on dashboard!"
         page.screenshot(path=str(SCREENSHOTS_DIR / "07_manager_dashboard_spanish.png"))
@@ -203,7 +203,7 @@ def run_browser_verification():
         content = page.content()
         assert "Inventory Catalog" in content or "Dashboard" in content, "Expected English Dashboard after toggle!"
         assert "All" in content, "Expected 'All' tab in English!"
-        assert "Active" in content, "Expected 'Active' tab in English!"
+        assert "Ready to Publish" in content, "Expected 'Ready to Publish' tab in English!"
         page.screenshot(path=str(SCREENSHOTS_DIR / "08_manager_dashboard_english.png"))
         print("Captured screenshot: 08_manager_dashboard_english.png")
 
