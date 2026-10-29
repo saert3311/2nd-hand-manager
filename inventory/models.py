@@ -67,6 +67,14 @@ class ProductCondition(models.TextChoices):
     VINTAGE = "vintage", _("Vintage")
 
 
+class PlatformSyncReason(models.TextChoices):
+    PHOTOS = "photos", _("Photos")
+    TITLE = "title", _("Title")
+    DESCRIPTION = "description", _("Description")
+    PRICE = "price", _("Price")
+    OTHER = "other", _("Other")
+
+
 OFFICIAL_CATEGORIES = (
     ("motor-y-accesorios", "Motor y accesorios", "Motors & Accessories", "two_wheeler", 1),
     ("moda-y-accesorios", "Moda y accesorios", "Fashion & Accessories", "apparel", 2),
@@ -503,6 +511,12 @@ class Product(models.Model):
         verbose_name=_("Needs Platform Sync"),
         help_text=_("Whether edits were made after publication that need updating on external platforms"),
     )
+    platform_sync_reasons = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name=_("Platform Sync Reasons"),
+        help_text=_("List of change categories that triggered out-of-sync status"),
+    )
     last_platform_synced_at = models.DateTimeField(
         null=True,
         blank=True,
@@ -628,20 +642,97 @@ class Product(models.Model):
                 self.save(update_fields=["status", "is_sold"])
         return self.status
 
+    @property
+    def platform_sync_reason_badges(self) -> list[dict]:
+        """
+        Returns localized metadata for currently pending out-of-sync reasons.
+        """
+        if not self.needs_platform_sync:
+            return []
+
+        meta = {
+            PlatformSyncReason.PHOTOS: {"code": "photos", "icon": "📷", "label": _("Photos")},
+            PlatformSyncReason.TITLE: {"code": "title", "icon": "🏷️", "label": _("Title")},
+            PlatformSyncReason.DESCRIPTION: {"code": "description", "icon": "📝", "label": _("Description")},
+            PlatformSyncReason.PRICE: {"code": "price", "icon": "💰", "label": _("Price")},
+            PlatformSyncReason.OTHER: {"code": "other", "icon": "📌", "label": _("Other")},
+        }
+        reasons = self.platform_sync_reasons or []
+        if not reasons:
+            return [meta[PlatformSyncReason.OTHER]]
+        return [meta[r] for r in reasons if r in meta]
+
+    def add_platform_sync_reasons(self, *reasons: str, user=None, commit=True):
+        """
+        Accumulates one or more change reasons into self.platform_sync_reasons
+        in canonical order without duplicates, sets needs_platform_sync = True,
+        and saves the product if commit=True.
+        """
+        if self.is_sold or self.status == ProductStatus.SOLD:
+            return
+
+        is_published = (
+            self.status == ProductStatus.PUBLISHED
+            or (self.pk and self.listing_links.filter(is_active=True).exists())
+        )
+        if not is_published:
+            return
+
+        canonical_order = [
+            PlatformSyncReason.PHOTOS,
+            PlatformSyncReason.TITLE,
+            PlatformSyncReason.DESCRIPTION,
+            PlatformSyncReason.PRICE,
+            PlatformSyncReason.OTHER,
+        ]
+        existing = set(self.platform_sync_reasons or [])
+        for r in reasons:
+            if r in canonical_order:
+                existing.add(r)
+
+        self.platform_sync_reasons = [r for r in canonical_order if r in existing]
+        self.needs_platform_sync = True
+        if commit and self.pk:
+            self.save(
+                update_fields=["needs_platform_sync", "platform_sync_reasons"],
+                changed_by=user,
+            )
+
     def mark_platform_synced(self, user=None, commit=True):
         """
         Clears the needs_platform_sync flag, sets last_platform_synced_at, and records an audit log entry.
         """
+        cleared_reasons = list(self.platform_sync_reasons or [])
         self.needs_platform_sync = False
+        self.platform_sync_reasons = []
         self.last_platform_synced_at = timezone.now()
         self._clearing_platform_sync = True
         acting_user = user if (user and getattr(user, "is_authenticated", False)) else None
         if commit:
             self.save(
-                update_fields=["needs_platform_sync", "last_platform_synced_at"],
+                update_fields=["needs_platform_sync", "platform_sync_reasons", "last_platform_synced_at"],
                 changed_by=acting_user,
             )
         self._clearing_platform_sync = False
+
+        reason_labels = []
+        meta = {
+            PlatformSyncReason.PHOTOS: str(_("Photos")),
+            PlatformSyncReason.TITLE: str(_("Title")),
+            PlatformSyncReason.DESCRIPTION: str(_("Description")),
+            PlatformSyncReason.PRICE: str(_("Price")),
+            PlatformSyncReason.OTHER: str(_("Other")),
+        }
+        for r in cleared_reasons:
+            if r in meta:
+                reason_labels.append(meta[r])
+            else:
+                reason_labels.append(str(r))
+
+        notes = "Marketplace listings verified as synchronized"
+        if reason_labels:
+            notes += f" (Resolved: {', '.join(reason_labels)})"
+
         try:
             log_status_change(
                 product=self,
@@ -649,7 +740,7 @@ class Product(models.Model):
                 to_status=self.status,
                 user=acting_user,
                 trigger="platform_sync_cleared",
-                notes="Marketplace listings verified as synchronized",
+                notes=notes,
             )
         except Exception:
             pass
@@ -661,7 +752,9 @@ class Product(models.Model):
         self._initial_sale_price = self.__dict__.get("sale_price")
         self._initial_ai_title = self.__dict__.get("ai_title")
         self._initial_ai_description = self.__dict__.get("ai_description")
+        self._initial_is_reserved = self.__dict__.get("is_reserved")
         self._initial_needs_platform_sync = self.__dict__.get("needs_platform_sync")
+        self._initial_platform_sync_reasons = list(self.__dict__.get("platform_sync_reasons") or [])
         self._previous_needs_platform_sync = None
         self._changed_by = None
         self._status_trigger = None
@@ -726,7 +819,29 @@ class Product(models.Model):
                 price_changed = self.sale_price != getattr(self, "_initial_sale_price", None)
                 title_changed = (self.ai_title or "") != (getattr(self, "_initial_ai_title", None) or "")
                 desc_changed = (self.ai_description or "") != (getattr(self, "_initial_ai_description", None) or "")
-                if price_changed or title_changed or desc_changed:
+                reserved_changed = getattr(self, "is_reserved", False) != getattr(self, "_initial_is_reserved", False)
+
+                detected_reasons = []
+                if price_changed:
+                    detected_reasons.append(PlatformSyncReason.PRICE)
+                if title_changed:
+                    detected_reasons.append(PlatformSyncReason.TITLE)
+                if desc_changed:
+                    detected_reasons.append(PlatformSyncReason.DESCRIPTION)
+                if reserved_changed:
+                    detected_reasons.append(PlatformSyncReason.OTHER)
+
+                if detected_reasons:
+                    canonical_order = [
+                        PlatformSyncReason.PHOTOS,
+                        PlatformSyncReason.TITLE,
+                        PlatformSyncReason.DESCRIPTION,
+                        PlatformSyncReason.PRICE,
+                        PlatformSyncReason.OTHER,
+                    ]
+                    existing = set(self.platform_sync_reasons or [])
+                    existing.update(detected_reasons)
+                    self.platform_sync_reasons = [r for r in canonical_order if r in existing]
                     self.needs_platform_sync = True
 
             if status_changed:
@@ -761,8 +876,11 @@ class Product(models.Model):
             fields.add("status")
             if getattr(self, "needs_platform_sync", False):
                 fields.add("needs_platform_sync")
+                fields.add("platform_sync_reasons")
             if "last_platform_synced_at" in fields:
                 fields.add("last_platform_synced_at")
+            if "platform_sync_reasons" in fields:
+                fields.add("platform_sync_reasons")
             kwargs["update_fields"] = list(fields)
 
         self._previous_status = initial_status
@@ -820,7 +938,9 @@ class Product(models.Model):
         self._initial_sale_price = self.sale_price
         self._initial_ai_title = self.ai_title
         self._initial_ai_description = self.ai_description
+        self._initial_is_reserved = getattr(self, "is_reserved", False)
         self._initial_needs_platform_sync = self.needs_platform_sync
+        self._initial_platform_sync_reasons = list(self.platform_sync_reasons or [])
         self._changed_by = None
         self._status_trigger = None
         self._status_notes = None
@@ -1264,27 +1384,29 @@ def sync_product_on_clarification_save(sender, instance, created=False, **kwargs
         or product.listing_links.filter(is_active=True).exists()
     )
     if instance.is_direct_note:
-        if is_published and not product.needs_platform_sync:
-            product.needs_platform_sync = True
-            product.save(update_fields=["needs_platform_sync"])
+        if is_published:
+            product.add_platform_sync_reasons(PlatformSyncReason.OTHER, user=instance.asked_by, commit=True)
         return
     if instance.status == ClarificationStatus.PENDING:
         if is_published:
-            product.needs_platform_sync = True
+            product.add_platform_sync_reasons(PlatformSyncReason.OTHER, user=instance.asked_by, commit=False)
         if product.status != ProductStatus.AWAITING_INFO:
             product.status = ProductStatus.AWAITING_INFO
             notes = f"Clarification opened: {instance.question[:60]}" if instance.question else ""
             update_fields = ["status"]
             if is_published:
-                update_fields.append("needs_platform_sync")
+                update_fields.extend(["needs_platform_sync", "platform_sync_reasons"])
             product.save(
                 update_fields=update_fields,
                 changed_by=instance.asked_by,
                 trigger="clarification_opened",
                 notes=notes,
             )
-        elif is_published and not product.needs_platform_sync:
-            product.save(update_fields=["needs_platform_sync"])
+        elif is_published:
+            product.save(
+                update_fields=["needs_platform_sync", "platform_sync_reasons"],
+                changed_by=instance.asked_by,
+            )
         if created and getattr(settings, "PUSH_NOTIFICATIONS_LIVE_SIGNALS", False):
             try:
                 from .permissions import ROLE_ASSISTANT
@@ -1301,14 +1423,14 @@ def sync_product_on_clarification_save(sender, instance, created=False, **kwargs
                 pass
     elif instance.status == ClarificationStatus.RESOLVED:
         if is_published:
-            product.needs_platform_sync = True
+            product.add_platform_sync_reasons(PlatformSyncReason.OTHER, user=instance.answered_by, commit=False)
         has_pending = product.clarifications.filter(status=ClarificationStatus.PENDING).exists()
         if not has_pending and product.status == ProductStatus.AWAITING_INFO:
             product.status = product.compute_lifecycle_status()
             notes = f"Clarification resolved: {instance.question[:60]}" if instance.question else ""
             update_fields = ["status", "is_sold"]
             if is_published:
-                update_fields.append("needs_platform_sync")
+                update_fields.extend(["needs_platform_sync", "platform_sync_reasons"])
             product.save(
                 update_fields=update_fields,
                 changed_by=instance.answered_by,
@@ -1316,7 +1438,10 @@ def sync_product_on_clarification_save(sender, instance, created=False, **kwargs
                 notes=notes,
             )
         elif is_published:
-            product.save(update_fields=["needs_platform_sync"])
+            product.save(
+                update_fields=["needs_platform_sync", "platform_sync_reasons"],
+                changed_by=instance.answered_by,
+            )
         was_pending = getattr(instance, "_previous_status", None) == ClarificationStatus.PENDING
         if (created or was_pending) and getattr(settings, "PUSH_NOTIFICATIONS_LIVE_SIGNALS", False):
             try:

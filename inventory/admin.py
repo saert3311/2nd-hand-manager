@@ -398,6 +398,7 @@ class ProductAdmin(admin.ModelAdmin):
         "updated_at",
         "sold_at",
         "last_platform_synced_at",
+        "platform_sync_reasons",
         "batch_session",
         "deleted_at",
         "deleted_by",
@@ -424,6 +425,16 @@ class ProductAdmin(admin.ModelAdmin):
 
     def needs_platform_sync_col(self, obj):
         if obj.needs_platform_sync:
+            badges = obj.platform_sync_reason_badges
+            if badges:
+                icons = " ".join(b["icon"] for b in badges)
+                labels = ", ".join(str(b["label"]) for b in badges)
+                return format_html(
+                    '<span style="color:#d97706; font-weight:700;" title="{}">⚠️ {} <span style="font-size:0.85em;">[{}]</span></span>',
+                    labels,
+                    _("Out of Sync"),
+                    icons,
+                )
             return format_html('<span style="color:#d97706; font-weight:700;">⚠️ {}</span>', _("Out of Sync"))
         return format_html('<span style="color:#16a34a; font-weight:600;">✓ {}</span>', _("Synced"))
 
