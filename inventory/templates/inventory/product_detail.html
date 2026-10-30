@@ -86,6 +86,16 @@
               <span class="hidden sm:inline">{% trans "Restore Product" %}</span>
             </button>
           </form>
+          <form method="post" action="{% url 'inventory:product_permanent_delete' product.pk %}" class="flex-1 min-w-0 sm:flex-initial inline-flex"
+                data-confirm-message="{% trans 'Permanently delete this product and all its photos from cloud storage? This action cannot be undone.' %}">
+            {% csrf_token %}
+            <button type="submit" id="btnPermanentDeleteTop"
+                    class="w-full inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer text-center min-h-[38px]">
+              <span aria-hidden="true">⚠️</span>
+              <span class="sm:hidden">{% trans "Delete" %}</span>
+              <span class="hidden sm:inline">{% trans "Delete Permanently" %}</span>
+            </button>
+          </form>
           {% else %}
           <button type="button" id="btnOpenDeleteModal" onclick="openDeleteModal()"
                   class="flex-1 min-w-0 sm:flex-initial inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer text-center min-h-[38px]">
@@ -161,13 +171,23 @@
       </div>
     </div>
     {% if can_manage %}
-    <form method="post" action="{% url 'inventory:product_restore' product.pk %}" class="shrink-0">
-      {% csrf_token %}
-      <button type="submit" id="btnRestoreProductBanner"
-              class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition cursor-pointer">
-        ♻️ {% trans "Restore Product" %}
-      </button>
-    </form>
+    <div class="flex flex-wrap items-center gap-2 shrink-0">
+      <form method="post" action="{% url 'inventory:product_restore' product.pk %}" class="shrink-0">
+        {% csrf_token %}
+        <button type="submit" id="btnRestoreProductBanner"
+                class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition cursor-pointer min-h-[38px]">
+          <span aria-hidden="true">♻️</span> {% trans "Restore Product" %}
+        </button>
+      </form>
+      <form method="post" action="{% url 'inventory:product_permanent_delete' product.pk %}" class="shrink-0"
+            data-confirm-message="{% trans 'Permanently delete this product and all its photos from cloud storage? This action cannot be undone.' %}">
+        {% csrf_token %}
+        <button type="submit" id="btnPermanentDelete"
+                class="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow-sm transition cursor-pointer min-h-[38px]">
+          <span aria-hidden="true">⚠️</span> {% trans "Delete Permanently" %}
+        </button>
+      </form>
+    </div>
     {% endif %}
   </div>
   {% endif %}
