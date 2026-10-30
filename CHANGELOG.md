@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-10-31
+
 ### Added
 - **Pallet Tracking & Sticky Intake Attribution (Phase 46)**:
   - **Pallet Domain Model**: Implemented `Pallet` model (`number`, `received_date`, `purchase_price`, `estimated_value`, `notes`, `created_by`) and linked to `Product` via `ForeignKey(Pallet, null=True, blank=True, on_delete=models.SET_NULL, related_name="products")`, ensuring non-destructive deletion cascades.
