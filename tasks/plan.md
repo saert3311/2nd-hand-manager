@@ -542,3 +542,43 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
 5. **Bilingual Localization & Comprehensive Test Suite (`locale/`, `tests/`)**:
    - Add Spanish and English translations in `locale/` and compile `.mo` catalogs.
    - Add test cases covering accumulation, field change triggers, photo edits, sync clearance, push notification copy, and responsive layouts.
+
+---
+
+## Phase 45: Trash Retention Policy & OCI Bucket Permanent Cleanup (`trash-retention-bucket-cleanup`)
+
+### Technical Design
+1. **Configuration & Domain Models (`config/settings.py`, `.env.example`, `inventory/models.py`)**:
+   - Add `TRASH_RETENTION_DAYS = int(os.getenv("TRASH_RETENTION_DAYS", "30"))` in `config/settings.py` and document safe default in `.env.example`.
+   - Update `ProductStatusLog`:
+     - Update `product` FK to `on_delete=models.SET_NULL, null=True, blank=True`.
+     - Add `product_id_snapshot = models.PositiveIntegerField(null=True, blank=True)` and `product_title_snapshot = models.CharField(max_length=255, blank=True, default="")`.
+     - Update `__str__` to use snapshot values when `product_id` is null.
+   - Attach `cleanup_product_image_file_on_delete` post-delete signal on `ProductImage` calling `default_storage.delete(instance.image.name)` to guarantee physical files are deleted whenever image rows are removed.
+2. **Trash Domain Service (`inventory/services/trash_service.py`)**:
+   - `purge_product_and_media(product, user=None) -> dict`:
+     - Enforces `is_deleted=True` precondition (cannot purge active products).
+     - Deletes all associated image files from `default_storage` (OCI Object Storage bucket).
+     - Writes immutable tombstone log entry to `ProductStatusLog` with snapshotted ID, title, acting user, and deleted photos count.
+     - Deletes the `Product` database record with clean cascade.
+   - `purge_expired_trash(days=None, dry_run=False, user=None) -> dict`:
+     - Queries `Product.objects.filter(is_deleted=True, deleted_at__lte=cutoff)`.
+     - In dry-run mode, counts and inspects without modifying. In execution mode, invokes `purge_product_and_media`.
+   - `empty_all_trash(user=None) -> dict`:
+     - Purges all soft-deleted items currently in the trash.
+   - `get_trash_metrics() -> dict`:
+     - Returns dictionary containing `trash_count`, `expired_count`, `total_images`, and `retention_days`.
+3. **Management Command (`inventory/management/commands/purge_expired_trash.py`)**:
+   - Implements CLI command accepting `--days`, `--all`, `--dry-run`, and `--quiet` for operational use and automated cron execution.
+4. **View Endpoints & Routing (`inventory/views.py`, `inventory/urls.py`)**:
+   - `product_permanent_delete_view(request, pk)`: POST-only, manager-only endpoint permanently purging a soft-deleted item.
+   - `dashboard_empty_trash_view(request)`: POST-only, manager-only endpoint purging expired or all trash items.
+   - Pass trash metrics to `dashboard_view` when `status_filter == 'erased'`.
+5. **UI & Mobile Ergonomics (`product_detail.html`, `dashboard.html`)**:
+   - In `product_detail.html`: Inside `#erasedProductBanner`, add `#btnPermanentDelete` styled with destructive red button and wired to `#actionConfirmModal`.
+   - In `dashboard.html`: Above the product grid in `?status=erased`, display a responsive management bar with storage metrics and buttons to empty expired or all trash.
+   - Enforce zero horizontal overflow on OPPO A74 mobile viewports (`320×711` and `360×800`).
+6. **Bilingual Localization & Comprehensive Tests (`locale/`, `tests/`)**:
+   - Spanish translations in `locale/es/LC_MESSAGES/django.po` and compile to `.mo`.
+   - Automated tests in `tests/test_trash_retention_and_cleanup.py` asserting storage mocks, cascade safety, audit tombstones, dry-run CLI, and responsive layouts.
+

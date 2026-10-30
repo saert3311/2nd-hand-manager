@@ -940,14 +940,43 @@ class ProductStatusLogAdmin(admin.ModelAdmin):
         "created_at",
     )
     list_filter = ("to_status", "from_status", "trigger", "created_at")
-    search_fields = ("product__id", "product__ai_title", "product__raw_note", "changed_by__username", "notes")
+    search_fields = (
+        "product__id",
+        "product__ai_title",
+        "product__raw_note",
+        "product_id_snapshot",
+        "product_title_snapshot",
+        "changed_by__username",
+        "notes",
+    )
     date_hierarchy = "created_at"
-    readonly_fields = ("product", "from_status_badge", "to_status_badge", "changed_by", "trigger", "notes", "created_at")
+    readonly_fields = (
+        "product",
+        "product_id_snapshot",
+        "product_title_snapshot",
+        "from_status_badge",
+        "to_status_badge",
+        "changed_by",
+        "trigger",
+        "notes",
+        "created_at",
+    )
     ordering = ["-created_at"]
 
     def product_link(self, obj):
-        url = reverse("admin:inventory_product_change", args=[obj.product_id])
-        return format_html('<a href="{}">#{} - {}</a>', url, obj.product_id, obj.product.display_title)
+        if obj.product_id and obj.product:
+            url = reverse("admin:inventory_product_change", args=[obj.product_id])
+            return format_html('<a href="{}">#{} - {}</a>', url, obj.product_id, obj.product.display_title)
+        if obj.product_id_snapshot or obj.product_title_snapshot:
+            pid = obj.product_id_snapshot or "?"
+            title = obj.product_title_snapshot or _("Deleted Product")
+            return format_html(
+                '<span style="color: #94a3b8; font-style: italic;">#{} - {} ({})</span>',
+                pid,
+                title,
+                _("Purged"),
+            )
+        return format_html('<span style="color: #94a3b8; font-style: italic;">{}</span>', _("Unknown / Purged"))
 
     product_link.short_description = _("Product")
 
@@ -959,6 +988,11 @@ class ProductStatusLogAdmin(admin.ModelAdmin):
     from_status_badge.short_description = _("From Status")
 
     def to_status_badge(self, obj):
+        if not obj.to_status:
+            return format_html(
+                '<span style="background-color: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 9999px; font-weight: 600; font-size: 11px; text-transform: uppercase;">{}</span>',
+                _("Purged"),
+            )
         return format_status_badge(obj.to_status)
 
     to_status_badge.short_description = _("To Status")

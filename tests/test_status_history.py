@@ -106,9 +106,14 @@ class ProductStatusLogModelTests(TestCase):
         self.assertIn("ready", s)
 
     def test_cascade_deletion_with_product(self):
+        prod_id = self.product.id
         self.assertGreaterEqual(ProductStatusLog.objects.filter(product=self.product).count(), 1)
         self.product.delete()
-        self.assertEqual(ProductStatusLog.objects.count(), 0)
+        # Product FK is set to NULL (SET_NULL) to preserve audit tombstones
+        self.assertEqual(ProductStatusLog.objects.filter(product_id=prod_id).count(), 0)
+        tombstones = ProductStatusLog.objects.filter(product_id_snapshot=prod_id)
+        self.assertGreaterEqual(tombstones.count(), 1)
+        self.assertIsNone(tombstones.first().product)
 
 
 class ProductLifecycleTransitionLoggingTests(TestCase):

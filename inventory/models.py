@@ -1579,6 +1579,21 @@ def sync_product_on_image_save(sender, instance, created=False, **kwargs):
 
 
 @receiver(post_delete, sender=ProductImage)
+def cleanup_product_image_file_on_delete(sender, instance, **kwargs):
+    """
+    Guarantees physical media files (.webp) are deleted from default_storage
+    (OCI Object Storage bucket or local media) whenever a ProductImage record is deleted.
+    """
+    if instance.image and instance.image.name:
+        try:
+            from django.core.files.storage import default_storage
+
+            default_storage.delete(instance.image.name)
+        except Exception:
+            pass
+
+
+@receiver(post_delete, sender=ProductImage)
 def sync_product_on_image_delete(sender, instance, **kwargs):
     if kwargs.get("raw", False):
         return
@@ -1721,10 +1736,25 @@ class PushSubscription(models.Model):
 class ProductStatusLog(models.Model):
     product = models.ForeignKey(
         Product,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="status_logs",
         verbose_name=_("Product"),
-        help_text=_("The product whose state changed"),
+        help_text=_("The product whose state changed (null if permanently purged)"),
+    )
+    product_id_snapshot = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name=_("Archived Product ID"),
+        help_text=_("Preserved ID of product when record is permanently purged"),
+    )
+    product_title_snapshot = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name=_("Archived Product Title"),
+        help_text=_("Preserved title/display of product when record is permanently purged"),
     )
     from_status = models.CharField(
         max_length=20,
@@ -1737,8 +1767,10 @@ class ProductStatusLog(models.Model):
     to_status = models.CharField(
         max_length=20,
         choices=ProductStatus.choices,
+        null=True,
+        blank=True,
         verbose_name=_("To Status"),
-        help_text=_("New lifecycle status"),
+        help_text=_("New lifecycle status (null if permanently purged)"),
     )
     changed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -1774,9 +1806,23 @@ class ProductStatusLog(models.Model):
         verbose_name = _("Product Status Log")
         verbose_name_plural = _("Product Status Logs")
 
+    def save(self, *args, **kwargs):
+        if self.product_id and not self.product_id_snapshot:
+            self.product_id_snapshot = self.product_id
+        if self.product and not self.product_title_snapshot:
+            self.product_title_snapshot = getattr(self.product, "display_title", "")
+        super().save(*args, **kwargs)
+
     def __str__(self):
         from_s = self.from_status or _("New")
-        return f"{self.product_id}: {from_s} -> {self.to_status} ({self.created_at:%Y-%m-%d %H:%M})"
+        to_s = self.to_status or _("Purged")
+        if self.product_id:
+            prod_ref = f"{_('Product')} #{self.product_id}"
+        elif self.product_id_snapshot:
+            prod_ref = f"{_('Product')} #{self.product_id_snapshot} ({self.product_title_snapshot})"
+        else:
+            prod_ref = str(_("Purged Item"))
+        return f"{prod_ref}: {from_s} -> {to_s} ({self.created_at:%Y-%m-%d %H:%M})"
 
 
 def log_status_change(product, from_status, to_status, user=None, trigger="", notes=""):
@@ -1784,11 +1830,15 @@ def log_status_change(product, from_status, to_status, user=None, trigger="", no
     Creates an immutable audit log entry for a product lifecycle status change.
     Ignores no-op transitions where from_status == to_status on existing products.
     """
-    if product.pk and from_status == to_status and not trigger:
+    if product and product.pk and from_status == to_status and not trigger:
         return None
     acting_user = user if (user and getattr(user, "is_authenticated", False)) else None
+    prod_id = product.pk if product else None
+    prod_title = getattr(product, "display_title", "") if product else ""
     return ProductStatusLog.objects.create(
         product=product,
+        product_id_snapshot=prod_id,
+        product_title_snapshot=prod_title,
         from_status=from_status,
         to_status=to_status,
         changed_by=acting_user,

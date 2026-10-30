@@ -51,6 +51,12 @@ from .services.image_service import (
     validate_images_count,
 )
 from .services.search_service import build_search_query
+from .services.trash_service import (
+    empty_all_trash,
+    get_trash_metrics,
+    purge_expired_trash,
+    purge_product_and_media,
+)
 
 PAGE_SIZE = 20
 
@@ -314,6 +320,8 @@ def dashboard_view(request):
         del extra_params["page"]
     query_string = extra_params.urlencode()
 
+    trash_metrics = get_trash_metrics() if status_filter == "erased" else None
+
     context = {
         "page_obj": page_obj,
         "products": page_obj,
@@ -339,6 +347,7 @@ def dashboard_view(request):
         "out_of_sync_count": counts["out_of_sync_count"] or 0,
         "blocked_count": counts["blocked_count"] or 0,
         "erased_count": counts["erased_count"] or 0,
+        "trash_metrics": trash_metrics,
         "can_manage": is_manager(request.user),
     }
     return render(request, "inventory/dashboard.html", context)
@@ -715,6 +724,65 @@ def product_restore_view(request, pk):
     product.restore(user=request.user)
     messages.success(request, _("Product successfully restored to catalog."))
     return redirect("inventory:product_detail", pk=pk)
+
+
+@manager_required
+def product_permanent_delete_view(request, pk):
+    """
+    Permanently purges a soft-deleted product and all attached media from cloud storage.
+    Restricted to managers; requires POST.
+    """
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    product = get_object_or_404(Product.objects.prefetch_related("images"), pk=pk)
+    if not product.is_deleted:
+        messages.error(request, _("Cannot permanently delete an active product. Move to trash first."))
+        return redirect("inventory:product_detail", pk=pk)
+
+    title = product.display_title
+    res = purge_product_and_media(product, user=request.user)
+    messages.success(
+        request,
+        _("Product '%(title)s' and %(images)d photo(s) permanently deleted from cloud storage.")
+        % {"title": title, "images": res.get("images_purged", 0)},
+    )
+    return redirect(f"{reverse('inventory:dashboard')}?status=erased")
+
+
+@manager_required
+def dashboard_empty_trash_view(request):
+    """
+    Purges soft-deleted products from trash and their media files from cloud storage.
+    Supports mode='expired' (older than TRASH_RETENTION_DAYS) or mode='all'.
+    Restricted to managers; requires POST.
+    """
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    mode = request.POST.get("mode", "expired").strip().lower()
+    if mode == "all":
+        res = empty_all_trash(user=request.user)
+        messages.success(
+            request,
+            _("Trash emptied: %(count)d product(s) and %(images)d photo(s) permanently deleted from cloud storage.")
+            % {"count": res.get("purged_count", 0), "images": res.get("purged_images", 0)},
+        )
+    else:
+        res = purge_expired_trash(user=request.user)
+        retention_days = res.get("retention_days", 30)
+        messages.success(
+            request,
+            _(
+                "Expired trash emptied: %(count)d product(s) older than %(days)d days and %(images)d photo(s) permanently deleted."
+            )
+            % {
+                "count": res.get("purged_count", 0),
+                "days": retention_days,
+                "images": res.get("purged_images", 0),
+            },
+        )
+    return redirect(f"{reverse('inventory:dashboard')}?status=erased")
 
 
 @manager_required

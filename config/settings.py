@@ -235,10 +235,16 @@ try:
 except (TypeError, ValueError):
     INTAKE_SESSION_DEBOUNCE_MINUTES = 15
 
+# Soft-deleted trash retention window in days before automated purging
+try:
+    TRASH_RETENTION_DAYS = int(os.getenv('TRASH_RETENTION_DAYS', '30'))
+except (TypeError, ValueError):
+    TRASH_RETENTION_DAYS = 30
+
 # Compilation & Build Metadata
 APP_BUILD_TIME = os.getenv('APP_BUILD_TIME', '').strip()
 APP_BUILD_COMMIT = os.getenv('APP_BUILD_COMMIT', '').strip()
-APP_VERSION = os.getenv('APP_VERSION', '2.4.0').strip()
+APP_VERSION = os.getenv('APP_VERSION', '2.5.0').strip()
 APP_ENV = os.getenv('APP_ENV', '').strip()
 
 

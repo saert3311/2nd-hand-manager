@@ -257,6 +257,61 @@
 
   </div>
 
+  <!-- Trash Management Toolbar -->
+  {% if status_filter == 'erased' and can_manage %}
+  <div id="trashManagementToolbar" class="p-3.5 sm:p-4 bg-rose-50 border border-rose-200 rounded-2xl shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="flex items-start sm:items-center gap-3 min-w-0">
+      <div class="w-10 h-10 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center shrink-0 text-xl text-rose-700" aria-hidden="true">
+        🗑️
+      </div>
+      <div class="min-w-0">
+        <h2 class="text-sm sm:text-base font-bold text-rose-950 flex flex-wrap items-center gap-2">
+          <span>{% trans "Trash & Storage Cleanup" %}</span>
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-rose-200/80 text-rose-900">
+            {% blocktrans with days=trash_metrics.retention_days|default:30 %}> {{ days }} days retention{% endblocktrans %}
+          </span>
+        </h2>
+        <p class="text-xs text-rose-800 mt-0.5 break-words">
+          {% blocktrans with total=erased_count photos=trash_metrics.total_images|default:0 expired=trash_metrics.expired_count|default:0 %}<strong>{{ total }}</strong> items (<strong>{{ photos }}</strong> photos in cloud storage) &bull; <strong>{{ expired }}</strong> expired ready for purge.{% endblocktrans %}
+        </p>
+      </div>
+    </div>
+    
+    <div class="flex flex-wrap items-center gap-2 shrink-0">
+      <!-- Purge Expired Trash Button -->
+      <form method="post" action="{% url 'inventory:dashboard_empty_trash' %}" class="inline-flex"
+            data-confirm-message="{% blocktrans with days=trash_metrics.retention_days|default:30 %}Permanently purge all products deleted more than {{ days }} days ago and remove their photos from cloud storage?{% endblocktrans %}">
+        {% csrf_token %}
+        <input type="hidden" name="mode" value="expired">
+        <button type="submit" id="btnEmptyExpiredTrash"
+                {% if trash_metrics.expired_count == 0 %}disabled{% endif %}
+                class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl shadow-xs transition min-h-[38px] cursor-pointer {% if trash_metrics.expired_count > 0 %}bg-rose-600 hover:bg-rose-700 text-white{% else %}bg-slate-200 text-slate-400 cursor-not-allowed shadow-none{% endif %}">
+          <span aria-hidden="true">🗑️</span>
+          <span>{% trans "Empty Expired" %}</span>
+          {% if trash_metrics.expired_count > 0 %}
+          <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-2xs bg-rose-800 text-white font-bold ml-0.5">
+            {{ trash_metrics.expired_count }}
+          </span>
+          {% endif %}
+        </button>
+      </form>
+
+      <!-- Empty All Trash Button -->
+      <form method="post" action="{% url 'inventory:dashboard_empty_trash' %}" class="inline-flex"
+            data-confirm-message="{% trans 'DANGER: Permanently delete ALL items in the trash and purge all their photos from cloud storage? This action cannot be undone.' %}">
+        {% csrf_token %}
+        <input type="hidden" name="mode" value="all">
+        <button type="submit" id="btnEmptyAllTrash"
+                {% if erased_count == 0 %}disabled{% endif %}
+                class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl shadow-xs transition min-h-[38px] cursor-pointer {% if erased_count > 0 %}bg-white hover:bg-rose-100 text-rose-700 border border-rose-300{% else %}bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none{% endif %}">
+          <span aria-hidden="true">⚠️</span>
+          <span>{% trans "Empty All Trash" %}</span>
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Product Catalog Grid -->
   {% if products %}
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -470,7 +525,77 @@
 
 </div>
 
+{% if can_manage %}
+<!-- Accessible Action Confirmation Modal -->
+<div id="actionConfirmModal" class="fixed inset-0 z-[70] hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="actionConfirmModalTitle" onclick="if (event.target === this) closeActionConfirmModal()">
+  <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+    <div class="flex items-start gap-3">
+      <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0 text-xl text-rose-600" aria-hidden="true">
+        ⚠️
+      </div>
+      <div>
+        <h2 id="actionConfirmModalTitle" class="text-base font-bold text-slate-900">{% trans "Confirm Action" %}</h2>
+        <p id="actionConfirmModalMessage" class="text-xs sm:text-sm text-slate-600 mt-1"></p>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+      <button type="button" id="btnCancelActionConfirm" onclick="closeActionConfirmModal()"
+              class="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer">
+        {% trans "Cancel" %}
+      </button>
+      <button type="button" id="btnProceedActionConfirm"
+              onclick="if (pendingConfirmForm) { pendingConfirmForm.dataset.confirmed = 'true'; pendingConfirmForm.submit(); }"
+              class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-xs cursor-pointer">
+        {% trans "Confirm" %}
+      </button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <script>
+  let pendingConfirmForm = null;
+  let lastActionConfirmTrigger = null;
+
+  function openActionConfirmModal(form, message, triggerEl) {
+    pendingConfirmForm = form;
+    lastActionConfirmTrigger = triggerEl || document.activeElement;
+    const modal = document.getElementById("actionConfirmModal");
+    const msgEl = document.getElementById("actionConfirmModalMessage");
+    if (modal && msgEl) {
+      msgEl.textContent = message || "{% trans 'Are you sure you want to proceed?' %}";
+      modal.classList.remove("hidden");
+      const confirmBtn = document.getElementById("btnProceedActionConfirm");
+      if (confirmBtn) confirmBtn.focus();
+    }
+  }
+
+  function closeActionConfirmModal() {
+    const modal = document.getElementById("actionConfirmModal");
+    if (modal) modal.classList.add("hidden");
+    if (lastActionConfirmTrigger && typeof lastActionConfirmTrigger.focus === "function") {
+      lastActionConfirmTrigger.focus();
+    }
+    pendingConfirmForm = null;
+  }
+
+  document.addEventListener("submit", function(e) {
+    const form = e.target.closest("form[data-confirm-message]");
+    if (!form) return;
+    if (form.dataset.confirmed === "true") return;
+    e.preventDefault();
+    openActionConfirmModal(form, form.getAttribute("data-confirm-message"), e.submitter || document.activeElement);
+  });
+
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") {
+      const confirmModal = document.getElementById("actionConfirmModal");
+      if (confirmModal && !confirmModal.classList.contains("hidden")) {
+        closeActionConfirmModal();
+      }
+    }
+  });
+
   document.addEventListener('DOMContentLoaded', () => {
     // Ensure active status pill is scrolled into view on mobile/narrow viewports
     const activeTab = document.querySelector('nav[role="tablist"] a[aria-selected="true"]');
