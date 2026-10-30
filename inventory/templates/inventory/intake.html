@@ -199,6 +199,26 @@
         </div>
       </div>
 
+      <!-- Pallet Attribution (Sticky Selector) -->
+      <div>
+        <label for="{{ form.pallet.id_for_label }}" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+          <span class="flex items-center gap-1.5">
+            <span aria-hidden="true">📦</span>
+            <span>{% trans "Pallet Attribution" %}</span>
+            <span class="text-slate-500 font-normal lowercase">({% trans "Optional" %})</span>
+          </span>
+        </label>
+        {{ form.pallet }}
+        {% if form.pallet.errors %}
+        <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+          {% for error in form.pallet.errors %}{{ error }}{% endfor %}
+        </div>
+        {% endif %}
+        <p class="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
+          {% trans "Pre-selected based on last item cataloged. Change if this item belongs to a different pallet or standalone." %}
+        </p>
+      </div>
+
       <!-- Raw Notes Textarea -->
       <div>
         <label for="id_raw_note" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5">

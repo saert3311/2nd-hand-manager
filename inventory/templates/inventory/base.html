@@ -112,6 +112,11 @@
             <a href="{% url 'inventory:dashboard' %}" class="px-3 py-1.5 text-sm font-medium text-slate-700 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition">
               {% trans "Dashboard" %}
             </a>
+            {% if can_manage %}
+            <a href="{% url 'inventory:pallets' %}" class="px-3 py-1.5 text-sm font-medium text-slate-700 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition">
+              <span aria-hidden="true">📦</span> {% trans "Pallets" %}
+            </a>
+            {% endif %}
             <a href="{% url 'storefront:catalog' %}" class="px-3 py-1.5 text-sm font-medium text-slate-700 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition">
               <span aria-hidden="true">🏪</span> {% trans "Storefront" %}
             </a>
@@ -264,6 +269,15 @@
           <span class="text-lg">📊</span>
           <span>{% trans "Dashboard" %}</span>
         </a>
+
+        {% if can_manage %}
+        <a href="{% url 'inventory:pallets' %}"
+           id="mobile-link-pallets"
+           class="flex items-center gap-3 px-3 py-2.5 text-base font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition min-h-[44px]">
+          <span class="text-lg">📦</span>
+          <span>{% trans "Pallets" %}</span>
+        </a>
+        {% endif %}
 
         <a href="{% url 'storefront:catalog' %}"
            id="mobile-link-storefront"

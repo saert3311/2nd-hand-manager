@@ -1,12 +1,14 @@
 from django.conf import settings
 
 from inventory.models import ClarificationStatus, ProductClarification, ProductStatus
+from inventory.permissions import is_manager
 
 
 def notifications(request):
     """
-    Global context processor providing count of unresolved clarification questions.
-    Returns 0 for unauthenticated users. Excludes sold products.
+    Global context processor providing count of unresolved clarification questions
+    and manager access status.
+    Returns 0 and False for unauthenticated users. Excludes sold products.
     """
     if getattr(request, "user", None) and request.user.is_authenticated:
         count = (
@@ -17,8 +19,14 @@ def notifications(request):
             .exclude(product__status=ProductStatus.SOLD)
             .count()
         )
-        return {"pending_clarifications_count": count}
-    return {"pending_clarifications_count": 0}
+        return {
+            "pending_clarifications_count": count,
+            "can_manage": is_manager(request.user),
+        }
+    return {
+        "pending_clarifications_count": 0,
+        "can_manage": False,
+    }
 
 
 def turnstile(request):
