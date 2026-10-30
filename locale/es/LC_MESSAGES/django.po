@@ -3327,3 +3327,54 @@ msgstr "Actualizado: %(reasons)s. Se requiere actualizar las plataformas externa
 msgid "Changed:"
 msgstr "Modificado:"
 
+
+msgid "Cannot permanently delete an active product. Move to trash first."
+msgstr "No se puede eliminar permanentemente un producto activo. Muévelo a la papelera primero."
+
+msgid "Product '%(title)s' and %(images)d photo(s) permanently deleted from cloud storage."
+msgstr "Producto '%(title)s' y %(images)d foto(s) eliminados permanentemente del almacenamiento en la nube."
+
+msgid "Trash emptied: %(count)d product(s) and %(images)d photo(s) permanently deleted from cloud storage."
+msgstr "Papelera vaciada: %(count)d producto(s) y %(images)d foto(s) eliminados permanentemente del almacenamiento en la nube."
+
+msgid "Expired trash emptied: %(count)d product(s) older than %(days)d days and %(images)d photo(s) permanently deleted."
+msgstr "Papelera caducada vaciada: %(count)d producto(s) con más de %(days)d días y %(images)d foto(s) eliminados permanentemente."
+
+msgid "Trash & Storage Cleanup"
+msgstr "Papelera y limpieza de almacenamiento"
+
+msgid "> %(days)s days retention"
+msgstr "> %(days)s días de retención"
+
+msgid "<strong>%(total)s</strong> items (<strong>%(photos)s</strong> photos in cloud storage) &bull; <strong>%(expired)s</strong> expired ready for purge."
+msgstr "<strong>%(total)s</strong> productos (<strong>%(photos)s</strong> fotos en almacenamiento en la nube) &bull; <strong>%(expired)s</strong> caducados listos para purgar."
+
+msgid "Permanently purge all products deleted more than %(days)s days ago and remove their photos from cloud storage?"
+msgstr "¿Purgar permanentemente todos los productos eliminados hace más de %(days)s días y borrar sus fotos de la nube?"
+
+msgid "Empty Expired"
+msgstr "Vaciar caducados"
+
+msgid "DANGER: Permanently delete ALL items in the trash and purge all their photos from cloud storage? This action cannot be undone."
+msgstr "PELIGRO: ¿Eliminar permanentemente TODOS los productos de la papelera y purgar sus fotos del almacenamiento? Esta acción no se puede deshacer."
+
+msgid "Empty All Trash"
+msgstr "Vaciar toda la papelera"
+
+msgid "Permanently delete this product and all its photos from cloud storage? This action cannot be undone."
+msgstr "¿Eliminar permanentemente este producto y todas sus fotos del almacenamiento en la nube? Esta acción no se puede deshacer."
+
+msgid "Delete Permanently"
+msgstr "Eliminar definitivamente"
+
+msgid "Purged"
+msgstr "Purgado"
+
+msgid "Deleted Product"
+msgstr "Producto eliminado"
+
+msgid "Unknown / Purged"
+msgstr "Desconocido / Purgado"
+
+msgid "Purged / Deleted"
+msgstr "Purgado / Eliminado"

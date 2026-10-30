@@ -3611,48 +3611,48 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 # Phase 45: Trash Retention Policy & OCI Bucket Permanent Cleanup
 
 ### Task 159: Configuration & Domain Schema: Settings, ProductStatusLog Tombstone & Image File Delete Signal (`config/settings.py`, `.env.example`, `inventory/models.py`, `inventory/migrations/`)
-- [ ] Add `TRASH_RETENTION_DAYS = int(os.getenv("TRASH_RETENTION_DAYS", "30"))` in `config/settings.py` and document safe default in `.env.example`.
-- [ ] Update `ProductStatusLog`: set `product` ForeignKey to `on_delete=models.SET_NULL, null=True, blank=True`, and add `product_id_snapshot` and `product_title_snapshot`.
-- [ ] Attach `cleanup_product_image_file_on_delete` post-delete signal on `ProductImage` calling `default_storage.delete(instance.image.name)` to guarantee physical files are removed upon row deletion.
-- [ ] Generate and apply schema migration (`makemigrations inventory` & `migrate`).
-- [ ] Verification: `.venv\Scripts\python.exe manage.py check`
+- [x] Add `TRASH_RETENTION_DAYS = int(os.getenv("TRASH_RETENTION_DAYS", "30"))` in `config/settings.py` and document safe default in `.env.example`.
+- [x] Update `ProductStatusLog`: set `product` ForeignKey to `on_delete=models.SET_NULL, null=True, blank=True`, and add `product_id_snapshot` and `product_title_snapshot`.
+- [x] Attach `cleanup_product_image_file_on_delete` post-delete signal on `ProductImage` calling `default_storage.delete(instance.image.name)` to guarantee physical files are removed upon row deletion.
+- [x] Generate and apply schema migration (`makemigrations inventory` & `migrate`).
+- [x] Verification: `.venv\Scripts\python.exe manage.py check`
 
 ### Task 160: Trash Domain Service: Safe Storage Purge, Audit Tombstone & Expired Querying (`inventory/services/trash_service.py`)
-- [ ] Implement `purge_product_and_media(product, user=None) -> dict`: verifies `is_deleted=True`, deletes all physical files from `default_storage`, writes tombstone log in `ProductStatusLog`, and cascades product record deletion.
-- [ ] Implement `purge_expired_trash(days=None, dry_run=False, user=None) -> dict`: queries products where `deleted_at <= now - retention_days`, supports simulation in dry-run mode, and purges in execution mode.
-- [ ] Implement `empty_all_trash(user=None) -> dict`: purges all soft-deleted products.
-- [ ] Implement `get_trash_metrics() -> dict`: aggregates count of trash items, expired items, and attached photos.
-- [ ] Verification: `.venv\Scripts\python.exe manage.py test tests.test_trash_retention_and_cleanup`
+- [x] Implement `purge_product_and_media(product, user=None) -> dict`: verifies `is_deleted=True`, deletes all physical files from `default_storage`, writes tombstone log in `ProductStatusLog`, and cascades product record deletion.
+- [x] Implement `purge_expired_trash(days=None, dry_run=False, user=None) -> dict`: queries products where `deleted_at <= now - retention_days`, supports simulation in dry-run mode, and purges in execution mode.
+- [x] Implement `empty_all_trash(user=None) -> dict`: purges all soft-deleted products.
+- [x] Implement `get_trash_metrics() -> dict`: aggregates count of trash items, expired items, and attached photos.
+- [x] Verification: `.venv\Scripts\python.exe manage.py test tests.test_trash_retention_and_cleanup`
 
 ### Task 161: Management Command for Scheduled Operations (`inventory/management/commands/purge_expired_trash.py`)
-- [ ] Implement `purge_expired_trash` command accepting `--days`, `--all`, `--dry-run`, and `--quiet`.
-- [ ] Output formatted statistics for operational execution and cron monitoring.
-- [ ] Verification: `.venv\Scripts\python.exe manage.py purge_expired_trash --dry-run`
+- [x] Implement `purge_expired_trash` command accepting `--days`, `--all`, `--dry-run`, and `--quiet`.
+- [x] Output formatted statistics for operational execution and cron monitoring.
+- [x] Verification: `.venv\Scripts\python.exe manage.py purge_expired_trash --dry-run`
 
 ### Task 162: View Endpoints & URL Routing (`inventory/views.py`, `inventory/urls.py`, `inventory/admin.py`)
-- [ ] Implement `product_permanent_delete_view(request, pk)`: `@login_required`, `@manager_required`, `@require_POST`, asserts `product.is_deleted`, calls `purge_product_and_media()`, and redirects with flash message.
-- [ ] Implement `dashboard_empty_trash_view(request)`: `@login_required`, `@manager_required`, `@require_POST`, supports `mode="expired"` or `mode="all"`, and redirects with flash message.
-- [ ] In `dashboard_view`, pass trash metrics to context when `status_filter == 'erased'`.
-- [ ] Update `inventory/urls.py` with routes for permanent delete and empty trash.
-- [ ] Update `inventory/admin.py` to display tombstoned status logs with snapshot titles when product is null.
-- [ ] Verification: `.venv\Scripts\python.exe manage.py test tests.test_trash_retention_and_cleanup`
+- [x] Implement `product_permanent_delete_view(request, pk)`: `@login_required`, `@manager_required`, `@require_POST`, asserts `product.is_deleted`, calls `purge_product_and_media()`, and redirects with flash message.
+- [x] Implement `dashboard_empty_trash_view(request)`: `@login_required`, `@manager_required`, `@require_POST`, supports `mode="expired"` or `mode="all"`, and redirects with flash message.
+- [x] In `dashboard_view`, pass trash metrics to context when `status_filter == 'erased'`.
+- [x] Update `inventory/urls.py` with routes for permanent delete and empty trash.
+- [x] Update `inventory/admin.py` to display tombstoned status logs with snapshot titles when product is null.
+- [x] Verification: `.venv\Scripts\python.exe manage.py test tests.test_trash_retention_and_cleanup`
 
 ### Task 163: User Interface & Mobile Viewports (`inventory/templates/inventory/product_detail.html`, `inventory/templates/inventory/dashboard.html`)
-- [ ] In `product_detail.html`: Inside `#erasedProductBanner`, add `#btnPermanentDelete` (red destructive styling) wired to `#actionConfirmModal` with explicit warning message.
-- [ ] In `dashboard.html`: In `?status=erased` tab, display responsive trash toolbar with storage metrics, "Empty Expired Trash", and "Empty All Trash" with modal confirmation.
-- [ ] Ensure full responsiveness down to `320px` width (OPPO A74 baseline) with zero horizontal overflow.
-- [ ] Verification: `.venv\Scripts\python.exe manage.py test tests.test_dashboard tests.test_dashboard_responsive`
+- [x] In `product_detail.html`: Inside `#erasedProductBanner`, add `#btnPermanentDelete` (red destructive styling) wired to `#actionConfirmModal` with explicit warning message.
+- [x] In `dashboard.html`: In `?status=erased` tab, display responsive trash toolbar with storage metrics, "Empty Expired Trash", and "Empty All Trash" with modal confirmation.
+- [x] Ensure full responsiveness down to `320px` width (OPPO A74 baseline) with zero horizontal overflow.
+- [x] Verification: `.venv\Scripts\python.exe manage.py test tests.test_dashboard tests.test_dashboard_responsive`
 
 ### Task 164: Bilingual Translations, Automated Tests, Documentation & Quality Gate (`locale/`, `tests/`, `CHANGELOG.md`, `tasks/todo.md`)
-- [ ] Add Spanish translations in `locale/es/LC_MESSAGES/django.po` and compile `.mo` catalogs via `manage.py compile_locales`.
-- [ ] Author comprehensive automated test suite in `tests/test_trash_retention_and_cleanup.py` covering storage mocks, permissions, soft-delete precondition, dry-runs, tombstones, and Spanish localization.
-- [ ] Update `CHANGELOG.md` under `## [Unreleased]`.
-- [ ] Run full quality gate: `ruff check .`, `manage.py check`, `manage.py compile_locales`, and `manage.py test`.
+- [x] Add Spanish translations in `locale/es/LC_MESSAGES/django.po` and compile `.mo` catalogs via `manage.py compile_locales`.
+- [x] Author comprehensive automated test suite in `tests/test_trash_retention_and_cleanup.py` covering storage mocks, permissions, soft-delete precondition, dry-runs, tombstones, and Spanish localization.
+- [x] Update `CHANGELOG.md` under `## [Unreleased]`.
+- [x] Run full quality gate: `ruff check .`, `manage.py check`, `manage.py compile_locales`, and `manage.py test`.
 
 ### Checkpoint 45: Trash Retention Policy & OCI Bucket Permanent Cleanup Complete
-- [ ] Store Managers can permanently delete individual soft-deleted products from the detail workspace or empty trash in bulk from the dashboard.
-- [ ] All attached photos are deleted from OCI Object Storage bucket, freeing quota and preventing orphaned files.
-- [ ] Automated CLI command `purge_expired_trash` purges items older than 30 days.
-- [ ] Permanent audit tombstone survives in `ProductStatusLog`.
-- [ ] 100% of automated tests pass, zero linter warnings, zero horizontal overflow on OPPO A74 mobile viewports.
+- [x] Store Managers can permanently delete individual soft-deleted products from the detail workspace or empty trash in bulk from the dashboard.
+- [x] All attached photos are deleted from OCI Object Storage bucket, freeing quota and preventing orphaned files.
+- [x] Automated CLI command `purge_expired_trash` purges items older than 30 days.
+- [x] Permanent audit tombstone survives in `ProductStatusLog`.
+- [x] 100% of automated tests pass, zero linter warnings, zero horizontal overflow on OPPO A74 mobile viewports.
 

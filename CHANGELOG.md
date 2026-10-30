@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Trash Retention & Safe Cloud Storage Purge (Phase 45)**:
+  - **Automated Retention Threshold**: Added configurable `TRASH_RETENTION_DAYS` (defaults to 30 days) in `config/settings.py` and `.env.example`.
+  - **Safe Storage-First Purge Service**: Implemented `inventory/services/trash_service.py` (`purge_product_and_media`, `purge_expired_trash`, `empty_all_trash`, `get_trash_metrics`) ensuring 100% of physical image files (`.webp`) are deleted from cloud storage (OCI Object Storage / media) before cascading database deletion to prevent wasting bucket space.
+  - **Immutable Status Log Tombstones**: Made `ProductStatusLog.product` nullable (`on_delete=models.SET_NULL`) and added `product_id_snapshot` and `product_title_snapshot` so product deletion creates a permanent audit tombstone log (`trigger="permanently_purged"`) while preserving complete audit history.
+  - **Storage Cleanup Signal**: Added `cleanup_product_image_file_on_delete` post-delete signal on `ProductImage` as an extra safety net against orphaned bucket objects.
+  - **Management Command**: Authored `manage.py purge_expired_trash` supporting `--days <N>`, `--all`, `--dry-run`, and `--quiet` for automated cron job execution.
+  - **Manager Endpoints & UI Controls**:
+    - Product Detail: Added `#btnPermanentDelete` (and top bar `#btnPermanentDeleteTop`) to `#erasedProductBanner` with accessible `#actionConfirmModal` confirmation.
+    - Dashboard: Added `#trashManagementToolbar` when viewing trash (`?status=erased`) with retention badge, item/photo count metrics, `#btnEmptyExpiredTrash` button, and `#btnEmptyAllTrash` button.
+  - **Bilingual Localization & Test Suite**: Added Spanish translations to `locale/es/LC_MESSAGES/django.po` (compiled to `django.mo`), and author comprehensive test suite in `tests/test_trash_retention_and_cleanup.py`. Verified responsive rendering on low-DPI OPPO A74 viewports (`320×711` and `360×800`).
+
 ## [2.4.0] - 2026-10-29
 
 ### Added

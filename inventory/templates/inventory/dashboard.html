@@ -272,9 +272,7 @@
           </span>
         </h2>
         <p class="text-xs text-rose-800 mt-0.5 break-words">
-          {% blocktrans with total=erased_count photos=trash_metrics.total_images|default:0 expired=trash_metrics.expired_count|default:0 %}
-          <strong>{{ total }}</strong> items (<strong>{{ photos }}</strong> photos in cloud storage) &bull; <strong>{{ expired }}</strong> expired ready for purge.
-          {% endblocktrans %}
+          {% blocktrans with total=erased_count photos=trash_metrics.total_images|default:0 expired=trash_metrics.expired_count|default:0 %}<strong>{{ total }}</strong> items (<strong>{{ photos }}</strong> photos in cloud storage) &bull; <strong>{{ expired }}</strong> expired ready for purge.{% endblocktrans %}
         </p>
       </div>
     </div>
