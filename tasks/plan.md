@@ -582,3 +582,61 @@ All uploaded photos are postprocessed on the server with Pillow to auto-orient, 
    - Spanish translations in `locale/es/LC_MESSAGES/django.po` and compile to `.mo`.
    - Automated tests in `tests/test_trash_retention_and_cleanup.py` asserting storage mocks, cascade safety, audit tombstones, dry-run CLI, and responsive layouts.
 
+---
+
+## Phase 46: Pallet Tracking & Sticky Intake Attribution
+
+### Overview
+Introduce a `Pallet` domain model representing acquired liquidation pallets or lots, managed via a dedicated Manager-only interface (`/pallets/`), integrated seamlessly into the mobile-first intake flow (`/intake/`) via session-based sticky selection (eliminating repetitive typing for warehouse staff), and attributed on the staging product workspace (`/products/<pk>/`) and Django Admin.
+
+### Technical Architecture
+1. **Domain Layer & Schema (`inventory/models.py`, `inventory/migrations/`)**:
+   - `Pallet` model:
+     - `number`: `PositiveIntegerField(unique=True, db_index=True)`
+     - `received_date`: `DateField(default=timezone.localdate, db_index=True)`
+     - `purchase_price`: `DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)`
+     - `estimated_value`: `DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)`
+     - `notes`: `TextField(blank=True, default="")`
+     - `created_by`: `ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)`
+     - `created_at`, `updated_at`: timestamps
+   - `Product.pallet`:
+     - `ForeignKey("Pallet", null=True, blank=True, on_delete=models.SET_NULL, related_name="products")`
+     - Non-destructive cascade: Deleting a pallet sets `product.pallet = None`.
+2. **Forms & Session Sticky Logic (`inventory/forms.py`)**:
+   - `PalletForm`:
+     - ModelForm for `Pallet` (`number`, `received_date`, `purchase_price`, `estimated_value`, `notes`).
+     - Includes validation for positive values.
+   - `ProductIntakeForm`:
+     - Add `pallet` `ModelChoiceField(queryset=Pallet.objects.order_by("-number"), required=False, empty_label=_("— No Pallet (Individual Item) —"))`.
+     - Custom label formatting: `Pallet #<number> (<received_date>)` — strictly hides `purchase_price` and `estimated_value` from non-managers.
+   - `ProductUpdateForm`:
+     - Include `pallet` in fields for managers to reassign or unset pallets.
+3. **Views & Routing (`inventory/views.py`, `inventory/urls.py`, `inventory/permissions.py`)**:
+   - `pallets_view(request)`:
+     - `@login_required`, `@manager_required`.
+     - GET: List all pallets with annotated `product_count=Count("products", filter=Q(products__is_deleted=False))`, plus pre-filled form with `number = (Pallet.objects.aggregate(Max("number"))["number__max"] or 0) + 1` and `received_date = timezone.localdate()`.
+     - POST: Validates and saves new `Pallet`, redirects with flash message.
+   - `pallet_edit_view(request, pk)`:
+     - `@login_required`, `@manager_required`.
+     - GET/POST to update existing pallet details.
+   - `pallet_delete_view(request, pk)`:
+     - `@login_required`, `@manager_required`, `@require_POST`.
+     - Deletes pallet, leaves products intact (`product.pallet = None`), redirects with flash message.
+   - `product_intake_view(request)`:
+     - Pre-selects pallet: reads `request.session.get("last_intake_pallet_id")`. If missing or invalid, defaults to latest `Pallet.objects.order_by("-number").first().pk` (if pallets exist). If explicitly `"none"`, leaves empty.
+     - On successful form submit, updates `request.session["last_intake_pallet_id"] = product.pallet_id or "none"`.
+4. **Templates & UI (`pallets.html`, `pallet_edit.html`, `intake.html`, `product_detail.html`, `base.html`)**:
+   - `inventory/templates/inventory/pallets.html`:
+     - Responsive manager view (cards on mobile, table on desktop) with auto-numbering creation form, reception date, item counts, financial details, edit/delete actions.
+   - `inventory/templates/inventory/pallet_edit.html`:
+     - Clean edit form for pallet attributes.
+   - `inventory/templates/inventory/intake.html`:
+     - Add Pallet selector above field notes. Mobile-optimized (`text-base sm:text-sm`).
+   - `inventory/templates/inventory/product_detail.html`:
+     - Display pallet badge in product header and info blocks; allow manager to edit via staging form.
+   - `inventory/templates/inventory/base.html`:
+     - Add `📦 Pallets` navigation link in top navbar, visible only to managers (`can_manage`).
+5. **Localization & Automated Tests (`locale/`, `tests/`)**:
+   - Spanish translations in `locale/es/LC_MESSAGES/django.po` compiled to `.mo`.
+   - Comprehensive test suite in `tests/test_pallet_tracking.py`: model constraints, cascade safety, sticky intake session behavior, manager vs. assistant permission firewalls, and mobile viewport tests.
+

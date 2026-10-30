@@ -3656,3 +3656,63 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 - [x] Permanent audit tombstone survives in `ProductStatusLog`.
 - [x] 100% of automated tests pass, zero linter warnings, zero horizontal overflow on OPPO A74 mobile viewports.
 
+---
+
+# Phase 46: Pallet Tracking & Sticky Intake Attribution
+
+### Task 165: Domain Model Schema & Django Admin Registration (`inventory/models.py`, `inventory/migrations/`, `inventory/admin.py`)
+- [ ] Define `Pallet` model in `inventory/models.py` with `number`, `received_date`, `purchase_price`, `estimated_value`, `notes`, `created_by`, `created_at`, `updated_at`.
+- [ ] Add `pallet` `ForeignKey(Pallet, null=True, blank=True, on_delete=models.SET_NULL, related_name="products")` on `Product`.
+- [ ] Generate and apply schema migration (`makemigrations inventory` & `migrate`).
+- [ ] Register `PalletAdmin` in `manager_admin_site` with product count badge column, search, and filters.
+- [ ] Register `pallet` filter and column in `ProductAdmin`.
+- [ ] Verification: `.venv\Scripts\python.exe manage.py check` and `.venv\Scripts\python.exe manage.py migrate`.
+
+### Task 166: Forms & Sticky Intake Session Logic (`inventory/forms.py`, `inventory/views.py`)
+- [ ] Implement `PalletForm` in `inventory/forms.py` with positive numeric validation and localized decimal handling.
+- [ ] Update `ProductIntakeForm` with `pallet` `ModelChoiceField`:
+  - Queryset: `Pallet.objects.order_by("-number")`.
+  - Empty label: `— {% trans "No Pallet (Individual Item)" %} —`.
+  - Display label: `Pallet #<number> (<received_date>)` — zero financials exposed to non-managers.
+- [ ] Update `ProductUpdateForm` to include `pallet` field for manager staging updates.
+- [ ] Update `product_intake_view` to resolve default pallet from session (`last_intake_pallet_id`), falling back to latest pallet or none, and update session on submit.
+- [ ] Verification: `.venv\Scripts\python.exe manage.py check`.
+
+### Task 167: Manager Pallet Management Views & Routing (`inventory/views.py`, `inventory/urls.py`, `inventory/permissions.py`)
+- [ ] Implement `pallets_view(request)`: `@login_required`, `@manager_required`. Lists pallets with product counts, auto-computes next pallet number `max(number) + 1` and today's date, processes new pallet creation.
+- [ ] Implement `pallet_edit_view(request, pk)`: `@login_required`, `@manager_required`. Edits existing pallet attributes.
+- [ ] Implement `pallet_delete_view(request, pk)`: `@login_required`, `@manager_required`, `@require_POST`. Non-destructively removes pallet (leaving products intact with `pallet=None`).
+- [ ] Wire URLs in `inventory/urls.py` (`pallets/`, `pallets/<pk>/edit/`, `pallets/<pk>/delete/`).
+- [ ] Add permission firewall ensuring sourcing assistants get 403 Forbidden on all `/pallets/` endpoints.
+- [ ] Verification: `.venv\Scripts\python.exe manage.py check`.
+
+### Task 168: User Interface & Mobile Viewports (`inventory/templates/inventory/pallets.html`, `pallet_edit.html`, `intake.html`, `product_detail.html`, `base.html`)
+- [ ] Create `inventory/templates/inventory/pallets.html` with responsive design (OPPO A74 baseline `360×800` & `320×711`), creation form card, and pallet cards/table with item counts and financials.
+- [ ] Create `inventory/templates/inventory/pallet_edit.html` for editing pallet numbers, dates, and valuations.
+- [ ] Update `intake.html`: Add sticky Pallet selector dropdown above Field Notes with clean mobile styling.
+- [ ] Update `product_detail.html`: Display pallet badge in header and detail info, editable in manager staging form.
+- [ ] Update `base.html`: Add `📦 Pallets` in navbar for managers (`can_manage`).
+- [ ] Verify zero horizontal overflow on OPPO A74 mobile viewports (`320×711` and `360×800`).
+- [ ] Verification: Manual & responsive viewport tests.
+
+### Task 169: Bilingual Translations, Comprehensive Automated Test Suite & Quality Gate (`locale/`, `tests/`, `CHANGELOG.md`, `tasks/todo.md`)
+- [ ] Add Spanish translations to `locale/es/LC_MESSAGES/django.po` and compile `.mo` catalogs via `manage.py compile_locales`.
+- [ ] Author comprehensive automated test suite in `tests/test_pallet_tracking.py` covering:
+  - Model creation, unique number constraints, cascade safety (`SET_NULL`).
+  - Pallet auto-increment numbering.
+  - Manager vs Assistant permissions (assistant 403 on `/pallets/`, assistant cannot see financials).
+  - Sticky intake session persistence (repeats previous pallet, remembers "No Pallet").
+  - Staging product detail pallet assignment and update.
+  - Spanish localization of all user-facing strings.
+  - Mobile viewport rendering.
+- [ ] Update `CHANGELOG.md` under `## [Unreleased]`.
+- [ ] Check off all items in `tasks/todo.md`.
+- [ ] Run full quality gate: `ruff check .`, `manage.py check`, `manage.py compile_locales`, and `manage.py test`.
+
+### Checkpoint 46: Pallet Tracking & Sticky Intake Attribution Complete
+- [ ] Store Managers can create, edit, and track liquidation pallets with received dates, purchase prices, and estimated values on `/pallets/`.
+- [ ] Warehouse staff can rapidly catalog intake items on `/intake/` linked to a pallet without re-typing the number for every item.
+- [ ] Sourcing assistants cannot access financial costs or pallet management screens.
+- [ ] Deleting a pallet non-destructively preserves all products with `pallet = None`.
+- [ ] 100% of automated tests pass, zero linter warnings, zero horizontal overflow on OPPO A74 mobile viewports.
+
