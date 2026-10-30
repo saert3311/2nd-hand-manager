@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-10-30
+
 ### Added
 - **Trash Retention & Safe Cloud Storage Purge (Phase 45)**:
   - **Automated Retention Threshold**: Added configurable `TRASH_RETENTION_DAYS` (defaults to 30 days) in `config/settings.py` and `.env.example`.
