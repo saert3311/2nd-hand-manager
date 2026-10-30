@@ -361,6 +361,11 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 page.click("#applyCropBtn")
                 page.wait_for_selector("#imagePreviewModal.hidden", state="attached", timeout=5000)
 
+                # 7. Pallets Management view
+                page.goto(f"{self.live_server_url}{reverse('inventory:pallets')}")
+                page.wait_for_load_state("networkidle")
+                self._assert_no_horizontal_overflow(page, f"pallets_{label}", width, height)
+
                 context.close()
 
             browser.close()

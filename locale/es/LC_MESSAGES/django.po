@@ -750,7 +750,8 @@ msgstr ""
 
 msgid "All doubts resolved! Product is waiting for sale price."
 msgstr ""
-"¡Todas las dudas resueltas! El producto está pendiente de asignar precio de venta."
+"¡Todas las dudas resueltas! El producto está pendiente de asignar precio de "
+"venta."
 
 msgid "Answer saved. %d doubts still pending."
 msgstr "Respuesta guardada. %d dudas aún pendientes."
@@ -3319,26 +3320,41 @@ msgid "Platform Sync Reasons"
 msgstr "Motivos de desincronización"
 
 msgid "List of change categories that triggered out-of-sync status"
-msgstr "Lista de categorías de cambios que provocaron el estado de desincronización"
+msgstr ""
+"Lista de categorías de cambios que provocaron el estado de desincronización"
 
 msgid "Updated: %(reasons)s. External platform listings require updating."
-msgstr "Actualizado: %(reasons)s. Se requiere actualizar las plataformas externas."
+msgstr ""
+"Actualizado: %(reasons)s. Se requiere actualizar las plataformas externas."
 
 msgid "Changed:"
 msgstr "Modificado:"
 
-
 msgid "Cannot permanently delete an active product. Move to trash first."
-msgstr "No se puede eliminar permanentemente un producto activo. Muévelo a la papelera primero."
+msgstr ""
+"No se puede eliminar permanentemente un producto activo. Muévelo a la "
+"papelera primero."
 
-msgid "Product '%(title)s' and %(images)d photo(s) permanently deleted from cloud storage."
-msgstr "Producto '%(title)s' y %(images)d foto(s) eliminados permanentemente del almacenamiento en la nube."
+msgid ""
+"Product '%(title)s' and %(images)d photo(s) permanently deleted from cloud "
+"storage."
+msgstr ""
+"Producto '%(title)s' y %(images)d foto(s) eliminados permanentemente del "
+"almacenamiento en la nube."
 
-msgid "Trash emptied: %(count)d product(s) and %(images)d photo(s) permanently deleted from cloud storage."
-msgstr "Papelera vaciada: %(count)d producto(s) y %(images)d foto(s) eliminados permanentemente del almacenamiento en la nube."
+msgid ""
+"Trash emptied: %(count)d product(s) and %(images)d photo(s) permanently "
+"deleted from cloud storage."
+msgstr ""
+"Papelera vaciada: %(count)d producto(s) y %(images)d foto(s) eliminados "
+"permanentemente del almacenamiento en la nube."
 
-msgid "Expired trash emptied: %(count)d product(s) older than %(days)d days and %(images)d photo(s) permanently deleted."
-msgstr "Papelera caducada vaciada: %(count)d producto(s) con más de %(days)d días y %(images)d foto(s) eliminados permanentemente."
+msgid ""
+"Expired trash emptied: %(count)d product(s) older than %(days)d days and "
+"%(images)d photo(s) permanently deleted."
+msgstr ""
+"Papelera caducada vaciada: %(count)d producto(s) con más de %(days)d días y "
+"%(images)d foto(s) eliminados permanentemente."
 
 msgid "Trash & Storage Cleanup"
 msgstr "Papelera y limpieza de almacenamiento"
@@ -3346,23 +3362,40 @@ msgstr "Papelera y limpieza de almacenamiento"
 msgid "> %(days)s days retention"
 msgstr "> %(days)s días de retención"
 
-msgid "<strong>%(total)s</strong> items (<strong>%(photos)s</strong> photos in cloud storage) &bull; <strong>%(expired)s</strong> expired ready for purge."
-msgstr "<strong>%(total)s</strong> productos (<strong>%(photos)s</strong> fotos en almacenamiento en la nube) &bull; <strong>%(expired)s</strong> caducados listos para purgar."
+msgid ""
+"<strong>%(total)s</strong> items (<strong>%(photos)s</strong> photos in "
+"cloud storage) &bull; <strong>%(expired)s</strong> expired ready for purge."
+msgstr ""
+"<strong>%(total)s</strong> productos (<strong>%(photos)s</strong> fotos en "
+"almacenamiento en la nube) &bull; <strong>%(expired)s</strong> caducados "
+"listos para purgar."
 
-msgid "Permanently purge all products deleted more than %(days)s days ago and remove their photos from cloud storage?"
-msgstr "¿Purgar permanentemente todos los productos eliminados hace más de %(days)s días y borrar sus fotos de la nube?"
+msgid ""
+"Permanently purge all products deleted more than %(days)s days ago and "
+"remove their photos from cloud storage?"
+msgstr ""
+"¿Purgar permanentemente todos los productos eliminados hace más de %(days)s "
+"días y borrar sus fotos de la nube?"
 
 msgid "Empty Expired"
 msgstr "Vaciar caducados"
 
-msgid "DANGER: Permanently delete ALL items in the trash and purge all their photos from cloud storage? This action cannot be undone."
-msgstr "PELIGRO: ¿Eliminar permanentemente TODOS los productos de la papelera y purgar sus fotos del almacenamiento? Esta acción no se puede deshacer."
+msgid ""
+"DANGER: Permanently delete ALL items in the trash and purge all their photos"
+" from cloud storage? This action cannot be undone."
+msgstr ""
+"PELIGRO: ¿Eliminar permanentemente TODOS los productos de la papelera y "
+"purgar sus fotos del almacenamiento? Esta acción no se puede deshacer."
 
 msgid "Empty All Trash"
 msgstr "Vaciar toda la papelera"
 
-msgid "Permanently delete this product and all its photos from cloud storage? This action cannot be undone."
-msgstr "¿Eliminar permanentemente este producto y todas sus fotos del almacenamiento en la nube? Esta acción no se puede deshacer."
+msgid ""
+"Permanently delete this product and all its photos from cloud storage? This "
+"action cannot be undone."
+msgstr ""
+"¿Eliminar permanentemente este producto y todas sus fotos del almacenamiento"
+" en la nube? Esta acción no se puede deshacer."
 
 msgid "Delete Permanently"
 msgstr "Eliminar definitivamente"
@@ -3378,3 +3411,130 @@ msgstr "Desconocido / Purgado"
 
 msgid "Purged / Deleted"
 msgstr "Purgado / Eliminado"
+
+msgid "Pallet Attribution"
+msgstr "Atribución de Pallet"
+
+msgid "— No Pallet (Individual Item) —"
+msgstr "— Sin Pallet (Artículo individual) —"
+
+msgid "Origin Pallet"
+msgstr "Pallet de origen"
+
+msgid "Pallet Number"
+msgstr "Número de Pallet"
+
+msgid "Pallet #"
+msgstr "Pallet #"
+
+msgid "Received Date"
+msgstr "Fecha de recepción"
+
+msgid "Purchase Price (€)"
+msgstr "Precio de compra (€)"
+
+msgid "Estimated Value (€)"
+msgstr "Valor estimado (€)"
+
+msgid "Supplier, condition notes, manifest details (optional)"
+msgstr "Proveedor, estado del lote, detalles del manifiesto (opcional)"
+
+msgid "Pallet #%(number)s created successfully."
+msgstr "Pallet #%(number)s creado con éxito."
+
+msgid "Pallet #%(number)s updated successfully."
+msgstr "Pallet #%(number)s actualizado con éxito."
+
+msgid "Pallet #%(number)s deleted."
+msgstr "Pallet #%(number)s eliminado."
+
+msgid "Liquidation Pallets"
+msgstr "Pallets de liquidación"
+
+msgid ""
+"Create and track pallets, acquisition costs, estimated values, and item "
+"counts."
+msgstr ""
+"Crea y gestiona pallets, costes de adquisición, valores estimados y recuento"
+" de productos."
+
+msgid "Go to Intake"
+msgstr "Ir a Entrada"
+
+msgid "Register New Pallet"
+msgstr "Registrar Nuevo Pallet"
+
+msgid ""
+"Auto-numbers the next sequential pallet. Financial amounts are optional and "
+"strictly confidential to managers."
+msgstr ""
+"Autonumera el siguiente pallet secuencial. Los importes financieros son "
+"opcionales y estrictamente confidenciales para encargados."
+
+msgid "Cost (€)"
+msgstr "Coste (€)"
+
+msgid "Est. Value (€)"
+msgstr "Valor est. (€)"
+
+msgid "Notes & Manifest Details"
+msgstr "Notas y detalles del manifiesto"
+
+msgid "Create Pallet"
+msgstr "Crear Pallet"
+
+msgid "Recorded Pallets"
+msgstr "Pallets Registrados"
+
+msgid "Pallet"
+msgstr "Pallet"
+
+msgid "Received:"
+msgstr "Recibido:"
+
+msgid "Purchase Cost"
+msgstr "Coste de compra"
+
+msgid "Est. Value"
+msgstr "Valor est."
+
+msgid "No pallets recorded yet"
+msgstr "Aún no hay pallets registrados"
+
+msgid ""
+"Create your first liquidation pallet above to start attributing intake "
+"products."
+msgstr ""
+"Crea tu primer pallet de liquidación arriba para empezar a atribuir "
+"productos en entrada."
+
+msgid "Delete Pallet"
+msgstr "Eliminar Pallet"
+
+msgid "Are you sure you want to delete"
+msgstr "¿Estás seguro de que deseas eliminar el"
+
+msgid "Its"
+msgstr "Sus"
+
+msgid "associated products will remain intact and will become unassigned."
+msgstr "productos asociados permanecerán intactos y quedarán sin asignar."
+
+msgid "Confirm Delete"
+msgstr "Confirmar eliminación"
+
+msgid "Edit Pallet"
+msgstr "Editar Pallet"
+
+msgid "Back to Pallets"
+msgstr "Volver a Pallets"
+
+msgid ""
+"Pre-selected based on last item cataloged. Change if this item belongs to a "
+"different pallet or standalone."
+msgstr ""
+"Preseleccionado según el último producto catalogado. Cámbialo si este "
+"producto pertenece a otro pallet o es individual."
+
+msgid "Pallets"
+msgstr "Pallets"
