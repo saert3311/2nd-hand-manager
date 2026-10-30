@@ -8,6 +8,9 @@ from .views import (
     generate_ai_view,
     intake_identify_view,
     manifest_view,
+    pallet_delete_view,
+    pallet_edit_view,
+    pallets_view,
     product_add_clarification_view,
     product_add_direct_clarification_view,
     product_answer_clarification_view,
@@ -45,6 +48,9 @@ urlpatterns = [
     path("logout/", CustomLogoutView.as_view(), name="logout"),
     path("intake/", product_intake_view, name="intake"),
     path("intake/identify/", intake_identify_view, name="intake_identify"),
+    path("pallets/", pallets_view, name="pallets"),
+    path("pallets/<int:pk>/edit/", pallet_edit_view, name="pallet_edit"),
+    path("pallets/<int:pk>/delete/", pallet_delete_view, name="pallet_delete"),
     path("dashboard/", dashboard_view, name="dashboard"),
     path("dashboard/empty-trash/", dashboard_empty_trash_view, name="dashboard_empty_trash"),
     path("products/<int:pk>/", product_detail_view, name="product_detail"),
@@ -64,4 +70,3 @@ urlpatterns = [
     path("products/<int:pk>/clarifications/<int:clarification_pk>/answer/", product_answer_clarification_view, name="answer_clarification"),
     path("products/<int:pk>/clarifications/<int:clarification_pk>/delete/", product_delete_clarification_view, name="delete_clarification"),
 ]
-

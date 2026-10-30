@@ -19,6 +19,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from .forms import (
+    PalletForm,
     ProductClarificationAnswerForm,
     ProductClarificationForm,
     ProductDirectClarificationForm,
@@ -31,6 +32,7 @@ from .models import (
     ClarificationCategory,
     ClarificationStatus,
     MarketplaceSite,
+    Pallet,
     PlatformSyncReason,
     Product,
     ProductClarification,
@@ -93,7 +95,8 @@ def root_redirect_view(request):
 def product_intake_view(request):
     """
     Mobile-first rapid product intake for assistants and managers.
-    Captures raw notes and up to 10 photos, auto-converting them to WebP.
+    Captures raw notes, pallet attribution, and up to 10 photos, auto-converting them to WebP.
+    Maintains sticky pallet selection across consecutive requests via session.
     """
     if request.method == "POST":
         form = ProductIntakeForm(request.POST)
@@ -128,6 +131,9 @@ def product_intake_view(request):
                             order=idx,
                         )
 
+                # Persist sticky pallet in session
+                request.session["last_intake_pallet_id"] = product.pallet_id if product.pallet else "none"
+
                 messages.success(
                     request,
                     _("Product #%(id)s cataloged successfully with %(count)d photo%(plural)s!")
@@ -141,7 +147,21 @@ def product_intake_view(request):
             except Exception as exc:
                 form.add_error(None, _("Error saving product: %(error)s") % {"error": exc})
     else:
-        form = ProductIntakeForm()
+        initial_pallet_id = request.session.get("last_intake_pallet_id")
+        initial_pallet = None
+        if initial_pallet_id == "none":
+            initial_pallet = None
+        elif initial_pallet_id is not None:
+            initial_pallet = Pallet.objects.filter(pk=initial_pallet_id).first()
+
+        if initial_pallet is None and initial_pallet_id != "none":
+            initial_pallet = Pallet.objects.order_by("-number").first()
+
+        initial_data = {}
+        if initial_pallet:
+            initial_data["pallet"] = initial_pallet.pk
+
+        form = ProductIntakeForm(initial=initial_data)
 
     recent_products = Product.objects.filter(created_by=request.user).order_by("-created_at")[:5]
 
@@ -215,7 +235,7 @@ def dashboard_view(request):
         .order_by("order", "name")
     )
 
-    products = Product.objects.select_related("category", "sold_marketplace").prefetch_related("images", "listing_links__site").all()
+    products = Product.objects.select_related("category", "sold_marketplace", "pallet").prefetch_related("images", "listing_links__site").all()
 
     if platform_filter:
         products = products.filter(
@@ -360,7 +380,7 @@ def product_detail_view(request, pk):
     download ZIP, and edit pricing / sold status.
     """
     product = get_object_or_404(
-        Product.objects.select_related("category").prefetch_related(
+        Product.objects.select_related("category", "pallet").prefetch_related(
             "images",
             "listing_links__site",
             "clarifications__asked_by",
@@ -1223,4 +1243,81 @@ def product_mark_platform_synced_view(request, pk):
     product.mark_platform_synced(user=request.user)
     messages.success(request, _("Platforms marked as updated successfully."))
     return redirect("inventory:product_detail", pk=pk)
+
+
+@login_required
+@manager_required
+def pallets_view(request):
+    """
+    Manager view for listing and creating liquidation pallets.
+    """
+    if request.method == "POST":
+        form = PalletForm(request.POST)
+        if form.is_valid():
+            pallet = form.save(commit=False)
+            pallet.created_by = request.user
+            pallet.save()
+            messages.success(request, _("Pallet #%(number)s created successfully.") % {"number": pallet.number})
+            return redirect("inventory:pallets")
+    else:
+        max_number = Pallet.objects.aggregate(Max("number"))["number__max"] or 0
+        form = PalletForm(initial={
+            "number": max_number + 1,
+            "received_date": timezone.localdate(),
+        })
+
+    pallets = (
+        Pallet.objects.annotate(
+            products_count=Count("products", filter=Q(products__is_deleted=False), distinct=True)
+        )
+        .order_by("-number")
+    )
+
+    context = {
+        "form": form,
+        "pallets": pallets,
+        "can_manage": True,
+    }
+    return render(request, "inventory/pallets.html", context)
+
+
+@login_required
+@manager_required
+def pallet_edit_view(request, pk):
+    """
+    Manager view for editing pallet metadata and financials.
+    """
+    pallet = get_object_or_404(Pallet, pk=pk)
+
+    if request.method == "POST":
+        form = PalletForm(request.POST, instance=pallet)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _("Pallet #%(number)s updated successfully.") % {"number": pallet.number})
+            return redirect("inventory:pallets")
+    else:
+        form = PalletForm(instance=pallet)
+
+    context = {
+        "form": form,
+        "pallet": pallet,
+        "can_manage": True,
+    }
+    return render(request, "inventory/pallet_edit.html", context)
+
+
+@login_required
+@manager_required
+@require_POST
+def pallet_delete_view(request, pk):
+    """
+    Manager endpoint to delete a pallet.
+    Products associated with the pallet have their pallet foreign key set to NULL.
+    """
+    pallet = get_object_or_404(Pallet, pk=pk)
+    number = pallet.number
+    pallet.delete()
+    messages.success(request, _("Pallet #%(number)s deleted.") % {"number": number})
+    return redirect("inventory:pallets")
+
 
