@@ -22,6 +22,7 @@ from .models import (
     DatabaseBackupLog,
     IntakeBatchSession,
     MarketplaceSite,
+    Pallet,
     Product,
     ProductClarification,
     ProductImage,
@@ -359,6 +360,7 @@ class ProductAdmin(admin.ModelAdmin):
         "id",
         "display_title",
         "category",
+        "pallet",
         "condition",
         "status",
         "needs_platform_sync_col",
@@ -380,6 +382,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = (
         "status",
         "category",
+        "pallet",
         "condition",
         "needs_platform_sync",
         "is_deleted",
@@ -406,7 +409,7 @@ class ProductAdmin(admin.ModelAdmin):
         "whatsapp_clicks",
     )
     actions = ["soft_delete_selected", "restore_selected"]
-    list_select_related = ("category", "created_by", "batch_session", "sold_marketplace")
+    list_select_related = ("category", "pallet", "created_by", "batch_session", "sold_marketplace")
 
     def has_module_permission(self, request):
         return bool(request.user and request.user.is_active and is_manager(request.user))
@@ -671,6 +674,57 @@ class CategoryAdmin(admin.ModelAdmin):
         return obj.products.count()
 
     products_count.short_description = _("Products")
+
+    def has_module_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_change_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_add_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_delete_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+
+@admin.register(Pallet, site=admin_site)
+class PalletAdmin(admin.ModelAdmin):
+    list_display = (
+        "number",
+        "received_date",
+        "products_count",
+        "purchase_price_display",
+        "estimated_value_display",
+        "created_by",
+        "created_at",
+    )
+    list_filter = ("received_date", "created_at")
+    search_fields = ("number", "notes", "created_by__username")
+    readonly_fields = ("created_at", "updated_at")
+    ordering = ["-number"]
+
+    def products_count(self, obj):
+        return obj.products.count()
+
+    products_count.short_description = _("Products")
+
+    def purchase_price_display(self, obj):
+        if obj.purchase_price is not None:
+            return f"€{obj.purchase_price}"
+        return "-"
+
+    purchase_price_display.short_description = _("Purchase Price")
+
+    def estimated_value_display(self, obj):
+        if obj.estimated_value is not None:
+            return f"€{obj.estimated_value}"
+        return "-"
+
+    estimated_value_display.short_description = _("Estimated Value")
 
     def has_module_permission(self, request):
         return bool(request.user and request.user.is_active and is_manager(request.user))

@@ -279,6 +279,82 @@ class StorefrontConfiguration(models.Model):
         return obj
 
 
+class Pallet(models.Model):
+    """
+    Represents an acquired liquidation pallet or inventory lot.
+    """
+    number = models.PositiveIntegerField(
+        unique=True,
+        db_index=True,
+        verbose_name=_("Pallet Number"),
+        help_text=_("Sequential pallet identification number"),
+    )
+    received_date = models.DateField(
+        default=timezone.localdate,
+        db_index=True,
+        verbose_name=_("Received Date"),
+        help_text=_("Date when the pallet arrived at the warehouse"),
+    )
+    purchase_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(Decimal("0.00")),
+            MaxValueValidator(Decimal("9999999.99")),
+        ],
+        verbose_name=_("Purchase Price (€)"),
+        help_text=_("Acquisition cost paid for the pallet"),
+    )
+    estimated_value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(Decimal("0.00")),
+            MaxValueValidator(Decimal("9999999.99")),
+        ],
+        verbose_name=_("Estimated Value (€)"),
+        help_text=_("Estimated total retail or resale value of the pallet"),
+    )
+    notes = models.TextField(
+        blank=True,
+        default="",
+        verbose_name=_("Notes"),
+        help_text=_("Optional supplier, manifest, or condition notes"),
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="created_pallets",
+        verbose_name=_("Created By"),
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("Created At"),
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_("Updated At"),
+    )
+
+    class Meta:
+        ordering = ["-number"]
+        verbose_name = _("Pallet")
+        verbose_name_plural = _("Pallets")
+
+    def __str__(self):
+        return f"Pallet #{self.number} ({self.received_date})"
+
+    @property
+    def display_name(self) -> str:
+        return f"Pallet #{self.number} ({self.received_date})"
+
+
 _deleting_product_pks = ContextVar("deleting_product_pks", default=frozenset())
 
 
@@ -381,6 +457,15 @@ class Product(models.Model):
         related_name="products",
         verbose_name=_("Category"),
         help_text=_("Marketplace product category"),
+    )
+    pallet = models.ForeignKey(
+        "Pallet",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="products",
+        verbose_name=_("Pallet"),
+        help_text=_("Origin liquidation pallet to which this product belongs"),
     )
     condition = models.CharField(
         max_length=30,
