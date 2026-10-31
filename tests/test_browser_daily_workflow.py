@@ -277,9 +277,34 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             with page.expect_navigation():
                 page.click("#loginSubmitBtn")
 
+            # PART II - STEP 1b: Manager visits Pallets management screen and creates Pallet #1
+            print("[PART II - STEP 1b] Manager visits Pallets management screen and creates Pallet #1...")
+            page.goto(f"{self.live_server_url}{reverse('inventory:pallets')}")
+            page.wait_for_selector("#btnCreatePallet")
+
+            # Create Pallet #1 with financial metrics and manifest notes
+            page.fill("#id_purchase_price", "350.00")
+            page.fill("#id_estimated_value", "900.00")
+            page.fill("#id_notes", "Lote Liquidacion Chaquetas & Moda Alfafar")
+            page.click("#btnCreatePallet")
+            page.wait_for_load_state("networkidle")
+
+            # Verify Pallet #1 card is rendered with financial amounts
+            self.assertTrue(page.locator('text="Pallet #1"').first.is_visible())
+            self.assertIn("350", page.content())
+            self.assertIn("900", page.content())
+            print("Verified Pallet #1 creation with auto-incremented number and financial metrics.")
+
             print("[PART II - STEP 2] Navigating to Intake screen...")
             page.goto(f"{self.live_server_url}{reverse('inventory:intake')}")
             page.wait_for_selector("#dropZone")
+
+            # Verify Pallet #1 is pre-selected in sticky selector
+            pallet_select = page.locator("#id_pallet")
+            self.assertTrue(pallet_select.is_visible())
+            selected_pallet_val = pallet_select.input_value()
+            self.assertTrue(len(selected_pallet_val) > 0)
+            print(f"Verified Pallet #1 automatically preselected on intake: id={selected_pallet_val}")
 
             # Upload product photo
             print("Uploading photo...")
@@ -339,7 +364,9 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             self.assertEqual(product.estimated_retail_price, 435.00)
             self.assertEqual(product.estimated_resale_price, 165.00)
             self.assertEqual(product.sale_price, 165.00)
-            print("Product persisted in database with full valuation benchmarks!")
+            self.assertIsNotNone(product.pallet)
+            self.assertEqual(product.pallet.number, 1)
+            print("Product persisted in database with full valuation benchmarks and Pallet #1 attribution!")
 
             # =================================================================
             # PART III: MANAGER STAGING REVIEW & STOREFRONT PUBLICATION
@@ -356,6 +383,12 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             print("\n[PART III - STEP 2] Opening Staging Product Detail view...")
             page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': product.pk})}")
             page.wait_for_selector("#id_sale_price")
+
+            # Verify origin pallet badge in detail header
+            pallet_badge = page.locator("#product-pallet-badge")
+            self.assertTrue(pallet_badge.is_visible())
+            self.assertIn("Pallet #1", pallet_badge.inner_text())
+            print("Verified origin '📦 Pallet #1' badge rendered in product detail header.")
 
             # Verify benchmark badges beside Sale Price input
             detail_benchmarks = page.locator("#detail-valuation-benchmarks")
@@ -400,6 +433,12 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             self.assertTrue(product.is_featured)
             print("Storefront controls saved: Category=Moda y accesorios, Condition=Muy bueno, Featured=True.")
 
+            # Verify Pallet Hub reflects 1 linked product
+            page.goto(f"{self.live_server_url}{reverse('inventory:pallets')}")
+            page.wait_for_selector('text="Pallet #1"')
+            self.assertTrue(page.locator('text="1"').first.is_visible())
+            print("Verified Pallet #1 displays 1 linked product in management hub.")
+
             # Manager adds marketplace link to transition product to PUBLISHED
             print("\n[PART III - STEP 4] Manager attaching Wallapop link to publish...")
             ProductListingLink.objects.create(
@@ -414,8 +453,8 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             self.assertEqual(product.status, ProductStatus.PUBLISHED)
             print("Product auto-transitioned to PUBLISHED!")
 
-            # Refresh staging detail to see the 'Ver en Tienda Pública' button
-            page.reload()
+            # Open staging detail to see the 'Ver en Tienda Pública' button
+            page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': product.pk})}")
             page.wait_for_selector('a:has-text("Ver en Tienda Pública"), a:has-text("View in Storefront")')
             view_storefront_btn = page.locator('a:has-text("Ver en Tienda Pública"), a:has-text("View in Storefront")')
             self.assertTrue(view_storefront_btn.is_visible())
