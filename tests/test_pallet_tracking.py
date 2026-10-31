@@ -320,6 +320,10 @@ class PalletTrackingTests(TestCase):
             self.assertEqual(_("Register New Pallet"), "Registrar Nuevo Pallet")
             self.assertEqual(_("Received Date"), "Fecha de recepción")
             self.assertEqual(_("Create Pallet"), "Crear Pallet")
+            self.assertEqual(_("Filter by pallet"), "Filtrar por pallet")
+            self.assertEqual(_("All Pallets"), "Todos los pallets")
+            self.assertEqual(_("— Standalone / No Pallet —"), "— Sueltos / Sin pallet —")
+            self.assertEqual(_("Clear filters"), "Limpiar filtros")
 
         self.client.login(username="manager_ana", password="password123")
         self.client.cookies["django_language"] = "es"
@@ -330,3 +334,130 @@ class PalletTrackingTests(TestCase):
         self.assertIn("Registrar Nuevo Pallet", content)
         self.assertIn("Fecha de recepción", content)
         self.assertIn("Crear Pallet", content)
+
+    def test_dashboard_pallet_filtering_and_card_badges(self):
+        """Dashboard renders pallet badges on product cards and supports filtering by pallet ID and 'none'."""
+        pallet2 = Pallet.objects.create(
+            number=2,
+            received_date=datetime.date(2026, 10, 20),
+            purchase_price=Decimal("600.00"),
+            estimated_value=Decimal("1500.00"),
+            created_by=self.manager,
+        )
+
+        prod1 = Product.objects.create(
+            raw_note="Sony headphones",
+            ai_title="Sony WH-1000XM4 Headphones",
+            ai_description="Noise cancelling headphones",
+            sale_price=Decimal("150.00"),
+            status=ProductStatus.READY,
+            pallet=self.pallet1,
+            created_by=self.assistant,
+        )
+
+        prod2 = Product.objects.create(
+            raw_note="Vintage boots",
+            ai_title="Dr Martens Leather Boots",
+            ai_description="Leather combat boots",
+            sale_price=Decimal("80.00"),
+            status=ProductStatus.READY,
+            pallet=pallet2,
+            created_by=self.assistant,
+        )
+
+        prod_standalone = Product.objects.create(
+            raw_note="Wool scarf",
+            ai_title="Cashmere Wool Scarf",
+            ai_description="Soft winter scarf",
+            sale_price=Decimal("25.00"),
+            status=ProductStatus.READY,
+            pallet=None,
+            created_by=self.assistant,
+        )
+
+        dashboard_url = reverse("inventory:dashboard")
+        self.client.login(username="manager_ana", password="password123")
+
+        # 1. Unfiltered Dashboard: shows all 3 items, displays badges, hides financial costs
+        resp_all = self.client.get(dashboard_url)
+        self.assertEqual(resp_all.status_code, 200)
+        self.assertEqual(len(resp_all.context["products"]), 3)
+        self.assertContains(resp_all, f"Pallet #{self.pallet1.number}")
+        self.assertContains(resp_all, f"Pallet #{pallet2.number}")
+        self.assertContains(resp_all, "product-card-pallet-badge")
+        self.assertContains(resp_all, "All Pallets")
+        self.assertContains(resp_all, "— Standalone / No Pallet —")
+        # Ensure commercial financials are NEVER leaked
+        self.assertNotContains(resp_all, "450.00")
+        self.assertNotContains(resp_all, "1200.00")
+        self.assertNotContains(resp_all, "600.00")
+
+        # 2. Filter by Pallet #1
+        resp_p1 = self.client.get(dashboard_url, {"pallet": str(self.pallet1.id)})
+        self.assertEqual(resp_p1.status_code, 200)
+        p1_products = list(resp_p1.context["products"])
+        self.assertEqual(len(p1_products), 1)
+        self.assertEqual(p1_products[0], prod1)
+        self.assertEqual(resp_p1.context["total_count"], 1)
+        self.assertEqual(resp_p1.context["ready_count"], 1)
+
+        # Filter by Pallet #2
+        resp_p2 = self.client.get(dashboard_url, {"pallet": str(pallet2.id)})
+        self.assertEqual(resp_p2.status_code, 200)
+        p2_products = list(resp_p2.context["products"])
+        self.assertEqual(len(p2_products), 1)
+        self.assertEqual(p2_products[0], prod2)
+        self.assertEqual(resp_p2.context["total_count"], 1)
+
+        # 3. Filter by Standalone / Unassigned items ("none")
+        resp_none = self.client.get(dashboard_url, {"pallet": "none"})
+        self.assertEqual(resp_none.status_code, 200)
+        none_products = list(resp_none.context["products"])
+        self.assertEqual(len(none_products), 1)
+        self.assertEqual(none_products[0], prod_standalone)
+        self.assertEqual(resp_none.context["total_count"], 1)
+
+    def test_dashboard_pallet_filter_composability_and_tab_links(self):
+        """Pallet filter composes with status tabs, search queries, and forwards parameter in tab URLs."""
+        prod1 = Product.objects.create(
+            raw_note="Winter jacket",
+            ai_title="North Face Down Jacket",
+            ai_description="Warm winter down jacket",
+            sale_price=Decimal("120.00"),
+            status=ProductStatus.READY,
+            pallet=self.pallet1,
+            created_by=self.assistant,
+        )
+
+        dashboard_url = reverse("inventory:dashboard")
+        self.client.login(username="manager_ana", password="password123")
+
+        # Status tab + pallet filter
+        resp = self.client.get(dashboard_url, {"status": "ready", "pallet": str(self.pallet1.id)})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(prod1, list(resp.context["products"]))
+        # Verify status tabs preserve pallet parameter
+        self.assertContains(resp, f"&pallet={self.pallet1.id}")
+        self.assertContains(resp, 'name="pallet"')
+        # Verify Clear filters link is present
+        self.assertContains(resp, "Clear filters")
+
+    def test_assistant_can_view_pallet_badges_without_financials(self):
+        """Sourcing assistants on dashboard can see pallet origin badge, but zero financial figures."""
+        Product.objects.create(
+            raw_note="Denim pants",
+            ai_title="Vintage Levi 501 Jeans",
+            ai_description="Classic straight leg denim",
+            sale_price=Decimal("45.00"),
+            status=ProductStatus.READY,
+            pallet=self.pallet1,
+            created_by=self.assistant,
+        )
+
+        self.client.login(username="assistant_carlos", password="password123")
+        resp = self.client.get(reverse("inventory:dashboard"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, f"Pallet #{self.pallet1.number}")
+        # Absolute guarantee: no purchase cost or valuation in assistant response
+        self.assertNotContains(resp, "450.00")
+        self.assertNotContains(resp, "1200.00")

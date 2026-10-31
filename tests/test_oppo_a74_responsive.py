@@ -1,3 +1,4 @@
+import datetime
 import os
 import shutil
 from decimal import Decimal
@@ -12,6 +13,7 @@ from playwright.sync_api import sync_playwright
 from inventory.models import (
     Category,
     MarketplaceSite,
+    Pallet,
     Product,
     ProductCondition,
     ProductImage,
@@ -99,6 +101,13 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
         img = Image.new("RGB", (400, 400), color="darkgreen")
         img.save(img_path, format="JPEG")
 
+        # Pallet
+        self.pallet = Pallet.objects.create(
+            number=1,
+            received_date=datetime.date(2026, 10, 15),
+            created_by=self.manager,
+        )
+
         # Active Product
         self.p_active = Product.objects.create(
             ai_title="Chaqueta Vintage Cazadora Cuero Nobuk Marrón Talla L",
@@ -109,6 +118,7 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
             status=ProductStatus.READY,
             category=self.category,
             condition=ProductCondition.VERY_GOOD,
+            pallet=self.pallet,
             is_public=True,
             is_featured=True,
             is_sold=False,
@@ -299,6 +309,8 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 page.goto(f"{self.live_server_url}{reverse('inventory:dashboard')}")
                 page.wait_for_load_state("networkidle")
                 self._assert_no_horizontal_overflow(page, f"dashboard_{label}", width, height)
+                self.assertTrue(page.locator("#palletFilterForm").is_visible())
+                self.assertTrue(page.locator(".product-card-pallet-badge").first.is_visible())
 
                 # 3. Staging Dashboard (Erased / Trash tab)
                 page.goto(f"{self.live_server_url}{reverse('inventory:dashboard')}?status=erased")

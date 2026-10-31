@@ -3224,3 +3224,15 @@ msgstr "Edit or remove listing link"
 
 msgid "Manage link for"
 msgstr "Manage link for"
+
+msgid "Filter by pallet"
+msgstr "Filter by pallet"
+
+msgid "All Pallets"
+msgstr "All Pallets"
+
+msgid "— Standalone / No Pallet —"
+msgstr "— Standalone / No Pallet —"
+
+msgid "Clear filters"
+msgstr "Clear filters"

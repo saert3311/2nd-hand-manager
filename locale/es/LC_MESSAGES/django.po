@@ -3538,3 +3538,15 @@ msgstr ""
 
 msgid "Pallets"
 msgstr "Pallets"
+
+msgid "Filter by pallet"
+msgstr "Filtrar por pallet"
+
+msgid "All Pallets"
+msgstr "Todos los pallets"
+
+msgid "— Standalone / No Pallet —"
+msgstr "— Sueltos / Sin pallet —"
+
+msgid "Clear filters"
+msgstr "Limpiar filtros"
