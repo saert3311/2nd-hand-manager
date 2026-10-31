@@ -220,6 +220,7 @@ def dashboard_view(request):
     platform_filter = request.GET.get("platform", "").strip().lower()
     channel_filter = request.GET.get("channel", "").strip().lower()
     sync_filter = request.GET.get("sync", "").strip().lower()
+    pallet_filter = request.GET.get("pallet", "").strip()
 
     # Query only marketplace sites that have at least one active published product
     available_platforms = (
@@ -235,6 +236,18 @@ def dashboard_view(request):
         .order_by("order", "name")
     )
 
+    available_pallets = (
+        Pallet.objects.annotate(
+            products_count=Count(
+                "products",
+                filter=Q(products__is_deleted=False),
+                distinct=True,
+            )
+        )
+        .order_by("-number")
+    )
+    unassigned_products_count = Product.objects.filter(is_deleted=False, pallet__isnull=True).count()
+
     products = Product.objects.select_related("category", "sold_marketplace", "pallet").prefetch_related("images", "listing_links__site").all()
 
     if platform_filter:
@@ -242,6 +255,11 @@ def dashboard_view(request):
             listing_links__site__slug=platform_filter,
             listing_links__is_active=True,
         ).distinct()
+
+    if pallet_filter == "none":
+        products = products.filter(pallet__isnull=True)
+    elif pallet_filter.isdigit():
+        products = products.filter(pallet_id=int(pallet_filter))
 
     if status_filter == "erased":
         products = products.filter(is_deleted=True)
@@ -286,6 +304,10 @@ def dashboard_view(request):
             listing_links__site__slug=platform_filter,
             listing_links__is_active=True,
         ).distinct()
+    if pallet_filter == "none":
+        counts_qs = counts_qs.filter(pallet__isnull=True)
+    elif pallet_filter.isdigit():
+        counts_qs = counts_qs.filter(pallet_id=int(pallet_filter))
 
     counts = counts_qs.aggregate(
         total_count=Count("id", filter=Q(is_deleted=False), distinct=True),
@@ -352,6 +374,9 @@ def dashboard_view(request):
         "search_query": search_query,
         "platform_filter": platform_filter,
         "available_platforms": available_platforms,
+        "pallet_filter": pallet_filter,
+        "available_pallets": available_pallets,
+        "unassigned_products_count": unassigned_products_count,
         "total_count": counts["total_count"] or 0,
         "ready_count": counts["ready_count"] or 0,
         "active_count": counts["active_count"] or 0,
