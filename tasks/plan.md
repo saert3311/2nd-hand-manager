@@ -640,3 +640,40 @@ Introduce a `Pallet` domain model representing acquired liquidation pallets or l
    - Spanish translations in `locale/es/LC_MESSAGES/django.po` compiled to `.mo`.
    - Comprehensive test suite in `tests/test_pallet_tracking.py`: model constraints, cascade safety, sticky intake session behavior, manager vs. assistant permission firewalls, and mobile viewport tests.
 
+
+---
+
+## Phase 47: Dashboard Pallet Filter & Visual Card Attribution (`dashboard-pallet-filter`)
+
+### Technical Design
+1. **Backend Query & Filter Handling (`inventory/views.py`)**:
+   - Read `pallet_filter = request.GET.get("pallet", "").strip()` in `dashboard_view`.
+   - Apply filter to `products` QuerySet:
+     - `pallet_filter == "none"`: `products = products.filter(pallet__isnull=True)`
+     - `pallet_filter.isdigit()`: `products = products.filter(pallet_id=int(pallet_filter))`
+   - Apply filter to `counts_qs` so status tab counters (`Ready`, `Published`, `Draft`, `Sold`, etc.) dynamically reflect counts for the active pallet filter:
+     - `if pallet_filter == "none": counts_qs = counts_qs.filter(pallet__isnull=True)`
+     - `elif pallet_filter.isdigit(): counts_qs = counts_qs.filter(pallet_id=int(pallet_filter))`
+   - Fetch pallet choices and unassigned metric for the dropdown:
+     - `available_pallets = Pallet.objects.annotate(products_count=Count("products", filter=Q(products__is_deleted=False))).order_by("-number")`
+     - `unassigned_products_count = Product.objects.filter(is_deleted=False, pallet__isnull=True).count()`
+   - Add `pallet_filter`, `available_pallets`, and `unassigned_products_count` to template context.
+2. **Dashboard UI & Filter Bar Integration (`inventory/templates/inventory/dashboard.html`)**:
+   - In Secondary Filter Bar:
+     - Add `palletFilterForm` beside `platformFilterForm` with `select[name="pallet"]` and `onchange="this.form.submit()"`.
+     - Options:
+       - `All Pallets` (`""`)
+       - `— Standalone / No Pallet — (count)` (`"none"`)
+       - `Pallet #X (YYYY-MM-DD) (count)` (`"<id>"`)
+     - Forward active `status`, `q`, `platform`, `channel` via hidden inputs.
+     - Update `platformFilterForm` and search form to forward active `pallet` via hidden input.
+     - Update "Clear All Filters" button to reset `pallet_filter`.
+     - Update status tabs to append `&pallet={{ pallet_filter }}` when active.
+3. **Product Card Badge Attribution (`inventory/templates/inventory/dashboard.html`)**:
+   - In the card image overlay badge container:
+     - Render `📦 Pallet #{{ product.pallet.number }}` badge if `product.pallet` exists, styled with `text-indigo-900 bg-indigo-50 border border-indigo-200/90 shadow-xs`.
+     - Standalone products display no extra badge.
+4. **Bilingual Localization & Comprehensive Test Suite (`locale/`, `tests/`)**:
+   - Add Spanish translations to `locale/es/LC_MESSAGES/django.po` and compile with `compile_locales`.
+   - Extend `tests/test_pallet_tracking.py` covering pallet filtering (`all`, specific ID, `none`), filter composability, tab count scoping, card badge rendering, and financial confidentiality.
+   - Verify zero horizontal overflow on low-DPI OPPO A74 mobile viewports (`360×800` & `320×711`).

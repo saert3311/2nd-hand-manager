@@ -3716,3 +3716,54 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 - [x] Deleting a pallet non-destructively preserves all products with `pallet = None`.
 - [x] 100% of automated tests pass, zero linter warnings, zero horizontal overflow on OPPO A74 mobile viewports.
 
+
+---
+
+# Phase 47: Dashboard Pallet Filter & Visual Card Attribution
+
+### Task 170: Backend Query & Filter Handling in `dashboard_view` (`inventory/views.py`)
+- [ ] Parse `pallet_filter = request.GET.get("pallet", "").strip()` in `dashboard_view`.
+- [ ] Filter `products` QuerySet:
+  - If `pallet_filter == "none"`: `products = products.filter(pallet__isnull=True)`
+  - If `pallet_filter.isdigit()`: `products = products.filter(pallet_id=int(pallet_filter))`
+- [ ] Scope `counts_qs` aggregation by `pallet_filter` (`none` vs numeric id) so status pills (`Ready`, `Published`, `Draft`, etc.) reflect counts for the filtered pallet.
+- [ ] Query `available_pallets` annotated with non-deleted product count and `unassigned_products_count`.
+- [ ] Pass `pallet_filter`, `available_pallets`, and `unassigned_products_count` in template context.
+- [ ] Verification: `.venv\Scripts\python.exe manage.py check`.
+
+### Task 171: Dashboard Secondary Filter Bar UI & Product Card Pallet Badge (`inventory/templates/inventory/dashboard.html`)
+- [ ] In Secondary Filter Bar:
+  - Add `palletFilterForm` beside `platformFilterForm` with `select[name="pallet"]` and `onchange="this.form.submit()"`.
+  - Provide options: "All Pallets", "— Standalone / No Pallet — (count)", and "Pallet #X (Date) (count)".
+  - Forward active `status`, `q`, `platform`, `channel` via hidden inputs.
+  - Forward `pallet` via hidden inputs in `platformFilterForm` and search form.
+  - Update "Clear All Filters" button condition to check `pallet_filter`.
+  - Update status tab links to preserve active `&pallet={{ pallet_filter }}`.
+- [ ] In Product Card:
+  - Render `📦 Pallet #{{ product.pallet.number }}` badge in the photo overlay badge container when `product.pallet` exists.
+  - Omit badge when `product.pallet` is null.
+- [ ] Ensure fluid flex wrapping on low-DPI Android viewports (`360×800` & `320×711`).
+- [ ] Verification: `.venv\Scripts\python.exe manage.py check`.
+
+### Task 172: Bilingual Translations, Comprehensive Test Suite & Responsive Verification (`locale/`, `tests/test_pallet_tracking.py`, `tests/test_oppo_a74_responsive.py`)
+- [ ] Add Spanish translations in `locale/es/LC_MESSAGES/django.po` and compile `.mo` catalogs via `manage.py compile_locales`.
+- [ ] Author comprehensive automated unit/integration tests in `tests/test_pallet_tracking.py`:
+  - Pallet filtering (`all`, specific pallet ID, `none`).
+  - Composability with status tabs, search query, and platform filters.
+  - Tab count scoping with active pallet filter.
+  - Badge rendering on dashboard cards.
+  - Strict financial confidentiality: verify purchase price and estimated value are never rendered in dropdown or card badges.
+- [ ] Extend `tests/test_oppo_a74_responsive.py` to verify dashboard with pallet filter on `360×800` and `320×711` viewports with zero horizontal overflow.
+- [ ] Verification: `.venv\Scripts\python.exe manage.py test tests.test_pallet_tracking`.
+
+### Task 173: Documentation, Changelog & Full Quality Gate (`CHANGELOG.md`, `tasks/todo.md`)
+- [ ] Document Phase 47 changes in `CHANGELOG.md` under `## [Unreleased]`.
+- [ ] Check off all tasks in `tasks/todo.md`.
+- [ ] Execute complete quality gate: `ruff check .`, `python manage.py check`, `python manage.py compile_locales`, and `python manage.py test`.
+
+### Checkpoint 47: Dashboard Pallet Filter & Visual Card Attribution Complete
+- [ ] Store Managers can filter the staging dashboard by specific liquidation pallets or unassigned items via a clean dropdown.
+- [ ] Status tab counters dynamically scope to the selected pallet.
+- [ ] Product cards in the grid display a tactile `📦 Pallet #X` origin badge.
+- [ ] Zero financial data leaked to sourcing assistants.
+- [ ] 100% of automated tests pass, zero linter warnings, zero horizontal overflow on OPPO A74 mobile viewports.
