@@ -122,6 +122,9 @@ class DashboardResponsiveUITests(StaticLiveServerTestCase):
                 page.goto(f"{self.live_server_url}{reverse('inventory:dashboard')}")
                 page.wait_for_load_state("networkidle")
 
+                # Verify pallet filter form is visible across all viewports
+                self.assertTrue(page.locator("#palletFilterForm").is_visible(), f"Pallet filter form must be visible at {label}")
+
                 # Verify status tab rail exists
                 tablist = page.locator('nav[role="tablist"]')
                 self.assertTrue(tablist.is_visible(), f"Status tablist must be visible at {label}")
@@ -186,6 +189,13 @@ class DashboardResponsiveUITests(StaticLiveServerTestCase):
             with page.expect_navigation():
                 page.click("#loginSubmitBtn")
             page.wait_for_load_state("networkidle")
+
+            # 2b. Dashboard mobile typography check
+            page.goto(f"{self.live_server_url}{reverse('inventory:dashboard')}")
+            page.wait_for_load_state("networkidle")
+            self.assertTrue(page.locator("#palletFilterForm").is_visible())
+            pallet_font_size = page.evaluate("() => window.getComputedStyle(document.querySelector('#palletFilterForm select[name=\"pallet\"]')).fontSize")
+            self.assertGreaterEqual(float(pallet_font_size.replace("px", "")), 16.0)
 
             # 3. Intake page mobile check
             page.goto(f"{self.live_server_url}{reverse('inventory:intake')}")

@@ -380,6 +380,29 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             self.assertTrue(page.locator('text="Chaqueta Barbour Beaufort Encerada"').first.is_visible())
             self.assertIn("165", page.content())
 
+            # Verify origin badge on product card photo
+            card_badge = page.locator(".product-card-pallet-badge").first
+            self.assertTrue(card_badge.is_visible())
+            self.assertIn("Pallet #1", card_badge.inner_text())
+            print("Verified '📦 Pallet #1' card photo origin badge on dashboard.")
+
+            # Verify pallet filter form is present and functional
+            self.assertTrue(page.locator("#palletFilterForm").is_visible())
+            pallet_select = page.locator("#palletFilterForm select[name='pallet']")
+            self.assertTrue(pallet_select.is_visible())
+
+            # Test filtering by unassigned items (none) - should filter out the jacket
+            with page.expect_navigation():
+                pallet_select.select_option("none")
+            self.assertFalse(page.locator('text="Chaqueta Barbour Beaufort Encerada"').is_visible())
+            print("Verified filtering by standalone items hides Pallet #1 jacket.")
+
+            # Test filtering back by Pallet #1
+            with page.expect_navigation():
+                page.locator("#palletFilterForm select[name='pallet']").select_option(str(product.pallet.id))
+            self.assertTrue(page.locator('text="Chaqueta Barbour Beaufort Encerada"').first.is_visible())
+            print("Verified filtering by Pallet #1 retains jacket and scopes dashboard.")
+
             print("\n[PART III - STEP 2] Opening Staging Product Detail view...")
             page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': product.pk})}")
             page.wait_for_selector("#id_sale_price")

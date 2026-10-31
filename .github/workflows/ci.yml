@@ -177,6 +177,15 @@ jobs:
             exit 1
           fi
 
+          # 3. Verify Pallet Management Route Protection & Authentication Redirect
+          STATUS_PALLETS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/pallets/)
+          if [ "$STATUS_PALLETS" -eq 302 ]; then
+            echo "PASS: Pallet management route (/pallets/) protected by authentication (HTTP 302 redirect)."
+          else
+            echo "ERROR: Expected HTTP 302 redirect on unauthenticated /pallets/, got $STATUS_PALLETS."
+            exit 1
+          fi
+
       - name: Cleanup Smoke Test Container
         if: always()
         run: |
