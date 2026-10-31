@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-10-31
+
+### Added
+- **Dashboard Pallet Filter & Visual Card Attribution (Phase 47)**:
+  - **Pallet Filter Dropdown**: Added a dedicated `select` dropdown (`#palletFilterForm`) in the Secondary Filter Bar on `/dashboard/`, situated adjacent to Platform and Search filters, with auto-submit on change.
+  - **Dynamic Status Tab Scoping**: Dashboard lifecycle tab counters (`All`, `Ready`, `Published`, `Draft`, etc.) dynamically compute and display product totals scoped strictly to the currently selected pallet filter.
+  - **Filter Presets**: Dropdown provides full clarity with "All Pallets", unassigned standalone items ("— Standalone / No Pallet — [count]"), and each registered pallet ("Pallet #X (Date) [count]").
+  - **Visual Card Attribution Badge**: Product cards in the staging grid now render a tactile `📦 Pallet #X` origin badge on the card photo overlay when linked to a pallet. Standalone items omit the badge to keep card UI clean.
+  - **Multi-Filter Composability**: Pallet filter state seamlessly composes with status tabs (`?status=`), keyword queries (`?q=`), and marketplace platforms (`?platform=`), preserving active filters across tab navigation, search queries, and clearing.
+  - **Strict Commercial Financial Confidentiality**: Purchase costs and estimated retail/resale valuations are excluded from dashboard markup and card badges, keeping pallet financials strictly confidential from workshop sourcing assistants.
+  - **Responsive Layout & Low-DPI Mobile Support**: Ensured fluid wrapping and zero horizontal overflow on low-DPI Android viewports (`360×800` standard and `320×711` zoomed OPPO A74 baseline).
+  - **Bilingual Localization & Comprehensive Test Suite**: Added English and Spanish translations (`Filtrar por pallet`, `Todos los pallets`, `— Sueltos / Sin pallet —`, `Limpiar filtros`), unit tests in `tests/test_pallet_tracking.py`, and Playwright responsive tests in `tests/test_oppo_a74_responsive.py`.
+
 ## [2.6.0] - 2026-10-31
 
 ### Added
