@@ -11,6 +11,7 @@ from .models import (
     ClarificationCategory,
     ClarificationStatus,
     MarketplaceSite,
+    Pallet,
     Product,
     ProductClarification,
     ProductCondition,
@@ -18,6 +19,11 @@ from .models import (
     SaleChannelType,
 )
 from .services.turnstile_service import verify_turnstile_token
+
+
+class PalletChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return f"Pallet #{obj.number} ({obj.received_date.strftime('%Y-%m-%d')})"
 
 
 class TurnstileValidationMixin:
@@ -117,9 +123,20 @@ class ProductIntakeForm(forms.ModelForm):
         widget=forms.HiddenInput(attrs={"id": "id_estimated_resale_price"}),
     )
 
+    pallet = PalletChoiceField(
+        queryset=Pallet.objects.all().order_by("-number"),
+        required=False,
+        empty_label=_("— No Pallet (Individual Item) —"),
+        label=_("Pallet Attribution"),
+        widget=forms.Select(attrs={
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+        }),
+    )
+
     class Meta:
         model = Product
         fields = [
+            "pallet",
             "raw_note",
             "sale_price",
             "ai_title",
@@ -205,6 +222,15 @@ class ProductUpdateForm(forms.ModelForm):
             "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
         }),
     )
+    pallet = PalletChoiceField(
+        queryset=Pallet.objects.all().order_by("-number"),
+        required=False,
+        empty_label=_("— No Pallet (Individual Item) —"),
+        label=_("Origin Pallet"),
+        widget=forms.Select(attrs={
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+        }),
+    )
     sold_channel_notes = forms.CharField(
         max_length=255,
         required=False,
@@ -219,6 +245,7 @@ class ProductUpdateForm(forms.ModelForm):
     class Meta:
         model = Product
         fields = [
+            "pallet",
             "ai_title",
             "ai_description",
             "sale_price",
@@ -371,3 +398,73 @@ class ProductDirectClarificationForm(forms.Form):
         if not note:
             raise forms.ValidationError(_("Clarification note cannot be empty."))
         return note
+
+
+class PalletForm(forms.ModelForm):
+    number = forms.IntegerField(
+        min_value=1,
+        max_value=2147483647,
+        label=_("Pallet Number"),
+        widget=forms.NumberInput(attrs={
+            "min": "1",
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+        }),
+    )
+    received_date = forms.DateField(
+        label=_("Received Date"),
+        widget=forms.DateInput(attrs={
+            "type": "date",
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+        }),
+    )
+    purchase_price = forms.DecimalField(
+        min_value=Decimal("0.00"),
+        max_value=Decimal("9999999.99"),
+        decimal_places=2,
+        required=False,
+        label=_("Purchase Price (€)"),
+        widget=forms.NumberInput(attrs={
+            "step": "0.01",
+            "min": "0",
+            "max": "9999999.99",
+            "placeholder": "0.00",
+            "inputmode": "decimal",
+            "class": "w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+        }),
+    )
+    estimated_value = forms.DecimalField(
+        min_value=Decimal("0.00"),
+        max_value=Decimal("9999999.99"),
+        decimal_places=2,
+        required=False,
+        label=_("Estimated Value (€)"),
+        widget=forms.NumberInput(attrs={
+            "step": "0.01",
+            "min": "0",
+            "max": "9999999.99",
+            "placeholder": "0.00",
+            "inputmode": "decimal",
+            "class": "w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+        }),
+    )
+    notes = forms.CharField(
+        max_length=2000,
+        required=False,
+        label=_("Notes"),
+        widget=forms.Textarea(attrs={
+            "rows": 2,
+            "maxlength": "2000",
+            "placeholder": _("Supplier, condition notes, manifest details (optional)"),
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white resize-y"
+        }),
+    )
+
+    class Meta:
+        model = Pallet
+        fields = [
+            "number",
+            "received_date",
+            "purchase_price",
+            "estimated_value",
+            "notes",
+        ]

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-10-31
+
+### Added
+- **Pallet Tracking & Sticky Intake Attribution (Phase 46)**:
+  - **Pallet Domain Model**: Implemented `Pallet` model (`number`, `received_date`, `purchase_price`, `estimated_value`, `notes`, `created_by`) and linked to `Product` via `ForeignKey(Pallet, null=True, blank=True, on_delete=models.SET_NULL, related_name="products")`, ensuring non-destructive deletion cascades.
+  - **Django Admin Registration**: Registered `PalletAdmin` in `manager_admin_site` with product count badge column, search, and filters. Added pallet filter and column to `ProductAdmin`.
+  - **Commercial Financial Confidentiality**: Sourcing assistants have no access to pallet financial metrics (`purchase_price`, `estimated_value`) or pallet management screens (enforced with 403 Forbidden firewall). `PalletChoiceField` renders choice labels as `Pallet #<number> (<received_date>)` without financial amounts.
+  - **Sticky Intake Session Attribution**: Intake screen (`/intake/`) maintains sticky pallet attribution across consecutive submissions using per-user session storage (`last_intake_pallet_id`), eliminating repetitive re-typing while allowing standalone/walk-in items (`— No Pallet —`).
+  - **Dedicated Pallet Management Screen**: Store managers can register new pallets with automatic sequential numbering (`max(number) + 1`) and today's date pre-filled, view active item counts and valuations, edit pallet metadata, and delete pallets with confirmation modal at `/pallets/` (`pallets_view`, `pallet_edit_view`, `pallet_delete_view`).
+  - **Product Staging Assignment**: Manager detail workspace (`/products/<pk>/`) displays origin pallet badge and allows reassigning or clearing pallets via `ProductUpdateForm`.
+  - **Navigation Integration**: Added `📦 Pallets` link in both desktop and mobile navigation menus for store managers (`can_manage`).
+  - **Bilingual Localization & Comprehensive Test Suite**: Added Spanish translations to `locale/es/LC_MESSAGES/django.po` (compiled to `django.mo`), unit tests in `tests/test_pallet_tracking.py`, and verified responsive rendering on low-DPI Android viewports (OPPO A74 `360×800` & `320×711` baseline) in `tests/test_oppo_a74_responsive.py`.
+
 ## [2.5.0] - 2026-10-30
 
 ### Added

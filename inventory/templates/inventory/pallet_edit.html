@@ -1,0 +1,144 @@
+{% extends "inventory/base.html" %}
+{% load i18n l10n static %}
+
+{% block title %}{% trans "Edit Pallet" %} #{{ pallet.number }} - 2ndHand Staging{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+  <!-- Header with Back Link -->
+  <div class="space-y-2">
+    <div>
+      <a href="{% url 'inventory:pallets' %}" class="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition">
+        &larr; {% trans "Back to Pallets" %}
+      </a>
+    </div>
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+        <span>✏️</span> {% trans "Edit Pallet" %} #{{ pallet.number }}
+      </h1>
+      <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200">
+        <span>📦</span> {{ pallet.products.count }} {% trans "items" %}
+      </span>
+    </div>
+  </div>
+
+  <!-- Edit Card -->
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <form method="post" action="{% url 'inventory:pallet_edit' pallet.pk %}" class="p-5 sm:p-6 space-y-4" novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+      <div role="alert" class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold space-y-1">
+        {% for error in form.non_field_errors %}
+          <div>⚠️ {{ error }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Number -->
+        <div>
+          <label for="id_number" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5">
+            {% trans "Pallet Number" %} <span class="text-rose-500">*</span>
+          </label>
+          <input type="number" min="1" max="2147483647" name="number" id="id_number"
+                 value="{{ form.number.value|unlocalize|default:'' }}" required
+                 class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+          {% if form.number.errors %}
+          <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+            {% for error in form.number.errors %}{{ error }}{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Received Date -->
+        <div>
+          <label for="id_received_date" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5">
+            {% trans "Received Date" %} <span class="text-rose-500">*</span>
+          </label>
+          <input type="date" name="received_date" id="id_received_date"
+                 value="{{ form.received_date.value|date:'Y-m-d'|default:form.received_date.value|default:'' }}" required
+                 class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+          {% if form.received_date.errors %}
+          <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+            {% for error in form.received_date.errors %}{{ error }}{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Purchase Price -->
+        <div>
+          <label for="id_purchase_price" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <span>{% trans "Purchase Price (€)" %}</span>
+            <span class="text-slate-400 font-normal lowercase text-xs">({% trans "Optional" %})</span>
+          </label>
+          <div class="relative flex items-center">
+            <span class="absolute left-3 text-slate-400 font-bold text-base sm:text-sm">€</span>
+            <input type="number" step="0.01" min="0" max="9999999.99" name="purchase_price" id="id_purchase_price"
+                   value="{{ form.purchase_price.value|unlocalize|default:'' }}"
+                   placeholder="0.00" inputmode="decimal"
+                   class="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+          </div>
+          {% if form.purchase_price.errors %}
+          <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+            {% for error in form.purchase_price.errors %}{{ error }}{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Estimated Value -->
+        <div>
+          <label for="id_estimated_value" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <span>{% trans "Estimated Value (€)" %}</span>
+            <span class="text-slate-400 font-normal lowercase text-xs">({% trans "Optional" %})</span>
+          </label>
+          <div class="relative flex items-center">
+            <span class="absolute left-3 text-slate-400 font-bold text-base sm:text-sm">€</span>
+            <input type="number" step="0.01" min="0" max="9999999.99" name="estimated_value" id="id_estimated_value"
+                   value="{{ form.estimated_value.value|unlocalize|default:'' }}"
+                   placeholder="0.00" inputmode="decimal"
+                   class="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+          </div>
+          {% if form.estimated_value.errors %}
+          <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+            {% for error in form.estimated_value.errors %}{{ error }}{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div>
+        <label for="id_notes" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+          <span>{% trans "Notes" %}</span>
+          <span class="text-slate-400 font-normal lowercase text-xs">({% trans "Optional" %})</span>
+        </label>
+        <textarea name="notes" id="id_notes" rows="3" maxlength="2000"
+                  placeholder="{% trans 'Supplier, condition notes, manifest details (optional)' %}"
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white resize-y">{{ form.notes.value|default:'' }}</textarea>
+        {% if form.notes.errors %}
+        <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+          {% for error in form.notes.errors %}{{ error }}{% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Actions -->
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+        <a href="{% url 'inventory:pallets' %}"
+           class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold rounded-xl transition min-h-[42px] inline-flex items-center">
+          {% trans "Cancel" %}
+        </a>
+
+        <button type="submit" id="btnSavePallet"
+                class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-base sm:text-sm cursor-pointer min-h-[42px]">
+          <span>💾</span>
+          <span>{% trans "Save Changes" %}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

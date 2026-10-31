@@ -160,15 +160,20 @@ class NotificationContextProcessorAndAlertTests(TestCase):
 
         factory = RequestFactory()
 
-        # Anonymous user gets 0
+        # Anonymous user gets 0 and can_manage=False
         req_anon = factory.get("/")
         req_anon.user = AnonymousUser()
-        self.assertEqual(notifications(req_anon), {"pending_clarifications_count": 0})
+        self.assertEqual(notifications(req_anon), {"pending_clarifications_count": 0, "can_manage": False})
 
-        # Authenticated user with no clarifications gets 0
+        # Authenticated assistant user with no clarifications gets 0 and can_manage=False
         req_auth = factory.get("/")
         req_auth.user = self.assistant
-        self.assertEqual(notifications(req_auth), {"pending_clarifications_count": 0})
+        self.assertEqual(notifications(req_auth), {"pending_clarifications_count": 0, "can_manage": False})
+
+        # Authenticated manager user gets can_manage=True
+        req_mgr = factory.get("/")
+        req_mgr.user = self.manager
+        self.assertTrue(notifications(req_mgr)["can_manage"])
 
         # Create 2 pending clarifications and 1 resolved
         ProductClarification.objects.create(
@@ -191,7 +196,7 @@ class NotificationContextProcessorAndAlertTests(TestCase):
         )
         resolved.resolve(answer="Made in Scotland", answered_by=self.assistant)
 
-        self.assertEqual(notifications(req_auth), {"pending_clarifications_count": 2})
+        self.assertEqual(notifications(req_auth), {"pending_clarifications_count": 2, "can_manage": False})
 
     def test_navbar_renders_badge_when_pending_exist(self):
         self.client.login(username="assistant", password="password123")

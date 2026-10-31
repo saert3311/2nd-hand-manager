@@ -244,7 +244,7 @@ except (TypeError, ValueError):
 # Compilation & Build Metadata
 APP_BUILD_TIME = os.getenv('APP_BUILD_TIME', '').strip()
 APP_BUILD_COMMIT = os.getenv('APP_BUILD_COMMIT', '').strip()
-APP_VERSION = os.getenv('APP_VERSION', '2.5.0').strip()
+APP_VERSION = os.getenv('APP_VERSION', '2.6.0').strip()
 APP_ENV = os.getenv('APP_ENV', '').strip()
 
 
