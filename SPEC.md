@@ -1180,3 +1180,12 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
     - Replaces the `Active` (`?status=active`) tab in `/dashboard/` (`nav[role="tablist"]`) with `✨ Ready to Publish` (`✨ Listo para publicar`, `?status=ready`, `#tab-ready`) backed by `ready_count` (`status=ProductStatus.READY, is_sold=False, is_deleted=False`), with backward-compatible aliasing when `?status=active` is visited.
     - Hardens automatic phase transitions in `Product.compute_lifecycle_status()`, `Product.save()`, and clarification resolution/deletion views (`product_answer_clarification_view`, `product_delete_clarification_view`) so products never stay stuck in `AWAITING_INFO` once doubts are resolved and never forcefully bypass `compute_lifecycle_status()`.
     - **Decision:** Approved per [`docs/prds/PRD-ready-to-publish-phase-and-filter.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-ready-to-publish-phase-and-filter.md).
+
+
+43. **Dashboard Pallet Filter & Visual Card Attribution (Phase 47):**
+    - Adds a dedicated Pallet selector dropdown in the Secondary Filter Bar on /dashboard/, composable with status tabs, search queries, channel filters, and platform filters.
+    - Supports filtering by specific pallet (?pallet=<id>), standalone unassigned items (?pallet=none), or all items (?pallet=).
+    - Dynamically scopes status tab counters (counts_qs) to the active pallet filter.
+    - Renders a compact badge (📦 Pallet #X) in the photo badge overlay row on product cards.
+    - Keeps dashboard UI clean without full-width summary banners, maintaining zero horizontal overflow across low-DPI mobile viewports (360×800 & 320×711).
+    - **Decision:** Approved per [docs/ideas/dashboard-pallet-filter-and-badges.md](file:///C:/Users/Jose/antigravity/epic-tesla/docs/ideas/dashboard-pallet-filter-and-badges.md) and [docs/prds/PRD-dashboard-pallet-filter.md](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-dashboard-pallet-filter.md).
