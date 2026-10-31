@@ -30,7 +30,7 @@
            role="tablist">
         
         <!-- All -->
-        <a href="?status=all{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <a href="?status=all{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            aria-selected="{% if status_filter == 'all' %}true{% else %}false{% endif %}"
            class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'all' %}bg-white text-slate-900 shadow-xs ring-1 ring-slate-200/80 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
@@ -41,7 +41,7 @@
         </a>
 
         <!-- Ready to Publish -->
-        <a href="?status=ready{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <a href="?status=ready{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            id="tab-ready"
            aria-selected="{% if status_filter == 'ready' %}true{% else %}false{% endif %}"
@@ -54,7 +54,7 @@
         </a>
 
         <!-- Published -->
-        <a href="?status=published{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <a href="?status=published{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            id="tab-published"
            aria-selected="{% if status_filter == 'published' %}true{% else %}false{% endif %}"
@@ -72,7 +72,7 @@
         </a>
 
         <!-- Price Pending -->
-        <a href="?status=price_pending{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <a href="?status=price_pending{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            aria-selected="{% if status_filter == 'price_pending' %}true{% else %}false{% endif %}"
            class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'price_pending' %}bg-white text-amber-900 shadow-xs ring-1 ring-amber-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
@@ -84,7 +84,7 @@
         </a>
 
         <!-- Doubts -->
-        <a href="?status=awaiting_info{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <a href="?status=awaiting_info{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            aria-selected="{% if status_filter == 'awaiting_info' %}true{% else %}false{% endif %}"
            class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'awaiting_info' %}bg-white text-amber-900 shadow-xs ring-1 ring-amber-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
@@ -96,7 +96,7 @@
         </a>
 
         <!-- Sold -->
-        <a href="?status=sold{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <a href="?status=sold{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            aria-selected="{% if status_filter == 'sold' %}true{% else %}false{% endif %}"
            class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'sold' %}bg-white text-slate-900 shadow-xs ring-1 ring-slate-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
@@ -108,7 +108,7 @@
 
         <!-- Blocked -->
         {% if blocked_count > 0 or status_filter == 'blocked' %}
-        <a href="?status=blocked{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <a href="?status=blocked{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            aria-selected="{% if status_filter == 'blocked' %}true{% else %}false{% endif %}"
            class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'blocked' %}bg-white text-rose-900 shadow-xs ring-1 ring-rose-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
@@ -122,7 +122,7 @@
 
         <!-- Erased / Trash Category -->
         {% if can_manage or erased_count > 0 or status_filter == 'erased' %}
-        <a href="?status=erased{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <a href="?status=erased{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            id="tab-erased"
            aria-selected="{% if status_filter == 'erased' %}true{% else %}false{% endif %}"
@@ -149,6 +149,9 @@
         {% if platform_filter %}
         <input type="hidden" name="platform" value="{{ platform_filter }}">
         {% endif %}
+        {% if pallet_filter %}
+        <input type="hidden" name="pallet" value="{{ pallet_filter }}">
+        {% endif %}
         {% if channel_filter %}
         <input type="hidden" name="channel" value="{{ channel_filter }}">
         {% endif %}
@@ -159,7 +162,7 @@
                  class="w-full pl-10 pr-10 py-2.5 text-base sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-normal text-slate-800 placeholder:text-slate-400 transition">
           <span class="absolute left-3.5 top-3 text-slate-400 text-sm pointer-events-none" aria-hidden="true">🔍</span>
           {% if search_query %}
-          <a href="?status={{ status_filter }}{% if platform_filter %}&platform={{ platform_filter }}{% endif %}"
+          <a href="?status={{ status_filter }}{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}"
              class="absolute right-3 top-2.5 p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/60 text-sm font-bold transition"
              title="{% trans 'Clear search' %}"
              aria-label="{% trans 'Clear search' %}">&times;</a>
@@ -169,12 +172,15 @@
 
       <!-- Platform Selector Form -->
       {% if available_platforms %}
-      <form method="get" class="w-full sm:w-60 shrink-0" id="platformFilterForm">
+      <form method="get" class="w-full sm:w-56 shrink-0" id="platformFilterForm">
         {% if status_filter != 'all' %}
         <input type="hidden" name="status" value="{{ status_filter }}">
         {% endif %}
         {% if search_query %}
         <input type="hidden" name="q" value="{{ search_query }}">
+        {% endif %}
+        {% if pallet_filter %}
+        <input type="hidden" name="pallet" value="{{ pallet_filter }}">
         {% endif %}
         {% if channel_filter %}
         <input type="hidden" name="channel" value="{{ channel_filter }}">
@@ -196,15 +202,52 @@
       </form>
       {% endif %}
 
+      <!-- Pallet Selector Form -->
+      {% if available_pallets or unassigned_products_count > 0 or pallet_filter %}
+      <form method="get" class="w-full sm:w-56 shrink-0" id="palletFilterForm">
+        {% if status_filter != 'all' %}
+        <input type="hidden" name="status" value="{{ status_filter }}">
+        {% endif %}
+        {% if search_query %}
+        <input type="hidden" name="q" value="{{ search_query }}">
+        {% endif %}
+        {% if platform_filter %}
+        <input type="hidden" name="platform" value="{{ platform_filter }}">
+        {% endif %}
+        {% if channel_filter %}
+        <input type="hidden" name="channel" value="{{ channel_filter }}">
+        {% endif %}
+        <div class="relative w-full">
+          <select name="pallet" onchange="this.form.submit()"
+                  aria-label="{% trans 'Filter by pallet' %}"
+                  class="w-full appearance-none pl-9 pr-9 py-2.5 text-base sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800 transition cursor-pointer">
+            <option value="">{% trans "All Pallets" %}</option>
+            {% if unassigned_products_count > 0 or pallet_filter == 'none' %}
+            <option value="none" {% if pallet_filter == 'none' %}selected{% endif %}>
+              {% trans "— Standalone / No Pallet —" %} ({{ unassigned_products_count }})
+            </option>
+            {% endif %}
+            {% for p in available_pallets %}
+            <option value="{{ p.id }}" {% if pallet_filter == p.id|stringformat:"s" %}selected{% endif %}>
+              Pallet #{{ p.number }} ({{ p.received_date|date:"Y-m-d" }}) ({{ p.products_count }})
+            </option>
+            {% endfor %}
+          </select>
+          <span class="absolute left-3 top-3 text-slate-400 text-sm pointer-events-none" aria-hidden="true">📦</span>
+          <span class="absolute right-3 top-3 text-slate-400 text-xs pointer-events-none" aria-hidden="true">▼</span>
+        </div>
+      </form>
+      {% endif %}
+
       <!-- Active Filters Reset / Clear Button -->
-      {% if search_query or platform_filter or channel_filter %}
+      {% if search_query or platform_filter or channel_filter or pallet_filter %}
       <div class="shrink-0 flex items-center">
         <a href="?status={{ status_filter }}"
            class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-transparent hover:border-rose-100 transition"
-           title="{% trans 'Clear search' %}"
-           aria-label="{% trans 'Clear search' %}">
+           title="{% trans 'Clear filters' %}"
+           aria-label="{% trans 'Clear filters' %}">
           <span aria-hidden="true">&times;</span>
-          <span>{% trans "Clear search" %}</span>
+          <span>{% trans "Clear filters" %}</span>
         </a>
       </div>
       {% endif %}
@@ -217,7 +260,7 @@
       <span class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">
         {% trans "Sync Status:" %}
       </span>
-      <a href="?status=published{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+      <a href="?status=published{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
          class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition {% if not sync_filter %}bg-slate-800 text-white shadow-xs{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
         {% trans "All Published" %} ({{ published_count }})
       </a>
@@ -405,6 +448,11 @@
           {% if product.is_reserved %}
           <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
             ⏳ {% trans "Reserved" %}
+          </span>
+          {% endif %}
+          {% if product.pallet %}
+          <span class="product-card-pallet-badge text-xs font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-900 border border-indigo-200/90 shadow-xs flex items-center gap-1 backdrop-blur-xs">
+            <span aria-hidden="true">📦</span> Pallet #{{ product.pallet.number }}
           </span>
           {% endif %}
         </div>
