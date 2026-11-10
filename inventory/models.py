@@ -75,6 +75,25 @@ class PlatformSyncReason(models.TextChoices):
     OTHER = "other", _("Other")
 
 
+class PolicySeverity(models.TextChoices):
+    CRITICAL = "critical", _("Critical (Prohibited)")
+    HIGH = "high", _("High Risk (Restricted)")
+    MEDIUM = "medium", _("Medium Risk (Conditional / Copy Rule)")
+
+
+class ComplianceVerdict(models.TextChoices):
+    APPROVED = "approved", _("Approved (Safe)")
+    MANUAL_REVIEW = "manual_review", _("Manual Review (Warning)")
+    REJECTED = "rejected", _("Policy Violation (High Risk)")
+
+
+class ComplianceStage(models.TextChoices):
+    STAGE_1_LEXICAL = "stage_1_lexical", _("Stage 1: Lexical Rule Match (0 Tokens)")
+    STAGE_1_SAFE = "stage_1_safe", _("Stage 1: Semantic Safe Short-Circuit (0 Tokens)")
+    STAGE_2_PIGGYBACK = "stage_2_piggyback", _("Stage 2: Piggybacked AI Check")
+    STAGE_2_TARGETED = "stage_2_targeted", _("Stage 2: Targeted Clause AI Check")
+
+
 OFFICIAL_CATEGORIES = (
     ("motor-y-accesorios", "Motor y accesorios", "Motors & Accessories", "two_wheeler", 1),
     ("moda-y-accesorios", "Moda y accesorios", "Fashion & Accessories", "apparel", 2),
@@ -608,6 +627,39 @@ class Product(models.Model):
         verbose_name=_("Last Platform Synced At"),
         help_text=_("Timestamp when external platform listings were last marked as synchronized"),
     )
+    compliance_status = models.CharField(
+        max_length=20,
+        choices=ComplianceVerdict.choices,
+        default=ComplianceVerdict.APPROVED,
+        db_index=True,
+        verbose_name=_("Policy Compliance Status"),
+        help_text=_("Advisory Terms & Conditions evaluation verdict"),
+    )
+    compliance_risk_score = models.PositiveSmallIntegerField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        verbose_name=_("Compliance Risk Score (0-100)"),
+        help_text=_("Numerical policy violation risk score from 0 (safe) to 100 (prohibited)"),
+    )
+    compliance_stage = models.CharField(
+        max_length=30,
+        choices=ComplianceStage.choices,
+        default=ComplianceStage.STAGE_1_SAFE,
+        verbose_name=_("Compliance Resolution Stage"),
+        help_text=_("Pipeline stage that resolved the current compliance verdict"),
+    )
+    compliance_report = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name=_("Compliance Audit Report"),
+        help_text=_("Structured Stage 1/Stage 2 compliance report, clause citations, platform matrix, and token savings telemetry"),
+    )
+    compliance_checked_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Compliance Checked At"),
+        help_text=_("Timestamp of the most recent compliance check"),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -835,6 +887,7 @@ class Product(models.Model):
         self._initial_status = self.__dict__.get("status")
         self._initial_is_sold = self.__dict__.get("is_sold")
         self._initial_sale_price = self.__dict__.get("sale_price")
+        self._initial_raw_note = self.__dict__.get("raw_note")
         self._initial_ai_title = self.__dict__.get("ai_title")
         self._initial_ai_description = self.__dict__.get("ai_description")
         self._initial_is_reserved = self.__dict__.get("is_reserved")
@@ -844,6 +897,46 @@ class Product(models.Model):
         self._changed_by = None
         self._status_trigger = None
         self._status_notes = None
+        self._skip_auto_compliance = False
+
+    @property
+    def is_compliance_flagged(self) -> bool:
+        return self.compliance_status in (ComplianceVerdict.MANUAL_REVIEW, ComplianceVerdict.REJECTED)
+
+    @property
+    def compliance_platform_list(self) -> list[dict]:
+        matrix = (self.compliance_report or {}).get("platform_matrix") or {}
+        if isinstance(matrix, dict):
+            return list(matrix.values())
+        return []
+
+    @property
+    def compliance_matched_clauses(self) -> list[dict]:
+        clauses = (self.compliance_report or {}).get("matched_clauses") or []
+        if not isinstance(clauses, list):
+            return []
+        lang = (get_language() or "es").lower()
+        is_en = lang.startswith("en")
+        localized = []
+        for item in clauses:
+            if not isinstance(item, dict):
+                continue
+            entry = dict(item)
+            if is_en:
+                entry["title"] = item.get("title_en") or item.get("title") or item.get("title_es") or ""
+                if item.get("explanation_en"):
+                    entry["explanation"] = item["explanation_en"]
+            else:
+                entry["title"] = item.get("title_es") or item.get("title") or item.get("title_en") or ""
+                if item.get("explanation_es"):
+                    entry["explanation"] = item["explanation_es"]
+            localized.append(entry)
+        return localized
+
+    @property
+    def compliance_telemetry(self) -> dict:
+        telemetry = (self.compliance_report or {}).get("telemetry") or {}
+        return telemetry if isinstance(telemetry, dict) else {}
 
     def _infer_status_trigger(self, from_status: str, to_status: str) -> str:
         if to_status == ProductStatus.SOLD:
@@ -870,10 +963,23 @@ class Product(models.Model):
             return "draft"
         return "status_updated"
 
-    def save(self, *args, changed_by=None, trigger=None, notes=None, **kwargs):
+    def save(self, *args, changed_by=None, trigger=None, notes=None, skip_auto_compliance=False, **kwargs):
         initial_status = getattr(self, "_initial_status", None)
         initial_is_sold = getattr(self, "_initial_is_sold", None)
         is_adding = self._state.adding
+        raw_note_changed = (self.raw_note or "") != (getattr(self, "_initial_raw_note", None) or "")
+        title_changed_for_compliance = (self.ai_title or "") != (getattr(self, "_initial_ai_title", None) or "")
+        desc_changed_for_compliance = (self.ai_description or "") != (getattr(self, "_initial_ai_description", None) or "")
+        update_fields_arg = kwargs.get("update_fields")
+        text_fields_updated = (
+            update_fields_arg is None
+            or any(f in {"raw_note", "ai_title", "ai_description"} for f in update_fields_arg)
+        )
+        should_run_stage1_compliance = (
+            not skip_auto_compliance
+            and not getattr(self, "_skip_auto_compliance", False)
+            and (is_adding or (text_fields_updated and (raw_note_changed or title_changed_for_compliance or desc_changed_for_compliance)))
+        )
 
         if is_adding:
             if self.is_sold or self.status == ProductStatus.SOLD:
@@ -968,6 +1074,29 @@ class Product(models.Model):
                 fields.add("platform_sync_reasons")
             kwargs["update_fields"] = list(fields)
 
+        if should_run_stage1_compliance:
+            try:
+                from .services.compliance_service import evaluate_stage1_local_for_product
+
+                stage1 = evaluate_stage1_local_for_product(self)
+                self.compliance_status = stage1["verdict"]
+                self.compliance_risk_score = stage1["risk_score"]
+                self.compliance_stage = stage1["stage"]
+                self.compliance_report = stage1["report"]
+                self.compliance_checked_at = timezone.now()
+                if "update_fields" in kwargs and kwargs["update_fields"] is not None:
+                    fields = set(kwargs["update_fields"])
+                    fields.update([
+                        "compliance_status",
+                        "compliance_risk_score",
+                        "compliance_stage",
+                        "compliance_report",
+                        "compliance_checked_at",
+                    ])
+                    kwargs["update_fields"] = list(fields)
+            except Exception:
+                pass
+
         self._previous_status = initial_status
         self._previous_needs_platform_sync = getattr(self, "_initial_needs_platform_sync", False)
         super().save(*args, **kwargs)
@@ -1021,6 +1150,7 @@ class Product(models.Model):
         self._initial_status = self.status
         self._initial_is_sold = self.is_sold
         self._initial_sale_price = self.sale_price
+        self._initial_raw_note = self.raw_note
         self._initial_ai_title = self.ai_title
         self._initial_ai_description = self.ai_description
         self._initial_is_reserved = getattr(self, "is_reserved", False)
@@ -1029,6 +1159,7 @@ class Product(models.Model):
         self._changed_by = None
         self._status_trigger = None
         self._status_notes = None
+        self._skip_auto_compliance = False
 
     def mark_as_sold(
         self,
@@ -1302,6 +1433,33 @@ class MarketplaceSite(models.Model):
         verbose_name=_("Display Order"),
         help_text=_("Sorting order for displaying platforms in dropdowns and lists"),
     )
+    policy_url = models.URLField(
+        max_length=1000,
+        blank=True,
+        default="",
+        validators=[HTTP_URL_VALIDATOR],
+        verbose_name=_("Terms & Conditions URL"),
+        help_text=_("Official platform Prohibited Items / T&C page URL for periodic policy sync"),
+    )
+    policy_raw_text = models.TextField(
+        blank=True,
+        default="",
+        verbose_name=_("Terms & Conditions Raw Text (Fallback)"),
+        help_text=_("Paste platform policy text here if automated URL fetching is blocked by anti-bot protection"),
+    )
+    policy_content_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        verbose_name=_("Policy Content SHA-256 Hash"),
+        help_text=_("SHA-256 hash of the last synced policy content to skip unchanged re-indexing"),
+    )
+    policy_last_synced_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Policy Last Synced At"),
+        help_text=_("Timestamp when policy rules were last synced and indexed"),
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
 
@@ -1317,6 +1475,104 @@ class MarketplaceSite(models.Model):
         if not self.slug and self.name:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
+
+
+class PolicyClause(models.Model):
+    code = models.CharField(
+        max_length=40,
+        unique=True,
+        db_index=True,
+        verbose_name=_("Clause Code"),
+        help_text=_("Unique policy clause identifier (e.g. GLB-101, VT-201, WP-301)"),
+    )
+    site = models.ForeignKey(
+        MarketplaceSite,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="policy_clauses",
+        verbose_name=_("Marketplace Site"),
+        help_text=_("Target marketplace platform (leave blank for Global / Storefront rule)"),
+    )
+    category = models.CharField(
+        max_length=80,
+        default="General",
+        verbose_name=_("Policy Category"),
+        help_text=_("Domain category (e.g. Weapons, Medical Claims, Counterfeit, Hygiene)"),
+    )
+    severity = models.CharField(
+        max_length=20,
+        choices=PolicySeverity.choices,
+        default=PolicySeverity.HIGH,
+        db_index=True,
+        verbose_name=_("Severity"),
+    )
+    title_es = models.CharField(
+        max_length=200,
+        verbose_name=_("Title (ES)"),
+    )
+    title_en = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        verbose_name=_("Title (EN)"),
+    )
+    description_es = models.TextField(
+        verbose_name=_("Clause Text (ES)"),
+    )
+    description_en = models.TextField(
+        blank=True,
+        default="",
+        verbose_name=_("Clause Text (EN)"),
+    )
+    hard_block_keywords = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name=_("Hard-Block Keywords"),
+        help_text=_("JSON list of lowercase trigger phrases in ES/EN for deterministic Stage 1 matching"),
+    )
+    embedding_vector = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name=_("Cached Embedding Vector"),
+        help_text=_("Cached semantic embedding vector computed from clause text"),
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        verbose_name=_("Is Active"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
+
+    class Meta:
+        ordering = ["code"]
+        verbose_name = _("Policy Clause")
+        verbose_name_plural = _("Policy Clauses")
+
+    def __str__(self):
+        scope = self.site.name if self.site_id else str(_("Global / Storefront"))
+        return f"[{self.code}] ({scope}) {self.localized_title}"
+
+    def get_localized_title(self, language: str | None = None) -> str:
+        lang = (language or get_language() or "es").lower()
+        if lang.startswith("en") and self.title_en:
+            return self.title_en
+        return self.title_es or self.title_en
+
+    def get_localized_description(self, language: str | None = None) -> str:
+        lang = (language or get_language() or "es").lower()
+        if lang.startswith("en") and self.description_en:
+            return self.description_en
+        return self.description_es or self.description_en
+
+    @property
+    def localized_title(self) -> str:
+        return self.get_localized_title()
+
+    @property
+    def localized_description(self) -> str:
+        return self.get_localized_description()
 
 
 class ProductListingLink(models.Model):

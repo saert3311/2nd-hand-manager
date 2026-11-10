@@ -19,10 +19,13 @@ from .models import (
     BackupStatus,
     BackupTriggerType,
     Category,
+    ComplianceVerdict,
     DatabaseBackupLog,
     IntakeBatchSession,
     MarketplaceSite,
     Pallet,
+    PolicyClause,
+    PolicySeverity,
     Product,
     ProductClarification,
     ProductImage,
@@ -363,6 +366,7 @@ class ProductAdmin(admin.ModelAdmin):
         "pallet",
         "condition",
         "status",
+        "compliance_badge_col",
         "needs_platform_sync_col",
         "sale_price_display",
         "estimated_resale_price_display",
@@ -381,6 +385,7 @@ class ProductAdmin(admin.ModelAdmin):
     )
     list_filter = (
         "status",
+        "compliance_status",
         "category",
         "pallet",
         "condition",
@@ -402,13 +407,14 @@ class ProductAdmin(admin.ModelAdmin):
         "sold_at",
         "last_platform_synced_at",
         "platform_sync_reasons",
+        "compliance_checked_at",
         "batch_session",
         "deleted_at",
         "deleted_by",
         "views_count",
         "whatsapp_clicks",
     )
-    actions = ["soft_delete_selected", "restore_selected"]
+    actions = ["soft_delete_selected", "restore_selected", "recheck_stage1_compliance"]
     list_select_related = ("category", "pallet", "created_by", "batch_session", "sold_marketplace")
 
     def has_module_permission(self, request):
@@ -490,6 +496,27 @@ class ProductAdmin(admin.ModelAdmin):
     is_deleted_col.short_description = _("Catalog State")
     is_deleted_col.admin_order_field = "is_deleted"
 
+    def compliance_badge_col(self, obj):
+        if obj.compliance_status == ComplianceVerdict.REJECTED:
+            return format_html(
+                '<span style="background-color:#fee2e2; color:#991b1b; padding:2px 8px; border-radius:9999px; font-weight:700; font-size:11px;">🚫 {} ({})</span>',
+                _("Violation"),
+                obj.compliance_risk_score,
+            )
+        if obj.compliance_status == ComplianceVerdict.MANUAL_REVIEW:
+            return format_html(
+                '<span style="background-color:#fef3c7; color:#92400e; padding:2px 8px; border-radius:9999px; font-weight:700; font-size:11px;">⚠️ {} ({})</span>',
+                _("Review"),
+                obj.compliance_risk_score,
+            )
+        return format_html(
+            '<span style="background-color:#dcfce7; color:#166534; padding:2px 8px; border-radius:9999px; font-weight:600; font-size:11px;">🛡️ {}</span>',
+            _("Safe"),
+        )
+
+    compliance_badge_col.short_description = _("Compliance")
+    compliance_badge_col.admin_order_field = "compliance_status"
+
     @admin.action(description=_("Move selected products to trash"))
     def soft_delete_selected(self, request, queryset):
         count = 0
@@ -505,6 +532,33 @@ class ProductAdmin(admin.ModelAdmin):
             p.restore(user=request.user)
             count += 1
         self.message_user(request, _("Restored %(count)d product(s) from trash.") % {"count": count})
+
+    @admin.action(description=_("Re-evaluate Stage 1 policy compliance (0 tokens)"))
+    def recheck_stage1_compliance(self, request, queryset):
+        from django.utils import timezone
+
+        from .services.compliance_service import evaluate_stage1_local_for_product
+
+        count = 0
+        for p in queryset:
+            res = evaluate_stage1_local_for_product(p)
+            p.compliance_status = res["verdict"]
+            p.compliance_risk_score = res["risk_score"]
+            p.compliance_stage = res["stage"]
+            p.compliance_report = res["report"]
+            p.compliance_checked_at = timezone.now()
+            p.save(
+                skip_auto_compliance=True,
+                update_fields=[
+                    "compliance_status",
+                    "compliance_risk_score",
+                    "compliance_stage",
+                    "compliance_report",
+                    "compliance_checked_at",
+                ],
+            )
+            count += 1
+        self.message_user(request, _("Evaluated Stage 1 policy compliance for %(count)d product(s).") % {"count": count})
 
 
 @admin.register(ProductImage, site=admin_site)
@@ -609,18 +663,141 @@ class MarketplaceSiteAdmin(admin.ModelAdmin):
         "is_active",
         "order",
         "links_count",
+        "clauses_count",
+        "policy_last_synced_at",
         "updated_at",
     )
     list_editable = ("is_active", "order")
     list_filter = ("is_active",)
-    search_fields = ("name", "slug", "base_url")
+    search_fields = ("name", "slug", "base_url", "policy_url")
     prepopulated_fields = {"slug": ("name",)}
-    readonly_fields = ("created_at", "updated_at")
+    readonly_fields = ("policy_content_hash", "policy_last_synced_at", "created_at", "updated_at")
+    actions = ["sync_policies_from_url_or_text"]
+    fieldsets = (
+        (
+            _("Platform Identity"),
+            {"fields": ("name", "slug", "base_url", "is_active", "order")},
+        ),
+        (
+            _("ClauseGuard Policy Sync"),
+            {
+                "fields": ("policy_url", "policy_raw_text", "policy_content_hash", "policy_last_synced_at"),
+                "description": _(
+                    "Configure the platform's prohibited items URL (or paste raw policy text if blocked by anti-bot rules), "
+                    "then use the admin action or `manage.py sync_marketplace_policies` to index clauses."
+                ),
+            },
+        ),
+        (
+            _("Timestamps"),
+            {"fields": ("created_at", "updated_at")},
+        ),
+    )
 
     def links_count(self, obj):
         return obj.product_links.count()
 
     links_count.short_description = _("Linked Products")
+
+    def clauses_count(self, obj):
+        return obj.policy_clauses.count()
+
+    clauses_count.short_description = _("Policy Clauses")
+
+    @admin.action(description=_("Sync & extract policy clauses from URL / raw text"))
+    def sync_policies_from_url_or_text(self, request, queryset):
+        from .services.compliance_service import sync_site_policy
+
+        synced = 0
+        unchanged = 0
+        skipped = 0
+        for site in queryset:
+            result = sync_site_policy(site, force=False)
+            if result["status"] == "synced":
+                synced += 1
+            elif result["status"] == "unchanged":
+                unchanged += 1
+            else:
+                skipped += 1
+        self.message_user(
+            request,
+            _("Policy sync complete: %(synced)d synced, %(unchanged)d unchanged, %(skipped)d skipped.")
+            % {"synced": synced, "unchanged": unchanged, "skipped": skipped},
+        )
+
+    def has_module_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_change_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_add_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_delete_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+
+@admin.register(PolicyClause, site=admin_site)
+class PolicyClauseAdmin(admin.ModelAdmin):
+    list_display = (
+        "code",
+        "site_scope_col",
+        "category",
+        "severity_badge",
+        "title_es",
+        "is_active",
+        "updated_at",
+    )
+    list_filter = ("severity", "is_active", "site", "category")
+    search_fields = ("code", "title_es", "title_en", "description_es", "description_en", "category")
+    readonly_fields = ("created_at", "updated_at")
+    actions = ["recompute_clause_embeddings"]
+
+    def site_scope_col(self, obj):
+        if obj.site_id and obj.site:
+            return obj.site.name
+        return format_html('<span style="color:#0f766e; font-weight:700;">🌐 {}</span>', _("Global / Storefront"))
+
+    site_scope_col.short_description = _("Platform Scope")
+
+    def severity_badge(self, obj):
+        colors = {
+            PolicySeverity.CRITICAL: ("#fee2e2", "#991b1b"),
+            PolicySeverity.HIGH: ("#fef3c7", "#92400e"),
+            PolicySeverity.MEDIUM: ("#e0f2fe", "#075985"),
+        }
+        bg, fg = colors.get(obj.severity, ("#f1f5f9", "#334155"))
+        return format_html(
+            '<span style="background-color:{}; color:{}; padding:2px 8px; border-radius:9999px; font-weight:700; font-size:11px;">{}</span>',
+            bg,
+            fg,
+            obj.get_severity_display(),
+        )
+
+    severity_badge.short_description = _("Severity")
+
+    @admin.action(description=_("Re-compute clause embedding vectors"))
+    def recompute_clause_embeddings(self, request, queryset):
+        from .services.compliance_service import compute_embedding_vector
+
+        count = 0
+        for clause in queryset:
+            text = (
+                f"{clause.title_es} {clause.title_en} "
+                f"{clause.description_es} {clause.description_en} "
+                f"{' '.join(clause.hard_block_keywords or [])}"
+            )
+            clause.embedding_vector = compute_embedding_vector(text, use_api=True)
+            clause.save(update_fields=["embedding_vector", "updated_at"])
+            count += 1
+        self.message_user(
+            request,
+            _("Re-computed semantic embedding vectors for %(count)d policy clause(s).") % {"count": count},
+        )
 
     def has_module_permission(self, request):
         return bool(request.user and request.user.is_active and is_manager(request.user))
