@@ -677,3 +677,38 @@ Introduce a `Pallet` domain model representing acquired liquidation pallets or l
    - Add Spanish translations to `locale/es/LC_MESSAGES/django.po` and compile with `compile_locales`.
    - Extend `tests/test_pallet_tracking.py` covering pallet filtering (`all`, specific ID, `none`), filter composability, tab count scoping, card badge rendering, and financial confidentiality.
    - Verify zero horizontal overflow on low-DPI OPPO A74 mobile viewports (`360×800` & `320×711`).
+
+---
+
+## Phase 48: ClauseGuard — Cost-Optimized Multi-Platform Policy Compliance (`clauseguard-policy-compliance`)
+
+### Overview
+Implement a two-stage, cost-optimized policy compliance engine (**ClauseGuard**) that evaluates cataloged products against platform-specific Terms & Conditions (Wallapop, Vinted, eBay, Milanuncios, and Rápido Pack Storefront) without uploading full legal documents on every request. Combines hybrid URL/raw-text policy syncing on `MarketplaceSite` + atomic `PolicyClause` vectors stored in SQLite, a `<5ms` zero-token Stage 1 local filter on manual saves, and a Stage 2 multimodal evaluation & auto-sanitizing copywriter piggybacked onto `identify_intake_product` and `generate_product_listing` (plus an on-demand `/products/<pk>/verify-compliance/` endpoint for managers).
+
+### Technical Design
+1. **Domain Layer & Schema (`inventory/models.py`, `inventory/migrations/`, `inventory/admin.py`)**:
+   - Add enums `PolicySeverity` (`CRITICAL`, `HIGH`, `MEDIUM`), `ComplianceVerdict` (`APPROVED`, `MANUAL_REVIEW`, `REJECTED`), and `ComplianceStage` (`STAGE_1_LEXICAL`, `STAGE_1_SAFE`, `STAGE_2_PIGGYBACK`, `STAGE_2_TARGETED`).
+   - Extend `MarketplaceSite` with `policy_url`, `policy_raw_text`, `policy_content_hash`, and `policy_last_synced_at`.
+   - Create `PolicyClause` model (`code`, `site` [nullable for global], `category`, `severity`, `title_es`, `title_en`, `description_es`, `description_en`, `hard_block_keywords`, `embedding_vector`, `is_active`, `updated_at`) with localized properties (`localized_title`, `localized_description`).
+   - Extend `Product` with orthogonal advisory fields: `compliance_status`, `compliance_risk_score`, `compliance_stage`, `compliance_report` (`JSONField`), and `compliance_checked_at`.
+   - In `Product.save()`: When text fields (`raw_note`, `ai_title`, `ai_description`) change on creation or manual edit (and not explicitly bypassed by a Stage 2 save), synchronously execute `evaluate_stage1_local(product)` (`<5ms`, 0 network calls) to keep advisory compliance state accurate.
+   - Register `PolicyClauseAdmin` and update `MarketplaceSiteAdmin` and `ProductAdmin` in `inventory/admin.py`.
+2. **Compliance Engine & Policy Sync Service (`inventory/services/compliance_service.py`, `inventory/management/commands/sync_marketplace_policies.py`)**:
+   - `ensure_default_policy_clauses()`: Idempotently seeds 12 curated bilingual (`es`/`en`) policy clauses covering global and platform-specific rules (Wallapop, Vinted, eBay, Milanuncios, Rápido Pack) with deterministic `hard_block_keywords`.
+   - `compute_embedding_vector(text)` & `cosine_similarity(vec_a, vec_b)`: Computes semantic embeddings via Gemini `text-embedding-004` / `gemini-embedding-001` when configured, with a deterministic normalized n-gram/lexical vector fallback when offline or in tests.
+   - `evaluate_stage1_local(product_or_text, category_slug="", top_k=3)`:
+     - Scans text against `hard_block_keywords` and ranks active `PolicyClause` records via cosine + lexical similarity.
+     - Returns `verdict`, `risk_score`, `stage`, `top_clauses` (top 3 for Stage 2 prompt injection), `matched_clauses`, `platform_matrix`, and token-savings `telemetry` (`tokens_used: 0` vs `naive_baseline_tokens: 12000`).
+   - `sync_site_policy(site, force=False)`: Fetches `site.policy_url` (with graceful fallback to `site.policy_raw_text` if blocked by anti-bot challenge or offline), computes SHA-256 hash, and updates/extracts `PolicyClause` rows when content changes.
+   - `sync_marketplace_policies` CLI command (`--site`, `--force`, `--dry-run`).
+3. **Stage 2 Piggybacked AI & Targeted Verification (`inventory/services/ai_service.py`, `inventory/views.py`, `inventory/urls.py`)**:
+   - **Intake Pre-flight (`identify_intake_product`)**: Extend `IntakePreflightSchema` with `compliance_verdict`, `compliance_risk_score`, and `compliance_flags` (detecting visual hazards in photos + note risks) and merge with local Stage 1 check in `intake_identify_view`.
+   - **Listing Copywriting (`generate_product_listing`)**: Inject only the top 3 Stage 1 candidate clauses (~150 tokens) into the prompt so Gemini **auto-sanitizes** generated copy (avoiding prohibited therapeutic claims or brand keyword stuffing) and returns `compliance_verdict`, `compliance_risk_score`, `violated_clause_codes`, `compliance_explanation`, and `sanitized_note` inside `ProductListingSchema`. Persist full report in `generate_ai_view`.
+   - **On-Demand Manager Verification (`product_verify_compliance_view`, `POST /products/<pk>/verify-compliance/`)**: Runs Stage 1 + targeted Stage 2 check (using only the top-3 matched clauses, ~250 tokens) without overwriting the manager's custom `ai_title` or `ai_description`.
+4. **User Interface & OPPO A74 Mobile Ergonomics (`intake.html`, `dashboard.html`, `product_detail.html`)**:
+   - `intake.html`: Render `#intakeComplianceAlert` inside `#aiIdentifyBanner` when pre-flight detects visual or note compliance risks.
+   - `dashboard.html`: Add `?compliance=flagged` filter toggle in the Secondary Filter Bar (`flagged_compliance_count`) and compact advisory badge (`🛡️ Review · <score>`) on flagged product cards.
+   - `product_detail.html`: Render `#clauseGuardCard` showing verdict badge, `0–100` Risk Score, Stage 1 vs Stage 2 resolution indicator, Token Savings telemetry (`Saved 98.8% tokens`), Per-Platform Compatibility Matrix (`Rápido Pack`, `Wallapop`, `Vinted`, `eBay`, `Milanuncios`), violated clause citations, sanitization notes, and the manager `🛡️ Verify Compliance` button.
+5. **Bilingual Localization & Comprehensive Test Suite (`locale/`, `tests/test_clauseguard_compliance.py`)**:
+   - Add Spanish/English translations in `locale/` and compile `.mo` catalogs.
+   - Author unit, integration, permission, and responsive viewport tests in `tests/test_clauseguard_compliance.py`.
