@@ -31,6 +31,7 @@ from .models import (
     Category,
     ClarificationCategory,
     ClarificationStatus,
+    ComplianceVerdict,
     MarketplaceSite,
     Pallet,
     PlatformSyncReason,
@@ -46,6 +47,10 @@ from .models import (
 )
 from .permissions import is_assistant, is_manager, manager_required
 from .services.ai_service import identify_intake_product
+from .services.compliance_service import (
+    evaluate_stage1_local_for_product,
+    verify_product_compliance_ai,
+)
 from .services.image_service import (
     MAX_IMAGES_PER_PRODUCT,
     process_and_convert_to_webp,
@@ -221,6 +226,7 @@ def dashboard_view(request):
     channel_filter = request.GET.get("channel", "").strip().lower()
     sync_filter = request.GET.get("sync", "").strip().lower()
     pallet_filter = request.GET.get("pallet", "").strip()
+    compliance_filter = request.GET.get("compliance", "").strip().lower()
 
     # Query only marketplace sites that have at least one active published product
     available_platforms = (
@@ -297,6 +303,11 @@ def dashboard_view(request):
     if search_query:
         products = products.filter(build_search_query(search_query))
 
+    if compliance_filter == "flagged":
+        products = products.filter(
+            compliance_status__in=[ComplianceVerdict.MANUAL_REVIEW, ComplianceVerdict.REJECTED]
+        )
+
     # Calculate status counts (scoped to selected platform if active)
     counts_qs = Product.objects.all()
     if platform_filter:
@@ -343,6 +354,14 @@ def dashboard_view(request):
         ),
         blocked_count=Count("id", filter=Q(status=ProductStatus.BLOCKED, is_deleted=False), distinct=True),
         erased_count=Count("id", filter=Q(is_deleted=True), distinct=True),
+        flagged_compliance_count=Count(
+            "id",
+            filter=Q(
+                compliance_status__in=[ComplianceVerdict.MANUAL_REVIEW, ComplianceVerdict.REJECTED],
+                is_deleted=False,
+            ),
+            distinct=True,
+        ),
     )
 
     paginator = Paginator(products, PAGE_SIZE)
@@ -388,10 +407,12 @@ def dashboard_view(request):
         "sold_other_count": counts["sold_other_count"] or 0,
         "channel_filter": channel_filter,
         "sync_filter": sync_filter,
+        "compliance_filter": compliance_filter,
         "published_count": counts["published_count"] or 0,
         "out_of_sync_count": counts["out_of_sync_count"] or 0,
         "blocked_count": counts["blocked_count"] or 0,
         "erased_count": counts["erased_count"] or 0,
+        "flagged_compliance_count": counts["flagged_compliance_count"] or 0,
         "trash_metrics": trash_metrics,
         "can_manage": is_manager(request.user),
     }
@@ -473,17 +494,20 @@ def product_detail_view(request, pk):
         form = ProductUpdateForm(instance=product)
 
     active_sites = MarketplaceSite.objects.filter(is_active=True).order_by("order", "name")
+    compliance_report = product.compliance_report or evaluate_stage1_local_for_product(product)["report"]
+    compliance_matrix_dict = compliance_report.get("platform_matrix") or {}
     links_by_site = {link.site_id: link for link in product.listing_links.all()}
     site_links_data = [
-        {"site": s, "link": links_by_site.get(s.id)}
+        {"site": s, "link": links_by_site.get(s.id), "compliance": compliance_matrix_dict.get(s.slug)}
         for s in active_sites
     ]
     active_site_ids = {s.id for s in active_sites}
-    active_listing_links = [
-        links_by_site[s.id]
-        for s in active_sites
-        if s.id in links_by_site and links_by_site[s.id].is_active
-    ]
+    active_listing_links = []
+    for s in active_sites:
+        if s.id in links_by_site and links_by_site[s.id].is_active:
+            link_obj = links_by_site[s.id]
+            link_obj.compliance_status_info = compliance_matrix_dict.get(s.slug)
+            active_listing_links.append(link_obj)
     unlinked_sites = [
         s for s in active_sites
         if s.id not in links_by_site or not links_by_site[s.id].is_active
@@ -516,6 +540,16 @@ def product_detail_view(request, pk):
         "direct_clarification_form": ProductDirectClarificationForm(),
         "answer_form": ProductClarificationAnswerForm(),
         "categories": ClarificationCategory.choices,
+        "compliance_report": compliance_report,
+        "compliance_platforms": list(compliance_matrix_dict.values()) if isinstance(compliance_matrix_dict, dict) else [],
+        "compliance_clauses": (
+            product.compliance_matched_clauses
+            if product.compliance_report
+            else (compliance_report.get("matched_clauses") or [])
+        ),
+        "compliance_telemetry": compliance_report.get("telemetry") or {},
+        "compliance_sanitized_actions": compliance_report.get("sanitized_actions") or [],
+        "compliance_summary": compliance_report.get("summary") or "",
     }
     return render(request, "inventory/product_detail.html", context)
 
@@ -874,7 +908,23 @@ def generate_ai_view(request, pk):
             product.condition = cond_code
             update_fields.append("condition")
 
-        product.save(update_fields=update_fields)
+        compliance_data = listing_data.get("compliance")
+        if isinstance(compliance_data, dict):
+            product.compliance_status = compliance_data.get("verdict", ComplianceVerdict.APPROVED)
+            product.compliance_risk_score = compliance_data.get("risk_score", 0)
+            product.compliance_stage = compliance_data.get("stage", product.compliance_stage)
+            product.compliance_report = compliance_data.get("report") or {}
+            product.compliance_checked_at = timezone.now()
+            update_fields.extend([
+                "compliance_status",
+                "compliance_risk_score",
+                "compliance_stage",
+                "compliance_report",
+                "compliance_checked_at",
+            ])
+            product.save(skip_auto_compliance=True, update_fields=update_fields)
+        else:
+            product.save(update_fields=update_fields)
 
         messages.success(request, _("AI listing successfully generated from photos and notes!"))
     except AIServiceError as e:
@@ -883,6 +933,49 @@ def generate_ai_view(request, pk):
         messages.error(request, _("Unexpected error during AI generation: %(error)s") % {"error": exc})
 
     return redirect("inventory:product_detail", pk=pk)
+
+
+@login_required
+@manager_required
+@require_POST
+def product_verify_compliance_view(request, pk):
+    """
+    On-demand Manager endpoint running Stage 1 local filter + targeted Stage 2 verification
+    using ONLY the top-3 matched policy clauses without overwriting custom listing text.
+    """
+    product = get_object_or_404(Product, pk=pk)
+    active_language = get_language() or "es"
+
+    result = verify_product_compliance_ai(product, language=active_language)
+    product.compliance_status = result.get("verdict", ComplianceVerdict.APPROVED)
+    product.compliance_risk_score = result.get("risk_score", 0)
+    product.compliance_stage = result.get("stage", product.compliance_stage)
+    product.compliance_report = result.get("report") or {}
+    product.compliance_checked_at = timezone.now()
+    product.save(
+        skip_auto_compliance=True,
+        update_fields=[
+            "compliance_status",
+            "compliance_risk_score",
+            "compliance_stage",
+            "compliance_report",
+            "compliance_checked_at",
+            "updated_at",
+        ],
+    )
+
+    telemetry = (product.compliance_report or {}).get("telemetry") or {}
+    saved_pct = telemetry.get("tokens_saved_percent", 100.0)
+    messages.success(
+        request,
+        _("ClauseGuard check completed: %(status)s (Risk %(score)s/100 · %(saved)s%% tokens saved).")
+        % {
+            "status": product.get_compliance_status_display(),
+            "score": product.compliance_risk_score,
+            "saved": saved_pct,
+        },
+    )
+    return redirect(f"{reverse('inventory:product_detail', kwargs={'pk': pk})}#clauseGuardCard")
 
 
 def manifest_view(request):
