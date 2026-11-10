@@ -3773,43 +3773,43 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 # Phase 48: ClauseGuard — Cost-Optimized Multi-Platform Policy Compliance
 
 ### Task 174: Domain Layer & Admin: PolicyClause, MarketplaceSite Sync Fields & Product Advisory Fields (`inventory/models.py`, `inventory/migrations/`, `inventory/admin.py`)
-- [ ] Add `PolicySeverity`, `ComplianceVerdict`, and `ComplianceStage` (`TextChoices`) to `inventory/models.py`.
-- [ ] Extend `MarketplaceSite` with `policy_url`, `policy_raw_text`, `policy_content_hash`, and `policy_last_synced_at`.
-- [ ] Define `PolicyClause` model (`code`, `site`, `category`, `severity`, `title_es`, `title_en`, `description_es`, `description_en`, `hard_block_keywords`, `embedding_vector`, `is_active`, `updated_at`) with `localized_title` and `localized_description` helpers.
-- [ ] Extend `Product` with advisory compliance fields (`compliance_status`, `compliance_risk_score`, `compliance_stage`, `compliance_report`, `compliance_checked_at`) and automatic Stage 1 evaluation hook in `Product.save()`.
-- [ ] Generate and apply migrations (`makemigrations inventory` & `migrate`).
-- [ ] Register `PolicyClauseAdmin` and update `MarketplaceSiteAdmin` and `ProductAdmin` in `inventory/admin.py`.
-- [ ] Verification: `.venv\Scripts\python.exe manage.py check` and `.venv\Scripts\python.exe manage.py migrate`.
+- [x] Add `PolicySeverity`, `ComplianceVerdict`, and `ComplianceStage` (`TextChoices`) to `inventory/models.py`.
+- [x] Extend `MarketplaceSite` with `policy_url`, `policy_raw_text`, `policy_content_hash`, and `policy_last_synced_at`.
+- [x] Define `PolicyClause` model (`code`, `site`, `category`, `severity`, `title_es`, `title_en`, `description_es`, `description_en`, `hard_block_keywords`, `embedding_vector`, `is_active`, `updated_at`) with `localized_title` and `localized_description` helpers.
+- [x] Extend `Product` with advisory compliance fields (`compliance_status`, `compliance_risk_score`, `compliance_stage`, `compliance_report`, `compliance_checked_at`) and automatic Stage 1 evaluation hook in `Product.save()`.
+- [x] Generate and apply migrations (`makemigrations inventory` & `migrate`).
+- [x] Register `PolicyClauseAdmin` and update `MarketplaceSiteAdmin` and `ProductAdmin` in `inventory/admin.py`.
+- [x] Verification: `.venv\Scripts\python.exe manage.py check` and `.venv\Scripts\python.exe manage.py migrate`.
 
 ### Task 175: ClauseGuard Two-Stage Service Engine & Policy Sync CLI (`inventory/services/compliance_service.py`, `inventory/management/commands/sync_marketplace_policies.py`)
-- [ ] Implement `ensure_default_policy_clauses()` seeding 12 bilingual (`es`/`en`) global and platform-specific rules (Wallapop, Vinted, eBay, Milanuncios, Rápido Pack Storefront) with `hard_block_keywords` and cached vectors.
-- [ ] Implement `compute_embedding_vector()`, `cosine_similarity()`, and `evaluate_stage1_local()` (local `<5ms` lexical + semantic clause matching, top-3 clause selection, per-platform compatibility matrix, and token-savings telemetry).
-- [ ] Implement `sync_site_policy()` supporting hybrid HTTP URL fetch + `policy_raw_text` fallback, SHA-256 content hash deduplication, and AI clause extraction.
-- [ ] Implement `sync_marketplace_policies` management command (`--site`, `--force`, `--dry-run`).
-- [ ] Verification: `.venv\Scripts\python.exe manage.py sync_marketplace_policies --dry-run`.
+- [x] Implement `ensure_default_policy_clauses()` seeding 12 bilingual (`es`/`en`) global and platform-specific rules (Wallapop, Vinted, eBay, Milanuncios, Rápido Pack Storefront) with `hard_block_keywords` and cached vectors.
+- [x] Implement `compute_embedding_vector()`, `cosine_similarity()`, and `evaluate_stage1_local()` (local `<5ms` lexical + semantic clause matching, top-3 clause selection, per-platform compatibility matrix, and token-savings telemetry).
+- [x] Implement `sync_site_policy()` supporting hybrid HTTP URL fetch + `policy_raw_text` fallback, SHA-256 content hash deduplication, and AI clause extraction.
+- [x] Implement `sync_marketplace_policies` management command (`--site`, `--force`, `--dry-run`).
+- [x] Verification: `.venv\Scripts\python.exe manage.py sync_marketplace_policies --dry-run`.
 
 ### Task 176: Stage 2 Piggybacked AI Integration & On-Demand Verify Endpoint (`inventory/services/ai_service.py`, `inventory/views.py`, `inventory/urls.py`)
-- [ ] Extend `IntakePreflightSchema` and `identify_intake_product()` in `ai_service.py` to detect visual and note compliance risks during the 3-photo intake pre-flight scan (0 extra API calls) and merge with Stage 1 results.
-- [ ] Extend `ProductListingSchema` and `generate_product_listing()` in `ai_service.py` to inject the top 3 Stage 1 candidate clauses (~150 tokens), auto-sanitize generated copy against prohibited claims, and return structured Stage 2 compliance telemetry.
-- [ ] Implement `verify_product_compliance_ai()` and `product_verify_compliance_view` (`POST /products/<pk>/verify-compliance/`) for manager on-demand re-verification without overwriting custom listing text.
-- [ ] Update `dashboard_view` in `inventory/views.py` to support `?compliance=flagged` filtering and compute `flagged_compliance_count`.
-- [ ] Verification: `.venv\Scripts\python.exe manage.py check`.
+- [x] Extend `IntakePreflightSchema` and `identify_intake_product()` in `ai_service.py` to detect visual and note compliance risks during the 3-photo intake pre-flight scan (0 extra API calls) and merge with Stage 1 results.
+- [x] Extend `ProductListingSchema` and `generate_product_listing()` in `ai_service.py` to inject the top 3 Stage 1 candidate clauses (~150 tokens), auto-sanitize generated copy against prohibited claims, and return structured Stage 2 compliance telemetry.
+- [x] Implement `verify_product_compliance_ai()` and `product_verify_compliance_view` (`POST /products/<pk>/verify-compliance/`) for manager on-demand re-verification without overwriting custom listing text.
+- [x] Update `dashboard_view` in `inventory/views.py` to support `?compliance=flagged` filtering and compute `flagged_compliance_count`.
+- [x] Verification: `.venv\Scripts\python.exe manage.py check`.
 
 ### Task 177: User Interface & OPPO A74 Mobile Ergonomics (`intake.html`, `dashboard.html`, `product_detail.html`)
-- [ ] In `intake.html`: Render `#intakeComplianceAlert` inside `#aiIdentifyBanner` displaying risk badge and detected visual/note policy warnings.
-- [ ] In `dashboard.html`: Add `?compliance=flagged` filter pill in the Secondary Filter Bar and compact advisory badges on flagged product cards.
-- [ ] In `product_detail.html`: Build `#clauseGuardCard` featuring verdict badge, `0–100` risk score, Stage 1 vs Stage 2 resolution indicator, Token Savings telemetry (`Used` vs `Naive Full-T&C`), Per-Platform Compatibility Matrix, violated clause citations, sanitization notes, and the manager `🛡️ Verify Compliance` button.
-- [ ] Ensure zero horizontal overflow across `320×711` and `360×800` OPPO A74 mobile viewports.
-- [ ] Verification: `.venv\Scripts\python.exe manage.py check`.
+- [x] In `intake.html`: Render `#intakeComplianceAlert` inside `#aiIdentifyBanner` displaying risk badge and detected visual/note policy warnings.
+- [x] In `dashboard.html`: Add `?compliance=flagged` filter pill in the Secondary Filter Bar and compact advisory badges on flagged product cards.
+- [x] In `product_detail.html`: Build `#clauseGuardCard` featuring verdict badge, `0–100` risk score, Stage 1 vs Stage 2 resolution indicator, Token Savings telemetry (`Used` vs `Naive Full-T&C`), Per-Platform Compatibility Matrix, violated clause citations, sanitization notes, and the manager `🛡️ Verify Compliance` button.
+- [x] Ensure zero horizontal overflow across `320×711` and `360×800` OPPO A74 mobile viewports.
+- [x] Verification: `.venv\Scripts\python.exe manage.py check`.
 
 ### Task 178: Bilingual Translations, Comprehensive Automated Test Suite & Quality Gate (`locale/`, `tests/test_clauseguard_compliance.py`, `CHANGELOG.md`, `tasks/todo.md`)
-- [ ] Add Spanish and English translations to `locale/es/LC_MESSAGES/django.po` and `locale/en/LC_MESSAGES/django.po`, and compile `.mo` catalogs via `manage.py compile_locales`.
-- [ ] Author `tests/test_clauseguard_compliance.py` covering Stage 1 lexical & vector matching, top-3 clause retrieval, token savings math, per-platform compatibility matrix, piggybacked intake & listing AI calls, auto-sanitizing copy, manual edit re-evaluation, hybrid URL/text policy sync, permissions, and OPPO A74 responsive layout.
-- [ ] Update `CHANGELOG.md` under `## [Unreleased]` and check off completed items in `tasks/todo.md`.
-- [ ] Run full quality gate: `ruff check .`, `manage.py check`, `manage.py compile_locales`, and `manage.py test`.
+- [x] Add Spanish and English translations to `locale/es/LC_MESSAGES/django.po` and `locale/en/LC_MESSAGES/django.po`, and compile `.mo` catalogs via `manage.py compile_locales`.
+- [x] Author `tests/test_clauseguard_compliance.py` covering Stage 1 lexical & vector matching, top-3 clause retrieval, token savings math, per-platform compatibility matrix, piggybacked intake & listing AI calls, auto-sanitizing copy, manual edit re-evaluation, hybrid URL/text policy sync, permissions, and OPPO A74 responsive layout.
+- [x] Update `CHANGELOG.md` under `## [Unreleased]` and check off completed items in `tasks/todo.md`.
+- [x] Run full quality gate: `ruff check .`, `manage.py check`, `manage.py compile_locales`, and `manage.py test`.
 
 ### Checkpoint 48: ClauseGuard Policy Compliance Complete
-- [ ] Products are automatically evaluated against global and platform-specific Terms & Conditions at intake, staging AI generation, and manual edits with ~95%+ token savings.
-- [ ] Sourcing assistants receive early visual/note warnings on `/intake/` without blocking uploads.
-- [ ] Store managers see per-platform compatibility (`Rápido Pack`, `Wallapop`, `Vinted`, `eBay`, `Milanuncios`), violated clause citations, auto-sanitized copy notes, and token telemetry on `/products/<pk>/`, plus `?compliance=flagged` filtering on `/dashboard/`.
-- [ ] 100% of automated tests pass, zero linter warnings, zero horizontal overflow on OPPO A74 mobile viewports.
+- [x] Products are automatically evaluated against global and platform-specific Terms & Conditions at intake, staging AI generation, and manual edits with ~95%+ token savings.
+- [x] Sourcing assistants receive early visual/note warnings on `/intake/` without blocking uploads.
+- [x] Store managers see per-platform compatibility (`Rápido Pack`, `Wallapop`, `Vinted`, `eBay`, `Milanuncios`), violated clause citations, auto-sanitized copy notes, and token telemetry on `/products/<pk>/`, plus `?compliance=flagged` filtering on `/dashboard/`.
+- [x] 100% of automated tests pass, zero linter warnings, zero horizontal overflow on OPPO A74 mobile viewports.

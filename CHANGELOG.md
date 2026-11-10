@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **ClauseGuard — Cost-Optimized Multi-Platform Policy Compliance (Phase 48)**:
+  - **Per-Platform Policy Knowledge Base & Hybrid URL Sync**: Extended `MarketplaceSite` with `policy_url`, `policy_raw_text`, `policy_content_hash`, and `policy_last_synced_at`, paired with the new `PolicyClause` model (pre-seeded with 12 bilingual global and platform-specific rules for Wallapop, Vinted, eBay, Milanuncios, and Rápido Pack Storefront) and `manage.py sync_marketplace_policies` CLI + Admin actions featuring SHA-256 hash deduplication and anti-bot raw-text fallback.
+  - **Zero-Token Stage 1 Local Pre-Filter (`<5ms`, 0 LLM Tokens)**: Implemented `inventory/services/compliance_service.py` with accent-insensitive lexical keyword matching and local/cached cosine vector similarity to select only the top 3 relevant clauses (~150 tokens vs 12,000+ full T&C tokens) and auto-evaluate manual product edits on `Product.save()`.
+  - **Stage 2 Piggybacked Multimodal AI & Auto-Sanitizing Copywriter**: Piggybacked visual & textual policy warnings onto `identify_intake_product` (`/intake/identify/`) and injected top-3 clauses into `generate_product_listing` (`/products/<pk>/generate-ai/`) to auto-sanitize prohibited health claims and SEO keyword stuffing with zero extra API calls.
+  - **On-Demand Manager Verification & Advisory UI**: Added `POST /products/<pk>/verify-compliance/`, `?compliance=flagged` filtering + `Policy Alerts` toggle and card badges on `/dashboard/`, `#intakeComplianceAlert` warnings on `/intake/`, and the `#clauseGuardCard` (Per-Platform Compatibility Matrix, clause citations, sanitization notes, and token savings telemetry) on `/products/<pk>/`.
+  - **Bilingual Localization & Automated Test Suite**: Added Spanish and English translations in `locale/` compiled via `manage.py compile_locales`, full unit/integration coverage in `tests/test_clauseguard_compliance.py`, and OPPO A74 (`360×800` & `320×711`) Playwright responsive verification in `tests/test_oppo_a74_responsive.py`.
+
 ## [2.7.0] - 2026-10-31
 
 ### Added

@@ -21,6 +21,7 @@ from inventory.models import (
     ProductStatus,
     StorefrontConfiguration,
 )
+from inventory.services.compliance_service import ensure_default_policy_clauses
 
 User = get_user_model()
 
@@ -95,6 +96,7 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
             slug="vinted",
             defaults={"name": "Vinted", "order": 1, "is_active": True},
         )
+        ensure_default_policy_clauses()
 
         # Create dummy image
         img_path = os.path.join("tmp_test_images", "sample_jacket.jpg")
@@ -151,6 +153,17 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
             is_public=False,
             is_sold=False,
             created_by=self.assistant,
+        )
+
+        # ClauseGuard Flagged Product (Platform-restricted on Vinted VT-202)
+        self.p_flagged = Product.objects.create(
+            ai_title="Taladro Percutor Bosch Profesional 800W",
+            ai_description="Taladro eléctrico de alta potencia en maletín original.",
+            sale_price=Decimal("65.00"),
+            status=ProductStatus.READY,
+            is_public=True,
+            is_sold=False,
+            created_by=self.manager,
         )
 
         # Erased Product
@@ -310,7 +323,9 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 page.wait_for_load_state("networkidle")
                 self._assert_no_horizontal_overflow(page, f"dashboard_{label}", width, height)
                 self.assertTrue(page.locator("#palletFilterForm").is_visible())
+                self.assertTrue(page.locator("#complianceFilterBtn").is_visible())
                 self.assertTrue(page.locator(".product-card-pallet-badge").first.is_visible())
+                self.assertTrue(page.locator(".product-card-compliance-badge").first.is_visible())
 
                 # 3. Staging Dashboard (Erased / Trash tab)
                 page.goto(f"{self.live_server_url}{reverse('inventory:dashboard')}?status=erased")
@@ -332,7 +347,14 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 page.click("#applyCropBtn")
                 page.wait_for_selector("#imagePreviewModal.hidden", state="attached", timeout=5000)
 
-                # 5. Staging Product Detail view
+                # 5. Staging Product Detail view (and ClauseGuard card on flagged item)
+                page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.p_flagged.pk})}")
+                page.wait_for_load_state("networkidle")
+                self.assertTrue(page.locator("#clauseGuardCard").is_visible())
+                self.assertTrue(page.locator("#clauseGuardPlatformMatrix").is_visible())
+                self.assertTrue(page.locator("#clauseGuardCitationsList").is_visible())
+                self._assert_no_horizontal_overflow(page, f"staging_detail_clauseguard_{label}", width, height)
+
                 page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.p_active.pk})}")
                 page.wait_for_load_state("networkidle")
                 self._assert_no_horizontal_overflow(page, f"staging_detail_{label}", width, height)

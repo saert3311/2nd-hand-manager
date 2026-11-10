@@ -3236,3 +3236,272 @@ msgstr "— Standalone / No Pallet —"
 
 msgid "Clear filters"
 msgstr "Clear filters"
+
+msgid "Critical (Prohibited)"
+msgstr "Critical (Prohibited)"
+
+msgid "High Risk (Restricted)"
+msgstr "High Risk (Restricted)"
+
+msgid "Medium Risk (Conditional / Copy Rule)"
+msgstr "Medium Risk (Conditional / Copy Rule)"
+
+msgid "Approved (Safe)"
+msgstr "Approved (Safe)"
+
+msgid "Manual Review (Warning)"
+msgstr "Manual Review (Warning)"
+
+msgid "Policy Violation (High Risk)"
+msgstr "Policy Violation (High Risk)"
+
+msgid "Stage 1: Lexical Rule Match (0 Tokens)"
+msgstr "Stage 1: Lexical Rule Match (0 Tokens)"
+
+msgid "Stage 1: Semantic Safe Short-Circuit (0 Tokens)"
+msgstr "Stage 1: Semantic Safe Short-Circuit (0 Tokens)"
+
+msgid "Stage 2: Piggybacked AI Check"
+msgstr "Stage 2: Piggybacked AI Check"
+
+msgid "Stage 2: Targeted Clause AI Check"
+msgstr "Stage 2: Targeted Clause AI Check"
+
+msgid "Policy Compliance Status"
+msgstr "Policy Compliance Status"
+
+msgid "Advisory Terms & Conditions evaluation verdict"
+msgstr "Advisory Terms & Conditions evaluation verdict"
+
+msgid "Compliance Risk Score (0-100)"
+msgstr "Compliance Risk Score (0-100)"
+
+msgid ""
+"Numerical policy violation risk score from 0 (safe) to 100 (prohibited)"
+msgstr ""
+"Numerical policy violation risk score from 0 (safe) to 100 (prohibited)"
+
+msgid "Compliance Resolution Stage"
+msgstr "Compliance Resolution Stage"
+
+msgid "Pipeline stage that resolved the current compliance verdict"
+msgstr "Pipeline stage that resolved the current compliance verdict"
+
+msgid "Compliance Audit Report"
+msgstr "Compliance Audit Report"
+
+msgid ""
+"Structured Stage 1/Stage 2 compliance report, clause citations, platform "
+"matrix, and token savings telemetry"
+msgstr ""
+"Structured Stage 1/Stage 2 compliance report, clause citations, platform "
+"matrix, and token savings telemetry"
+
+msgid "Compliance Checked At"
+msgstr "Compliance Checked At"
+
+msgid "Timestamp of the most recent compliance check"
+msgstr "Timestamp of the most recent compliance check"
+
+msgid "Terms & Conditions URL"
+msgstr "Terms & Conditions URL"
+
+msgid ""
+"Official platform Prohibited Items / T&C page URL for periodic policy sync"
+msgstr ""
+"Official platform Prohibited Items / T&C page URL for periodic policy sync"
+
+msgid "Terms & Conditions Raw Text (Fallback)"
+msgstr "Terms & Conditions Raw Text (Fallback)"
+
+msgid ""
+"Paste platform policy text here if automated URL fetching is blocked by "
+"anti-bot protection"
+msgstr ""
+"Paste platform policy text here if automated URL fetching is blocked by "
+"anti-bot protection"
+
+msgid "Policy Content SHA-256 Hash"
+msgstr "Policy Content SHA-256 Hash"
+
+msgid ""
+"SHA-256 hash of the last synced policy content to skip unchanged re-indexing"
+msgstr ""
+"SHA-256 hash of the last synced policy content to skip unchanged re-indexing"
+
+msgid "Policy Last Synced At"
+msgstr "Policy Last Synced At"
+
+msgid "Timestamp when policy rules were last synced and indexed"
+msgstr "Timestamp when policy rules were last synced and indexed"
+
+msgid "Clause Code"
+msgstr "Clause Code"
+
+msgid "Unique policy clause identifier (e.g. GLB-101, VT-201, WP-301)"
+msgstr "Unique policy clause identifier (e.g. GLB-101, VT-201, WP-301)"
+
+msgid "Target marketplace platform (leave blank for Global / Storefront rule)"
+msgstr ""
+"Target marketplace platform (leave blank for Global / Storefront rule)"
+
+msgid "Policy Category"
+msgstr "Policy Category"
+
+msgid "Domain category (e.g. Weapons, Medical Claims, Counterfeit, Hygiene)"
+msgstr "Domain category (e.g. Weapons, Medical Claims, Counterfeit, Hygiene)"
+
+msgid "Severity"
+msgstr "Severity"
+
+msgid "Title (ES)"
+msgstr "Title (ES)"
+
+msgid "Title (EN)"
+msgstr "Title (EN)"
+
+msgid "Clause Text (ES)"
+msgstr "Clause Text (ES)"
+
+msgid "Clause Text (EN)"
+msgstr "Clause Text (EN)"
+
+msgid "Hard-Block Keywords"
+msgstr "Hard-Block Keywords"
+
+msgid ""
+"JSON list of lowercase trigger phrases in ES/EN for deterministic Stage 1 "
+"matching"
+msgstr ""
+"JSON list of lowercase trigger phrases in ES/EN for deterministic Stage 1 "
+"matching"
+
+msgid "Cached Embedding Vector"
+msgstr "Cached Embedding Vector"
+
+msgid "Cached semantic embedding vector computed from clause text"
+msgstr "Cached semantic embedding vector computed from clause text"
+
+msgid "Policy Clause"
+msgstr "Policy Clause"
+
+msgid "Policy Clauses"
+msgstr "Policy Clauses"
+
+msgid "Global / Storefront"
+msgstr "Global / Storefront"
+
+msgid "Violation"
+msgstr "Violation"
+
+msgid "Safe"
+msgstr "Safe"
+
+msgid "Compliance"
+msgstr "Compliance"
+
+msgid "Re-evaluate Stage 1 policy compliance (0 tokens)"
+msgstr "Re-evaluate Stage 1 policy compliance (0 tokens)"
+
+msgid "Evaluated Stage 1 policy compliance for %(count)d product(s)."
+msgstr "Evaluated Stage 1 policy compliance for %(count)d product(s)."
+
+msgid "Platform Identity"
+msgstr "Platform Identity"
+
+msgid "ClauseGuard Policy Sync"
+msgstr "ClauseGuard Policy Sync"
+
+msgid ""
+"Configure the platform's prohibited items URL (or paste raw policy text if "
+"blocked by anti-bot rules), then use the admin action or manage.py "
+"sync_marketplace_policies to index clauses."
+msgstr ""
+"Configure the platform's prohibited items URL (or paste raw policy text if "
+"blocked by anti-bot rules), then use the admin action or manage.py "
+"sync_marketplace_policies to index clauses."
+
+msgid "Timestamps"
+msgstr "Timestamps"
+
+msgid "Sync & extract policy clauses from URL / raw text"
+msgstr "Sync & extract policy clauses from URL / raw text"
+
+msgid ""
+"Policy sync complete: %(synced)d synced, %(unchanged)d unchanged, "
+"%(skipped)d skipped."
+msgstr ""
+"Policy sync complete: %(synced)d synced, %(unchanged)d unchanged, "
+"%(skipped)d skipped."
+
+msgid "Platform Scope"
+msgstr "Platform Scope"
+
+msgid "Re-compute clause embedding vectors"
+msgstr "Re-compute clause embedding vectors"
+
+msgid "Re-computed semantic embedding vectors for %(count)d policy clause(s)."
+msgstr ""
+"Re-computed semantic embedding vectors for %(count)d policy clause(s)."
+
+msgid ""
+"ClauseGuard check completed: %(status)s (Risk %(score)s/100 · %(saved)s%% "
+"tokens saved)."
+msgstr ""
+"ClauseGuard check completed: %(status)s (Risk %(score)s/100 · %(saved)s%% "
+"tokens saved)."
+
+msgid "ClauseGuard Policy Risk"
+msgstr "ClauseGuard Policy Risk"
+
+msgid "Risk"
+msgstr "Risk"
+
+msgid "ClauseGuard Platform Advisory"
+msgstr "ClauseGuard Platform Advisory"
+
+msgid "Policy Alerts"
+msgstr "Policy Alerts"
+
+msgid "Policy Risk"
+msgstr "Policy Risk"
+
+msgid "ClauseGuard Policy Compliance"
+msgstr "ClauseGuard Policy Compliance"
+
+msgid "Two-stage advisory T&C check across marketplaces (top-3 clauses only)."
+msgstr ""
+"Two-stage advisory T&C check across marketplaces (top-3 clauses only)."
+
+msgid "Policy Violation"
+msgstr "Policy Violation"
+
+msgid "Manual Review"
+msgstr "Manual Review"
+
+msgid "Approved"
+msgstr "Approved"
+
+msgid "Tokens: %(used)s vs ~%(baseline)s full T&C · Saved %(saved)s%%"
+msgstr "Tokens: %(used)s vs ~%(baseline)s full T&C · Saved %(saved)s%%"
+
+msgid "Platform Compatibility Matrix"
+msgstr "Platform Compatibility Matrix"
+
+msgid "Flagged Policy Clauses"
+msgstr "Flagged Policy Clauses"
+
+msgid "Trigger:"
+msgstr "Trigger:"
+
+msgid "Auto-Sanitized Copywriting Notes"
+msgstr "Auto-Sanitized Copywriting Notes"
+
+msgid "Last checked:"
+msgstr "Last checked:"
+
+msgid "Evaluated locally via Stage 1 rules."
+msgstr "Evaluated locally via Stage 1 rules."
+
+msgid "Verify Compliance (AI)"
+msgstr "Verify Compliance (AI)"
