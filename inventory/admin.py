@@ -706,10 +706,11 @@ class MarketplaceSiteAdmin(admin.ModelAdmin):
 
     @admin.action(description=_("Sync & extract policy clauses from URL / raw text"))
     def sync_policies_from_url_or_text(self, request, queryset):
-        from .services.compliance_service import sync_site_policy
+        from .services.policy_sync_service import sync_site_policy
 
         synced = 0
         unchanged = 0
+        failed = 0
         skipped = 0
         for site in queryset:
             result = sync_site_policy(site, force=False)
@@ -717,12 +718,17 @@ class MarketplaceSiteAdmin(admin.ModelAdmin):
                 synced += 1
             elif result["status"] == "unchanged":
                 unchanged += 1
+            elif result["status"] == "extraction_failed":
+                failed += 1
             else:
                 skipped += 1
         self.message_user(
             request,
-            _("Policy sync complete: %(synced)d synced, %(unchanged)d unchanged, %(skipped)d skipped.")
-            % {"synced": synced, "unchanged": unchanged, "skipped": skipped},
+            _(
+                "Policy sync complete: %(synced)d synced, %(unchanged)d unchanged, "
+                "%(failed)d extraction failed, %(skipped)d skipped."
+            )
+            % {"synced": synced, "unchanged": unchanged, "failed": failed, "skipped": skipped},
         )
 
     def has_module_permission(self, request):
@@ -782,16 +788,11 @@ class PolicyClauseAdmin(admin.ModelAdmin):
 
     @admin.action(description=_("Re-compute clause embedding vectors"))
     def recompute_clause_embeddings(self, request, queryset):
-        from .services.compliance_service import compute_embedding_vector
+        from .services.compliance_service import clause_embedding_text, compute_embedding_vector
 
         count = 0
         for clause in queryset:
-            text = (
-                f"{clause.title_es} {clause.title_en} "
-                f"{clause.description_es} {clause.description_en} "
-                f"{' '.join(clause.hard_block_keywords or [])}"
-            )
-            clause.embedding_vector = compute_embedding_vector(text, use_api=True)
+            clause.embedding_vector = compute_embedding_vector(clause_embedding_text(clause), use_api=False)
             clause.save(update_fields=["embedding_vector", "updated_at"])
             count += 1
         self.message_user(

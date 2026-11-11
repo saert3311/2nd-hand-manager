@@ -30,7 +30,7 @@ Implement a **Two-Stage, Zero-Waste Advisory Policy Compliance Engine** integrat
 - **Runtime & Language:** Python 3.13+
 - **Web Framework:** Django 5.x (`inventory` app)
 - **Database & Vector Cache:** SQLite storing compact float vectors in `PolicyClause.embedding_vector` (`JSONField`) with pure-Python cosine similarity + normalized lexical BM25/token-overlap fallback (zero external vector DB dependencies)
-- **AI Integration:** `google-genai` (`gemini-2.5-flash` / `gemini-flash-latest` for multimodal vision & structured JSON adjudication; `gemini-embedding-001` / `text-embedding-004` with deterministic local fallback when offline/testing)
+- **AI Integration:** `google-genai` (`gemini-flash-latest` for granular policy rule extraction & pass/fail compliance verification; Gemini Flash for multimodal vision & structured JSON listing generation; `gemini-embedding-001` with deterministic local fallback when offline/testing)
 - **Frontend:** Django Templates + Tailwind CSS + Vanilla JS (strictly compliant with OPPO A74 `360×800` & `320×711` low-DPI mobile viewports)
 - **Localization:** Bilingual (`es` / `en`) via Django `i18n` and `polib` (`manage.py compile_locales`)
 
@@ -150,7 +150,7 @@ Add orthogonal advisory fields to `Product` (never mutating `Product.status`):
 
 ---
 
-## 5. Service Architecture (`inventory/services/compliance_service.py`)
+## 5. Service Architecture (`inventory/services/compliance_service.py`, `policy_sync_service.py`, `policy_clauses_seed.py`)
 
 ### 5.1 Pre-Seeded Marketplace Policy Clauses
 `ensure_default_policy_clauses()` seeds 12 realistic, high-value bilingual clauses covering:
@@ -175,21 +175,22 @@ Add orthogonal advisory fields to `Product` (never mutating `Product.status`):
 4. Selects the **top 3 candidate clauses** (`top_k=3`) and builds the per-platform compatibility matrix and token telemetry (`naive_baseline_tokens = 12000` vs `tokens_used = 0` for Stage 1).
 5. When invoked from `Product.save()` on manual edits, updates `compliance_status`, `compliance_risk_score`, `compliance_stage`, and `compliance_report` in `<5ms` with zero external API calls.
 
-### 5.3 Stage 2: Piggybacked & Targeted AI Evaluation
+### 5.3 Stage 2: Piggybacked & Targeted AI Evaluation (Zero-Reason Pass/Fail)
 1. **Piggybacked on `identify_intake_product` (`ai_service.py`)**:
-   - Appends a compact ~120-token policy checklist to `PREFLIGHT_ES_INSTRUCTION` / `PREFLIGHT_EN_INSTRUCTION` and extends `IntakePreflightSchema` with:
-     - `compliance_verdict`: `Literal["approved", "manual_review", "rejected"]`
-     - `compliance_risk_score`: `int` (`0–100`)
-     - `compliance_flags`: `list[str]` (visual or textual policy risks spotted in photos/notes)
+   - Injects ONLY the top-3 Stage 1 clauses (~150 tokens) into the intake prompt (**0 extra API calls**) and extends `IntakePreflightSchema` with:
+     - `compliance_passed`: `bool` (`true` if safe, `false` if any clause triggered)
+     - `violated_clause_codes`: `list[str]` (exact violated clause codes, e.g. `["VT-201"]`, without asking Gemini to generate explanations)
 2. **Piggybacked on `generate_product_listing` (`ai_service.py`)**:
    - Runs Stage 1 first to fetch the top 3 relevant `PolicyClause` records (~150 tokens).
    - Injects those 3 clauses into the copywriting prompt with explicit instructions to:
      1. **Auto-sanitize** `title` and `description` so they do not make prohibited therapeutic claims or keyword-stuff unrelated brands.
-     2. Populate compliance fields in `ProductListingSchema` (`compliance_verdict`, `compliance_risk_score`, `violated_clause_codes`, `compliance_explanation`, `sanitized_note`).
-   - Merges Stage 1 + Stage 2 results into `Product.compliance_report` and persists on `generate_ai_view`.
+     2. Populate compact compliance fields in `ProductListingSchema` (`compliance_passed`, `violated_clause_codes`, `sanitized_note`), avoiding reason/explanation output tokens.
+   - `merge_stage2_compliance_result()` deterministically derives verdict, risk score, localized rule titles/descriptions, and the Per-Platform Compatibility Matrix from the local `PolicyClause` DB records.
 3. **Standalone Targeted Verification (`verify_product_compliance_ai`)**:
    - Triggered via `POST /products/<pk>/verify-compliance/` (`product_verify_compliance_view`).
-   - Sends *only* the product text and top-3 matched clauses (~250 tokens) to Gemini Flash (or deterministic Stage 1 fallback if `GEMINI_API_KEY` is unconfigured), updating `product.compliance_*` without overwriting the manager's manual `ai_title` or `ai_description`.
+   - Sends *only* the product text and top-3 matched clauses to `gemini-flash-latest`, requesting strictly pass/fail (`passed`: `bool`) + `violated_clause_codes` (zero explanation output tokens). Exact rule citations and descriptions are populated locally from `PolicyClause`, and targeted `passed=True` verification clears verified Stage 1 keyword false-positives.
+4. **Granular SSRF-Protected Policy Extraction (`sync_site_policy` in `policy_sync_service.py`)**:
+   - Validates remote URLs (and HTTP redirects) against private/loopback/metadata IPs, enforces `text/*` responses, only persists `policy_content_hash` when Gemini extraction succeeds, deactivates obsolete auto-synced rules on re-sync, and uses `gemini-flash-latest` without an artificial 8-rule cap across up to 60,000 characters.
 
 ---
 

@@ -549,7 +549,11 @@ def product_detail_view(request, pk):
         ),
         "compliance_telemetry": compliance_report.get("telemetry") or {},
         "compliance_sanitized_actions": compliance_report.get("sanitized_actions") or [],
-        "compliance_summary": compliance_report.get("summary") or "",
+        "compliance_summary": (
+            product.compliance_summary_localized
+            if product.compliance_report
+            else (compliance_report.get("summary") or "")
+        ),
     }
     return render(request, "inventory/product_detail.html", context)
 

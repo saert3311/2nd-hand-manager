@@ -3745,10 +3745,10 @@ msgstr "Sincronizar y extraer cláusulas de política desde URL / texto"
 
 msgid ""
 "Policy sync complete: %(synced)d synced, %(unchanged)d unchanged, "
-"%(skipped)d skipped."
+"%(failed)d extraction failed, %(skipped)d skipped."
 msgstr ""
 "Sincronización completada: %(synced)d sincronizada(s), %(unchanged)d sin "
-"cambios, %(skipped)d omitida(s)."
+"cambios, %(failed)d fallida(s), %(skipped)d omitida(s)."
 
 msgid "Platform Scope"
 msgstr "Ámbito de Plataforma"

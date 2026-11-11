@@ -1,10 +1,8 @@
 from django.core.management.base import BaseCommand
 
 from inventory.models import MarketplaceSite
-from inventory.services.compliance_service import (
-    ensure_default_policy_clauses,
-    sync_site_policy,
-)
+from inventory.services.compliance_service import ensure_default_policy_clauses
+from inventory.services.policy_sync_service import sync_site_policy
 
 
 class Command(BaseCommand):

@@ -3429,10 +3429,10 @@ msgstr "Sync & extract policy clauses from URL / raw text"
 
 msgid ""
 "Policy sync complete: %(synced)d synced, %(unchanged)d unchanged, "
-"%(skipped)d skipped."
+"%(failed)d extraction failed, %(skipped)d skipped."
 msgstr ""
 "Policy sync complete: %(synced)d synced, %(unchanged)d unchanged, "
-"%(skipped)d skipped."
+"%(failed)d extraction failed, %(skipped)d skipped."
 
 msgid "Platform Scope"
 msgstr "Platform Scope"

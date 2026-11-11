@@ -1,3 +1,4 @@
+import logging
 from contextvars import ContextVar
 from datetime import timedelta
 from decimal import Decimal
@@ -14,6 +15,8 @@ from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
 
 from .middleware import get_current_user
+
+logger = logging.getLogger(__name__)
 
 HTTP_URL_VALIDATOR = URLValidator(
     schemes=["http", "https"],
@@ -938,6 +941,15 @@ class Product(models.Model):
         telemetry = (self.compliance_report or {}).get("telemetry") or {}
         return telemetry if isinstance(telemetry, dict) else {}
 
+    @property
+    def compliance_summary_localized(self) -> str:
+        report = self.compliance_report or {}
+        if not isinstance(report, dict):
+            return ""
+        lang = (get_language() or "es").lower()
+        key = "summary_en" if lang.startswith("en") else "summary_es"
+        return str(report.get(key) or report.get("summary") or "")
+
     def _infer_status_trigger(self, from_status: str, to_status: str) -> str:
         if to_status == ProductStatus.SOLD:
             return "marked_sold"
@@ -1095,7 +1107,7 @@ class Product(models.Model):
                     ])
                     kwargs["update_fields"] = list(fields)
             except Exception:
-                pass
+                logger.warning("Stage 1 auto-compliance check failed for product %s", self.pk, exc_info=True)
 
         self._previous_status = initial_status
         self._previous_needs_platform_sync = getattr(self, "_initial_needs_platform_sync", False)
