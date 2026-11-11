@@ -2,7 +2,7 @@ import gzip
 import os
 import sqlite3
 import tempfile
-from datetime import datetime
+from datetime import datetime, timedelta
 from datetime import timezone as dt_timezone
 from io import StringIO
 from unittest.mock import MagicMock, patch
@@ -147,13 +147,16 @@ class GetBackupStorageTests(TestCase):
         self.assertIsInstance(storage, OCIObjectStorage)
 
 
+def _backup_key_for_offset(days_ago: int) -> str:
+    dt = datetime.now(dt_timezone.utc) - timedelta(days=days_ago)
+    return f"backups/db/{dt:%Y/%m}/db_{dt:%Y%m%d_%H%M%S}.sqlite3.gz"
+
+
 class PruneOldBackupsTests(TestCase):
     def test_prune_in_memory_storage(self):
         storage = InMemoryStorage()
-        # Old backup (40 days ago)
-        old_key = "backups/db/2026/09/db_20260901_000000.sqlite3.gz"
-        # Recent backup (2 days ago)
-        recent_key = "backups/db/2026/10/db_20261012_000000.sqlite3.gz"
+        old_key = _backup_key_for_offset(40)
+        recent_key = _backup_key_for_offset(2)
 
         storage.save(old_key, ContentFile(b"old-data"))
         storage.save(recent_key, ContentFile(b"recent-data"))
@@ -170,10 +173,10 @@ class PruneOldBackupsTests(TestCase):
         mock_storage.bucket = mock_bucket
 
         obj_old = MagicMock()
-        obj_old.key = "backups/db/2026/08/db_20260801_000000.sqlite3.gz"
+        obj_old.key = _backup_key_for_offset(40)
 
         obj_recent = MagicMock()
-        obj_recent.key = "backups/db/2026/10/db_20261014_000000.sqlite3.gz"
+        obj_recent.key = _backup_key_for_offset(2)
 
         mock_bucket.objects.filter.return_value = [obj_old, obj_recent]
 
@@ -185,7 +188,7 @@ class PruneOldBackupsTests(TestCase):
 
     def test_prune_dry_run_does_not_delete(self):
         storage = InMemoryStorage()
-        old_key = "backups/db/2026/09/db_20260901_000000.sqlite3.gz"
+        old_key = _backup_key_for_offset(40)
         storage.save(old_key, ContentFile(b"old-data"))
 
         pruned = prune_old_backups(retention_days=30, storage=storage, dry_run=True)
