@@ -951,6 +951,33 @@ class Product(models.Model):
         key = "summary_en" if lang.startswith("en") else "summary_es"
         return str(report.get(key) or report.get("summary") or "")
 
+    _COMPLIANCE_FIELDS = (
+        "compliance_status",
+        "compliance_risk_score",
+        "compliance_stage",
+        "compliance_report",
+        "compliance_checked_at",
+    )
+
+    def apply_compliance_result(
+        self,
+        result: dict,
+        *,
+        commit: bool = False,
+        update_fields: list[str] | set[str] | None = None,
+    ) -> list[str]:
+        """Applies a Stage 1 or Stage 2 compliance payload consistently onto this Product."""
+        self.compliance_status = result.get("verdict", ComplianceVerdict.APPROVED)
+        self.compliance_risk_score = result.get("risk_score", 0)
+        self.compliance_stage = result.get("stage", self.compliance_stage)
+        self.compliance_report = result.get("report") or {}
+        self.compliance_checked_at = timezone.now()
+
+        fields = list(dict.fromkeys([*(update_fields or ()), *self._COMPLIANCE_FIELDS]))
+        if commit:
+            self.save(skip_auto_compliance=True, update_fields=fields)
+        return fields
+
     def _infer_status_trigger(self, from_status: str, to_status: str) -> str:
         if to_status == ProductStatus.SOLD:
             return "marked_sold"
@@ -1127,20 +1154,10 @@ class Product(models.Model):
                     and not has_category_violation
                 )
                 if not preserve_stage2_clearance:
-                    self.compliance_status = stage1["verdict"]
-                    self.compliance_risk_score = stage1["risk_score"]
-                    self.compliance_stage = stage1["stage"]
-                    self.compliance_report = stage1["report"]
-                    self.compliance_checked_at = timezone.now()
+                    applied_fields = self.apply_compliance_result(stage1, commit=False)
                     if "update_fields" in kwargs and kwargs["update_fields"] is not None:
                         fields = set(kwargs["update_fields"])
-                        fields.update([
-                            "compliance_status",
-                            "compliance_risk_score",
-                            "compliance_stage",
-                            "compliance_report",
-                            "compliance_checked_at",
-                        ])
+                        fields.update(applied_fields)
                         kwargs["update_fields"] = list(fields)
             except Exception:
                 logger.warning("Stage 1 auto-compliance check failed for product %s", self.pk, exc_info=True)
@@ -1626,6 +1643,11 @@ class PolicyClause(models.Model):
         if lang.startswith("en") and self.description_en:
             return self.description_en
         return self.description_es or self.description_en
+
+    def save(self, *args, **kwargs):
+        if self.code:
+            self.code = self.code.strip().upper()
+        super().save(*args, **kwargs)
 
     @property
     def localized_title(self) -> str:

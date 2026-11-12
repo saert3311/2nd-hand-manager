@@ -535,28 +535,11 @@ class ProductAdmin(admin.ModelAdmin):
 
     @admin.action(description=_("Re-evaluate Stage 1 policy compliance (0 tokens)"))
     def recheck_stage1_compliance(self, request, queryset):
-        from django.utils import timezone
-
         from .services.compliance_service import evaluate_stage1_local_for_product
 
         count = 0
         for p in queryset:
-            res = evaluate_stage1_local_for_product(p)
-            p.compliance_status = res["verdict"]
-            p.compliance_risk_score = res["risk_score"]
-            p.compliance_stage = res["stage"]
-            p.compliance_report = res["report"]
-            p.compliance_checked_at = timezone.now()
-            p.save(
-                skip_auto_compliance=True,
-                update_fields=[
-                    "compliance_status",
-                    "compliance_risk_score",
-                    "compliance_stage",
-                    "compliance_report",
-                    "compliance_checked_at",
-                ],
-            )
+            p.apply_compliance_result(evaluate_stage1_local_for_product(p), commit=True)
             count += 1
         self.message_user(request, _("Evaluated Stage 1 policy compliance for %(count)d product(s).") % {"count": count})
 
@@ -694,13 +677,23 @@ class MarketplaceSiteAdmin(admin.ModelAdmin):
         ),
     )
 
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(
+                _links_count=Count("product_links", distinct=True),
+                _clauses_count=Count("policy_clauses", distinct=True),
+            )
+        )
+
     def links_count(self, obj):
-        return obj.product_links.count()
+        return getattr(obj, "_links_count", None) if hasattr(obj, "_links_count") else obj.product_links.count()
 
     links_count.short_description = _("Linked Products")
 
     def clauses_count(self, obj):
-        return obj.policy_clauses.count()
+        return getattr(obj, "_clauses_count", None) if hasattr(obj, "_clauses_count") else obj.policy_clauses.count()
 
     clauses_count.short_description = _("Policy Clauses")
 
@@ -774,11 +767,9 @@ class PolicyClauseAdmin(admin.ModelAdmin):
         "hard_block_keywords",
         "weak_keywords",
         "exception_phrases",
-        "embedding_vector",
         "created_at",
         "updated_at",
     )
-    actions = ["recompute_clause_embeddings"]
 
     def site_scope_col(self, obj):
         if obj.site_id and obj.site:
@@ -802,20 +793,6 @@ class PolicyClauseAdmin(admin.ModelAdmin):
         )
 
     severity_badge.short_description = _("Severity")
-
-    @admin.action(description=_("Re-compute clause embedding vectors"))
-    def recompute_clause_embeddings(self, request, queryset):
-        from .services.compliance_service import clause_embedding_text, compute_embedding_vector
-
-        count = 0
-        for clause in queryset:
-            clause.embedding_vector = compute_embedding_vector(clause_embedding_text(clause), use_api=False)
-            clause.save(update_fields=["embedding_vector", "updated_at"])
-            count += 1
-        self.message_user(
-            request,
-            _("Re-computed semantic embedding vectors for %(count)d policy clause(s).") % {"count": count},
-        )
 
     def has_module_permission(self, request):
         return bool(request.user and request.user.is_active and is_manager(request.user))

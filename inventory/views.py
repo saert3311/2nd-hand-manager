@@ -914,18 +914,7 @@ def generate_ai_view(request, pk):
 
         compliance_data = listing_data.get("compliance")
         if isinstance(compliance_data, dict):
-            product.compliance_status = compliance_data.get("verdict", ComplianceVerdict.APPROVED)
-            product.compliance_risk_score = compliance_data.get("risk_score", 0)
-            product.compliance_stage = compliance_data.get("stage", product.compliance_stage)
-            product.compliance_report = compliance_data.get("report") or {}
-            product.compliance_checked_at = timezone.now()
-            update_fields.extend([
-                "compliance_status",
-                "compliance_risk_score",
-                "compliance_stage",
-                "compliance_report",
-                "compliance_checked_at",
-            ])
+            update_fields = product.apply_compliance_result(compliance_data, commit=False, update_fields=update_fields)
             product.save(skip_auto_compliance=True, update_fields=update_fields)
         else:
             product.save(update_fields=update_fields)
@@ -951,22 +940,7 @@ def product_verify_compliance_view(request, pk):
     active_language = get_language() or "es"
 
     result = verify_product_compliance_ai(product, language=active_language)
-    product.compliance_status = result.get("verdict", ComplianceVerdict.APPROVED)
-    product.compliance_risk_score = result.get("risk_score", 0)
-    product.compliance_stage = result.get("stage", product.compliance_stage)
-    product.compliance_report = result.get("report") or {}
-    product.compliance_checked_at = timezone.now()
-    product.save(
-        skip_auto_compliance=True,
-        update_fields=[
-            "compliance_status",
-            "compliance_risk_score",
-            "compliance_stage",
-            "compliance_report",
-            "compliance_checked_at",
-            "updated_at",
-        ],
-    )
+    product.apply_compliance_result(result, commit=True, update_fields=["updated_at"])
 
     telemetry = (product.compliance_report or {}).get("telemetry") or {}
     saved_pct = telemetry.get("tokens_saved_percent", 100.0)

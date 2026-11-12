@@ -251,7 +251,7 @@
       <!-- ClauseGuard Policy Alerts Toggle -->
       {% if flagged_compliance_count > 0 or compliance_filter == 'flagged' %}
       <a id="complianceFilterBtn"
-         href="?status={{ status_filter }}{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}{% if compliance_filter != 'flagged' %}&compliance=flagged{% endif %}"
+         href="?status={{ status_filter }}{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if channel_filter %}&channel={{ channel_filter }}{% endif %}{% if sync_filter %}&sync={{ sync_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}{% if compliance_filter != 'flagged' %}&compliance=flagged{% endif %}"
          class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs sm:text-sm font-bold rounded-xl border transition min-h-[42px] shrink-0 {% if compliance_filter == 'flagged' %}bg-amber-600 text-white border-amber-700 shadow-xs{% else %}bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300{% endif %}">
         <span aria-hidden="true">🛡️</span>
         <span>{% trans "Policy Alerts" %}</span>
@@ -282,11 +282,11 @@
       <span class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">
         {% trans "Sync Status:" %}
       </span>
-      <a href="?status=published{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+      <a href="?status=published{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
          class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition {% if not sync_filter %}bg-slate-800 text-white shadow-xs{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
         {% trans "All Published" %} ({{ published_count }})
       </a>
-      <a href="?status=published&sync=out_of_sync{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+      <a href="?status=published&sync=out_of_sync{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
          class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition inline-flex items-center gap-1.5 {% if sync_filter == 'out_of_sync' %}bg-amber-600 text-white shadow-xs{% else %}bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200{% endif %}">
         <span aria-hidden="true">⚠️</span>
         <span>{% trans "Out of Sync" %} ({{ out_of_sync_count }})</span>
@@ -299,20 +299,20 @@
       <span class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">
         {% trans "Channel:" %}
       </span>
-      <a href="?status=sold{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+      <a href="?status=sold{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
          class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition {% if not channel_filter %}bg-slate-800 text-white shadow-xs{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
         {% trans "All Channels" %} ({{ sold_count }})
       </a>
-      <a href="?status=sold&channel=in_store{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+      <a href="?status=sold&channel=in_store{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
          class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition inline-flex items-center gap-1 {% if channel_filter == 'in_store' %}bg-emerald-700 text-white shadow-xs{% else %}bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200{% endif %}">
         <span>🏪</span> {% trans "In-Store" %} ({{ sold_in_store_count }})
       </a>
-      <a href="?status=sold&channel=marketplace{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+      <a href="?status=sold&channel=marketplace{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
          class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition inline-flex items-center gap-1 {% if channel_filter == 'marketplace' and not platform_filter %}bg-blue-700 text-white shadow-xs{% else %}bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200{% endif %}">
         <span>🌐</span> {% trans "Marketplaces" %} ({{ sold_marketplace_count }})
       </a>
       {% if sold_other_count > 0 %}
-      <a href="?status=sold&channel=other{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+      <a href="?status=sold&channel=other{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
          class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition inline-flex items-center gap-1 {% if channel_filter == 'other' %}bg-purple-700 text-white shadow-xs{% else %}bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200{% endif %}">
         <span>📦</span> {% trans "Other" %} ({{ sold_other_count }})
       </a>

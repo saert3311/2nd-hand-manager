@@ -19,9 +19,6 @@ from pydantic import BaseModel, Field
 from inventory.models import MarketplaceSite, PolicyClause
 
 from .compliance_service import (
-    LOCAL_EMBEDDING_DIMS,
-    clause_embedding_text,
-    compute_embedding_vector,
     ensure_default_policy_clauses,
     normalize_text,
     parse_gemini_response_dict,
@@ -303,22 +300,31 @@ def sync_site_policy(
     extracted_clauses: list[ExtractedClauseSchema] = []
     extraction_attempted = bool(use_api and api_key.strip())
 
-    if extraction_attempted:
-        try:
-            extracted_clauses, extraction_error = _extract_clauses_with_gemini(site, fetched_text)
-        except Exception as exc:
-            extraction_error = str(exc)
-            logger.warning("Gemini policy clause extraction fallback for %s: %s", site.slug, exc)
+    if not extraction_attempted:
+        return {
+            "site": site.slug,
+            "status": "skipped_no_ai",
+            "source": source_used,
+            "hash": site.policy_content_hash,
+            "clauses_updated": 0,
+            "fallback_error": fetch_error,
+        }
 
-        if extraction_error is not None:
-            return {
-                "site": site.slug,
-                "status": "extraction_failed",
-                "source": source_used,
-                "hash": site.policy_content_hash,
-                "clauses_updated": 0,
-                "error": extraction_error,
-            }
+    try:
+        extracted_clauses, extraction_error = _extract_clauses_with_gemini(site, fetched_text)
+    except Exception as exc:
+        extraction_error = str(exc)
+        logger.warning("Gemini policy clause extraction fallback for %s: %s", site.slug, exc)
+
+    if extraction_error is not None:
+        return {
+            "site": site.slug,
+            "status": "extraction_failed",
+            "source": source_used,
+            "hash": site.policy_content_hash,
+            "clauses_updated": 0,
+            "error": extraction_error,
+        }
 
     site_prefix = re.sub(r"[^A-Z0-9]", "", (site.slug or "SITE").upper())[:4] or "SITE"
     seen_codes: set[str] = set()
@@ -337,10 +343,6 @@ def sync_site_policy(
             for e in (item.exception_phrases or [])
             if str(e or "").strip()
         ]
-        clause_text = (
-            f"{item.title_es} {item.title_en} {item.description_es} {item.description_en} "
-            f"{' '.join(sanitized_hard)}"
-        )
         PolicyClause.objects.update_or_create(
             code=code,
             defaults={
@@ -354,7 +356,6 @@ def sync_site_policy(
                 "hard_block_keywords": sanitized_hard,
                 "weak_keywords": sanitized_weak,
                 "exception_phrases": sanitized_exc,
-                "embedding_vector": compute_embedding_vector(clause_text, use_api=False),
                 "is_active": True,
             },
         )
@@ -369,20 +370,6 @@ def sync_site_policy(
             .exclude(code__in=seed_codes)
             .update(is_active=False)
         )
-
-    for existing_clause in PolicyClause.objects.filter(site=site, is_active=True):
-        if (
-            not existing_clause.embedding_vector
-            or len(existing_clause.embedding_vector) != LOCAL_EMBEDDING_DIMS
-            or force
-        ):
-            existing_clause.embedding_vector = compute_embedding_vector(
-                clause_embedding_text(existing_clause),
-                use_api=False,
-            )
-            existing_clause.save(update_fields=["embedding_vector", "updated_at"])
-            if not extracted_clauses:
-                clauses_updated += 1
 
     site.policy_content_hash = content_hash
     site.policy_last_synced_at = timezone.now()

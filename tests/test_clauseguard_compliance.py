@@ -29,8 +29,7 @@ from inventory.services.ai_service import (
 from inventory.services.compliance_service import (
     LOCAL_EMBEDDING_DIMS,
     TargetedComplianceCheckSchema,
-    compute_embedding_vector,
-    cosine_similarity,
+    compute_local_ngram_vector,
     ensure_default_policy_clauses,
     evaluate_stage1_local,
     merge_stage2_compliance_result,
@@ -439,11 +438,6 @@ class ClauseGuardComplianceTests(TestCase):
         self.assertContains(resp_asst_detail, "clauseGuardCard")
         self.assertNotContains(resp_asst_detail, "verifyComplianceBtn")
 
-        # Cosine similarity helper handles empty & mismatched lengths safely
-        self.assertEqual(cosine_similarity([], [1.0, 2.0]), 0.0)
-        self.assertEqual(cosine_similarity([1.0, 0.0], [1.0, 0.0, 0.0]), 0.0)
-        self.assertEqual(cosine_similarity([1.0, 0.0], [1.0, 0.0]), 1.0)
-
     def test_admin_policy_clause_permissions(self):
         self.client.force_login(self.assistant)
         resp_asst = self.client.get("/admin/inventory/policyclause/")
@@ -702,7 +696,11 @@ class ClauseGuardComplianceTests(TestCase):
             self.assertIn("unsupported", (err_pdf or "").lower())
 
     def test_stage1_matcher_cache_reuses_precompiled_rules_and_scales_under_5ms(self):
-        self.assertEqual(len(compute_embedding_vector("Regla de prueba", use_api=True)), LOCAL_EMBEDDING_DIMS)
+        from inventory.services import compliance_service
+
+        self.assertEqual(len(compute_local_ngram_vector("Regla de prueba")), LOCAL_EMBEDDING_DIMS)
+        self.assertFalse(hasattr(compliance_service, "cosine_similarity"))
+        self.assertFalse(hasattr(compliance_service, "compute_embedding_vector"))
 
         # Create 300 active synced clauses with 12 keywords each (3,600 total keywords)
         vinted = MarketplaceSite.objects.get(slug="vinted")
@@ -726,12 +724,12 @@ class ClauseGuardComplianceTests(TestCase):
         # First call builds/warms cache; subsequent calls hit cached matcher without rebuilding
         evaluate_stage1_local(title="Silla plegable de aluminio", language="es")
 
-        from inventory.services import compliance_service as cs
+        from inventory.services import compliance_matcher as cm
 
         with patch.object(
-            cs,
+            cm,
             "_compile_clause_entries",
-            wraps=cs._compile_clause_entries,
+            wraps=cm._compile_clause_entries,
         ) as spy_compile:
             t0 = time.perf_counter()
             for _ in range(10):
@@ -1011,3 +1009,126 @@ class ClauseGuardComplianceTests(TestCase):
         output = out.getvalue()
         self.assertIn("NOISY-999", output)
         self.assertIn("camiseta", output)
+
+    @override_settings(GEMINI_API_KEY="test-key")
+    @patch("inventory.services.policy_sync_service.genai.Client")
+    def test_sync_site_policy_no_ai_does_not_poison_content_hash(self, mock_client_cls):
+        vinted = MarketplaceSite.objects.get(slug="vinted")
+        vinted.policy_url = ""
+        vinted.policy_raw_text = "Regla nueva sin haber sido extraída todavía por IA."
+        vinted.policy_content_hash = "previous-hash"
+        vinted.save()
+
+        # Running with use_api=False must NOT stamp the new content hash, otherwise a subsequent AI run skips it
+        res_no_ai = sync_site_policy(vinted, use_api=False)
+        self.assertNotEqual(res_no_ai["status"], "synced")
+        vinted.refresh_from_db()
+        self.assertEqual(vinted.policy_content_hash, "previous-hash")
+
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        mock_resp = MagicMock()
+        mock_resp.parsed = ExtractedPolicyClausesSchema(
+            clauses=[
+                ExtractedClauseSchema(
+                    code_suffix="991",
+                    category="Test",
+                    severity="medium",
+                    title_es="Regla extraída",
+                    title_en="Extracted rule",
+                    description_es="Descripción de prueba",
+                    description_en="Test description",
+                    hard_block_keywords=["artefacto prohibido"],
+                )
+            ]
+        )
+        mock_client.models.generate_content.return_value = mock_resp
+
+        res_ai = sync_site_policy(vinted, use_api=True)
+        self.assertEqual(res_ai["status"], "synced")
+        mock_client.models.generate_content.assert_called_once()
+
+    def test_dashboard_secondary_subfilters_preserve_compliance_filter(self):
+        from inventory.models import ProductListingLink, SaleChannelType
+
+        self.client.force_login(self.manager)
+        wallapop = MarketplaceSite.objects.get(slug="wallapop")
+
+        pub_flagged = Product.objects.create(
+            ai_title="Pistola antigua decorativa",
+            ai_description="Pieza vintage",
+            sale_price="30.00",
+            created_by=self.manager,
+        )
+        ProductListingLink.objects.create(
+            product=pub_flagged,
+            site=wallapop,
+            url="https://es.wallapop.com/item/test-subfilter-1",
+        )
+        sold_flagged = Product.objects.create(
+            ai_title="Navaja mariposa vintage",
+            ai_description="Colección",
+            sale_price="40.00",
+            is_sold=True,
+            sold_channel_type=SaleChannelType.IN_STORE,
+            created_by=self.manager,
+        )
+        self.assertTrue(sold_flagged.is_compliance_flagged)
+
+        resp_pub = self.client.get(
+            f"{reverse('inventory:dashboard')}?status=published&sync=out_of_sync&compliance=flagged"
+        )
+        self.assertEqual(resp_pub.status_code, 200)
+        html_pub = resp_pub.content.decode("utf-8")
+        self.assertIn('href="?status=published&compliance=flagged"', html_pub)
+        self.assertIn('href="?status=published&sync=out_of_sync&compliance=flagged"', html_pub)
+        self.assertIn("sync=out_of_sync", html_pub.split('id="complianceFilterBtn"', 1)[1].split("</a>", 1)[0])
+
+        resp_sold = self.client.get(
+            f"{reverse('inventory:dashboard')}?status=sold&channel=in_store&compliance=flagged"
+        )
+        self.assertEqual(resp_sold.status_code, 200)
+        html_sold = resp_sold.content.decode("utf-8")
+        self.assertIn('href="?status=sold&compliance=flagged"', html_sold)
+        self.assertIn('href="?status=sold&channel=in_store&compliance=flagged"', html_sold)
+        self.assertIn("channel=in_store", html_sold.split('id="complianceFilterBtn"', 1)[1].split("</a>", 1)[0])
+
+    def test_compliance_matcher_module_split_and_zero_percent_negation(self):
+        from inventory.services import compliance_matcher, compliance_service
+
+        # Dedicated matcher module must exist cleanly and dead _match_keyword must be gone
+        self.assertTrue(hasattr(compliance_matcher, "stem_token"))
+        self.assertTrue(hasattr(compliance_matcher, "stem_phrase"))
+        self.assertFalse(hasattr(compliance_service, "_match_keyword"))
+
+        # "0% nicotina" and "cero nicotina" must not trigger WP-301 false positive
+        for clean_text in (
+            "Líquido 0% nicotina para limpieza óptica",
+            "Solución cero nicotina para cristal",
+        ):
+            res = evaluate_stage1_local(title=clean_text, description="")
+            self.assertEqual(res["verdict"], ComplianceVerdict.APPROVED, msg=f"False positive on: {clean_text}")
+
+        flagged = evaluate_stage1_local(title="E-liquid con 12mg nicotina para vaper", description="")
+        self.assertNotEqual(flagged["verdict"], ComplianceVerdict.APPROVED)
+
+    def test_policy_clause_normalizes_code_and_product_apply_compliance_result(self):
+        vinted = MarketplaceSite.objects.get(slug="vinted")
+        clause = PolicyClause.objects.create(
+            code="  vt-custom-lower  ",
+            site=vinted,
+            category="Test",
+            severity=PolicySeverity.MEDIUM,
+            title_es="Regla minúscula",
+            description_es="Texto",
+        )
+        self.assertEqual(clause.code, "VT-CUSTOM-LOWER")
+
+        product = Product.objects.create(raw_note="Mesa madera maciza", created_by=self.assistant)
+        sample = evaluate_stage1_local(title="Lote de réplicas de bolsos", raw_note="")
+        product.apply_compliance_result(sample, commit=True)
+        product.refresh_from_db()
+        self.assertEqual(product.compliance_status, sample["verdict"])
+        self.assertEqual(product.compliance_risk_score, sample["risk_score"])
+        self.assertEqual(product.compliance_stage, sample["stage"])
+        self.assertIsNotNone(product.compliance_checked_at)

@@ -77,6 +77,12 @@ class Command(BaseCommand):
                         f"{prefix}{site.name} ({site.slug}): WOULD SYNC via {source}"
                     )
                 )
+            elif status == "skipped_no_ai":
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"{prefix}{site.name} ({site.slug}): SKIPPED_NO_AI (hash preserved; configure GEMINI_API_KEY or omit --no-ai)"
+                    )
+                )
             else:
                 self.stdout.write(
                     self.style.WARNING(

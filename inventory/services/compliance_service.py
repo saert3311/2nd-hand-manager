@@ -3,14 +3,10 @@ import json
 import logging
 import math
 import re
-import threading
-import unicodedata
-from dataclasses import dataclass
 from typing import Any, Optional
 
 from django.conf import settings
 from django.db import OperationalError, ProgrammingError
-from django.db.models import Count, Max
 from django.utils.translation import get_language
 from google import genai
 from google.genai import types
@@ -24,63 +20,27 @@ from inventory.models import (
     PolicySeverity,
 )
 
+from .compliance_matcher import (
+    CATEGORY_BOOST_MAP,
+    CATEGORY_FLAG_MAP,
+    STOPWORDS,
+    _masked_positions_for_exceptions,
+    _matches_at_position,
+    _tokenize_with_sentences,
+    clause_embedding_text,
+    collect_lexical_hits,
+    get_compiled_clause_matcher,
+    invalidate_clause_matcher_cache,
+    normalize_text,
+    stem_phrase,
+    stem_token,
+)
 from .policy_clauses_seed import DEFAULT_POLICY_CLAUSES_SEED, DEFAULT_POLICY_URL_MAP
 
 logger = logging.getLogger(__name__)
 
 COMPLIANCE_CHECK_MODEL = getattr(settings, "GEMINI_COMPLIANCE_CHECK_MODEL_NAME", "gemini-flash-latest")
 LOCAL_EMBEDDING_DIMS = 96
-
-# Deterministic category-slug mappings for Stage 1 local compliance
-CATEGORY_FLAG_MAP: dict[str, tuple[str, ...]] = {
-    "electrodomesticos": ("VT-202",),
-    "construccion-y-reformas": ("VT-202",),
-    "motor-y-accesorios": ("VT-202",),
-}
-
-CATEGORY_BOOST_MAP: dict[str, tuple[str, ...]] = {
-    "motor-y-accesorios": ("VT-202", "EB-401"),
-    "electrodomesticos": ("VT-202",),
-    "construccion-y-reformas": ("VT-202",),
-    "tecnologia-y-electronica": ("GLB-105", "GLB-106", "GLB-107"),
-    "industria-y-agricultura": ("ML-501", "VT-202"),
-    "moda-y-accesorios": ("GLB-103", "VT-201"),
-}
-
-_INVARIANT_STEMS = frozenset({
-    "gas", "gris", "pais", "seis", "tres", "dos", "mas", "plus",
-    "tenis", "chasis", "crisis", "dosis", "tesis", "lunes", "martes",
-    "jueves", "viernes", "virus", "bonus", "campus", "focus", "status",
-})
-
-_PLURAL_ES_SUFFIXES = (
-    "ares", "eres", "ires", "ores", "ures",
-    "ales", "eles", "iles", "oles", "ules",
-    "anes", "enes", "ines", "ones", "unes",
-    "ades", "edes", "ides", "odes", "udes",
-    "ojes", "ajes", "ejes", "ises",
-)
-
-_STOPWORDS = frozenset({
-    "a", "al", "con", "de", "del", "e", "el", "en", "es", "la", "las", "lo",
-    "los", "o", "para", "por", "se", "sin", "su", "sus", "un", "una", "unas",
-    "unos", "y", "and", "for", "from", "in", "of", "on", "or", "the", "to", "with",
-    "articulo", "articulos", "producto", "productos", "venta", "vendo", "nuevo",
-    "usado", "buen", "estado", "lote", "item", "items",
-})
-
-_NEGATION_WORDS = frozenset({
-    "no", "ni", "sin", "nunca", "jamas", "nada", "tampoco",
-    "not", "without", "never", "non", "0mg",
-})
-
-_NEGATION_BIGRAMS = frozenset({
-    ("libre", "de"),
-    ("free", "of"),
-    ("exento", "de"),
-})
-
-_CLAUSE_BOUNDARY_CHARS = frozenset(".;:!?\n()[]{}")
 
 __all__ = [
     "CATEGORY_BOOST_MAP",
@@ -90,11 +50,12 @@ __all__ = [
     "DEFAULT_POLICY_URL_MAP",
     "LOCAL_EMBEDDING_DIMS",
     "TargetedComplianceCheckSchema",
+    "_masked_positions_for_exceptions",
+    "_matches_at_position",
+    "_tokenize_with_sentences",
     "build_platform_matrix",
     "clause_embedding_text",
-    "compute_embedding_vector",
     "compute_local_ngram_vector",
-    "cosine_similarity",
     "ensure_default_policy_clauses",
     "evaluate_stage1_local",
     "evaluate_stage1_local_for_product",
@@ -107,7 +68,6 @@ __all__ = [
     "stem_token",
     "verify_product_compliance_ai",
 ]
-
 
 _PRIMITIVE_FIELD_TYPES = (str, int, float, bool, list, dict, BaseModel, type(None))
 
@@ -143,266 +103,13 @@ def parse_gemini_response_dict(response: Any, schema_cls: Optional[type[BaseMode
     return data if isinstance(data, dict) else {}
 
 
-def clause_embedding_text(clause: Any) -> str:
-    """Concatenates bilingual clause title, description, and trigger keywords for local vectorization."""
-    return (
-        f"{clause.title_es} {clause.title_en} "
-        f"{clause.description_es} {clause.description_en} "
-        f"{' '.join(clause.hard_block_keywords or [])}"
-    )
-
-
-def normalize_text(text: str) -> str:
-    """Lowercase and strip diacritics for accent-insensitive Spanish/English matching."""
-    raw = (text or "").strip().lower()
-    nfkd = unicodedata.normalize("NFKD", raw)
-    return "".join(ch for ch in nfkd if not unicodedata.combining(ch))
-
-
-_TOKEN_OR_BOUNDARY_RE = re.compile(r"[.;:!?\n()\[\]]|[a-z0-9]+(?::[a-z0-9]+|\+)?")
-
-
-def stem_token(token: str) -> str:
-    """Lightweight accent-normalized Spanish/English plural stemmer with invariant allowlist."""
-    tok = normalize_text(token)
-    if not tok or len(tok) < 4 or tok in _INVARIANT_STEMS:
-        return tok
-    if tok.endswith("ces") and len(tok) > 4:
-        return tok[:-3] + "z"
-    if len(tok) >= 5 and tok.endswith(_PLURAL_ES_SUFFIXES):
-        return tok[:-2]
-    if tok.endswith("s") and not tok.endswith("ss"):
-        return tok[:-1]
-    return tok
-
-
-def _tokenize_with_sentences(text: str) -> list[tuple[str, str, int]]:
-    """
-    Tokenizes text into (stemmed_token, normalized_token, sentence_id) tuples.
-    Punctuation increments sentence_id so negations never bleed across sentence boundaries.
-    """
-    norm = normalize_text(text)
-    if not norm:
-        return []
-    tokens: list[tuple[str, str, int]] = []
-    sent_id = 0
-    for match in _TOKEN_OR_BOUNDARY_RE.finditer(norm):
-        raw = match.group(0)
-        if len(raw) == 1 and raw in _CLAUSE_BOUNDARY_CHARS:
-            sent_id += 1
-            continue
-        tokens.append((stem_token(raw), raw, sent_id))
-    return tokens
-
-
-def stem_phrase(phrase: str) -> tuple[str, ...]:
-    """Converts a keyword/exception phrase into a tuple of stemmed tokens."""
-    norm = normalize_text(phrase)
-    if not norm:
-        return ()
-    parts: list[str] = []
-    for match in _TOKEN_OR_BOUNDARY_RE.finditer(norm):
-        raw = match.group(0)
-        if len(raw) == 1 and raw in _CLAUSE_BOUNDARY_CHARS:
-            continue
-        parts.append(stem_token(raw))
-    return tuple(parts)
-
-
-def _tokenize(text: str) -> list[str]:
-    norm = normalize_text(text)
-    return re.findall(r"[a-z0-9]{2,}", norm)
-
-
-@dataclass(frozen=True)
-class _CompiledClauseEntry:
-    clause: PolicyClause
-    site_slug: str
-    exceptions: tuple[tuple[str, ...], ...]
-    content_stems: frozenset[str]
-
-
-@dataclass(frozen=True)
-class _CompiledClauseMatcher:
-    signature: tuple[int, Any, int]
-    entries: tuple[_CompiledClauseEntry, ...]
-    by_code_idx: dict[str, int]
-    strong_index: dict[str, tuple[tuple[int, str, tuple[str, ...]], ...]]
-    weak_index: dict[str, tuple[tuple[int, str, tuple[str, ...]], ...]]
-    naive_baseline: int
-
-
-_CACHE_LOCK = threading.Lock()
-_CACHE_GENERATION = 0
-_COMPILED_MATCHER_CACHE: Optional[_CompiledClauseMatcher] = None
-
-
-def invalidate_clause_matcher_cache() -> None:
-    """Invalidates the in-memory compiled Stage 1 PolicyClause matcher cache."""
-    global _CACHE_GENERATION, _COMPILED_MATCHER_CACHE
-    with _CACHE_LOCK:
-        _CACHE_GENERATION += 1
-        _COMPILED_MATCHER_CACHE = None
-
-
-def _compile_clause_entries(
-    clauses: list[PolicyClause],
-    sites: list[MarketplaceSite],
-    signature: tuple[int, Any, int],
-) -> _CompiledClauseMatcher:
-    entries: list[_CompiledClauseEntry] = []
-    by_code_idx: dict[str, int] = {}
-    strong_tmp: dict[str, list[tuple[int, str, tuple[str, ...]]]] = {}
-    weak_tmp: dict[str, list[tuple[int, str, tuple[str, ...]]]] = {}
-
-    for c_idx, clause in enumerate(clauses):
-        site_slug = clause.site.slug if clause.site_id and clause.site else ""
-        exc_list = []
-        for phrase in (getattr(clause, "exception_phrases", None) or []):
-            stemmed = stem_phrase(str(phrase))
-            if stemmed:
-                exc_list.append(stemmed)
-
-        for kw in (clause.hard_block_keywords or []):
-            stemmed = stem_phrase(str(kw))
-            if stemmed:
-                strong_tmp.setdefault(stemmed[0], []).append((c_idx, str(kw), stemmed))
-
-        for kw in (getattr(clause, "weak_keywords", None) or []):
-            stemmed = stem_phrase(str(kw))
-            if stemmed:
-                weak_tmp.setdefault(stemmed[0], []).append((c_idx, str(kw), stemmed))
-
-        full_text = clause_embedding_text(clause)
-        c_stems = frozenset(
-            st
-            for st, _raw, _sid in _tokenize_with_sentences(full_text)
-            if len(st) >= 3 and st not in _STOPWORDS
-        )
-        entries.append(
-            _CompiledClauseEntry(
-                clause=clause,
-                site_slug=site_slug,
-                exceptions=tuple(exc_list),
-                content_stems=c_stems,
-            )
-        )
-        by_code_idx[clause.code.upper()] = c_idx
-
-    return _CompiledClauseMatcher(
-        signature=signature,
-        entries=tuple(entries),
-        by_code_idx=by_code_idx,
-        strong_index={k: tuple(v) for k, v in strong_tmp.items()},
-        weak_index={k: tuple(v) for k, v in weak_tmp.items()},
-        naive_baseline=_estimate_naive_baseline_tokens(clauses, sites),
-    )
-
-
-def _get_compiled_clause_matcher(sites: list[MarketplaceSite]) -> _CompiledClauseMatcher:
-    global _COMPILED_MATCHER_CACHE
-    stats = PolicyClause.objects.filter(is_active=True).aggregate(
-        cnt=Count("id"),
-        max_upd=Max("updated_at"),
-    )
-    cnt = int(stats.get("cnt") or 0)
-    if cnt == 0:
-        ensure_default_policy_clauses(use_api_embeddings=False)
-        stats = PolicyClause.objects.filter(is_active=True).aggregate(
-            cnt=Count("id"),
-            max_upd=Max("updated_at"),
-        )
-        cnt = int(stats.get("cnt") or 0)
-
-    signature = (cnt, stats.get("max_upd"), _CACHE_GENERATION)
-    cached = _COMPILED_MATCHER_CACHE
-    if cached is not None and cached.signature == signature:
-        return cached
-
-    with _CACHE_LOCK:
-        cached = _COMPILED_MATCHER_CACHE
-        if cached is not None and cached.signature == signature:
-            return cached
-        clauses = list(PolicyClause.objects.filter(is_active=True).select_related("site").order_by("code"))
-        compiled = _compile_clause_entries(clauses, sites, signature)
-        _COMPILED_MATCHER_CACHE = compiled
-        return compiled
-
-
-def _masked_positions_for_exceptions(
-    tokens: list[tuple[str, str, int]],
-    exceptions: tuple[tuple[str, ...], ...],
-) -> set[int]:
-    if not exceptions or not tokens:
-        return set()
-    masked: set[int] = set()
-    n = len(tokens)
-    for exc in exceptions:
-        m = len(exc)
-        if m == 0 or m > n:
-            continue
-        first_exc = exc[0]
-        for idx in range(n - m + 1):
-            if tokens[idx][0] != first_exc:
-                continue
-            sid = tokens[idx][2]
-            if all(tokens[idx + j][0] == exc[j] and tokens[idx + j][2] == sid for j in range(1, m)):
-                masked.update(range(idx, idx + m))
-    return masked
-
-
-def _has_pre_hit_negation(tokens: list[tuple[str, str, int]], hit_idx: int) -> bool:
-    if hit_idx <= 0:
-        return False
-    sid = tokens[hit_idx][2]
-    start = max(0, hit_idx - 3)
-    prev_raw = [tokens[p][1] for p in range(start, hit_idx) if tokens[p][2] == sid]
-    if not prev_raw:
-        return False
-    if any(tok in _NEGATION_WORDS for tok in prev_raw):
-        return True
-    for i in range(len(prev_raw) - 1):
-        if (prev_raw[i], prev_raw[i + 1]) in _NEGATION_BIGRAMS:
-            return True
-    return False
-
-
-def _matches_at_position(
-    tokens: list[tuple[str, str, int]],
-    idx: int,
-    kw_stems: tuple[str, ...],
-    masked: set[int],
-) -> bool:
-    m = len(kw_stems)
-    if idx + m > len(tokens):
-        return False
-    sid = tokens[idx][2]
-    for offset in range(m):
-        pos = idx + offset
-        if pos in masked:
-            return False
-        if tokens[pos][0] != kw_stems[offset] or tokens[pos][2] != sid:
-            return False
-    return not _has_pre_hit_negation(tokens, idx)
-
-
-def _compute_product_text_hash(title: str = "", description: str = "", raw_note: str = "") -> str:
-    combined = normalize_text(f"{title}\n{description}\n{raw_note}")
-    return hashlib.sha256(combined.encode("utf-8")).hexdigest()[:16]
-
-
 def compute_local_ngram_vector(text: str, dims: int = LOCAL_EMBEDDING_DIMS) -> list[float]:
-    """
-    Deterministic lightweight hashed char-trigram + word-token embedding vector.
-    Provides fast (<1ms) offline semantic similarity in SQLite without external APIs.
-    """
+    """Retained for historical migration `0026_seed_default_policy_clauses` compatibility."""
     norm = normalize_text(text)
     if not norm:
         return [0.0] * dims
-
     vec = [0.0] * dims
-    tokens = _tokenize(norm)
-    for tok in tokens:
+    for tok in re.findall(r"[a-z0-9]{2,}", norm):
         h = int(hashlib.md5(tok.encode("utf-8")).hexdigest(), 16)
         vec[h % dims] += 2.0
         if len(tok) >= 4:
@@ -410,34 +117,10 @@ def compute_local_ngram_vector(text: str, dims: int = LOCAL_EMBEDDING_DIMS) -> l
                 gram = tok[idx:idx + 3]
                 gh = int(hashlib.md5(gram.encode("utf-8")).hexdigest(), 16)
                 vec[gh % dims] += 0.6
-
     magnitude = math.sqrt(sum(v * v for v in vec))
     if magnitude > 0:
         vec = [round(v / magnitude, 6) for v in vec]
     return vec
-
-
-def compute_embedding_vector(text: str, use_api: bool = False) -> list[float]:
-    """
-    Computes the fixed 96-dim local hashed n-gram vector used by Stage 1 scoring.
-    Kept synchronous and zero-API-cost so stored vectors always match runtime Stage 1 dimensions.
-    """
-    clean_text = (text or "").strip()
-    if not clean_text:
-        return [0.0] * LOCAL_EMBEDDING_DIMS
-    return compute_local_ngram_vector(clean_text)
-
-
-def cosine_similarity(vec_a: list[float] | tuple[float, ...], vec_b: list[float] | tuple[float, ...]) -> float:
-    """Computes cosine similarity in [0.0, 1.0] safely, returning 0.0 on empty or mismatched dimensions."""
-    if not vec_a or not vec_b or len(vec_a) != len(vec_b):
-        return 0.0
-    dot = sum(a * b for a, b in zip(vec_a, vec_b))
-    norm_a = math.sqrt(sum(a * a for a in vec_a))
-    norm_b = math.sqrt(sum(b * b for b in vec_b))
-    if norm_a <= 0 or norm_b <= 0:
-        return 0.0
-    return max(0.0, min(1.0, round(dot / (norm_a * norm_b), 4)))
 
 
 def ensure_default_policy_clauses(use_api_embeddings: bool = False, sync_defaults: bool = False) -> int:
@@ -445,6 +128,7 @@ def ensure_default_policy_clauses(use_api_embeddings: bool = False, sync_default
     Idempotently seeds curated global and per-platform policy clauses (Wallapop, Vinted, eBay, Milanuncios).
     Also ensures default `policy_url` values are populated on known MarketplaceSite entries if blank.
     """
+    del use_api_embeddings  # Historical signature compatibility
     sites_by_slug = {s.slug: s for s in MarketplaceSite.objects.all()}
     for slug, url in DEFAULT_POLICY_URL_MAP.items():
         site = sites_by_slug.get(slug)
@@ -455,11 +139,6 @@ def ensure_default_policy_clauses(use_api_embeddings: bool = False, sync_default
     created_count = 0
     for item in DEFAULT_POLICY_CLAUSES_SEED:
         site_obj = sites_by_slug.get(item["site_slug"]) if item["site_slug"] else None
-        seed_text = (
-            f"{item['title_es']} {item['title_en']} "
-            f"{item['description_es']} {item['description_en']} "
-            f"{' '.join(item['hard_block_keywords'])}"
-        )
         hard_kws = list(item.get("hard_block_keywords") or [])
         weak_kws = list(item.get("weak_keywords") or [])
         exc_phrases = list(item.get("exception_phrases") or [])
@@ -474,57 +153,31 @@ def ensure_default_policy_clauses(use_api_embeddings: bool = False, sync_default
             "hard_block_keywords": hard_kws,
             "weak_keywords": weak_kws,
             "exception_phrases": exc_phrases,
-            "embedding_vector": compute_embedding_vector(seed_text, use_api=use_api_embeddings),
             "is_active": True,
         }
         obj, created = PolicyClause.objects.get_or_create(code=item["code"], defaults=defaults)
         if created:
             created_count += 1
-        else:
+        elif sync_defaults:
             changed_fields: list[str] = []
-            if not obj.embedding_vector or len(obj.embedding_vector) != LOCAL_EMBEDDING_DIMS:
-                obj.embedding_vector = compute_embedding_vector(seed_text, use_api=False)
-                changed_fields.append("embedding_vector")
-            if sync_defaults:
-                if obj.hard_block_keywords != hard_kws:
-                    obj.hard_block_keywords = hard_kws
-                    changed_fields.append("hard_block_keywords")
-                if obj.weak_keywords != weak_kws:
-                    obj.weak_keywords = weak_kws
-                    changed_fields.append("weak_keywords")
-                if obj.exception_phrases != exc_phrases:
-                    obj.exception_phrases = exc_phrases
-                    changed_fields.append("exception_phrases")
+            if obj.hard_block_keywords != hard_kws:
+                obj.hard_block_keywords = hard_kws
+                changed_fields.append("hard_block_keywords")
+            if obj.weak_keywords != weak_kws:
+                obj.weak_keywords = weak_kws
+                changed_fields.append("weak_keywords")
+            if obj.exception_phrases != exc_phrases:
+                obj.exception_phrases = exc_phrases
+                changed_fields.append("exception_phrases")
             if changed_fields:
                 changed_fields.append("updated_at")
                 obj.save(update_fields=changed_fields)
     return created_count
 
 
-def _match_keyword(normalized_haystack: str, keyword: str) -> bool:
-    """Stem-aware, negation-aware phrase matcher on arbitrary text."""
-    kw_stems = stem_phrase(keyword)
-    if not kw_stems:
-        return False
-    tokens = _tokenize_with_sentences(normalized_haystack)
-    if not tokens:
-        return False
-    first = kw_stems[0]
-    empty_masked: set[int] = set()
-    return any(
-        tok[0] == first and _matches_at_position(tokens, idx, kw_stems, empty_masked)
-        for idx, tok in enumerate(tokens)
-    )
-
-
-def _estimate_naive_baseline_tokens(clauses: list[PolicyClause], sites: list[MarketplaceSite]) -> int:
-    raw_policy_chars = sum(len((s.policy_raw_text or "").strip()) for s in sites)
-    clause_chars = sum(
-        len(c.title_es or "") + len(c.description_es or "") + len(c.title_en or "") + len(c.description_en or "")
-        for c in clauses
-    )
-    estimated = (raw_policy_chars + clause_chars * 4) // 4
-    return max(12000, estimated)
+def _compute_product_text_hash(title: str = "", description: str = "", raw_note: str = "") -> str:
+    combined = normalize_text(f"{title}\n{description}\n{raw_note}")
+    return hashlib.sha256(combined.encode("utf-8")).hexdigest()[:16]
 
 
 def _severity_score(severity: str, is_global: bool, match_strength: str = "strong") -> int:
@@ -617,33 +270,6 @@ def _build_telemetry(top_k_sent: int, tokens_used: int, naive_baseline_tokens: i
     }
 
 
-def _collect_lexical_hits(
-    tokens: list[tuple[str, str, int]],
-    matcher: _CompiledClauseMatcher,
-    index_map: dict[str, tuple[tuple[int, str, tuple[str, ...]], ...]],
-    masked_cache: dict[int, set[int]],
-) -> dict[int, list[str]]:
-    """Evaluates an inverted-index keyword dictionary against product tokens in O(len(tokens))."""
-    hits: dict[int, list[str]] = {}
-    seen_pairs: set[tuple[int, str]] = set()
-    entries = matcher.entries
-    for idx, (stem, _raw, _sid) in enumerate(tokens):
-        candidates = index_map.get(stem)
-        if not candidates:
-            continue
-        for c_idx, raw_kw, kw_stems in candidates:
-            masked = masked_cache.get(c_idx)
-            if masked is None:
-                masked = _masked_positions_for_exceptions(tokens, entries[c_idx].exceptions)
-                masked_cache[c_idx] = masked
-            if _matches_at_position(tokens, idx, kw_stems, masked):
-                pair = (c_idx, raw_kw)
-                if pair not in seen_pairs:
-                    seen_pairs.add(pair)
-                    hits.setdefault(c_idx, []).append(raw_kw)
-    return hits
-
-
 def evaluate_stage1_local(
     *,
     title: str = "",
@@ -669,7 +295,7 @@ def evaluate_stage1_local(
 
     try:
         sites = list(MarketplaceSite.objects.filter(is_active=True).order_by("order", "name"))
-        matcher = _get_compiled_clause_matcher(sites)
+        matcher = get_compiled_clause_matcher(sites, seed_callback=ensure_default_policy_clauses)
     except (OperationalError, ProgrammingError):
         sites = []
         matcher = None
@@ -699,17 +325,17 @@ def evaluate_stage1_local(
 
     tokens = _tokenize_with_sentences(combined_text)
     masked_cache: dict[int, set[int]] = {}
-    strong_hits = _collect_lexical_hits(tokens, matcher, matcher.strong_index, masked_cache)
-    weak_hits = _collect_lexical_hits(tokens, matcher, matcher.weak_index, masked_cache)
+    strong_hits = collect_lexical_hits(tokens, matcher, matcher.strong_index, masked_cache)
+    weak_hits = collect_lexical_hits(tokens, matcher, matcher.weak_index, masked_cache)
 
     flagged_codes = set(CATEGORY_FLAG_MAP.get(cat_slug, ()))
     boosted_codes = set(CATEGORY_BOOST_MAP.get(cat_slug, ())) | flagged_codes
 
     product_content_stems = {
-        st for st, _raw, _sid in tokens if len(st) >= 3 and st not in _STOPWORDS
+        st for st, _raw, _sid in tokens if len(st) >= 3 and st not in STOPWORDS
     }
 
-    scored_clauses: list[tuple[float, _CompiledClauseEntry, list[str], list[str], bool, float]] = []
+    scored_clauses: list[tuple[float, Any, list[str], list[str], bool, float]] = []
     for c_idx, entry in enumerate(matcher.entries):
         s_hits = strong_hits.get(c_idx, [])
         w_hits = weak_hits.get(c_idx, [])
@@ -749,7 +375,6 @@ def evaluate_stage1_local(
         clause = entry.clause
         is_global = not entry.site_slug
 
-        # Strong hit OR 2+ weak hits escalate to full clause severity; single weak hit or category stays cautious
         if s_hits or len(w_hits) >= 2:
             match_strength = "strong"
         elif w_hits:
@@ -764,10 +389,7 @@ def evaluate_stage1_local(
         for wk in w_hits:
             if wk not in combined_kws:
                 combined_kws.append(wk)
-        if combined_kws:
-            excerpt = ", ".join(combined_kws)
-        else:
-            excerpt = f"category:{cat_slug}"
+        excerpt = ", ".join(combined_kws) if combined_kws else f"category:{cat_slug}"
 
         matched_entry = {
             "code": clause.code,
@@ -817,6 +439,7 @@ def evaluate_stage1_local(
         "risk_score": max_risk,
         "stage": stage,
         "top_clauses": top_clauses,
+        "_sites": sites,
         "report": {
             "text_hash": text_hash,
             "summary": summary_es if is_es else summary_en,
@@ -893,8 +516,6 @@ def merge_stage2_compliance_result(
 
     codes = [str(c).strip().upper() for c in (violated_clause_codes or []) if str(c).strip()]
 
-    # In targeted AI verification, clear Stage 1 keyword false-positives for clauses that were
-    # explicitly sent to Gemini and adjudicated safe by the model.
     if stage == ComplianceStage.STAGE_2_TARGETED and ai_passed is not None:
         inspected_codes = {
             c.code.upper()
@@ -1017,7 +638,7 @@ def merge_stage2_compliance_result(
     if sanitized_note and sanitized_note.strip():
         sanitized_actions.append(sanitized_note.strip())
 
-    matrix = build_platform_matrix(merged_matched)
+    matrix = build_platform_matrix(merged_matched, sites=stage1_result.get("_sites"))
     top_k_sent = len(stage1_result.get("top_clauses") or [])
     naive_baseline = (
         stage1_result.get("report", {})
