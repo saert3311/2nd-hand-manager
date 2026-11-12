@@ -893,6 +893,7 @@ class Product(models.Model):
         self._initial_raw_note = self.__dict__.get("raw_note")
         self._initial_ai_title = self.__dict__.get("ai_title")
         self._initial_ai_description = self.__dict__.get("ai_description")
+        self._initial_category_id = self.__dict__.get("category_id")
         self._initial_is_reserved = self.__dict__.get("is_reserved")
         self._initial_needs_platform_sync = self.__dict__.get("needs_platform_sync")
         self._initial_platform_sync_reasons = list(self.__dict__.get("platform_sync_reasons") or [])
@@ -982,15 +983,30 @@ class Product(models.Model):
         raw_note_changed = (self.raw_note or "") != (getattr(self, "_initial_raw_note", None) or "")
         title_changed_for_compliance = (self.ai_title or "") != (getattr(self, "_initial_ai_title", None) or "")
         desc_changed_for_compliance = (self.ai_description or "") != (getattr(self, "_initial_ai_description", None) or "")
+        category_changed_for_compliance = self.category_id != getattr(self, "_initial_category_id", None)
         update_fields_arg = kwargs.get("update_fields")
-        text_fields_updated = (
+        compliance_fields_updated = (
             update_fields_arg is None
-            or any(f in {"raw_note", "ai_title", "ai_description"} for f in update_fields_arg)
+            or any(
+                f in {"raw_note", "ai_title", "ai_description", "category", "category_id"}
+                for f in update_fields_arg
+            )
         )
         should_run_stage1_compliance = (
             not skip_auto_compliance
             and not getattr(self, "_skip_auto_compliance", False)
-            and (is_adding or (text_fields_updated and (raw_note_changed or title_changed_for_compliance or desc_changed_for_compliance)))
+            and (
+                is_adding
+                or (
+                    compliance_fields_updated
+                    and (
+                        raw_note_changed
+                        or title_changed_for_compliance
+                        or desc_changed_for_compliance
+                        or category_changed_for_compliance
+                    )
+                )
+            )
         )
 
         if is_adding:
@@ -1088,24 +1104,44 @@ class Product(models.Model):
 
         if should_run_stage1_compliance:
             try:
-                from .services.compliance_service import evaluate_stage1_local_for_product
+                from .services.compliance_service import CATEGORY_FLAG_MAP, evaluate_stage1_local_for_product
 
                 stage1 = evaluate_stage1_local_for_product(self)
-                self.compliance_status = stage1["verdict"]
-                self.compliance_risk_score = stage1["risk_score"]
-                self.compliance_stage = stage1["stage"]
-                self.compliance_report = stage1["report"]
-                self.compliance_checked_at = timezone.now()
-                if "update_fields" in kwargs and kwargs["update_fields"] is not None:
-                    fields = set(kwargs["update_fields"])
-                    fields.update([
-                        "compliance_status",
-                        "compliance_risk_score",
-                        "compliance_stage",
-                        "compliance_report",
-                        "compliance_checked_at",
-                    ])
-                    kwargs["update_fields"] = list(fields)
+                text_hash = (stage1.get("report") or {}).get("text_hash", "")
+                cleared_hash = (self.compliance_report or {}).get("stage2_cleared_text_hash", "")
+                cat_slug = self.category.slug.lower() if self.category_id and self.category and self.category.slug else ""
+                cat_flag_codes = set(CATEGORY_FLAG_MAP.get(cat_slug, ()))
+                has_category_violation = any(
+                    m.get("code", "").upper() in cat_flag_codes or m.get("match_strength") == "category"
+                    for m in ((stage1.get("report") or {}).get("matched_clauses") or [])
+                )
+                preserve_stage2_clearance = (
+                    not is_adding
+                    and not raw_note_changed
+                    and not title_changed_for_compliance
+                    and not desc_changed_for_compliance
+                    and self.compliance_stage == ComplianceStage.STAGE_2_TARGETED
+                    and self.compliance_status == ComplianceVerdict.APPROVED
+                    and bool(cleared_hash)
+                    and cleared_hash == text_hash
+                    and not has_category_violation
+                )
+                if not preserve_stage2_clearance:
+                    self.compliance_status = stage1["verdict"]
+                    self.compliance_risk_score = stage1["risk_score"]
+                    self.compliance_stage = stage1["stage"]
+                    self.compliance_report = stage1["report"]
+                    self.compliance_checked_at = timezone.now()
+                    if "update_fields" in kwargs and kwargs["update_fields"] is not None:
+                        fields = set(kwargs["update_fields"])
+                        fields.update([
+                            "compliance_status",
+                            "compliance_risk_score",
+                            "compliance_stage",
+                            "compliance_report",
+                            "compliance_checked_at",
+                        ])
+                        kwargs["update_fields"] = list(fields)
             except Exception:
                 logger.warning("Stage 1 auto-compliance check failed for product %s", self.pk, exc_info=True)
 
@@ -1165,6 +1201,7 @@ class Product(models.Model):
         self._initial_raw_note = self.raw_note
         self._initial_ai_title = self.ai_title
         self._initial_ai_description = self.ai_description
+        self._initial_category_id = self.category_id
         self._initial_is_reserved = getattr(self, "is_reserved", False)
         self._initial_needs_platform_sync = self.needs_platform_sync
         self._initial_platform_sync_reasons = list(self.platform_sync_reasons or [])
@@ -1541,7 +1578,19 @@ class PolicyClause(models.Model):
         default=list,
         blank=True,
         verbose_name=_("Hard-Block Keywords"),
-        help_text=_("JSON list of lowercase trigger phrases in ES/EN for deterministic Stage 1 matching"),
+        help_text=_("JSON list of strong trigger phrases in ES/EN for deterministic Stage 1 matching"),
+    )
+    weak_keywords = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name=_("Weak / Contextual Keywords"),
+        help_text=_("Ambiguous single words in ES/EN that trigger caution (Manual Review) unless corroborated"),
+    )
+    exception_phrases = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name=_("Exception Phrases"),
+        help_text=_("Benign compound phrases that suppress false-positive keyword matches"),
     )
     embedding_vector = models.JSONField(
         default=list,
@@ -1585,6 +1634,14 @@ class PolicyClause(models.Model):
     @property
     def localized_description(self) -> str:
         return self.get_localized_description()
+
+
+@receiver(post_save, sender=PolicyClause)
+@receiver(post_delete, sender=PolicyClause)
+def invalidate_policy_clause_matcher_on_change(sender, **kwargs):
+    from .services.compliance_service import invalidate_clause_matcher_cache
+
+    invalidate_clause_matcher_cache()
 
 
 class ProductListingLink(models.Model):

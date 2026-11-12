@@ -761,6 +761,23 @@ class PolicyClauseAdmin(admin.ModelAdmin):
     list_filter = ("severity", "is_active", "site", "category")
     search_fields = ("code", "title_es", "title_en", "description_es", "description_en", "category")
     readonly_fields = ("created_at", "updated_at")
+    fields = (
+        "code",
+        "site",
+        "category",
+        "severity",
+        "is_active",
+        "title_es",
+        "title_en",
+        "description_es",
+        "description_en",
+        "hard_block_keywords",
+        "weak_keywords",
+        "exception_phrases",
+        "embedding_vector",
+        "created_at",
+        "updated_at",
+    )
     actions = ["recompute_clause_embeddings"]
 
     def site_scope_col(self, obj):

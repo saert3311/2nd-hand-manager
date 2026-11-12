@@ -3813,3 +3813,103 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 - [x] Sourcing assistants receive early visual/note warnings on `/intake/` without blocking uploads.
 - [x] Store managers see per-platform compatibility (`Rápido Pack`, `Wallapop`, `Vinted`, `eBay`, `Milanuncios`), violated clause citations, auto-sanitized copy notes, and token telemetry on `/products/<pk>/`, plus `?compliance=flagged` filtering on `/dashboard/`.
 - [x] 100% of automated tests pass, zero linter warnings, zero horizontal overflow on OPPO A74 mobile viewports.
+
+---
+
+# Phase 49: ClauseGuard Stage 1 Local Compliance Optimization & Precision Overhaul
+
+### Task 179: PolicyClause Schema Upgrade (`weak_keywords`, `exception_phrases`), Migration `0027` & Expanded Seed Vocabulary (`inventory/models.py`, `inventory/migrations/`, `inventory/services/policy_clauses_seed.py`, `inventory/admin.py`)
+**Description:** Extend `PolicyClause` with `weak_keywords` (`JSONField`) and `exception_phrases` (`JSONField`) so Stage 1 distinguishes unambiguous hard-block phrases from context-dependent single words and benign compound exceptions. Generate schema + data backfill migration `0027`, expose the new fields in `PolicyClauseAdmin`, and upgrade `DEFAULT_POLICY_CLAUSES_SEED` across all 12 global/platform clauses with missing real-world Spanish/English terms (`copia exacta`, `calidad aaa`, `cuchillo mariposa`, `balisong`, `pila abombada`, `huele a quemado`, `tester usado`, `sin precinto`, etc.), separated `weak_keywords`, and curated `exception_phrases`.
+**Acceptance criteria:**
+- [x] `PolicyClause` defines `weak_keywords` (`JSONField(default=list, blank=True)`) and `exception_phrases` (`JSONField(default=list, blank=True)`).
+- [x] Migration `0027` applies cleanly and updates the 12 default `PolicyClause` rows with expanded `hard_block_keywords`, `weak_keywords`, and `exception_phrases`.
+- [x] `ensure_default_policy_clauses()` populates and syncs `hard_block_keywords`, `weak_keywords`, and `exception_phrases` idempotently.
+- [x] `PolicyClauseAdmin` displays and allows editing `hard_block_keywords`, `weak_keywords`, and `exception_phrases`.
+**Verification:**
+- [x] Migration check succeeds: `.venv\Scripts\python.exe manage.py makemigrations --check` and `.venv\Scripts\python.exe manage.py migrate`
+- [x] System check passes: `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Checkpoint 48
+**Files likely touched:**
+- `inventory/models.py`
+- `inventory/migrations/0027_policyclause_weak_keywords_and_exception_phrases.py`
+- `inventory/services/policy_clauses_seed.py`
+- `inventory/admin.py`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Task 180: Stemmed, Negation-Aware, Precompiled Stage 1 Matcher, Category Signal & `Product.save()` Hook (`inventory/services/compliance_service.py`, `inventory/models.py`)
+**Description:** Overhaul `evaluate_stage1_local` in `inventory/services/compliance_service.py`:
+1. Implement deterministic Spanish/English plural token stemmer (`stem_token`, `stem_phrase`) with an invariant-stem allowlist (`gas`, `gris`, `tenis`, `plus`, `gafas`, `alicates`, etc.).
+2. Implement `exception_phrases` span masking and a 3-token pre-hit negation window (`no`, `ni`, `sin`, `no es`, `no son`, `nunca`, `libre de`, `not`, `without`, `free`, `non`) bounded by clause punctuation.
+3. Score `hard_block_keywords` (strong) vs `weak_keywords` (weak): a single weak keyword hit caps at `MANUAL_REVIEW` (never `REJECTED` 92/100) while promoting the clause into Stage 2 top-3; strong `CRITICAL` hits or 2+ hits trigger `REJECTED`.
+4. Wire `CATEGORY_CLAUSE_MAP` (`electrodomesticos`, `construccion-y-reformas`, `motor-y-accesorios` → `VT-202` Vinted restriction + top-3 domain boosts) and track `_initial_category_id` in `Product.__init__()` / `Product.save()` so category assignment re-evaluates Stage 1 while preserving `STAGE_2_TARGETED` clearance when `stage2_cleared_text_hash` is unchanged and no category violation exists.
+5. Replace per-keyword regex compilation and the noisy 96-dim MD5 character-trigram ranking with a module-cached precompiled matcher (`_COMPILED_CLAUSE_CACHE`, invalidated on `PolicyClause` `post_save`/`post_delete` and `(count, max(updated_at))`) and stopword-filtered stemmed token overlap.
+**Acceptance criteria:**
+- [x] Plural forms (`réplicas`, `medicamentos`, `baterías hinchadas`, `perfumes abiertos`, `vapers`, `cachorros`, `taladros`) match singular clause keywords automatically.
+- [x] Benign compound phrases (`Pistola de silicona`, `Pistola de masaje`, `Pistola de agua Nerf`, `Pistola de pintura`, `Disfraz de pirata`, `Barco pirata LEGO`, `Falso techo`, `Color tabaco`, `Vaso de whisky`, `Nevera para insulina`, `Cama para mascota`, `Llanta de bicicleta`, `Funda para DNI`, `Pastillero`) and negated phrases (`no es réplica ni falso`, `líquido sin nicotina`) evaluate to `APPROVED` (0 false positives).
+- [x] Assigning `category` (`electrodomesticos`, `construccion-y-reformas`, `motor-y-accesorios`) to a product flags `VT-202` on Vinted (`MANUAL_REVIEW`) and updates compliance on `Product.save()`.
+- [x] Stage 1 evaluation with 300 active clauses (3,600 keywords) completes in `< 5 ms` per product via the precompiled cache.
+**Verification:**
+- [x] Focused tests pass: `.venv\Scripts\python.exe manage.py test tests.test_clauseguard_compliance`
+- [x] Linter passes: `.venv\Scripts\ruff.exe check .`
+**Dependencies:** Task 179
+**Files likely touched:**
+- `inventory/services/compliance_service.py`
+- `inventory/models.py`
+**Estimated scope:** Medium (2 files)
+
+---
+
+### Checkpoint: After Tasks 179–180 (Core Stage 1 Engine & Schema Foundation)
+- [x] Migration `0027` applied cleanly and default clauses updated.
+- [x] Stage 1 benchmark probe (`scratch/stage1_probe.py`) achieves `0/15` false negatives and `0/17` false positives.
+- [x] Existing `tests.test_clauseguard_compliance` suite passes with 0 regressions.
+
+---
+
+### Task 181: Policy Sync Keyword Guardrails & `audit_policy_keywords` Management Command (`inventory/services/policy_sync_service.py`, `inventory/management/commands/audit_policy_keywords.py`)
+**Description:** Harden `sync_site_policy()` in `inventory/services/policy_sync_service.py` by extending `ExtractedClauseSchema` with `weak_keywords` and `exception_phrases`, and adding `sanitize_extracted_keywords()` to reject generic catalog stopwords (`ropa`, `usado`, `nuevo`, `caja`, `original`, `marca`, `envio`, `lote`, etc.) and overly short single-word triggers (`len < 4` unless in an explicit acronym allowlist like `dni`, `cbd`, `thc`, `tnt`). Create `inventory/management/commands/audit_policy_keywords.py` (`python manage.py audit_policy_keywords --threshold 0.05`) to test active `PolicyClause` keywords against catalog products and report noisy keywords/clauses exceeding the match threshold.
+**Acceptance criteria:**
+- [x] `ExtractedClauseSchema` and `sync_site_policy()` support and persist sanitized `hard_block_keywords`, `weak_keywords`, and `exception_phrases`.
+- [x] `sanitize_extracted_keywords()` strips generic stopwords and `< 4` char single tokens while preserving valid acronyms (`dni`, `cbd`, `thc`, `tnt`) and multi-word phrases.
+- [x] `python manage.py audit_policy_keywords` runs cleanly, reports per-clause/keyword match rates across non-deleted products, and flags noisy triggers above `--threshold`.
+**Verification:**
+- [x] CLI command runs: `.venv\Scripts\python.exe manage.py audit_policy_keywords`
+- [x] Focused tests pass: `.venv\Scripts\python.exe manage.py test tests.test_clauseguard_compliance`
+**Dependencies:** Task 180
+**Files likely touched:**
+- `inventory/services/policy_sync_service.py`
+- `inventory/management/commands/audit_policy_keywords.py`
+**Estimated scope:** Small to Medium (2 files)
+
+---
+
+### Task 182: Table-Driven Accuracy & Latency Regression Suite, Bilingual Translations & Changelog (`tests/test_clauseguard_compliance.py`, `locale/`, `CHANGELOG.md`, `SPEC.md`)
+**Description:** Expand `tests/test_clauseguard_compliance.py` with a table-driven regression suite covering the 15 `SHOULD_FLAG` prohibited items and 17 `SHOULD_PASS` benign second-hand items, category-change re-evaluation tests, `STAGE_2_TARGETED` clearance preservation tests, sync keyword sanitization tests, `audit_policy_keywords` command tests, and a 300-clause (`3,600` keyword) `< 5 ms` performance benchmark test. Update `locale/es/` and `locale/en/` translations (`compile_locales`), `SPEC.md`, and `CHANGELOG.md`.
+**Acceptance criteria:**
+- [x] Table-driven test suite asserts `0/15` false negatives on `SHOULD_FLAG` and `0/17` false positives on `SHOULD_PASS`.
+- [x] Unit tests verify category-triggered `VT-202` matching, `Product.save()` category change hook, `sanitize_extracted_keywords()`, `audit_policy_keywords` CLI output, and `< 5 ms` cached matcher latency at 300 clauses.
+- [x] Bilingual catalogs compile cleanly (`python manage.py compile_locales`).
+- [x] Full test suite (`python manage.py test`), Django system check (`python manage.py check`), and Ruff (`ruff check .`) pass with 0 errors.
+**Verification:**
+- [x] Focused tests pass: `.venv\Scripts\python.exe manage.py test tests.test_clauseguard_compliance`
+- [x] Full test suite passes: `.venv\Scripts\python.exe manage.py test`
+- [x] Linter & checks pass: `.venv\Scripts\ruff.exe check .` and `.venv\Scripts\python.exe manage.py check`
+**Dependencies:** Task 180, Task 181
+**Files likely touched:**
+- `tests/test_clauseguard_compliance.py`
+- `locale/es/LC_MESSAGES/django.po`
+- `locale/en/LC_MESSAGES/django.po`
+- `SPEC.md`
+- `CHANGELOG.md`
+**Estimated scope:** Medium (5 files)
+
+---
+
+### Checkpoint 49: ClauseGuard Stage 1 Local Compliance Optimization Complete
+- [x] Stage 1 local check achieves 100% recall (`15/15`) on the plural/synonym prohibited corpus and 100% precision (`17/17` passed, `0` false positives) on the benign second-hand corpus.
+- [x] Category-restricted items (`electrodomesticos`, `construccion-y-reformas`, `motor-y-accesorios`) automatically flag `VT-202` for Vinted even without keyword hits.
+- [x] Stage 1 evaluation latency remains `< 5 ms` even with 300 synced clauses (`3,600` keywords).
+- [x] Policy sync filters out noisy generic keywords, and `python manage.py audit_policy_keywords` audits catalog match rates.
+- [x] 100% of automated tests, `manage.py check`, `compile_locales`, and `ruff check .` pass with zero warnings.

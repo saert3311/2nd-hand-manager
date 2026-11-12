@@ -3821,3 +3821,25 @@ msgstr "Evaluado localmente mediante reglas Fase 1."
 
 msgid "Verify Compliance (AI)"
 msgstr "Verificar Cumplimiento (IA)"
+
+msgid "Weak / Contextual Keywords"
+msgstr "Palabras Clave Débiles / Contextuales"
+
+msgid ""
+"Ambiguous single words in ES/EN that trigger caution (Manual Review) unless "
+"corroborated"
+msgstr ""
+"Palabras sueltas ambiguas en ES/EN que activan cautela (Revisión Manual) "
+"salvo corroboración"
+
+msgid "Exception Phrases"
+msgstr "Frases de Excepción"
+
+msgid "Benign compound phrases that suppress false-positive keyword matches"
+msgstr ""
+"Frases compuestas benignas que suprimen falsos positivos de palabras clave"
+
+msgid "JSON list of strong trigger phrases in ES/EN for deterministic Stage 1 matching"
+msgstr ""
+"Lista JSON de frases de activación fuerte en ES/EN para coincidencia "
+"determinista en Fase 1"

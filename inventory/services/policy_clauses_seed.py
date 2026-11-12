@@ -26,9 +26,27 @@ DEFAULT_POLICY_CLAUSES_SEED: tuple[dict[str, Any], ...] = (
             "pepper sprays, and prohibited switchblades or knuckles is strictly forbidden."
         ),
         "hard_block_keywords": [
-            "pistola", "arma de fuego", "armas", "municion", "airsoft", "navaja automatica",
-            "puno americano", "taser", "spray pimienta", "escopeta", "rifle",
-            "firearm", "ammunition", "switchblade", "brass knuckles", "pepper spray", "handgun",
+            "arma de fuego", "armas de fuego", "municion", "cartucho", "airsoft",
+            "navaja automatica", "cuchillo mariposa", "balisong", "puno americano",
+            "taser", "spray pimienta", "escopeta", "rifle", "revolver",
+            "pistola de fogueo", "pistola airsoft", "pistola balines", "pistola detonadora",
+            "pistola electrica", "carabina",
+            "firearm", "ammunition", "switchblade", "butterfly knife",
+            "brass knuckles", "pepper spray", "handgun", "shotgun",
+        ],
+        "weak_keywords": [
+            "pistola", "arma", "armas", "navaja", "cuchillo", "katana", "espada",
+            "weapon", "knife",
+        ],
+        "exception_phrases": [
+            "pistola de silicona", "pistola silicona",
+            "pistola de masaje", "pistola masaje",
+            "pistola de agua", "pistola agua", "pistola nerf",
+            "pistola de pintura", "pistola pintura",
+            "pistola de calor", "pistola aire caliente",
+            "pistola de clavos", "pistola de encolar", "pistola termofusible",
+            "cuchillo de cocina", "cuchillo jamonero", "juego de cuchillos", "cuchillo de mesa",
+            "glue gun", "massage gun", "water gun", "paint sprayer", "heat gun", "nail gun", "kitchen knife",
         ],
     },
     {
@@ -48,8 +66,19 @@ DEFAULT_POLICY_CLAUSES_SEED: tuple[dict[str, Any], ...] = (
         ),
         "hard_block_keywords": [
             "medicamento", "receta medica", "antibiotico", "anabolizante", "esteroides",
-            "viagra", "cialis", "insulina", "jeringuilla", "farmaco",
+            "viagra", "cialis", "jeringuilla", "farmaco", "ibuprofeno", "paracetamol",
+            "amoxicilina", "tramadol", "ozempic",
             "prescription", "antibiotic", "steroids", "pharmacy drug",
+        ],
+        "weak_keywords": [
+            "insulina", "suplemento medico", "pastillas", "cbd", "insulin",
+        ],
+        "exception_phrases": [
+            "nevera para insulina", "nevera portatil para insulina",
+            "bolsa isotermica para insulina", "estuche para insulina", "estuche insulina",
+            "organizador de pastillas", "pastillero", "pastillero para medicamentos",
+            "pastillero semanal para medicamentos", "organizador para medicamentos",
+            "insulin cooler", "insulin case", "pill organizer", "pill box",
         ],
     },
     {
@@ -68,8 +97,17 @@ DEFAULT_POLICY_CLAUSES_SEED: tuple[dict[str, Any], ...] = (
             "trademarks or copyrights is prohibited."
         ),
         "hard_block_keywords": [
-            "replica", "imitacion", "falsificacion", "falso", "clon exacto", "calidad 1:1",
-            "aaa+", "bootleg", "pirata", "counterfeit", "fake", "knockoff", "exact replica",
+            "replica", "copia exacta", "imitacion", "falsificacion", "clon exacto",
+            "calidad 1:1", "calidad aaa", "aaa+", "bootleg",
+            "counterfeit", "knockoff", "exact replica", "exact copy",
+        ],
+        "weak_keywords": [
+            "falso", "pirata", "fake",
+        ],
+        "exception_phrases": [
+            "disfraz de pirata", "disfraz pirata", "barco pirata", "sombrero pirata", "bandera pirata",
+            "falso techo", "techo falso", "suelo falso", "pestanas postizas",
+            "pirate costume", "pirate ship", "false ceiling", "faux leather",
         ],
     },
     {
@@ -89,8 +127,15 @@ DEFAULT_POLICY_CLAUSES_SEED: tuple[dict[str, Any], ...] = (
         ),
         "hard_block_keywords": [
             "cura el dolor", "cura enfermedades", "milagroso", "tratamiento medico",
-            "elimina la artritis", "tipo zara", "estilo rolex", "como gucci",
-            "cures pain", "medical cure", "miracle cure", "arthritis relief",
+            "elimina la artritis", "cura cancer", "tipo zara", "estilo rolex", "estilo gucci",
+            "como gucci", "como apple",
+            "cures pain", "medical cure", "miracle cure", "arthritis relief", "treats arthritis",
+        ],
+        "weak_keywords": [
+            "terapeutico", "antiinflamatorio", "therapeutic",
+        ],
+        "exception_phrases": [
+            "masajeador muscular", "relajacion muscular",
         ],
     },
     {
@@ -109,9 +154,17 @@ DEFAULT_POLICY_CLAUSES_SEED: tuple[dict[str, Any], ...] = (
             "and recalled safety-hazard products are prohibited."
         ),
         "hard_block_keywords": [
-            "bateria hinchada", "bateria danada", "inflamable", "explosivo", "gas butano",
-            "bombona", "pirotecnia", "retirado del mercado", "amianto",
-            "swollen battery", "damaged battery", "flammable", "explosive", "recalled product",
+            "bateria hinchada", "pila abombada", "bateria abombada", "bateria danada",
+            "bateria quemada", "huele a quemado", "cortocircuito", "chisporrotea",
+            "inflamable", "explosivo", "gas butano", "bombona de butano", "pirotecnia",
+            "retirado del mercado", "amianto",
+            "swollen battery", "damaged battery", "bulging battery", "flammable", "explosive", "recalled product",
+        ],
+        "weak_keywords": [
+            "bombona", "chispas", "battery defect",
+        ],
+        "exception_phrases": [
+            "bombona decorativa", "funda bombona",
         ],
     },
     {
@@ -130,9 +183,15 @@ DEFAULT_POLICY_CLAUSES_SEED: tuple[dict[str, Any], ...] = (
             "lockpicking tools are prohibited."
         ),
         "hard_block_keywords": [
-            "cuenta netflix", "cuenta spotify", "licencia pirateada", "iptv pirata",
-            "modchip", "ganzua", "pirated software", "cracked license", "lockpick", "streaming account",
+            "cuenta netflix", "cuenta spotify", "cuenta hbo", "cuenta disney",
+            "licencia pirateada", "iptv pirata", "lista m3u", "decodificador pirata",
+            "modchip", "r4 ds", "ganzua", "set de ganzuas",
+            "pirated software", "cracked license", "lockpick", "streaming account",
         ],
+        "weak_keywords": [
+            "iptv", "crackeado", "pirateado",
+        ],
+        "exception_phrases": [],
     },
     {
         "code": "GLB-107",
@@ -150,8 +209,16 @@ DEFAULT_POLICY_CLAUSES_SEED: tuple[dict[str, Any], ...] = (
             "with unwiped personal data is strictly prohibited."
         ),
         "hard_block_keywords": [
-            "pasaporte", "carnet de conducir", "tarjeta de credito", "datos bancarios",
+            "pasaporte", "carnet de conducir", "documento de identidad",
+            "tarjeta de credito", "datos bancarios", "cuenta bancaria", "numero de tarjeta",
             "passport", "driver license", "credit card", "bank card",
+        ],
+        "weak_keywords": [
+            "dni", "nie",
+        ],
+        "exception_phrases": [
+            "funda para dni", "funda dni", "portadocumentos",
+            "funda pasaporte", "portapasaportes", "passport cover", "passport holder", "card holder",
         ],
     },
     {
@@ -170,9 +237,19 @@ DEFAULT_POLICY_CLAUSES_SEED: tuple[dict[str, Any], ...] = (
             "opened or used personal hygiene products are prohibited."
         ),
         "hard_block_keywords": [
-            "perfume empezado", "perfume abierto", "maquillaje usado", "cosmetico abierto",
-            "crema usada", "ropa interior usada", "used makeup", "opened perfume",
-            "opened cosmetic", "used underwear",
+            "perfume empezado", "perfume abierto", "perfume usado", "frasco empezado", "colonia empezada",
+            "maquillaje usado", "cosmetico abierto", "pintalabios usado", "labial usado",
+            "sin precinto", "desprecintado",
+            "tester usado", "muestra usada", "crema usada", "ropa interior usada",
+            "used makeup", "opened perfume", "used perfume", "opened cosmetic", "unsealed perfume", "used underwear",
+        ],
+        "weak_keywords": [
+            "tester", "probador", "bragas", "calzoncillos", "ropa interior",
+        ],
+        "exception_phrases": [
+            "nuevo precintado", "precintado de fabrica", "nuevo con etiquetas",
+            "new with tags", "factory sealed", "ropa interior nueva con etiquetas",
+            "calzoncillos nuevos precintados",
         ],
     },
     {
@@ -191,9 +268,21 @@ DEFAULT_POLICY_CLAUSES_SEED: tuple[dict[str, Any], ...] = (
             "and mechanical automotive or motorcycle replacement parts."
         ),
         "hard_block_keywords": [
-            "lavadora", "frigorifico", "nevera", "freidora de aire", "microondas",
-            "taladro", "radial", "amoladora", "motosierra", "neumatico", "llanta", "carburador",
-            "washing machine", "fridge", "air fryer", "power drill", "angle grinder", "car tire",
+            "lavadora", "frigorifico", "lavavajillas", "secadora", "horno empotrable",
+            "vitroceramica", "freidora de aire", "microondas", "robot de cocina", "thermomix",
+            "taladro", "radial", "amoladora", "sierra circular", "sierra de calar", "lijadora",
+            "motosierra", "soldador", "neumatico", "carburador", "alternador",
+            "tubo de escape", "pastillas de freno",
+            "washing machine", "fridge", "dishwasher", "air fryer", "microwave",
+            "power drill", "angle grinder", "chainsaw", "car tire",
+        ],
+        "weak_keywords": [
+            "nevera", "llanta", "compresor", "bujia",
+        ],
+        "exception_phrases": [
+            "nevera para insulina", "nevera portatil para insulina",
+            "nevera de camping", "nevera portatil de playa", "nevera termica", "mini nevera portatil",
+            "llanta de bicicleta", "llanta bicicleta", "llanta mtb", "llanta bmx",
         ],
     },
     {
@@ -212,9 +301,19 @@ DEFAULT_POLICY_CLAUSES_SEED: tuple[dict[str, Any], ...] = (
             "and alcoholic beverages."
         ),
         "hard_block_keywords": [
-            "vaper", "cigarrillo electronico", "e-liquid", "nicotina", "shisha", "cachimba",
-            "tabaco", "botella de vino", "whisky", "licor",
-            "vape", "e-cigarette", "nicotine", "tobacco", "alcohol bottle",
+            "vaper", "cigarrillo electronico", "e-liquid", "shisha", "cachimba",
+            "tabaco de liar", "cigarro", "puro habano",
+            "botella de vino", "botella de ron", "ginebra", "vodka", "cerveza artesanal", "licor",
+            "vape", "e-cigarette", "tobacco", "alcohol bottle",
+        ],
+        "weak_keywords": [
+            "tabaco", "whisky", "nicotina", "vino", "ron", "nicotine", "wine", "whiskey",
+        ],
+        "exception_phrases": [
+            "color tabaco", "marron tabaco", "tono tabaco",
+            "vaso de whisky", "vasos de whisky", "copa de vino", "copas de vino",
+            "botellero de vino", "sacacorchos", "cenicero decorativo",
+            "tobacco brown", "whisky glass", "wine glass", "wine rack",
         ],
     },
     {
@@ -233,8 +332,15 @@ DEFAULT_POLICY_CLAUSES_SEED: tuple[dict[str, Any], ...] = (
             "software without accompanying original hardware."
         ),
         "hard_block_keywords": [
-            "catalizador", "modulo airbag", "airbag usado", "disco oem", "windows oem",
+            "catalizador", "modulo airbag", "airbag usado", "centralita airbag",
+            "disco oem", "windows oem", "cinturon desguace",
             "catalytic converter", "airbag module", "oem recovery disc",
+        ],
+        "weak_keywords": [
+            "airbag",
+        ],
+        "exception_phrases": [
+            "mochila airbag", "chaleco airbag moto", "funda volante",
         ],
     },
     {
@@ -253,8 +359,18 @@ DEFAULT_POLICY_CLAUSES_SEED: tuple[dict[str, Any], ...] = (
             "unregulated sales of pets or protected species."
         ),
         "hard_block_keywords": [
-            "fitosanitario", "herbicida profesional", "pesticida", "cachorro", "mascota",
-            "animal vivo", "pesticide", "herbicide", "live puppy", "live animal",
+            "fitosanitario", "herbicida profesional", "pesticida", "insecticida profesional",
+            "cachorro", "animal vivo", "gatito en adopcion", "reptil vivo",
+            "pesticide", "herbicide", "live puppy", "live animal",
+        ],
+        "weak_keywords": [
+            "mascota", "perro", "gato", "jaula",
+        ],
+        "exception_phrases": [
+            "para mascota", "para mascotas", "cama para mascota", "transportin para mascota",
+            "comida para mascota", "juguete para mascota", "comedero mascota",
+            "correa para perro", "rascador para gato",
+            "for pets", "pet bed", "pet carrier", "dog toy", "cat tree",
         ],
     },
 )

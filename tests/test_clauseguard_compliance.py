@@ -1,3 +1,4 @@
+import time
 from io import StringIO
 from unittest.mock import MagicMock, patch
 
@@ -10,6 +11,7 @@ from django.urls import reverse
 from PIL import Image
 
 from inventory.models import (
+    Category,
     ComplianceStage,
     ComplianceVerdict,
     MarketplaceSite,
@@ -81,6 +83,26 @@ class ClauseGuardComplianceTests(TestCase):
         vinted = MarketplaceSite.objects.get(slug="vinted")
         self.assertTrue(vinted.policy_url.startswith("https://"))
         self.assertTrue(PolicyClause.objects.filter(code="VT-202", site=vinted).exists())
+
+    def test_policy_clause_exposes_weak_keywords_and_exception_phrases(self):
+        glb101 = PolicyClause.objects.get(code="GLB-101")
+        glb103 = PolicyClause.objects.get(code="GLB-103")
+        vt202 = PolicyClause.objects.get(code="VT-202")
+        wp301 = PolicyClause.objects.get(code="WP-301")
+
+        self.assertIn("arma de fuego", glb101.hard_block_keywords)
+        self.assertIn("pistola", glb101.weak_keywords)
+        self.assertIn("pistola de silicona", glb101.exception_phrases)
+
+        self.assertIn("copia exacta", glb103.hard_block_keywords)
+        self.assertIn("pirata", glb103.weak_keywords)
+        self.assertIn("disfraz de pirata", glb103.exception_phrases)
+
+        self.assertIn("llanta", vt202.weak_keywords)
+        self.assertIn("llanta de bicicleta", vt202.exception_phrases)
+
+        self.assertIn("whisky", wp301.weak_keywords)
+        self.assertIn("vaso de whisky", wp301.exception_phrases)
 
     def test_stage1_safe_product_short_circuits_with_zero_tokens(self):
         res = evaluate_stage1_local(
@@ -679,18 +701,207 @@ class ClauseGuardComplianceTests(TestCase):
             self.assertEqual(text_pdf, "")
             self.assertIn("unsupported", (err_pdf or "").lower())
 
-    def test_stage1_reuses_cached_local_vectors_without_recomputing_per_clause(self):
+    def test_stage1_matcher_cache_reuses_precompiled_rules_and_scales_under_5ms(self):
         self.assertEqual(len(compute_embedding_vector("Regla de prueba", use_api=True)), LOCAL_EMBEDDING_DIMS)
+
+        # Create 300 active synced clauses with 12 keywords each (3,600 total keywords)
+        vinted = MarketplaceSite.objects.get(slug="vinted")
+        bulk_clauses = [
+            PolicyClause(
+                code=f"PERF-{idx:03d}",
+                site=vinted,
+                category="Performance Test",
+                severity=PolicySeverity.MEDIUM,
+                title_es=f"Regla sintética {idx}",
+                title_en=f"Synthetic rule {idx}",
+                description_es="Descripción sintética de prueba.",
+                description_en="Synthetic test description.",
+                hard_block_keywords=[f"synkw{idx}_{kw_idx}" for kw_idx in range(12)],
+                is_active=True,
+            )
+            for idx in range(300)
+        ]
+        PolicyClause.objects.bulk_create(bulk_clauses)
+
+        # First call builds/warms cache; subsequent calls hit cached matcher without rebuilding
+        evaluate_stage1_local(title="Silla plegable de aluminio", language="es")
 
         from inventory.services import compliance_service as cs
 
         with patch.object(
             cs,
-            "compute_local_ngram_vector",
-            wraps=cs.compute_local_ngram_vector,
-        ) as spy_vec:
-            evaluate_stage1_local(title="Silla plegable de aluminio", language="es")
-            self.assertEqual(spy_vec.call_count, 1)
+            "_compile_clause_entries",
+            wraps=cs._compile_clause_entries,
+        ) as spy_compile:
+            t0 = time.perf_counter()
+            for _ in range(10):
+                res = evaluate_stage1_local(title="Silla plegable de aluminio con respaldo", language="es")
+                self.assertEqual(res["verdict"], ComplianceVerdict.APPROVED)
+            avg_ms = ((time.perf_counter() - t0) / 10.0) * 1000.0
+            self.assertEqual(spy_compile.call_count, 0)
+            self.assertLess(avg_ms, 5.0, f"Expected <5ms Stage 1 cached latency with 300 clauses, got {avg_ms:.2f}ms")
+
+        # Creating/saving a PolicyClause invalidates the compiled cache automatically
+        new_clause = PolicyClause.objects.get(code="PERF-001")
+        new_clause.hard_block_keywords = ["sillaplasticoespecial"]
+        new_clause.save()
+        res_invalidated = evaluate_stage1_local(title="Item sillaplasticoespecial nuevo", language="es")
+        self.assertEqual(res_invalidated["verdict"], ComplianceVerdict.MANUAL_REVIEW)
+
+    def test_stage1_accuracy_corpus_zero_false_negatives_and_zero_false_positives(self):
+        should_flag = [
+            ("Pistolas de airsoft x2 con bolas", "GLB-101"),
+            ("Lote de réplicas de bolsos Louis Vuitton", "GLB-103"),
+            ("Medicamentos caducados varios", "GLB-102"),
+            ("Baterías hinchadas de portátil", "GLB-105"),
+            ("Perfumes abiertos al 80%", "VT-201"),
+            ("Vapers desechables sabor fresa", "WP-301"),
+            ("Esteroide anabolizante sin abrir", "GLB-102"),
+            ("Navaja automática de bolsillo", "GLB-101"),
+            ("Bolso imitación Gucci", "GLB-103"),
+            ("Zapatillas Nike fake", "GLB-103"),
+            ("Munición calibre 9mm", "GLB-101"),
+            ("Cachorros de bulldog francés", "ML-501"),
+            ("Taladros percutores Bosch lote", "VT-202"),
+            ("Copia exacta de reloj Rolex", "GLB-103"),
+            ("Cuchillo mariposa (balisong)", "GLB-101"),
+            ("Revólver antiguo de colección", "GLB-101"),
+            ("Cargador de móvil con pila abombada", "GLB-105"),
+            ("Cargador que huele a quemado", "GLB-105"),
+            ("Pintalabios usado una vez", "VT-201"),
+        ]
+        should_pass = [
+            "Pistola de silicona caliente Bosch",
+            "Pistola de masaje muscular percusión",
+            "Pistola de agua Nerf para niños",
+            "Pistola de pintura Wagner",
+            "Chaqueta de cuero color tabaco",
+            "Bolso 100% original, no es réplica ni falso",
+            "Disfraz de pirata para niño talla 6",
+            "Barco pirata LEGO 70413",
+            "Transportín para mascota pequeña",
+            "Cama para mascota lavable",
+            "Vaso de whisky de cristal tallado",
+            "Líquido sin nicotina para limpieza",
+            "Pastillero semanal para medicamentos",
+            "Nevera portátil para insulina",
+            "Falso techo de escayola placas",
+            "Llanta de bicicleta 29 pulgadas",
+            "Funda para DNI y tarjetas",
+            "Armario ropero de pino",
+            "Silla de oficina ergonómica",
+        ]
+
+        for text, expected_code in should_flag:
+            with self.subTest(flag_text=text):
+                res = evaluate_stage1_local(title=text, language="es")
+                self.assertIn(
+                    res["verdict"],
+                    (ComplianceVerdict.MANUAL_REVIEW, ComplianceVerdict.REJECTED),
+                    f"False negative on {text!r}: verdict={res['verdict']}",
+                )
+                matched_codes = {m["code"] for m in res["report"]["matched_clauses"]}
+                self.assertIn(
+                    expected_code,
+                    matched_codes,
+                    f"Expected {expected_code} for {text!r}, got {matched_codes}",
+                )
+
+        for text in should_pass:
+            with self.subTest(pass_text=text):
+                res = evaluate_stage1_local(title=text, language="es")
+                self.assertEqual(
+                    res["verdict"],
+                    ComplianceVerdict.APPROVED,
+                    f"False positive on {text!r}: matched={res['report']['matched_clauses']}",
+                )
+
+    def test_stage1_weak_vs_strong_keyword_severity_and_top3_promotion(self):
+        # Single ambiguous weak keyword ("pistola") triggers MANUAL_REVIEW (not REJECTED 92) and promotes GLB-101
+        res_weak = evaluate_stage1_local(title="Pistola de juguete antigua sin marca", language="es")
+        self.assertEqual(res_weak["verdict"], ComplianceVerdict.MANUAL_REVIEW)
+        self.assertLess(res_weak["risk_score"], 85)
+        self.assertIn("GLB-101", [c.code for c in res_weak["top_clauses"]])
+
+        # Unambiguous strong CRITICAL keyword ("escopeta") triggers REJECTED (92)
+        res_strong = evaluate_stage1_local(title="Escopeta de caza superpuesta", language="es")
+        self.assertEqual(res_strong["verdict"], ComplianceVerdict.REJECTED)
+        self.assertGreaterEqual(res_strong["risk_score"], 85)
+
+    def test_stage1_category_signal_and_product_save_category_change_hook(self):
+        appliances_cat, _ = Category.objects.get_or_create(
+            slug="electrodomesticos",
+            defaults={"name": "Electrodomésticos", "name_en": "Appliances"},
+        )
+        fashion_cat, _ = Category.objects.get_or_create(
+            slug="moda-y-accesorios",
+            defaults={"name": "Moda y accesorios", "name_en": "Fashion"},
+        )
+
+        # Neutral title + no category -> APPROVED
+        product = Product.objects.create(
+            raw_note="Aparato compacto blanco 1200W",
+            created_by=self.assistant,
+        )
+        self.assertEqual(product.compliance_status, ComplianceVerdict.APPROVED)
+
+        # Assigning category "electrodomesticos" triggers Stage 1 VT-202 for Vinted in Product.save()
+        product.category = appliances_cat
+        product.save()
+        product.refresh_from_db()
+        self.assertEqual(product.compliance_status, ComplianceVerdict.MANUAL_REVIEW)
+        matrix = product.compliance_report["platform_matrix"]
+        self.assertEqual(matrix["vinted"]["status"], ComplianceVerdict.MANUAL_REVIEW)
+        self.assertIn("VT-202", matrix["vinted"]["clauses"])
+        self.assertEqual(matrix["wallapop"]["status"], ComplianceVerdict.APPROVED)
+
+        # Switching to safe fashion category restores APPROVED automatically
+        product.category = fashion_cat
+        product.save()
+        product.refresh_from_db()
+        self.assertEqual(product.compliance_status, ComplianceVerdict.APPROVED)
+
+    @override_settings(GEMINI_API_KEY="test-key")
+    @patch("inventory.services.compliance_service.genai.Client")
+    def test_stage2_targeted_clearance_preserved_across_non_violating_category_edit(self, mock_client_cls):
+        fashion_cat, _ = Category.objects.get_or_create(
+            slug="moda-y-accesorios",
+            defaults={"name": "Moda y accesorios", "name_en": "Fashion"},
+        )
+        appliances_cat, _ = Category.objects.get_or_create(
+            slug="electrodomesticos",
+            defaults={"name": "Electrodomésticos", "name_en": "Appliances"},
+        )
+        product = Product.objects.create(
+            raw_note="Pistola antigua decorativa de metal",
+            created_by=self.assistant,
+        )
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        mock_pass = MagicMock()
+        mock_pass.usage_metadata = MagicMock(total_token_count=110)
+        mock_pass.parsed = TargetedComplianceCheckSchema(passed=True, violated_clause_codes=[])
+        mock_client.models.generate_content.return_value = mock_pass
+
+        self.client.force_login(self.manager)
+        self.client.post(reverse("inventory:product_verify_compliance", kwargs={"pk": product.pk}))
+        product.refresh_from_db()
+        self.assertEqual(product.compliance_stage, ComplianceStage.STAGE_2_TARGETED)
+        self.assertEqual(product.compliance_status, ComplianceVerdict.APPROVED)
+
+        # Assigning a non-violating category preserves STAGE_2_TARGETED clearance
+        product.category = fashion_cat
+        product.save()
+        product.refresh_from_db()
+        self.assertEqual(product.compliance_stage, ComplianceStage.STAGE_2_TARGETED)
+        self.assertEqual(product.compliance_status, ComplianceVerdict.APPROVED)
+
+        # Assigning a restricted category ("electrodomesticos" -> VT-202) flags VT-202
+        product.category = appliances_cat
+        product.save()
+        product.refresh_from_db()
+        self.assertEqual(product.compliance_status, ComplianceVerdict.MANUAL_REVIEW)
+        self.assertIn("VT-202", [m["code"] for m in product.compliance_matched_clauses])
 
     def test_stage1_clean_pass_summary_localized_in_spanish(self):
         res_non_empty = evaluate_stage1_local(title="Silla de madera maciza", language="es")
@@ -713,3 +924,90 @@ class ClauseGuardComplianceTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertNotContains(resp, "Stage 1 clean pass")
         self.assertContains(resp, "Fase 1")
+
+    def test_sanitize_extracted_keywords_strips_generic_stopwords_and_short_tokens(self):
+        from inventory.services.policy_sync_service import sanitize_extracted_keywords
+
+        raw = [
+            "ropa",
+            "Usado",
+            "caja",
+            "original",
+            "gas",
+            "oro",
+            "DNI",
+            "cbd",
+            "tnt",
+            "arma de fuego",
+            "arma de fuego",
+            "perfume abierto",
+            "lote",
+        ]
+        cleaned = sanitize_extracted_keywords(raw)
+        self.assertEqual(cleaned, ["dni", "cbd", "tnt", "arma de fuego", "perfume abierto"])
+
+    @override_settings(GEMINI_API_KEY="test-key")
+    @patch("inventory.services.policy_sync_service.genai.Client")
+    def test_sync_site_policy_sanitizes_keywords_and_persists_weak_and_exceptions(self, mock_client_cls):
+        vinted = MarketplaceSite.objects.get(slug="vinted")
+        vinted.policy_raw_text = "Regla actualizada sobre cosméticos y artículos prohibidos."
+        vinted.policy_content_hash = ""
+        vinted.save()
+
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        mock_resp = MagicMock()
+        mock_resp.parsed = ExtractedPolicyClausesSchema(
+            clauses=[
+                ExtractedClauseSchema(
+                    code_suffix="990",
+                    category="Hygiene",
+                    severity="high",
+                    title_es="Vinted: Higiene",
+                    title_en="Vinted: Hygiene",
+                    description_es="Cosméticos usados prohibidos.",
+                    description_en="Used cosmetics prohibited.",
+                    hard_block_keywords=["ropa", "usado", "cosmetico abierto", "dni"],
+                    weak_keywords=["caja", "tester"],
+                    exception_phrases=["nuevo precintado"],
+                )
+            ]
+        )
+        mock_client.models.generate_content.return_value = mock_resp
+
+        res = sync_site_policy(vinted, use_api=True)
+        self.assertEqual(res["status"], "synced")
+        clause = PolicyClause.objects.get(code="VINT-990")
+        self.assertEqual(clause.hard_block_keywords, ["cosmetico abierto", "dni"])
+        self.assertEqual(clause.weak_keywords, ["tester"])
+        self.assertEqual(clause.exception_phrases, ["nuevo precintado"])
+
+    def test_audit_policy_keywords_command_reports_noisy_triggers(self):
+        vinted = MarketplaceSite.objects.get(slug="vinted")
+        PolicyClause.objects.create(
+            code="NOISY-999",
+            site=vinted,
+            category="Audit Test",
+            severity=PolicySeverity.MEDIUM,
+            title_es="Regla ruidosa",
+            title_en="Noisy rule",
+            description_es="Regla de prueba",
+            description_en="Test rule",
+            hard_block_keywords=["camiseta"],
+            is_active=True,
+        )
+        for i in range(4):
+            Product.objects.create(
+                raw_note=f"Camiseta básica algodón #{i}",
+                created_by=self.assistant,
+            )
+        Product.objects.create(
+            raw_note="Mesa auxiliar madera roble",
+            created_by=self.assistant,
+        )
+
+        out = StringIO()
+        call_command("audit_policy_keywords", threshold=0.05, stdout=out)
+        output = out.getvalue()
+        self.assertIn("NOISY-999", output)
+        self.assertIn("camiseta", output)

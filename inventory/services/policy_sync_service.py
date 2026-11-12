@@ -23,6 +23,7 @@ from .compliance_service import (
     clause_embedding_text,
     compute_embedding_vector,
     ensure_default_policy_clauses,
+    normalize_text,
     parse_gemini_response_dict,
 )
 from .policy_clauses_seed import DEFAULT_POLICY_CLAUSES_SEED
@@ -30,6 +31,37 @@ from .policy_clauses_seed import DEFAULT_POLICY_CLAUSES_SEED
 logger = logging.getLogger(__name__)
 
 POLICY_SYNC_EXTRACTION_MODEL = getattr(settings, "GEMINI_POLICY_SYNC_MODEL_NAME", "gemini-flash-latest")
+
+_GENERIC_CATALOG_STOPWORDS = frozenset({
+    "ropa", "usado", "usada", "usados", "usadas", "nuevo", "nueva", "nuevos", "nuevas",
+    "caja", "original", "marca", "envio", "lote", "buen estado", "articulo", "articulos",
+    "producto", "productos", "negro", "negra", "blanco", "blanca", "gris", "azul",
+    "rojo", "roja", "verde", "talla", "venta", "vendo", "item", "items",
+    "used", "new", "box", "brand", "size", "color", "shipping", "pack",
+})
+
+_ALLOWED_SHORT_ACRONYMS = frozenset({"dni", "nie", "cbd", "thc", "tnt", "pcp", "gbl", "lsd", "oem"})
+
+
+def sanitize_extracted_keywords(raw_keywords: list[str] | tuple[str, ...] | None) -> list[str]:
+    """
+    Filters out generic second-hand catalog stopwords and <4 char single tokens
+    (preserving allowed regulatory acronyms like 'dni', 'cbd', 'tnt', and multi-word phrases).
+    """
+    if not raw_keywords:
+        return []
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for item in raw_keywords:
+        norm = re.sub(r"\s+", " ", normalize_text(str(item or ""))).strip(" ,.;:!?\"'")
+        if not norm or norm in seen or norm in _GENERIC_CATALOG_STOPWORDS:
+            continue
+        is_single_token = " " not in norm and "-" not in norm
+        if is_single_token and len(norm) < 4 and norm not in _ALLOWED_SHORT_ACRONYMS:
+            continue
+        seen.add(norm)
+        cleaned.append(norm)
+    return cleaned
 
 
 class ExtractedClauseSchema(BaseModel):
@@ -42,7 +74,15 @@ class ExtractedClauseSchema(BaseModel):
     description_en: str = Field(description="Concise English summary of the rule")
     hard_block_keywords: list[str] = Field(
         default_factory=list,
-        description="Up to 10 lowercase trigger words/phrases in Spanish and English",
+        description="Unambiguous lowercase prohibited trigger words/phrases in Spanish and English (4+ chars)",
+    )
+    weak_keywords: list[str] = Field(
+        default_factory=list,
+        description="Contextual single words needing review (never generic clothing/size/color terms)",
+    )
+    exception_phrases: list[str] = Field(
+        default_factory=list,
+        description="Benign compound phrases that must not trigger this rule (e.g. 'pistola de silicona')",
     )
 
 
@@ -180,7 +220,9 @@ def _extract_clauses_with_gemini(site: MarketplaceSite, fetched_text: str) -> tu
         "Do NOT cap the count or lump unrelated categories together—create one atomic clause per specific item category, "
         "hazard, hygiene rule, IP rule, or listing copy restriction.\n"
         "For each rule provide a unique sequential code_suffix (e.g. '901', '902', ...), category, severity, "
-        "Spanish and English titles/descriptions, and rich lowercase trigger keywords in Spanish and English.\n\n"
+        "Spanish and English titles/descriptions, unambiguous lowercase `hard_block_keywords` (4+ chars, no generic "
+        "catalog words like 'ropa', 'usado', 'nuevo', 'caja'), contextual `weak_keywords`, and benign compound "
+        "`exception_phrases` in Spanish and English.\n\n"
         f"POLICY TEXT:\n{snippet}"
     )
     config = types.GenerateContentConfig(
@@ -288,9 +330,16 @@ def sync_site_policy(
         if code in seen_codes:
             code = f"{site_prefix}-{suffix}-{idx}"[:40]
         seen_codes.add(code)
+        sanitized_hard = sanitize_extracted_keywords(item.hard_block_keywords)
+        sanitized_weak = sanitize_extracted_keywords(item.weak_keywords)
+        sanitized_exc = [
+            re.sub(r"\s+", " ", normalize_text(str(e or ""))).strip()
+            for e in (item.exception_phrases or [])
+            if str(e or "").strip()
+        ]
         clause_text = (
             f"{item.title_es} {item.title_en} {item.description_es} {item.description_en} "
-            f"{' '.join(item.hard_block_keywords or [])}"
+            f"{' '.join(sanitized_hard)}"
         )
         PolicyClause.objects.update_or_create(
             code=code,
@@ -302,7 +351,9 @@ def sync_site_policy(
                 "title_en": (item.title_en or item.title_es)[:200],
                 "description_es": item.description_es or item.description_en,
                 "description_en": item.description_en or item.description_es,
-                "hard_block_keywords": [str(k).strip().lower() for k in (item.hard_block_keywords or []) if str(k).strip()],
+                "hard_block_keywords": sanitized_hard,
+                "weak_keywords": sanitized_weak,
+                "exception_phrases": sanitized_exc,
                 "embedding_vector": compute_embedding_vector(clause_text, use_api=False),
                 "is_active": True,
             },
