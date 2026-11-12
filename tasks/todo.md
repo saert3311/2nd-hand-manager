@@ -3913,3 +3913,36 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 - [x] Stage 1 evaluation latency remains `< 5 ms` even with 300 synced clauses (`3,600` keywords).
 - [x] Policy sync filters out noisy generic keywords, and `python manage.py audit_policy_keywords` audits catalog match rates.
 - [x] 100% of automated tests, `manage.py check`, `compile_locales`, and `ruff check .` pass with zero warnings.
+
+---
+
+## Phase 50: Product Detail Tabbed Workspace Redesign & Audit Log Deprioritization
+
+### Task 183: Tabbed Workspace Architecture, Progressive Photo Upload & Deprioritized Audit Footer (`inventory/templates/inventory/product_detail.html`)
+**Description:** Redesign `inventory/templates/inventory/product_detail.html` following `/frontend-ui-engineering`, `/design-taste-frontend`, and `modern-web-guidance` (`tabs`, `content-first-noise-reduction`, `search-hidden-content`):
+1. Organize the right-hand workspace into a 4-tab accessible category switcher (`#detailWorkspaceTablist`, `role="tablist"`) with `aria-selected` bottom border indicator, keyboard `ArrowLeft`/`ArrowRight`/`Home`/`End` navigation, URL hash deep-linking (`#tab-listing`, `#tab-channels`, `#tab-notes`, `#tab-compliance`, `#clarifications-section`), and `hidden="until-found"` + `beforematch` auto-tab activation.
+2. Add high-agency UX improvements:
+   - Compact dark-slate AI Copywriting command bar (`bg-slate-900`) replacing the oversized gradient banner.
+   - **Listing Readiness Checklist Strip (`#listingReadinessChecklist`)** showing at-a-glance status for `Photos`, `Title & Copy`, `Sale Price`, and `Policy Check`.
+   - **1-Tap "Copy Full Listing Pack" (`#btnCopyFullListingPack`)** button copying formatted `Title + Price + Description`.
+   - **Live Character & Line Counters (`#titleCharCounter`, `#descCharCounter`)** in `font-mono tabular-nums`.
+   - **Unsaved Changes Indicator (`#unsavedChangesBadge`)** & **`Ctrl+S` / `Cmd+S` Keyboard Save**.
+   - Unlock `Public Storefront & Taxonomy` (`Rápido Pack`) and `Preserved Intake Notes` on mobile viewports inside their dedicated tabs (`Channels & Storefront` and `Notes & Doubts`).
+3. Wrap `#detailPhotoUploadContainer` inside a progressive-disclosure `<details id="detailAddPhotosDisclosure">` drawer when photos already exist (auto-opening on file selection or dragover).
+4. Relocate `#status-history-section` out of the main grid to the bottom of the page as a quiet, collapsed-by-default native `<details id="status-history-disclosure">` footer drawer with a compact single-line-per-event timeline.
+**Acceptance criteria:**
+- [ ] `#detailWorkspaceTablist` renders 4 category tabs (`#tabBtnWorkspaceListing`, `#tabBtnWorkspaceChannels`, `#tabBtnWorkspaceNotes`, `#tabBtnWorkspaceCompliance`) with live badges and keyboard navigation.
+- [ ] Tab panels (`#workspacePanelListing`, `#workspacePanelChannels`, `#workspacePanelNotes`, `#workspacePanelCompliance`) use `hidden="until-found"` on inactive panels and auto-switch on `beforematch` or URL hash.
+- [ ] `#status-history-section` / `#status-history-disclosure` is collapsed by default at the bottom of the page.
+- [ ] `#btnCopyFullListingPack`, `#titleCharCounter`, `#descCharCounter`, `#listingReadinessChecklist`, and `#unsavedChangesBadge` function cleanly.
+- [ ] Zero horizontal overflow on OPPO A74 (`360×800` and `320×711`) and mobile (`390×844`) viewports.
+
+---
+
+### Task 184: Bilingual Translations, Unit/Browser Test Suite & Visual Verification (`locale/`, `tests/`, `CHANGELOG.md`)
+**Description:** Add Spanish translations in `locale/es/LC_MESSAGES/django.po` for all new workspace tab labels, readiness checklist pills, copy full pack button, character counters, and collapsed audit trail summary. Compile binary `.mo` catalogs (`python manage.py compile_locales`). Create `tests/test_product_detail_tabs.py` and update existing Playwright/view tests (`tests/test_product_detail_mobile_ux.py`, `tests/test_oppo_a74_responsive.py`, `tests/test_browser_phase39_workflow.py`, `tests/test_browser_lifecycle.py`, `tests/test_browser_daily_workflow.py`) to verify tab switching, keyboard navigation, audit log deprioritization, and mobile responsiveness. Update `CHANGELOG.md`.
+**Acceptance criteria:**
+- [ ] `python manage.py compile_locales` compiles cleanly with 0 untranslated or fuzzy strings.
+- [ ] `tests/test_product_detail_tabs.py` and all existing unit + Playwright browser tests pass (`python manage.py test`).
+- [ ] `python manage.py check` and `ruff check .` pass with 0 errors.
+
