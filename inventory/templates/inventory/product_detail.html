@@ -427,6 +427,11 @@
               <div class="flex items-center gap-2 min-w-0">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" aria-hidden="true"></span>
                 <span class="font-bold text-sm text-slate-900 truncate">{{ link.site.name }}</span>
+                {% if link.compliance_status_info and link.compliance_status_info.status != 'approved' %}
+                <span class="text-xs font-bold px-2 py-0.5 rounded-full {% if link.compliance_status_info.status == 'rejected' %}bg-rose-100 text-rose-800 border border-rose-300{% else %}bg-amber-100 text-amber-900 border border-amber-300{% endif %} shrink-0">
+                  🛡️ {{ link.compliance_status_info.clauses|join:", " }}
+                </span>
+                {% endif %}
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
                 <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
@@ -1254,6 +1259,151 @@
           {% endif %}
 
         </form>
+      </div>
+
+      <!-- ClauseGuard Policy Compliance & Platform Matrix Card -->
+      <div id="clauseGuardCard" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-6 space-y-4 min-w-0">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 min-w-0">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-base sm:text-lg shrink-0" aria-hidden="true">🛡️</span>
+            <div class="min-w-0">
+              <h2 class="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider break-words">
+                {% trans "ClauseGuard Policy Compliance" %}
+              </h2>
+              <p class="text-xs sm:text-sm text-slate-600 mt-0.5 break-words">
+                {% trans "Two-stage advisory T&C check across marketplaces (top-3 clauses only)." %}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+            <span id="clauseGuardVerdictBadge" class="text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider
+              {% if product.compliance_status == 'rejected' %}bg-rose-100 text-rose-900 border border-rose-300
+              {% elif product.compliance_status == 'manual_review' %}bg-amber-100 text-amber-950 border border-amber-300
+              {% else %}bg-emerald-100 text-emerald-900 border border-emerald-300{% endif %}">
+              {% if product.compliance_status == 'rejected' %}
+                🚫 {% trans "Policy Violation" %}
+              {% elif product.compliance_status == 'manual_review' %}
+                ⚠️ {% trans "Manual Review" %}
+              {% else %}
+                ✅ {% trans "Approved" %}
+              {% endif %}
+            </span>
+            <span id="clauseGuardRiskScore" class="font-mono tabular-nums text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 border border-slate-300">
+              {% trans "Risk" %} {{ product.compliance_risk_score }}/100
+            </span>
+          </div>
+        </div>
+
+        <!-- Stage & Token Economics Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-2 text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-slate-700 min-w-0">
+          <span class="font-semibold break-words">
+            {{ product.get_compliance_stage_display }}
+          </span>
+          <span id="clauseGuardTokenSavings" class="font-mono tabular-nums text-emerald-800 font-bold break-words">
+            {% blocktrans with used=compliance_telemetry.tokens_used|default:0 baseline=compliance_telemetry.naive_baseline_tokens|default:12000 saved=compliance_telemetry.tokens_saved_percent|default:100 %}Tokens: {{ used }} vs ~{{ baseline }} full T&C · Saved {{ saved }}%{% endblocktrans %}
+          </span>
+        </div>
+
+        <!-- Per-Platform Compatibility Matrix -->
+        {% if compliance_platforms %}
+        <div class="space-y-2 min-w-0">
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">
+            {% trans "Platform Compatibility Matrix" %}
+          </h3>
+          <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0" id="clauseGuardPlatformMatrix">
+            {% for plat in compliance_platforms %}
+            <span data-platform-slug="{{ plat.slug }}"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border break-words max-w-full
+                    {% if plat.status == 'rejected' %}bg-rose-50 text-rose-900 border-rose-300
+                    {% elif plat.status == 'manual_review' %}bg-amber-50 text-amber-950 border-amber-300
+                    {% else %}bg-emerald-50 text-emerald-900 border-emerald-200{% endif %}">
+              {% if plat.status == 'rejected' %}
+                <span aria-hidden="true">🚫</span>
+              {% elif plat.status == 'manual_review' %}
+                <span aria-hidden="true">⚠️</span>
+              {% else %}
+                <span aria-hidden="true">✅</span>
+              {% endif %}
+              <span>{{ plat.name }}</span>
+              {% if plat.clauses %}
+                <span class="font-mono text-xs opacity-90">({{ plat.clauses|join:", " }})</span>
+              {% endif %}
+            </span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Matched / Violated Policy Clauses -->
+        {% if compliance_clauses %}
+        <div class="space-y-2 min-w-0" id="clauseGuardCitationsList">
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">
+            {% trans "Flagged Policy Clauses" %}
+          </h3>
+          {% for clause in compliance_clauses %}
+          <div class="p-3 rounded-xl border text-xs sm:text-sm space-y-1 min-w-0
+            {% if clause.severity == 'critical' %}bg-rose-50/70 border-rose-200 text-rose-950
+            {% else %}bg-amber-50/70 border-amber-200 text-amber-950{% endif %}">
+            <div class="flex flex-wrap items-center justify-between gap-1.5 min-w-0">
+              <span class="font-bold break-words">
+                <span class="font-mono">[{{ clause.code }}]</span> {{ clause.title }}
+              </span>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-white/90 border border-slate-200 text-slate-800 shrink-0">
+                {{ clause.site_name }}
+              </span>
+            </div>
+            {% if clause.explanation %}
+            <p class="text-xs leading-relaxed break-words">{{ clause.explanation }}</p>
+            {% endif %}
+            {% if clause.excerpt %}
+            <p class="text-xs font-mono text-slate-700 break-words">
+              {% trans "Trigger:" %} {{ clause.excerpt }}
+            </p>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% elif compliance_summary %}
+        <p class="text-xs sm:text-sm text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-xl p-3 break-words">
+          ✅ {{ compliance_summary }}
+        </p>
+        {% endif %}
+
+        <!-- Auto-Sanitized Copy Actions -->
+        {% if compliance_sanitized_actions %}
+        <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-950 text-xs sm:text-sm space-y-1 min-w-0">
+          <p class="font-bold flex items-center gap-1.5">
+            <span aria-hidden="true">✍️</span> {% trans "Auto-Sanitized Copywriting Notes" %}
+          </p>
+          <ul class="list-disc list-inside text-xs space-y-0.5 pl-1 break-words">
+            {% for note in compliance_sanitized_actions %}
+            <li>{{ note }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <!-- Manager On-Demand Targeted Re-Verify Action -->
+        {% if can_manage %}
+        <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 min-w-0">
+          <span class="text-xs text-slate-600 break-words">
+            {% if product.compliance_checked_at %}
+              {% trans "Last checked:" %} {{ product.compliance_checked_at|date:"M d, Y H:i" }}
+            {% else %}
+              {% trans "Evaluated locally via Stage 1 rules." %}
+            {% endif %}
+          </span>
+          <form method="post" action="{% url 'inventory:product_verify_compliance' product.pk %}" class="shrink-0">
+            {% csrf_token %}
+            <button type="submit" id="verifyComplianceBtn"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition cursor-pointer min-h-[38px]">
+              <span aria-hidden="true">🛡️</span>
+              <span>{% trans "Verify Compliance (AI)" %}</span>
+            </button>
+          </form>
+        </div>
+        {% endif %}
       </div>
 
     </div>

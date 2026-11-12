@@ -677,3 +677,80 @@ Introduce a `Pallet` domain model representing acquired liquidation pallets or l
    - Add Spanish translations to `locale/es/LC_MESSAGES/django.po` and compile with `compile_locales`.
    - Extend `tests/test_pallet_tracking.py` covering pallet filtering (`all`, specific ID, `none`), filter composability, tab count scoping, card badge rendering, and financial confidentiality.
    - Verify zero horizontal overflow on low-DPI OPPO A74 mobile viewports (`360×800` & `320×711`).
+
+---
+
+## Phase 48: ClauseGuard — Cost-Optimized Multi-Platform Policy Compliance (`clauseguard-policy-compliance`)
+
+### Overview
+Implement a two-stage, cost-optimized policy compliance engine (**ClauseGuard**) that evaluates cataloged products against platform-specific Terms & Conditions (Wallapop, Vinted, eBay, Milanuncios, and Rápido Pack Storefront) without uploading full legal documents on every request. Combines hybrid URL/raw-text policy syncing on `MarketplaceSite` + atomic `PolicyClause` vectors stored in SQLite, a `<5ms` zero-token Stage 1 local filter on manual saves, and a Stage 2 multimodal evaluation & auto-sanitizing copywriter piggybacked onto `identify_intake_product` and `generate_product_listing` (plus an on-demand `/products/<pk>/verify-compliance/` endpoint for managers).
+
+### Technical Design
+1. **Domain Layer & Schema (`inventory/models.py`, `inventory/migrations/`, `inventory/admin.py`)**:
+   - Add enums `PolicySeverity` (`CRITICAL`, `HIGH`, `MEDIUM`), `ComplianceVerdict` (`APPROVED`, `MANUAL_REVIEW`, `REJECTED`), and `ComplianceStage` (`STAGE_1_LEXICAL`, `STAGE_1_SAFE`, `STAGE_2_PIGGYBACK`, `STAGE_2_TARGETED`).
+   - Extend `MarketplaceSite` with `policy_url`, `policy_raw_text`, `policy_content_hash`, and `policy_last_synced_at`.
+   - Create `PolicyClause` model (`code`, `site` [nullable for global], `category`, `severity`, `title_es`, `title_en`, `description_es`, `description_en`, `hard_block_keywords`, `embedding_vector`, `is_active`, `updated_at`) with localized properties (`localized_title`, `localized_description`).
+   - Extend `Product` with orthogonal advisory fields: `compliance_status`, `compliance_risk_score`, `compliance_stage`, `compliance_report` (`JSONField`), and `compliance_checked_at`.
+   - In `Product.save()`: When text fields (`raw_note`, `ai_title`, `ai_description`) change on creation or manual edit (and not explicitly bypassed by a Stage 2 save), synchronously execute `evaluate_stage1_local(product)` (`<5ms`, 0 network calls) to keep advisory compliance state accurate.
+   - Register `PolicyClauseAdmin` and update `MarketplaceSiteAdmin` and `ProductAdmin` in `inventory/admin.py`.
+2. **Compliance Engine & Policy Sync Service (`inventory/services/compliance_service.py`, `inventory/management/commands/sync_marketplace_policies.py`)**:
+   - `ensure_default_policy_clauses()`: Idempotently seeds 12 curated bilingual (`es`/`en`) policy clauses covering global and platform-specific rules (Wallapop, Vinted, eBay, Milanuncios, Rápido Pack) with deterministic `hard_block_keywords`.
+   - `compute_embedding_vector(text)` & `cosine_similarity(vec_a, vec_b)`: Computes semantic embeddings via Gemini `text-embedding-004` / `gemini-embedding-001` when configured, with a deterministic normalized n-gram/lexical vector fallback when offline or in tests.
+   - `evaluate_stage1_local(product_or_text, category_slug="", top_k=3)`:
+     - Scans text against `hard_block_keywords` and ranks active `PolicyClause` records via cosine + lexical similarity.
+     - Returns `verdict`, `risk_score`, `stage`, `top_clauses` (top 3 for Stage 2 prompt injection), `matched_clauses`, `platform_matrix`, and token-savings `telemetry` (`tokens_used: 0` vs `naive_baseline_tokens: 12000`).
+   - `sync_site_policy(site, force=False)`: Fetches `site.policy_url` (with graceful fallback to `site.policy_raw_text` if blocked by anti-bot challenge or offline), computes SHA-256 hash, and uses `gemini-flash-latest` to extract ALL distinct, granular `PolicyClause` rows (no artificial rule cap) when content changes.
+   - `sync_marketplace_policies` CLI command (`--site`, `--force`, `--dry-run`).
+3. **Stage 2 Piggybacked AI & Targeted Verification (`inventory/services/ai_service.py`, `inventory/views.py`, `inventory/urls.py`)**:
+   - **Intake Pre-flight (`identify_intake_product`)**: Inject top-3 Stage 1 clauses and extend `IntakePreflightSchema` with compact pass/fail fields (`compliance_passed`, `violated_clause_codes`, `compliance_flags`), resolving rule citations locally in `merge_stage2_compliance_result`.
+   - **Listing Copywriting (`generate_product_listing`)**: Inject only the top 3 Stage 1 candidate clauses (~150 tokens) into the prompt so Gemini **auto-sanitizes** generated copy (avoiding prohibited therapeutic claims or brand keyword stuffing) and returns compact pass/fail fields (`compliance_passed`, `violated_clause_codes`, `sanitized_note`) inside `ProductListingSchema`. Persist full locally resolved report in `generate_ai_view`.
+   - **On-Demand Manager Verification (`product_verify_compliance_view`, `POST /products/<pk>/verify-compliance/`)**: Runs Stage 1 + targeted `gemini-flash-latest` Stage 2 check (`TargetedComplianceCheckSchema` returning only `passed` + `violated_clause_codes`, zero explanation output tokens) without overwriting the manager's custom `ai_title` or `ai_description`.
+4. **User Interface & OPPO A74 Mobile Ergonomics (`intake.html`, `dashboard.html`, `product_detail.html`)**:
+   - `intake.html`: Render `#intakeComplianceAlert` inside `#aiIdentifyBanner` when pre-flight detects visual or note compliance risks.
+   - `dashboard.html`: Add `?compliance=flagged` filter toggle in the Secondary Filter Bar (`flagged_compliance_count`) and compact advisory badge (`🛡️ Review · <score>`) on flagged product cards.
+   - `product_detail.html`: Render `#clauseGuardCard` showing verdict badge, `0–100` Risk Score, Stage 1 vs Stage 2 resolution indicator, Token Savings telemetry (`Saved 98.8% tokens`), Per-Platform Compatibility Matrix (`Rápido Pack`, `Wallapop`, `Vinted`, `eBay`, `Milanuncios`), violated clause citations, sanitization notes, and the manager `🛡️ Verify Compliance` button.
+5. **Bilingual Localization & Comprehensive Test Suite (`locale/`, `tests/test_clauseguard_compliance.py`)**:
+   - Add Spanish/English translations in `locale/` and compile `.mo` catalogs.
+   - Author unit, integration, permission, and responsive viewport tests in `tests/test_clauseguard_compliance.py`.
+
+---
+
+## Phase 49: ClauseGuard Stage 1 Local Compliance Optimization & Precision Overhaul (`clauseguard-stage1-optimization`)
+
+### Overview
+Eliminate Stage 1 false negatives (currently 9/15 missed on plural and synonym variations) and false positives (currently 15/17 benign second-hand items falsely flagged on compound phrases and negations), wire deterministic `Product.category` policy mapping into Stage 1, replace the noisy 96-dim hashed character-trigram ranking with stemmed token-overlap + category/keyword signals, and replace per-keyword regex compilation with a cached precompiled matcher (`297.8 ms` → `< 0.5 ms` at 3,600 keywords).
+
+### Architecture Decisions
+1. **Strong vs. Weak Keywords (`hard_block_keywords` vs `weak_keywords`) + `exception_phrases`**:
+   - *Decision*: Add `weak_keywords` (`JSONField`) and `exception_phrases` (`JSONField`) to `PolicyClause`.
+   - *Rationale*: Unambiguous terms (`arma de fuego`, `escopeta`, `falsificación`, `copia exacta`, `batería hinchada`) belong in `hard_block_keywords` and can immediately trigger `REJECTED` (92/100) on `CRITICAL` clauses. Ambiguous single words (`pistola`, `pirata`, `falso`, `tabaco`, `whisky`, `mascota`, `insulina`, `nicotina`, `llanta`, `nevera`, `ropa interior`, `bombona`) belong in `weak_keywords`: a single weak hit caps at `MANUAL_REVIEW` (never `REJECTED` 92/100) while promoting the clause into Stage 2 top-3 so AI resolves the context. `exception_phrases` (`pistola de silicona`, `pistola de masaje`, `pistola de agua`, `pistola de pintura`, `disfraz de pirata`, `barco pirata`, `falso techo`, `color tabaco`, `vaso de whisky`, `nevera para insulina`, `cama para mascota`, `transportin`, `llanta de bicicleta`, `funda para dni`, `pastillero`) mask benign spans before matching.
+2. **Lightweight Spanish/English Plural Stemmer + 3-Token Negation Window**:
+   - *Decision*: Normalize and stem tokens `>= 4` chars (strip trailing `-es` after consonants, `-ces` → `-z`, or trailing `-s` with an invariant-stem allowlist) on both haystacks and clause keywords, and suppress hits preceded within 1–3 tokens (within the same clause/sentence) by negation markers (`no`, `ni`, `sin`, `no es`, `no son`, `nunca`, `libre de`, `not`, `without`, `free`, `non`).
+   - *Rationale*: Recovers 7/9 plural false negatives (`réplicas`, `medicamentos`, `baterías hinchadas`, `perfumes abiertos`, `vapers`, `cachorros`, `taladros`) and eliminates negation false positives (`"no es réplica ni falso"`, `"líquido sin nicotina"`) in `< 0.1 ms` with zero external NLP dependencies.
+3. **Category-Aware Stage 1 Rules & `Product.save()` Category Change Hook**:
+   - *Decision*: Wire `CATEGORY_CLAUSE_MAP` in `compliance_service.py` so `Product.category.slug` (`electrodomesticos`, `construccion-y-reformas`, `motor-y-accesorios`, `tecnologia-y-electronica`, `industria-y-agricultura`, etc.) directly flags category-restricted platforms (e.g., `VT-202` on Vinted) and boosts domain-relevant clauses into Stage 2 top-3. Track `_initial_category_id` in `Product.__init__()` and `Product.save()` so changing `category` triggers Stage 1 re-evaluation, while preserving `STAGE_2_TARGETED` clearance when neither text nor category introduces a violation.
+   - *Rationale*: `evaluate_stage1_local` previously accepted `category_slug` as a dead parameter and `Product.save()` ignored `category_id` edits.
+4. **Replace 96-Dim MD5 Trigram Hash with Stemmed Token Overlap + Precompiled Matcher Cache**:
+   - *Decision*: Replace the 96-bucket MD5 character-trigram ranking in Stage 1 with stopword-filtered stemmed content-token overlap + category/keyword boost (`strong_hit * 3.0 + weak_hit * 1.5 + category_boost * 1.2 + token_overlap`), and cache pre-stemmed clause matchers in memory invalidated via `post_save`/`post_delete` on `PolicyClause` and `(count, max(updated_at))`.
+   - *Rationale*: Eliminates 96-bucket hash collisions (`0.464` false similarity on `"Silla de oficina ergonómica"`) and avoids Python's 512-entry `re` cache thrashing at scale (`297.8 ms` → `< 0.5 ms`).
+5. **Sync Keyword Guardrails & `audit_policy_keywords` Management Command**:
+   - *Decision*: Filter out generic catalog stopwords and `< 4` char single tokens during `sync_site_policy`, and add `python manage.py audit_policy_keywords` to scan existing catalog products and report noisy clauses/keywords (`> 5%` match rate).
+   - *Rationale*: Prevents Gemini policy sync from injecting overly broad single-word triggers into production.
+
+### Dependency Graph
+```
+Task 179: PolicyClause Schema (weak_keywords, exception_phrases) + Curated Seed Vocabulary + Migration 0027
+    │
+    ├── Task 180: Stemmed, Negation-Aware, Precompiled Stage 1 Engine + Category Signal + Product.save() Hook
+    │       │
+    │       └── Task 182: Table-Driven 32-Case Accuracy & Latency Regression Suite + Bilingual Catalogs
+    │
+    └── Task 181: Policy Sync Keyword Guardrails + `audit_policy_keywords` CLI Command
+```
+
+### Risks and Mitigations
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Over-stemming short Spanish words (`gas` → `ga`, `gris` → `gri`, `tenis` → `teni`) causing false matches | Medium | Only stem tokens with `len >= 4` and maintain an explicit `_INVARIANT_STEMS` set (`gas`, `gris`, `pais`, `seis`, `tres`, `dos`, `mas`, `plus`, `tenis`, `chasis`, `crisis`, `dosis`, `tesis`, `gafas`, `alicates`). |
+| Existing databases already ran migration `0026` and wouldn't pick up updated `DEFAULT_POLICY_CLAUSES_SEED` keywords | High | Add data migration `0027` (and update `ensure_default_policy_clauses(sync_defaults=True)`) to backfill `hard_block_keywords`, `weak_keywords`, and `exception_phrases` on the 12 default clauses. |
+| Changing `category` on a product previously cleared via `STAGE_2_TARGETED` could unnecessarily wipe Stage 2 clearance | Medium | Record `stage2_cleared_text_hash` in `compliance_report`; if text hash is unchanged and the new category triggers no category rule violation, preserve `STAGE_2_TARGETED` clearance. |

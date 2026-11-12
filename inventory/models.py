@@ -1,3 +1,4 @@
+import logging
 from contextvars import ContextVar
 from datetime import timedelta
 from decimal import Decimal
@@ -14,6 +15,8 @@ from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
 
 from .middleware import get_current_user
+
+logger = logging.getLogger(__name__)
 
 HTTP_URL_VALIDATOR = URLValidator(
     schemes=["http", "https"],
@@ -73,6 +76,25 @@ class PlatformSyncReason(models.TextChoices):
     DESCRIPTION = "description", _("Description")
     PRICE = "price", _("Price")
     OTHER = "other", _("Other")
+
+
+class PolicySeverity(models.TextChoices):
+    CRITICAL = "critical", _("Critical (Prohibited)")
+    HIGH = "high", _("High Risk (Restricted)")
+    MEDIUM = "medium", _("Medium Risk (Conditional / Copy Rule)")
+
+
+class ComplianceVerdict(models.TextChoices):
+    APPROVED = "approved", _("Approved (Safe)")
+    MANUAL_REVIEW = "manual_review", _("Manual Review (Warning)")
+    REJECTED = "rejected", _("Policy Violation (High Risk)")
+
+
+class ComplianceStage(models.TextChoices):
+    STAGE_1_LEXICAL = "stage_1_lexical", _("Stage 1: Lexical Rule Match (0 Tokens)")
+    STAGE_1_SAFE = "stage_1_safe", _("Stage 1: Semantic Safe Short-Circuit (0 Tokens)")
+    STAGE_2_PIGGYBACK = "stage_2_piggyback", _("Stage 2: Piggybacked AI Check")
+    STAGE_2_TARGETED = "stage_2_targeted", _("Stage 2: Targeted Clause AI Check")
 
 
 OFFICIAL_CATEGORIES = (
@@ -608,6 +630,39 @@ class Product(models.Model):
         verbose_name=_("Last Platform Synced At"),
         help_text=_("Timestamp when external platform listings were last marked as synchronized"),
     )
+    compliance_status = models.CharField(
+        max_length=20,
+        choices=ComplianceVerdict.choices,
+        default=ComplianceVerdict.APPROVED,
+        db_index=True,
+        verbose_name=_("Policy Compliance Status"),
+        help_text=_("Advisory Terms & Conditions evaluation verdict"),
+    )
+    compliance_risk_score = models.PositiveSmallIntegerField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        verbose_name=_("Compliance Risk Score (0-100)"),
+        help_text=_("Numerical policy violation risk score from 0 (safe) to 100 (prohibited)"),
+    )
+    compliance_stage = models.CharField(
+        max_length=30,
+        choices=ComplianceStage.choices,
+        default=ComplianceStage.STAGE_1_SAFE,
+        verbose_name=_("Compliance Resolution Stage"),
+        help_text=_("Pipeline stage that resolved the current compliance verdict"),
+    )
+    compliance_report = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name=_("Compliance Audit Report"),
+        help_text=_("Structured Stage 1/Stage 2 compliance report, clause citations, platform matrix, and token savings telemetry"),
+    )
+    compliance_checked_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Compliance Checked At"),
+        help_text=_("Timestamp of the most recent compliance check"),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -835,8 +890,10 @@ class Product(models.Model):
         self._initial_status = self.__dict__.get("status")
         self._initial_is_sold = self.__dict__.get("is_sold")
         self._initial_sale_price = self.__dict__.get("sale_price")
+        self._initial_raw_note = self.__dict__.get("raw_note")
         self._initial_ai_title = self.__dict__.get("ai_title")
         self._initial_ai_description = self.__dict__.get("ai_description")
+        self._initial_category_id = self.__dict__.get("category_id")
         self._initial_is_reserved = self.__dict__.get("is_reserved")
         self._initial_needs_platform_sync = self.__dict__.get("needs_platform_sync")
         self._initial_platform_sync_reasons = list(self.__dict__.get("platform_sync_reasons") or [])
@@ -844,6 +901,82 @@ class Product(models.Model):
         self._changed_by = None
         self._status_trigger = None
         self._status_notes = None
+        self._skip_auto_compliance = False
+
+    @property
+    def is_compliance_flagged(self) -> bool:
+        return self.compliance_status in (ComplianceVerdict.MANUAL_REVIEW, ComplianceVerdict.REJECTED)
+
+    @property
+    def compliance_platform_list(self) -> list[dict]:
+        matrix = (self.compliance_report or {}).get("platform_matrix") or {}
+        if isinstance(matrix, dict):
+            return list(matrix.values())
+        return []
+
+    @property
+    def compliance_matched_clauses(self) -> list[dict]:
+        clauses = (self.compliance_report or {}).get("matched_clauses") or []
+        if not isinstance(clauses, list):
+            return []
+        lang = (get_language() or "es").lower()
+        is_en = lang.startswith("en")
+        localized = []
+        for item in clauses:
+            if not isinstance(item, dict):
+                continue
+            entry = dict(item)
+            if is_en:
+                entry["title"] = item.get("title_en") or item.get("title") or item.get("title_es") or ""
+                if item.get("explanation_en"):
+                    entry["explanation"] = item["explanation_en"]
+            else:
+                entry["title"] = item.get("title_es") or item.get("title") or item.get("title_en") or ""
+                if item.get("explanation_es"):
+                    entry["explanation"] = item["explanation_es"]
+            localized.append(entry)
+        return localized
+
+    @property
+    def compliance_telemetry(self) -> dict:
+        telemetry = (self.compliance_report or {}).get("telemetry") or {}
+        return telemetry if isinstance(telemetry, dict) else {}
+
+    @property
+    def compliance_summary_localized(self) -> str:
+        report = self.compliance_report or {}
+        if not isinstance(report, dict):
+            return ""
+        lang = (get_language() or "es").lower()
+        key = "summary_en" if lang.startswith("en") else "summary_es"
+        return str(report.get(key) or report.get("summary") or "")
+
+    _COMPLIANCE_FIELDS = (
+        "compliance_status",
+        "compliance_risk_score",
+        "compliance_stage",
+        "compliance_report",
+        "compliance_checked_at",
+    )
+
+    def apply_compliance_result(
+        self,
+        result: dict,
+        *,
+        commit: bool = False,
+        update_fields: list[str] | set[str] | None = None,
+    ) -> list[str]:
+        """Applies a Stage 1 or Stage 2 compliance payload consistently onto this Product."""
+        self.compliance_status = result.get("verdict", ComplianceVerdict.APPROVED)
+        self.compliance_risk_score = result.get("risk_score", 0)
+        self.compliance_stage = result.get("stage", self.compliance_stage)
+        self.compliance_report = result.get("report") or {}
+        self.compliance_checked_at = timezone.now()
+
+        fields = list(dict.fromkeys([*(update_fields or ()), *self._COMPLIANCE_FIELDS]))
+        if commit:
+            self.save(skip_auto_compliance=True, update_fields=fields)
+        return fields
 
     def _infer_status_trigger(self, from_status: str, to_status: str) -> str:
         if to_status == ProductStatus.SOLD:
@@ -870,10 +1003,38 @@ class Product(models.Model):
             return "draft"
         return "status_updated"
 
-    def save(self, *args, changed_by=None, trigger=None, notes=None, **kwargs):
+    def save(self, *args, changed_by=None, trigger=None, notes=None, skip_auto_compliance=False, **kwargs):
         initial_status = getattr(self, "_initial_status", None)
         initial_is_sold = getattr(self, "_initial_is_sold", None)
         is_adding = self._state.adding
+        raw_note_changed = (self.raw_note or "") != (getattr(self, "_initial_raw_note", None) or "")
+        title_changed_for_compliance = (self.ai_title or "") != (getattr(self, "_initial_ai_title", None) or "")
+        desc_changed_for_compliance = (self.ai_description or "") != (getattr(self, "_initial_ai_description", None) or "")
+        category_changed_for_compliance = self.category_id != getattr(self, "_initial_category_id", None)
+        update_fields_arg = kwargs.get("update_fields")
+        compliance_fields_updated = (
+            update_fields_arg is None
+            or any(
+                f in {"raw_note", "ai_title", "ai_description", "category", "category_id"}
+                for f in update_fields_arg
+            )
+        )
+        should_run_stage1_compliance = (
+            not skip_auto_compliance
+            and not getattr(self, "_skip_auto_compliance", False)
+            and (
+                is_adding
+                or (
+                    compliance_fields_updated
+                    and (
+                        raw_note_changed
+                        or title_changed_for_compliance
+                        or desc_changed_for_compliance
+                        or category_changed_for_compliance
+                    )
+                )
+            )
+        )
 
         if is_adding:
             if self.is_sold or self.status == ProductStatus.SOLD:
@@ -968,6 +1129,39 @@ class Product(models.Model):
                 fields.add("platform_sync_reasons")
             kwargs["update_fields"] = list(fields)
 
+        if should_run_stage1_compliance:
+            try:
+                from .services.compliance_service import CATEGORY_FLAG_MAP, evaluate_stage1_local_for_product
+
+                stage1 = evaluate_stage1_local_for_product(self)
+                text_hash = (stage1.get("report") or {}).get("text_hash", "")
+                cleared_hash = (self.compliance_report or {}).get("stage2_cleared_text_hash", "")
+                cat_slug = self.category.slug.lower() if self.category_id and self.category and self.category.slug else ""
+                cat_flag_codes = set(CATEGORY_FLAG_MAP.get(cat_slug, ()))
+                has_category_violation = any(
+                    m.get("code", "").upper() in cat_flag_codes or m.get("match_strength") == "category"
+                    for m in ((stage1.get("report") or {}).get("matched_clauses") or [])
+                )
+                preserve_stage2_clearance = (
+                    not is_adding
+                    and not raw_note_changed
+                    and not title_changed_for_compliance
+                    and not desc_changed_for_compliance
+                    and self.compliance_stage == ComplianceStage.STAGE_2_TARGETED
+                    and self.compliance_status == ComplianceVerdict.APPROVED
+                    and bool(cleared_hash)
+                    and cleared_hash == text_hash
+                    and not has_category_violation
+                )
+                if not preserve_stage2_clearance:
+                    applied_fields = self.apply_compliance_result(stage1, commit=False)
+                    if "update_fields" in kwargs and kwargs["update_fields"] is not None:
+                        fields = set(kwargs["update_fields"])
+                        fields.update(applied_fields)
+                        kwargs["update_fields"] = list(fields)
+            except Exception:
+                logger.warning("Stage 1 auto-compliance check failed for product %s", self.pk, exc_info=True)
+
         self._previous_status = initial_status
         self._previous_needs_platform_sync = getattr(self, "_initial_needs_platform_sync", False)
         super().save(*args, **kwargs)
@@ -1021,14 +1215,17 @@ class Product(models.Model):
         self._initial_status = self.status
         self._initial_is_sold = self.is_sold
         self._initial_sale_price = self.sale_price
+        self._initial_raw_note = self.raw_note
         self._initial_ai_title = self.ai_title
         self._initial_ai_description = self.ai_description
+        self._initial_category_id = self.category_id
         self._initial_is_reserved = getattr(self, "is_reserved", False)
         self._initial_needs_platform_sync = self.needs_platform_sync
         self._initial_platform_sync_reasons = list(self.platform_sync_reasons or [])
         self._changed_by = None
         self._status_trigger = None
         self._status_notes = None
+        self._skip_auto_compliance = False
 
     def mark_as_sold(
         self,
@@ -1302,6 +1499,33 @@ class MarketplaceSite(models.Model):
         verbose_name=_("Display Order"),
         help_text=_("Sorting order for displaying platforms in dropdowns and lists"),
     )
+    policy_url = models.URLField(
+        max_length=1000,
+        blank=True,
+        default="",
+        validators=[HTTP_URL_VALIDATOR],
+        verbose_name=_("Terms & Conditions URL"),
+        help_text=_("Official platform Prohibited Items / T&C page URL for periodic policy sync"),
+    )
+    policy_raw_text = models.TextField(
+        blank=True,
+        default="",
+        verbose_name=_("Terms & Conditions Raw Text (Fallback)"),
+        help_text=_("Paste platform policy text here if automated URL fetching is blocked by anti-bot protection"),
+    )
+    policy_content_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        verbose_name=_("Policy Content SHA-256 Hash"),
+        help_text=_("SHA-256 hash of the last synced policy content to skip unchanged re-indexing"),
+    )
+    policy_last_synced_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Policy Last Synced At"),
+        help_text=_("Timestamp when policy rules were last synced and indexed"),
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
 
@@ -1317,6 +1541,129 @@ class MarketplaceSite(models.Model):
         if not self.slug and self.name:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
+
+
+class PolicyClause(models.Model):
+    code = models.CharField(
+        max_length=40,
+        unique=True,
+        db_index=True,
+        verbose_name=_("Clause Code"),
+        help_text=_("Unique policy clause identifier (e.g. GLB-101, VT-201, WP-301)"),
+    )
+    site = models.ForeignKey(
+        MarketplaceSite,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="policy_clauses",
+        verbose_name=_("Marketplace Site"),
+        help_text=_("Target marketplace platform (leave blank for Global / Storefront rule)"),
+    )
+    category = models.CharField(
+        max_length=80,
+        default="General",
+        verbose_name=_("Policy Category"),
+        help_text=_("Domain category (e.g. Weapons, Medical Claims, Counterfeit, Hygiene)"),
+    )
+    severity = models.CharField(
+        max_length=20,
+        choices=PolicySeverity.choices,
+        default=PolicySeverity.HIGH,
+        db_index=True,
+        verbose_name=_("Severity"),
+    )
+    title_es = models.CharField(
+        max_length=200,
+        verbose_name=_("Title (ES)"),
+    )
+    title_en = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        verbose_name=_("Title (EN)"),
+    )
+    description_es = models.TextField(
+        verbose_name=_("Clause Text (ES)"),
+    )
+    description_en = models.TextField(
+        blank=True,
+        default="",
+        verbose_name=_("Clause Text (EN)"),
+    )
+    hard_block_keywords = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name=_("Hard-Block Keywords"),
+        help_text=_("JSON list of strong trigger phrases in ES/EN for deterministic Stage 1 matching"),
+    )
+    weak_keywords = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name=_("Weak / Contextual Keywords"),
+        help_text=_("Ambiguous single words in ES/EN that trigger caution (Manual Review) unless corroborated"),
+    )
+    exception_phrases = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name=_("Exception Phrases"),
+        help_text=_("Benign compound phrases that suppress false-positive keyword matches"),
+    )
+    embedding_vector = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name=_("Cached Embedding Vector"),
+        help_text=_("Cached semantic embedding vector computed from clause text"),
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        verbose_name=_("Is Active"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
+
+    class Meta:
+        ordering = ["code"]
+        verbose_name = _("Policy Clause")
+        verbose_name_plural = _("Policy Clauses")
+
+    def __str__(self):
+        scope = self.site.name if self.site_id else str(_("Global / Storefront"))
+        return f"[{self.code}] ({scope}) {self.localized_title}"
+
+    def get_localized_title(self, language: str | None = None) -> str:
+        lang = (language or get_language() or "es").lower()
+        if lang.startswith("en") and self.title_en:
+            return self.title_en
+        return self.title_es or self.title_en
+
+    def get_localized_description(self, language: str | None = None) -> str:
+        lang = (language or get_language() or "es").lower()
+        if lang.startswith("en") and self.description_en:
+            return self.description_en
+        return self.description_es or self.description_en
+
+    def save(self, *args, **kwargs):
+        if self.code:
+            self.code = self.code.strip().upper()
+        super().save(*args, **kwargs)
+
+    @property
+    def localized_title(self) -> str:
+        return self.get_localized_title()
+
+    @property
+    def localized_description(self) -> str:
+        return self.get_localized_description()
+
+
+@receiver(post_save, sender=PolicyClause)
+@receiver(post_delete, sender=PolicyClause)
+def invalidate_policy_clause_matcher_on_change(sender, **kwargs):
+    from .services.compliance_service import invalidate_clause_matcher_cache
+
+    invalidate_clause_matcher_cache()
 
 
 class ProductListingLink(models.Model):

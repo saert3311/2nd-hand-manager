@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import Dict, Literal, Optional, Tuple
 
@@ -7,7 +6,20 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
-from inventory.models import OFFICIAL_CATEGORIES, ClarificationStatus, Product, ProductCondition
+from inventory.models import (
+    OFFICIAL_CATEGORIES,
+    ClarificationStatus,
+    ComplianceStage,
+    Product,
+    ProductCondition,
+)
+from inventory.services.compliance_service import (
+    evaluate_stage1_local,
+    evaluate_stage1_local_for_product,
+    format_top_clauses_prompt_block,
+    merge_stage2_compliance_result,
+    parse_gemini_response_dict,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +89,18 @@ class ProductListingSchema(BaseModel):
         default=None,
         description="Official physical condition state: new_with_tags, very_good, good, or vintage",
     )
+    compliance_passed: bool = Field(
+        default=True,
+        description="True if compliant with all top-3 policy clauses, False if any clause is violated",
+    )
+    violated_clause_codes: list[str] = Field(
+        default_factory=list,
+        description="Exact violated clause codes (e.g. ['VT-202', 'GLB-104']), or [] if compliant",
+    )
+    sanitized_note: Optional[str] = Field(
+        default="",
+        description="Short note only if banned therapeutic/brand claims were avoided in copy; empty otherwise",
+    )
 
 
 class IntakePreflightSchema(BaseModel):
@@ -100,6 +124,14 @@ class IntakePreflightSchema(BaseModel):
     estimated_resale_price: Optional[float] = Field(
         default=None,
         description="Estimated realistic secondhand market resale value in Euros (€) considering condition in Spain/Europe. Null if impossible to estimate."
+    )
+    compliance_passed: bool = Field(
+        default=True,
+        description="True if photos and notes pass all checked policy clauses, False if any rule is violated",
+    )
+    violated_clause_codes: list[str] = Field(
+        default_factory=list,
+        description="Exact violated clause codes from the top-3 list, or [] if compliant",
     )
 
 
@@ -203,15 +235,24 @@ def resolve_ai_configuration(language: str = "en") -> Tuple[str, float, str]:
     return DEFAULT_MODEL_NAME, DEFAULT_TEMPERATURE, default_instruction
 
 
+def _extract_token_count(response: object, prompt_text: str) -> int:
+    usage = getattr(response, "usage_metadata", None)
+    raw_total = getattr(usage, "total_token_count", None) if usage is not None else None
+    if isinstance(raw_total, int) and raw_total > 0:
+        return raw_total
+    return max(140, len(prompt_text) // 4 + 80)
+
+
 def generate_product_listing(
     product: Product,
     model_name: Optional[str] = None,
     language: str = "en",
-) -> Dict[str, str]:
+) -> Dict[str, object]:
     """
     Sends product photos and preserved raw notes to Gemini Multimodal Vision API.
     Uses dynamic model, temperature, and instructions from AIPromptConfiguration with fallback.
-    Returns a dictionary with 'title' and 'description' matched to the target language.
+    Piggybacks Stage 2 ClauseGuard evaluation using ONLY the top-3 matched policy clauses
+    and auto-sanitizes generated copy against prohibited claims.
     """
     api_key = getattr(settings, "GEMINI_API_KEY", "") or ""
     if not api_key.strip():
@@ -255,11 +296,33 @@ def generate_product_listing(
 
         clarifications_text = clarifications_header + "\n" + "\n".join(clarif_lines)
 
+    # Stage 1 local filter to retrieve ONLY top-3 matched clauses (instead of full T&Cs)
+    stage1_result = evaluate_stage1_local_for_product(product, language=language, top_k=3)
+    top_clauses = stage1_result.get("top_clauses") or []
+    clauses_block = format_top_clauses_prompt_block(top_clauses, language=language)
+    compliance_instruction = ""
+    if clauses_block:
+        if is_es:
+            compliance_instruction = (
+                f"\n\n{clauses_block}\n"
+                "INSTRUCCIÓN DE CUMPLIMIENTO Y AUTO-SANEAMIENTO:\n"
+                "- Redacta título y descripción SIN afirmaciones médicas/terapéuticas no verificadas ni relleno de marcas ajenas (anótalo brevemente en sanitized_note si lo evitas).\n"
+                "- Para ahorrar tokens, NO redactes explicaciones de cumplimiento; responde únicamente `compliance_passed` (true/false) y los códigos infringidos en `violated_clause_codes` (o `[]`)."
+            )
+        else:
+            compliance_instruction = (
+                f"\n\n{clauses_block}\n"
+                "COMPLIANCE & AUTO-SANITIZATION INSTRUCTION:\n"
+                "- Write title and description WITHOUT unverified therapeutic claims or unrelated brand keyword stuffing (briefly note in sanitized_note if avoided).\n"
+                "- To save tokens, do NOT write compliance explanations; return ONLY `compliance_passed` (true/false) and violated codes in `violated_clause_codes` (or `[]`)."
+            )
+
     prompt_text = (
         f"{system_instruction}\n\n"
         f"{notes_header}\n"
         f"{notes_text}"
         f"{clarifications_text}"
+        f"{compliance_instruction}"
     )
 
     contents = [prompt_text]
@@ -288,27 +351,26 @@ def generate_product_listing(
             contents=contents,
             config=config,
         )
+        tokens_used = _extract_token_count(response, prompt_text)
 
-        if hasattr(response, "parsed") and response.parsed:
-            parsed = response.parsed
-            raw_cat = (getattr(parsed, "category_slug", None) or "").strip()
-            raw_cond = (getattr(parsed, "condition", None) or "").strip()
-            return {
-                "title": getattr(parsed, "title", "").strip(),
-                "description": getattr(parsed, "description", "").strip(),
-                "category_slug": raw_cat if raw_cat in VALID_CATEGORY_SLUGS else "",
-                "condition": raw_cond if raw_cond in VALID_CONDITION_CODES else "",
-            }
-
-        # Fallback to json text parsing
-        data = json.loads(response.text)
+        data = parse_gemini_response_dict(response, ProductListingSchema)
         raw_cat = str(data.get("category_slug") or "").strip()
         raw_cond = str(data.get("condition") or "").strip()
+        compliance_data = merge_stage2_compliance_result(
+            stage1_result=stage1_result,
+            ai_passed=bool(data.get("compliance_passed", True)),
+            violated_clause_codes=list(data.get("violated_clause_codes") or []),
+            sanitized_note=str(data.get("sanitized_note") or ""),
+            stage=ComplianceStage.STAGE_2_PIGGYBACK,
+            tokens_used=tokens_used,
+            language=language,
+        )
         return {
-            "title": data.get("title", "").strip(),
-            "description": data.get("description", "").strip(),
+            "title": str(data.get("title") or "").strip(),
+            "description": str(data.get("description") or "").strip(),
             "category_slug": raw_cat if raw_cat in VALID_CATEGORY_SLUGS else "",
             "condition": raw_cond if raw_cond in VALID_CONDITION_CODES else "",
+            "compliance": compliance_data,
         }
 
     except Exception as exc:
@@ -348,8 +410,7 @@ def identify_intake_product(
     """
     Analyzes uploaded product images during intake using Gemini Multimodal Vision API.
     Caps image inputs to the first 3 photos for rapid mobile response and lower token usage.
-    Returns structured JSON with identified_title, category, detected_attributes,
-    missing_or_recommended_info, and suggested_note.
+    Piggybacks visual + textual Terms & Conditions policy checks at zero extra API calls.
     Does not raise unhandled exceptions; returns { 'success': False, 'error': ... } on failure.
     """
     valid_images = [b for b in (images_bytes or []) if b][:3]
@@ -373,10 +434,29 @@ def identify_intake_product(
     notes_header = "NOTAS PRELIMINARES DEL ASISTENTE:" if is_es else "ASSISTANT PRELIMINARY NOTES:"
     notes_body = note_clean if note_clean else ("Ninguna nota proporcionada." if is_es else "None provided.")
 
+    stage1_result = evaluate_stage1_local(raw_note=note_clean, language=language, top_k=3)
+    top_clauses = stage1_result.get("top_clauses") or []
+    clauses_block = format_top_clauses_prompt_block(top_clauses, language=language)
+    compliance_hint = ""
+    if clauses_block:
+        if is_es:
+            compliance_hint = (
+                f"\n\n{clauses_block}\n"
+                "- Revisa también visualmente las fotos frente a esas cláusulas (armas/airsoft, medicamentos, falsificaciones, baterías dañadas, cosméticos abiertos). "
+                "Sin redactar razones largas, devuelve únicamente `compliance_passed` (true/false) y `violated_clause_codes` (códigos exactos infringidos o `[]`)."
+            )
+        else:
+            compliance_hint = (
+                f"\n\n{clauses_block}\n"
+                "- Also inspect the photos visually against those clauses (weapons/airsoft, medicines, counterfeits, swollen batteries, opened cosmetics). "
+                "Without writing long reasons, return ONLY `compliance_passed` (true/false) and `violated_clause_codes` (exact violated codes or `[]`)."
+            )
+
     prompt_text = (
         f"{system_instruction}\n\n"
         f"{notes_header}\n"
         f"{notes_body}"
+        f"{compliance_hint}"
     )
 
     contents = [prompt_text]
@@ -396,39 +476,38 @@ def identify_intake_product(
             contents=contents,
             config=config,
         )
+        tokens_used = _extract_token_count(response, prompt_text)
 
-        if hasattr(response, "parsed") and response.parsed:
-            parsed = response.parsed
-            raw_cat = (getattr(parsed, "category_slug", None) or "").strip()
-            raw_cond = (getattr(parsed, "condition", None) or "").strip()
-            return {
-                "success": True,
-                "identified_title": getattr(parsed, "identified_title", "").strip(),
-                "category": getattr(parsed, "category", "").strip(),
-                "category_slug": raw_cat if raw_cat in VALID_CATEGORY_SLUGS else "",
-                "condition": raw_cond if raw_cond in VALID_CONDITION_CODES else "",
-                "detected_attributes": list(getattr(parsed, "detected_attributes", []) or []),
-                "missing_or_recommended_info": list(getattr(parsed, "missing_or_recommended_info", []) or []),
-                "suggested_note": getattr(parsed, "suggested_note", "").strip(),
-                "estimated_retail_price": _clean_price(getattr(parsed, "estimated_retail_price", None)),
-                "estimated_resale_price": _clean_price(getattr(parsed, "estimated_resale_price", None)),
-            }
-
-        # Fallback to json text parsing
-        data = json.loads(response.text)
+        data = parse_gemini_response_dict(response, IntakePreflightSchema)
         raw_cat = str(data.get("category_slug") or "").strip()
         raw_cond = str(data.get("condition") or "").strip()
+        violated_codes = list(data.get("violated_clause_codes") or [])
+        merged_comp = merge_stage2_compliance_result(
+            stage1_result=stage1_result,
+            ai_passed=bool(data.get("compliance_passed", True)),
+            violated_clause_codes=violated_codes,
+            stage=ComplianceStage.STAGE_2_PIGGYBACK,
+            tokens_used=tokens_used,
+            language=language,
+        )
+        local_flag_labels = [
+            f"[{m['code']}] {m['title']}" for m in merged_comp["report"].get("matched_clauses", [])
+        ]
         return {
             "success": True,
-            "identified_title": str(data.get("identified_title", "")).strip(),
-            "category": str(data.get("category", "")).strip(),
+            "identified_title": str(data.get("identified_title") or "").strip(),
+            "category": str(data.get("category") or "").strip(),
             "category_slug": raw_cat if raw_cat in VALID_CATEGORY_SLUGS else "",
             "condition": raw_cond if raw_cond in VALID_CONDITION_CODES else "",
-            "detected_attributes": list(data.get("detected_attributes", []) or []),
-            "missing_or_recommended_info": list(data.get("missing_or_recommended_info", []) or []),
-            "suggested_note": str(data.get("suggested_note", "")).strip(),
+            "detected_attributes": list(data.get("detected_attributes") or []),
+            "missing_or_recommended_info": list(data.get("missing_or_recommended_info") or []),
+            "suggested_note": str(data.get("suggested_note") or "").strip(),
             "estimated_retail_price": _clean_price(data.get("estimated_retail_price")),
             "estimated_resale_price": _clean_price(data.get("estimated_resale_price")),
+            "compliance_verdict": merged_comp["verdict"],
+            "compliance_risk_score": merged_comp["risk_score"],
+            "compliance_flags": local_flag_labels,
+            "compliance_report": merged_comp["report"],
         }
     except Exception as exc:
         logger.error(f"Gemini preflight identification failed: {exc}", exc_info=True)

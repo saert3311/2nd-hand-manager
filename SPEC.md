@@ -37,6 +37,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 33. **Granular Out-of-Sync Change Tracking (Phase 44):** Extends `needs_platform_sync` on published products with an accumulating `platform_sync_reasons` (`JSONField`) and `PlatformSyncReason` enum (`photos`, `title`, `description`, `price`, `other`). Tracks exact modified categories across photo updates, title/description edits, price changes, and reservation/doubt modifications. Displays dedicated category chips in the product detail warning banner (`#platformSyncBanner`), compact change icons on dashboard cards, detailed push notification alerts, and cleared change history in `ProductStatusLog` ([`docs/prds/PRD-platform-sync-change-tracking.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-platform-sync-change-tracking.md)).
 34. **Trash Retention Policy & OCI Bucket Permanent Cleanup (Phase 45):** Dual-tier management system for soft-deleted items (`is_deleted=True`) pairing a configurable automated background retention command (`python manage.py purge_expired_trash --days=30`) with manager-restricted immediate deletion controls on both the Product Detail workspace (`#btnPermanentDelete` in `#erasedProductBanner`) and Staging Dashboard (`?status=erased`). Deletes 100% of physical `.webp` photos from the Oracle Cloud Infrastructure (OCI) Object Storage bucket before record deletion to prevent orphaned storage bloat, backed by accessible modal confirmations (`#actionConfirmModal`) and audit tombstone preservation in `ProductStatusLog` ([`docs/prds/PRD-trash-retention-bucket-cleanup.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-trash-retention-bucket-cleanup.md)).
 35. **Pallet Tracking & Sticky Intake Attribution (Phase 46):** Dedicated warehouse pallet tracking model (`Pallet`: `number`, `received_date`, optional `purchase_price`, `estimated_value`, and `notes`) managed exclusively by Store Managers on `/pallets/`. Seamless mobile intake integration (`/intake/`) featuring a session-sticky pallet selector that remembers the last attributed pallet across consecutive cataloging sessions without re-typing, explicit `No Pallet` support for walk-in inventory, commercial confidentiality (financial figures strictly hidden from assistants), cascade-safe deletion (`SET_NULL`), and staging attribution on `/products/<pk>/` ([`docs/prds/PRD-pallet-tracking.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-pallet-tracking.md)).
+36. **ClauseGuard — Cost-Optimized Multi-Platform Policy Compliance (Phase 48):** Two-stage advisory policy compliance engine evaluating products against platform-specific Terms & Conditions (Wallapop, Vinted, eBay, Milanuncios, Rápido Pack Storefront) at near-zero extra token cost. Combines hybrid URL/raw-text policy syncing (`MarketplaceSite` + `PolicyClause` with cached SQLite vectors and `hard_block_keywords`), a `<5ms` zero-token Stage 1 local filter on manual saves, and Stage 2 multimodal compliance & auto-sanitizing copywriting piggybacked onto `identify_intake_product` and `generate_product_listing` (plus on-demand `/products/<pk>/verify-compliance/`) ([`docs/prds/PRD-clauseguard-policy-compliance.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-clauseguard-policy-compliance.md)).
 
 ---
 
@@ -360,6 +361,23 @@ Constraints: `UniqueConstraint(fields=['product', 'site'], name='unique_product_
 | `is_notified` | BooleanField | default=False, db_index=True | Whether consolidated push alert has been dispatched to managers |
 | `closed_at` | DateTimeField | null=True, blank=True | Timestamp when session was finalized and marked closed |
 | `created_at` | DateTimeField | auto_now_add=True | Creation timestamp |
+| `updated_at` | DateTimeField | auto_now=True | Modification timestamp |
+
+### 5.11 `PolicyClause`
+| Field | Type | Attributes | Description |
+|---|---|---|---|
+| `id` | AutoField | Primary Key | Unique policy clause identifier |
+| `code` | CharField | max_length=40, unique=True, db_index=True | Clause code (e.g. `GLB-101`, `VT-201`, `WP-301`) |
+| `site` | ForeignKey(MarketplaceSite) | null=True, blank=True, on_delete=CASCADE, related_name='policy_clauses' | Target marketplace site (`null` for Global / Storefront rules) |
+| `category` | CharField | max_length=80, default='General' | Policy domain category |
+| `severity` | CharField | max_length=20, choices=[critical, high, medium], db_index=True | Violation severity level |
+| `title_es` | CharField | max_length=200 | Clause title in Spanish |
+| `title_en` | CharField | max_length=200, blank=True, default="" | Clause title in English |
+| `description_es` | TextField | blank=False | Full clause description in Spanish |
+| `description_en` | TextField | blank=True, default="" | Full clause description in English |
+| `hard_block_keywords` | JSONField | default=list, blank=True | Deterministic lowercase keywords/phrases triggering Stage 1 match |
+| `embedding_vector` | JSONField | default=list, blank=True | Cached semantic embedding vector for Stage 1 cosine matching |
+| `is_active` | BooleanField | default=True, db_index=True | Whether clause is active in evaluations |
 | `updated_at` | DateTimeField | auto_now=True | Modification timestamp |
 
 ---
@@ -1189,3 +1207,14 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
     - Renders a compact badge (📦 Pallet #X) in the photo badge overlay row on product cards.
     - Keeps dashboard UI clean without full-width summary banners, maintaining zero horizontal overflow across low-DPI mobile viewports (360×800 & 320×711).
     - **Decision:** Approved per [docs/ideas/dashboard-pallet-filter-and-badges.md](file:///C:/Users/Jose/antigravity/epic-tesla/docs/ideas/dashboard-pallet-filter-and-badges.md) and [docs/prds/PRD-dashboard-pallet-filter.md](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-dashboard-pallet-filter.md).
+
+44. **ClauseGuard — Cost-Optimized Multi-Platform Policy Compliance (Phase 48):**
+    - Extends `MarketplaceSite` with `policy_url`, `policy_raw_text`, `policy_content_hash`, and `policy_last_synced_at`, paired with `PolicyClause` (`code`, `site`, `category`, `severity`, `title_es`/`title_en`, `description_es`/`description_en`, `hard_block_keywords`, `embedding_vector`) and `sync_marketplace_policies` command.
+    - Adds orthogonal advisory compliance fields to `Product` (`compliance_status`, `compliance_risk_score`, `compliance_stage`, `compliance_report`, `compliance_checked_at`). Never hard-blocks intake or forces `ProductStatus.BLOCKED`.
+    - Stage 1 runs local lexical + vector/token similarity in `<5ms` (0 LLM tokens) on manual saves and selects top-3 clauses (~150 tokens) for Stage 2.
+    - Stage 2 piggybacks onto `identify_intake_product` (visual + note compliance warning on `/intake/`) and `generate_product_listing` (auto-sanitizing copywriter + per-platform compatibility matrix + token savings telemetry), plus an on-demand manager verification endpoint (`POST /products/<pk>/verify-compliance/`).
+    - **Decision:** Approved per [docs/ideas/clauseguard-policy-compliance.md](file:///C:/Users/Jose/antigravity/epic-tesla/docs/ideas/clauseguard-policy-compliance.md) and [docs/prds/PRD-clauseguard-policy-compliance.md](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-clauseguard-policy-compliance.md).
+- **Phase 49 (ClauseGuard Stage 1 Precision & Latency Optimization)**:
+  - **Extended Schema**: `PolicyClause` adds `weak_keywords` and `exception_phrases` (`JSONField`, migration `0027`) to separate unambiguous prohibited phrases (`hard_block_keywords`) from ambiguous single words (`weak_keywords` capped at `MANUAL_REVIEW`) and benign compounds (`exception_phrases`).
+  - **Stemmed Inverted-Index Matcher**: `evaluate_stage1_local` uses an accent-insensitive Spanish/English plural stemmer (`stem_token`, `stem_phrase`), sentence-bounded 3-token pre-hit negation window, `CATEGORY_FLAG_MAP` / `CATEGORY_BOOST_MAP` (tracked on `Product.save()` including `category_id` changes while preserving unchanged `STAGE_2_TARGETED` clearances), and a signal-invalidated precompiled inverted-index cache (`< 5 ms` across 300+ clauses).
+  - **Policy Sync Guardrails & Catalog Audit**: `sync_site_policy` sanitizes extracted keywords (`sanitize_extracted_keywords`), and `manage.py audit_policy_keywords` scans non-deleted inventory to detect noisy triggers (`> 5%`).
