@@ -14,11 +14,38 @@
       max-height: 65vh;
     }
   }
+  /* Workspace Tablist: accessible aria-selected underline indicator without layout shift (WCAG 1.4.1) */
+  #detailWorkspaceTablist {
+    scroll-snap-type: inline proximity;
+    scroll-padding-inline: 1rem;
+  }
+  #detailWorkspaceTablist [role="tab"] {
+    position: relative;
+    scroll-snap-align: start;
+    flex: none;
+  }
+  #detailWorkspaceTablist [role="tab"][aria-selected="true"] {
+    color: #065f46;
+    background-color: #ffffff;
+  }
+  #detailWorkspaceTablist [role="tab"][aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    border-block-end: 2.5px solid #059669;
+  }
+  #detailWorkspaceTablist [role="tab"][aria-selected="false"] {
+    color: #475569;
+  }
+  #detailWorkspaceTablist [role="tab"][aria-selected="false"]:hover {
+    color: #0f172a;
+    background-color: rgba(241, 245, 249, 0.7);
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="space-y-6">
+<div class="space-y-5">
 
   <!-- Breadcrumb & Top Bar -->
   <div class="space-y-2">
@@ -28,7 +55,7 @@
           &larr; {% trans "Back to Dashboard" %}
         </a>
         <span>&bull;</span>
-        <span class="text-slate-800">{% trans "Product" %} #{{ product.id }}</span>
+        <span class="text-slate-800 font-mono">{% trans "Product" %} #{{ product.id }}</span>
         <span>&bull;</span>
         <span id="product-status-badge" class="product-status-badge text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider
           {% if product.is_deleted %}bg-rose-100 text-rose-800 border border-rose-300
@@ -50,13 +77,13 @@
         </span>
         {% if product.sale_price is not None %}
         <span>&bull;</span>
-        <span id="product-price-badge" class="product-price-badge text-xs sm:text-sm font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full shadow-sm">
+        <span id="product-price-badge" class="product-price-badge font-mono tabular-nums text-xs sm:text-sm font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full shadow-2xs">
           €{{ product.sale_price|floatformat:2 }}
         </span>
         {% endif %}
         {% if product.pallet %}
         <span>&bull;</span>
-        <span id="product-pallet-badge" class="product-pallet-badge text-xs sm:text-sm font-bold text-indigo-800 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full shadow-sm inline-flex items-center gap-1">
+        <span id="product-pallet-badge" class="product-pallet-badge text-xs sm:text-sm font-bold text-indigo-800 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full shadow-2xs inline-flex items-center gap-1">
           <span aria-hidden="true">📦</span>
           <span>Pallet #{{ product.pallet.number }} ({{ product.pallet.received_date|date:"Y-m-d" }})</span>
         </span>
@@ -66,7 +93,7 @@
       <div class="flex items-center gap-1.5 w-full sm:w-auto sm:gap-2">
         <!-- Public Storefront Preview Button -->
         <a href="{{ product.get_public_url }}" target="_blank" rel="noopener noreferrer"
-           class="flex-1 min-w-0 sm:flex-initial inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2.5 bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition text-center min-h-[38px]">
+           class="flex-1 min-w-0 sm:flex-initial inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2 bg-teal-700 hover:bg-teal-800 active:scale-[0.98] text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition text-center min-h-[38px]">
           <span aria-hidden="true">🏪</span>
           <span class="sm:hidden">{% trans "Store" %}</span>
           <span class="hidden sm:inline">{% trans "View in Storefront" %}</span>
@@ -75,7 +102,7 @@
         <!-- ZIP Download Button -->
         {% if product.images.exists %}
         <a href="{% url 'inventory:download_zip' product.pk %}"
-           class="flex-1 min-w-0 sm:flex-initial inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition text-center min-h-[38px]">
+           class="flex-1 min-w-0 sm:flex-initial inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2 bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition text-center min-h-[38px]">
           <span aria-hidden="true">💾</span>
           <span class="sm:hidden">{% trans "ZIP" %}</span>
           <span class="hidden sm:inline">{% trans "Download All Photos (.ZIP)" %}</span>
@@ -87,7 +114,7 @@
           <form method="post" action="{% url 'inventory:product_restore' product.pk %}" class="flex-1 min-w-0 sm:flex-initial inline-flex">
             {% csrf_token %}
             <button type="submit" id="btnRestoreProductTop"
-                    class="w-full inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer text-center min-h-[38px]">
+                    class="w-full inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition cursor-pointer text-center min-h-[38px]">
               <span aria-hidden="true">♻️</span>
               <span class="sm:hidden">{% trans "Restore" %}</span>
               <span class="hidden sm:inline">{% trans "Restore Product" %}</span>
@@ -97,7 +124,7 @@
                 data-confirm-message="{% trans 'Permanently delete this product and all its photos from cloud storage? This action cannot be undone.' %}">
             {% csrf_token %}
             <button type="submit" id="btnPermanentDeleteTop"
-                    class="w-full inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer text-center min-h-[38px]">
+                    class="w-full inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2 bg-rose-600 hover:bg-rose-700 active:scale-[0.98] text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition cursor-pointer text-center min-h-[38px]">
               <span aria-hidden="true">⚠️</span>
               <span class="sm:hidden">{% trans "Delete" %}</span>
               <span class="hidden sm:inline">{% trans "Delete Permanently" %}</span>
@@ -105,7 +132,7 @@
           </form>
           {% else %}
           <button type="button" id="btnOpenDeleteModal" onclick="openDeleteModal()"
-                  class="flex-1 min-w-0 sm:flex-initial inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer text-center min-h-[38px]">
+                  class="flex-1 min-w-0 sm:flex-initial inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2 bg-rose-50 hover:bg-rose-100 active:scale-[0.98] text-rose-700 border border-rose-200 text-xs sm:text-sm font-bold rounded-xl shadow-2xs transition cursor-pointer text-center min-h-[38px]">
             <span aria-hidden="true">🗑️</span>
             <span class="sm:hidden">{% trans "Trash" %}</span>
             <span class="hidden sm:inline">{% trans "Move to Trash" %}</span>
@@ -121,11 +148,11 @@
 
   <!-- Out-of-Sync Warning Banner -->
   {% if product.needs_platform_sync %}
-  <div id="platformSyncBanner" class="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-2xl shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" role="alert">
+  <div id="platformSyncBanner" class="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-2xl shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" role="alert">
     <div class="flex items-start sm:items-center gap-3">
-      <span class="text-3xl" aria-hidden="true">⚠️</span>
+      <span class="text-2xl shrink-0" aria-hidden="true">⚠️</span>
       <div>
-        <h2 class="text-sm sm:text-base font-bold text-amber-950 flex items-center gap-2">
+        <h2 class="text-sm sm:text-base font-bold text-amber-950 flex flex-wrap items-center gap-2">
           <span>{% trans "Update Required on Marketplaces" %}</span>
           <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 uppercase tracking-wider">
             {% trans "Out of Sync" %}
@@ -135,10 +162,10 @@
           {% trans "This product was modified after publication. External listings (Wallapop, Vinted, etc.) may have outdated details or photos." %}
         </p>
         {% if product.platform_sync_reason_badges %}
-        <div class="mt-2.5 flex flex-wrap items-center gap-1.5" id="platformSyncReasonsList">
+        <div class="mt-2 flex flex-wrap items-center gap-1.5" id="platformSyncReasonsList">
           <span class="text-xs font-semibold text-amber-950 mr-1">{% trans "Changed:" %}</span>
           {% for badge in product.platform_sync_reason_badges %}
-          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white border border-amber-300 text-amber-900 shadow-2xs">
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-white border border-amber-300 text-amber-900 shadow-2xs">
             <span aria-hidden="true">{{ badge.icon }}</span>
             <span>{{ badge.label }}</span>
           </span>
@@ -146,7 +173,7 @@
         </div>
         {% endif %}
         {% if product.last_platform_synced_at %}
-        <p class="text-xs text-amber-700 mt-0.5">
+        <p class="text-xs text-amber-700 mt-1 font-mono">
           {% trans "Last marked as synchronized:" %} {{ product.last_platform_synced_at|date:"Y-m-d H:i" }}
         </p>
         {% endif %}
@@ -156,7 +183,7 @@
     <form method="post" action="{% url 'inventory:product_mark_platform_synced' product.pk %}" class="shrink-0">
       {% csrf_token %}
       <button type="submit" id="btnMarkPlatformSynced"
-              class="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition active:scale-95 cursor-pointer">
+              class="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition active:scale-[0.98] cursor-pointer">
         <span aria-hidden="true">✅</span> {% trans "Mark Platforms as Updated" %}
       </button>
     </form>
@@ -166,14 +193,14 @@
 
   <!-- Trash Warning Banner if Soft-Deleted -->
   {% if product.is_deleted %}
-  <div id="erasedProductBanner" class="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-2xl shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" role="alert">
+  <div id="erasedProductBanner" class="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-2xl shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" role="alert">
     <div class="flex items-start sm:items-center gap-3">
-      <span class="text-3xl" aria-hidden="true">🗑️</span>
+      <span class="text-2xl shrink-0" aria-hidden="true">🗑️</span>
       <div>
         <h2 class="text-sm font-bold text-amber-900">{% trans "This product is in the trash" %}</h2>
         <p class="text-xs text-amber-700 mt-0.5">{% trans "It is currently hidden from the active catalog. You can restore it anytime to resume staging." %}</p>
         {% if product.deleted_at %}
-        <p class="text-xs text-amber-700 mt-0.5">{% trans "Deleted on" %}: {{ product.deleted_at|date:"Y-m-d H:i" }}{% if product.deleted_by %} {% trans "by" %} {{ product.deleted_by.get_full_name|default:product.deleted_by.username }}{% endif %}</p>
+        <p class="text-xs text-amber-700 mt-0.5 font-mono">{% trans "Deleted on" %}: {{ product.deleted_at|date:"Y-m-d H:i" }}{% if product.deleted_by %} {% trans "by" %} {{ product.deleted_by.get_full_name|default:product.deleted_by.username }}{% endif %}</p>
         {% endif %}
       </div>
     </div>
@@ -182,7 +209,7 @@
       <form method="post" action="{% url 'inventory:product_restore' product.pk %}" class="shrink-0">
         {% csrf_token %}
         <button type="submit" id="btnRestoreProductBanner"
-                class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition cursor-pointer min-h-[38px]">
+                class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-bold rounded-lg shadow-xs transition cursor-pointer min-h-[38px]">
           <span aria-hidden="true">♻️</span> {% trans "Restore Product" %}
         </button>
       </form>
@@ -190,7 +217,7 @@
             data-confirm-message="{% trans 'Permanently delete this product and all its photos from cloud storage? This action cannot be undone.' %}">
         {% csrf_token %}
         <button type="submit" id="btnPermanentDelete"
-                class="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow-sm transition cursor-pointer min-h-[38px]">
+                class="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 active:scale-[0.98] text-white text-xs font-bold rounded-lg shadow-xs transition cursor-pointer min-h-[38px]">
           <span aria-hidden="true">⚠️</span> {% trans "Delete Permanently" %}
         </button>
       </form>
@@ -199,23 +226,24 @@
   </div>
   {% endif %}
 
-  <!-- Main Staging Grid: Responsive Mobile Ordering (Gemini & Listing first on mobile) -->
-  <div class="flex flex-col lg:grid lg:grid-cols-12 gap-6">
+  <!-- Main Staging Grid: Responsive Mobile Ordering (Tabbed Workspace first on mobile, Gallery rail on left on desktop) -->
+  <div class="flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
 
-    <!-- Left Column: Gallery & Raw Field Notes (5 cols) -->
-    <div class="order-2 lg:order-1 lg:col-span-5 space-y-6">
-      
+    <!-- Left Column: Visual Media & Gallery Rail (5 cols) -->
+    <div class="order-2 lg:order-1 lg:col-span-5 w-full space-y-4">
+
       <!-- Photo Gallery Card -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+      <div id="photoGalleryCard" class="bg-white rounded-2xl shadow-xs border border-slate-200 p-4 space-y-3">
         <div class="flex items-center justify-between">
-          <h2 class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider">
-            {% trans "Photos" %} ({{ product.images.count }})
+          <h2 class="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+            <span>{% trans "Photos" %}</span>
+            <span class="font-mono tabular-nums px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs">{{ product.images.count }}/10</span>
           </h2>
           <div class="flex items-center gap-2">
             <span class="text-xs text-slate-500">{% trans "Saved as WebP" %}</span>
             {% if can_manage and product.images.count > 1 %}
             <button type="button" id="toggleReorderModeBtn" aria-pressed="false"
-                    class="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg px-2.5 py-1 transition flex items-center gap-1 active:scale-95 shadow-xs">
+                    class="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg px-2.5 py-1 transition flex items-center gap-1 active:scale-95 shadow-2xs cursor-pointer">
               <span id="toggleReorderIcon" aria-hidden="true">🔄</span> <span id="toggleReorderText">{% trans "Reorder" %}</span>
             </button>
             {% endif %}
@@ -232,7 +260,7 @@
         <!-- Featured Image Container -->
         <div id="featuredImageWrapper" class="aspect-square bg-slate-100 rounded-xl overflow-hidden border border-slate-200 relative group cursor-pointer" title="{% trans 'Click to inspect photo' %}">
           <img id="mainImage" src="{{ product.primary_image.image.url }}" alt="{{ product.display_title }}" class="w-full h-full object-contain">
-          <span id="mainCoverBadge" class="absolute top-2 left-2 bg-amber-400 text-slate-950 text-xs font-black px-2 py-0.5 rounded-md shadow-sm flex items-center gap-1 pointer-events-none select-none">
+          <span id="mainCoverBadge" class="absolute top-2 left-2 bg-amber-400 text-slate-950 text-xs font-black px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1 pointer-events-none select-none">
             ⭐ {% trans "Cover Photo" %}
           </span>
         </div>
@@ -240,14 +268,14 @@
         <!-- Thumbnails Strip -->
         <div id="galleryThumbnailsGrid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5 max-h-72 overflow-y-auto p-1">
           {% for img_obj in product.images.all %}
-          <div class="gallery-thumb-item gallery-thumb-btn relative aspect-square rounded-xl overflow-hidden border-2 {% if forloop.first %}border-amber-400 shadow-sm{% else %}border-slate-200{% endif %} bg-slate-100 group transition-all"
+          <div class="gallery-thumb-item gallery-thumb-btn relative aspect-square rounded-xl overflow-hidden border-2 {% if forloop.first %}border-amber-400 shadow-xs{% else %}border-slate-200{% endif %} bg-slate-100 group transition-all"
                data-image-id="{{ img_obj.id }}"
                data-image-url="{{ img_obj.image.url }}"
                data-index="{{ forloop.counter0 }}">
             <img src="{{ img_obj.image.url }}" role="button" tabindex="0" class="w-full h-full object-cover cursor-pointer gallery-view-trigger select-none focus:outline-none focus:ring-2 focus:ring-emerald-500" alt="{{ product.display_title }} - {% trans 'Photo' %} {{ forloop.counter }}">
 
             <!-- Index Badge -->
-            <span class="thumb-index-badge absolute top-1 left-1 {% if forloop.first %}bg-amber-400 text-slate-950 font-black{% else %}bg-slate-900/75 text-white font-bold{% endif %} text-xs px-1.5 py-0.5 rounded-md shadow-sm pointer-events-none select-none z-10">
+            <span class="thumb-index-badge font-mono absolute top-1 left-1 {% if forloop.first %}bg-amber-400 text-slate-950 font-black{% else %}bg-slate-900/75 text-white font-bold{% endif %} text-xs px-1.5 py-0.5 rounded-md shadow-xs pointer-events-none select-none z-10">
               {% if forloop.first %}⭐ #1{% else %}#{{ forloop.counter }}{% endif %}
             </span>
 
@@ -258,7 +286,7 @@
                   data-confirm-message="{% trans 'Are you sure you want to delete this photo?' %}">
               {% csrf_token %}
               <button type="submit"
-                      class="w-6 h-6 rounded-full bg-rose-600/90 hover:bg-rose-700 text-white flex items-center justify-center text-xs font-black shadow-sm transition active:scale-90 cursor-pointer"
+                      class="w-6 h-6 rounded-full bg-rose-600/90 hover:bg-rose-700 text-white flex items-center justify-center text-xs font-black shadow-xs transition active:scale-90 cursor-pointer"
                       title="{% trans 'Delete photo' %}" aria-label="{% trans 'Delete photo' %}">
                 ✕
               </button>
@@ -267,7 +295,7 @@
 
             <!-- Photo Inspect / Edit Button -->
             <button type="button"
-                    class="photo-edit-btn absolute bottom-1 right-1 z-20 px-1.5 py-1 min-w-[28px] min-h-[28px] rounded-md bg-slate-900/80 hover:bg-slate-900 active:bg-slate-700 text-white flex items-center justify-center text-xs font-bold shadow-sm transition active:scale-90 cursor-pointer"
+                    class="photo-edit-btn absolute bottom-1 right-1 z-20 px-1.5 py-1 min-w-[28px] min-h-[28px] rounded-md bg-slate-900/80 hover:bg-slate-900 active:bg-slate-700 text-white flex items-center justify-center text-xs font-bold shadow-xs transition active:scale-90 cursor-pointer"
                     title="{% if can_manage %}{% trans 'Crop or rotate photo' %}{% else %}{% trans 'Inspect photo' %}{% endif %}"
                     aria-label="{% if can_manage %}{% trans 'Crop or rotate photo' %}{% else %}{% trans 'Inspect photo' %}{% endif %}">
               {% if can_manage %}✂️{% else %}🔍{% endif %}
@@ -287,1128 +315,1278 @@
           </div>
           {% endfor %}
         </div>
-
-        {% if can_manage and product.images.count < 10 %}
-        <!-- Enhanced Add More Photos Component (Phase 34 Parity with Intake) -->
-        <div id="detailPhotoUploadContainer" class="pt-4 border-t border-slate-100 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <span aria-hidden="true">📷</span> {% trans "Add More Photos" %}
-            </span>
-            <span id="detailUploadSlotCount" class="text-xs font-semibold text-slate-500" data-existing="{{ product.images.count }}" data-max="10">
-              {% blocktrans with available=available_slots count=product.images.count %}
-                {{ available }} available ({{ count }}/10)
-              {% endblocktrans %}
-            </span>
-          </div>
-
-          <!-- Interactive Dashed Dropzone -->
-          <div id="detailDropZone" class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl p-4 sm:p-5 text-center bg-slate-50 hover:bg-emerald-50/40 transition cursor-pointer relative group">
-            <input type="file" id="detailImageInput" multiple accept="image/*" class="sr-only">
-            <input type="file" id="detailCameraInput" accept="image/*" capture="environment" class="sr-only">
-
-            <div class="space-y-2.5">
-              <div class="w-10 h-10 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl group-hover:scale-105 transition duration-150 shadow-xs" aria-hidden="true">
-                📷
-              </div>
-              <div>
-                <p class="text-sm sm:text-base font-bold text-slate-800">{% trans "Tap to take photos or upload" %}</p>
-                <p class="text-xs text-slate-500 mt-0.5">
-                  {% blocktrans with max=available_slots %}Select up to {{ max }} photos (auto-optimized to WebP 2560px){% endblocktrans %}
-                </p>
-              </div>
-
-              <!-- Dual Action Triggers -->
-              <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
-                <label for="detailCameraInput" id="btnTriggerDetailCamera" role="button" tabindex="0"
-                       class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl shadow-sm text-xs sm:text-sm transition cursor-pointer min-h-[38px] select-none">
-                  <span class="text-base leading-none" aria-hidden="true">📸</span>
-                  <span>{% trans "Take Photo" %}</span>
-                </label>
-                <label for="detailImageInput" id="btnTriggerDetailGallery" role="button" tabindex="0"
-                       class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 font-bold rounded-xl border border-slate-300 shadow-sm text-xs sm:text-sm transition cursor-pointer min-h-[38px] select-none">
-                  <span class="text-base leading-none" aria-hidden="true">🖼️</span>
-                  <span>{% trans "Choose from Gallery" %}</span>
-                </label>
-              </div>
-              <p class="text-xs text-slate-500 hidden sm:block">{% trans "Or drop photos anywhere in this box" %}</p>
-            </div>
-          </div>
-
-          <!-- Client-side Alert / Validation Banner -->
-          <div id="detailUploadAlert" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-medium flex items-center justify-between gap-2" role="alert">
-            <span id="detailUploadAlertText"></span>
-            <button type="button" id="btnDismissDetailUploadAlert" class="text-rose-500 hover:text-rose-700 text-sm font-bold p-1 cursor-pointer" title="{% trans 'Dismiss' %}">✕</button>
-          </div>
-
-          <!-- Inline Compression Indicator -->
-          <div id="detailCompressionIndicator" role="status" aria-live="polite"
-               class="hidden p-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition-all duration-200">
-            <svg class="animate-spin h-4 w-4 text-emerald-600 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-            </svg>
-            <span id="detailCompressionIndicatorText">{% trans "Optimizing photos to WebP (2560px)..." %}</span>
-          </div>
-
-          <!-- Pending Thumbnails Preview Grid -->
-          <div id="detailPendingContainer" class="hidden space-y-2">
-            <div class="flex items-center justify-between">
-              <p class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <span>✨</span> {% trans "New Photos to Upload" %} (<span id="detailPendingCount">0</span>)
-              </p>
-              <button type="button" id="btnClearDetailPending" class="text-xs text-rose-600 hover:text-rose-800 font-semibold transition cursor-pointer">
-                {% trans "Clear All" %}
-              </button>
-            </div>
-            <div id="detailPendingGrid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5 max-h-56 overflow-y-auto p-1.5 bg-slate-50/80 rounded-xl border border-slate-200"></div>
-          </div>
-
-          <!-- Upload Action Form -->
-          <form id="detailUploadForm" method="post" action="{% url 'inventory:product_upload_images' product.pk %}" enctype="multipart/form-data" class="pt-1">
-            {% csrf_token %}
-            <input type="file" name="images" id="detailFormImages" multiple class="hidden">
-            <button type="submit" id="btnUploadDetailPhotos" disabled
-                    class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 active:scale-95 cursor-pointer">
-              <span>⬆️</span>
-              <span id="btnUploadDetailPhotosText">{% trans "Upload Selected Photos" %}</span>
-            </button>
-          </form>
-        </div>
-        {% endif %}
         {% else %}
-        <div class="aspect-square bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 text-sm">
+        <div class="aspect-square bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 text-sm">
           {% trans "No photos attached." %}
         </div>
         {% endif %}
+
+        {% if can_manage and product.images.count < 10 %}
+        <!-- Progressive Disclosure Add More Photos Drawer (Collapsed when photos already exist to keep view clean) -->
+        <details id="detailAddPhotosDisclosure" class="pt-3 border-t border-slate-100 group" {% if not product.images.exists %}open{% endif %}>
+          <summary class="list-none cursor-pointer select-none flex items-center justify-between gap-2 py-1.5 px-3 rounded-xl bg-slate-50 hover:bg-emerald-50/60 border border-slate-200/80 hover:border-emerald-200 transition">
+            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+              <span aria-hidden="true">📷</span>
+              <span>{% trans "Add More Photos" %}</span>
+            </span>
+            <span class="flex items-center gap-2">
+              <span id="detailUploadSlotCount" class="font-mono tabular-nums text-xs font-semibold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-full" data-existing="{{ product.images.count }}" data-max="10">
+                {% blocktrans with available=available_slots count=product.images.count %}{{ available }} available ({{ count }}/10){% endblocktrans %}
+              </span>
+              <span class="text-slate-400 group-open:rotate-180 transition-transform text-xs" aria-hidden="true">▼</span>
+            </span>
+          </summary>
+
+          <div id="detailPhotoUploadContainer" class="pt-3 space-y-3">
+            <!-- Interactive Dashed Dropzone -->
+            <div id="detailDropZone" class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl p-4 text-center bg-slate-50 hover:bg-emerald-50/40 transition cursor-pointer relative group">
+              <input type="file" id="detailImageInput" multiple accept="image/*" class="sr-only">
+              <input type="file" id="detailCameraInput" accept="image/*" capture="environment" class="sr-only">
+
+              <div class="space-y-2.5">
+                <div class="w-9 h-9 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg group-hover:scale-105 transition duration-150 shadow-2xs" aria-hidden="true">
+                  📷
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-slate-800">{% trans "Tap to take photos or upload" %}</p>
+                  <p class="text-xs text-slate-500 mt-0.5">
+                    {% blocktrans with max=available_slots %}Select up to {{ max }} photos (auto-optimized to WebP 2560px){% endblocktrans %}
+                  </p>
+                </div>
+
+                <!-- Dual Action Triggers -->
+                <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
+                  <label for="detailCameraInput" id="btnTriggerDetailCamera" role="button" tabindex="0"
+                         class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl shadow-xs text-xs sm:text-sm transition cursor-pointer min-h-[38px] select-none">
+                    <span class="text-base leading-none" aria-hidden="true">📸</span>
+                    <span>{% trans "Take Photo" %}</span>
+                  </label>
+                  <label for="detailImageInput" id="btnTriggerDetailGallery" role="button" tabindex="0"
+                         class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 font-bold rounded-xl border border-slate-300 shadow-xs text-xs sm:text-sm transition cursor-pointer min-h-[38px] select-none">
+                    <span class="text-base leading-none" aria-hidden="true">🖼️</span>
+                    <span>{% trans "Choose from Gallery" %}</span>
+                  </label>
+                </div>
+                <p class="text-xs text-slate-500 hidden sm:block">{% trans "Or drop photos anywhere in this box" %}</p>
+              </div>
+            </div>
+
+            <!-- Client-side Alert / Validation Banner -->
+            <div id="detailUploadAlert" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-medium flex items-center justify-between gap-2" role="alert">
+              <span id="detailUploadAlertText"></span>
+              <button type="button" id="btnDismissDetailUploadAlert" class="text-rose-500 hover:text-rose-700 text-sm font-bold p-1 cursor-pointer" title="{% trans 'Dismiss' %}">✕</button>
+            </div>
+
+            <!-- Inline Compression Indicator -->
+            <div id="detailCompressionIndicator" role="status" aria-live="polite"
+                 class="hidden p-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-xs font-semibold flex items-center justify-center gap-2 shadow-2xs transition-all duration-200">
+              <svg class="animate-spin h-4 w-4 text-emerald-600 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <span id="detailCompressionIndicatorText">{% trans "Optimizing photos to WebP (2560px)..." %}</span>
+            </div>
+
+            <!-- Pending Thumbnails Preview Grid -->
+            <div id="detailPendingContainer" class="hidden space-y-2">
+              <div class="flex items-center justify-between">
+                <p class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>✨</span> {% trans "New Photos to Upload" %} (<span id="detailPendingCount" class="font-mono">0</span>)
+                </p>
+                <button type="button" id="btnClearDetailPending" class="text-xs text-rose-600 hover:text-rose-800 font-semibold transition cursor-pointer">
+                  {% trans "Clear All" %}
+                </button>
+              </div>
+              <div id="detailPendingGrid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5 max-h-56 overflow-y-auto p-1.5 bg-slate-50/80 rounded-xl border border-slate-200"></div>
+            </div>
+
+            <!-- Upload Action Form -->
+            <form id="detailUploadForm" method="post" action="{% url 'inventory:product_upload_images' product.pk %}" enctype="multipart/form-data" class="pt-1">
+              {% csrf_token %}
+              <input type="file" name="images" id="detailFormImages" multiple class="hidden">
+              <button type="submit" id="btnUploadDetailPhotos" disabled
+                      class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-2 active:scale-95 cursor-pointer">
+                <span>⬆️</span>
+                <span id="btnUploadDetailPhotosText">{% trans "Upload Selected Photos" %}</span>
+              </button>
+            </form>
+          </div>
+        </details>
+        {% endif %}
       </div>
 
-      <!-- Marketplace Links Card -->
-      <div id="marketplaceLinksCard" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-6 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-          <div class="flex items-center gap-2">
-            <span class="text-base sm:text-lg" aria-hidden="true">🔗</span>
-            <div>
-              <h2 class="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider">
-                {% trans "Marketplace Listing Links" %}
-              </h2>
-              <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
-                {% trans "Track and share active listings across external resale platforms." %}
-              </p>
-            </div>
-          </div>
-          <span id="activeLinksCountBadge" class="text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
-            {{ active_listing_links|length }} {% trans "published" %}
+      <!-- Compact Listing Readiness Checklist Strip -->
+      <div id="listingReadinessChecklist" class="bg-white rounded-2xl shadow-xs border border-slate-200 p-3.5 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">{% trans "Staging Readiness" %}</span>
+          <span class="font-mono tabular-nums text-xs font-bold px-2 py-0.5 rounded-full {% if product.images.exists and product.ai_title and product.ai_description and product.sale_price and product.compliance_status == 'approved' %}bg-emerald-100 text-emerald-800{% else %}bg-slate-100 text-slate-700{% endif %}">
+            {% if product.status == 'published' %}🚀 {% trans "Live" %}{% elif product.status == 'ready' %}✅ {% trans "Ready" %}{% else %}{% trans "In Progress" %}{% endif %}
           </span>
         </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <button type="button" onclick="switchWorkspaceTab('listing')"
+                  class="flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-left transition cursor-pointer {% if product.ai_title and product.ai_description %}bg-emerald-50/60 border-emerald-200 text-emerald-900{% else %}bg-amber-50/70 border-amber-200 text-amber-900{% endif %}">
+            <span class="font-semibold truncate">{% trans "Copywriting" %}</span>
+            <span class="font-mono font-bold shrink-0 ml-1">{% if product.ai_title and product.ai_description %}✓{% else %}!{% endif %}</span>
+          </button>
+          <button type="button" onclick="switchWorkspaceTab('listing'); setTimeout(() => document.getElementById('id_sale_price')?.focus(), 50);"
+                  class="flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-left transition cursor-pointer {% if product.sale_price and product.sale_price > 0 %}bg-emerald-50/60 border-emerald-200 text-emerald-900{% else %}bg-amber-50/70 border-amber-200 text-amber-900{% endif %}">
+            <span class="font-semibold truncate">{% trans "Sale Price" %}</span>
+            <span class="font-mono font-bold shrink-0 ml-1">{% if product.sale_price and product.sale_price > 0 %}€{{ product.sale_price|floatformat:0 }}{% else %}—{% endif %}</span>
+          </button>
+          <button type="button" onclick="switchWorkspaceTab('channels')"
+                  class="flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-left transition cursor-pointer {% if active_listing_links %}bg-blue-50/70 border-blue-200 text-blue-900{% else %}bg-slate-50 border-slate-200 text-slate-700{% endif %}">
+            <span class="font-semibold truncate">{% trans "Channels" %}</span>
+            <span class="font-mono font-bold shrink-0 ml-1">{{ active_listing_links|length }}</span>
+          </button>
+          <button type="button" onclick="switchWorkspaceTab('compliance')"
+                  class="flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-left transition cursor-pointer {% if product.compliance_status == 'rejected' %}bg-rose-50 border-rose-200 text-rose-900{% elif product.compliance_status == 'manual_review' %}bg-amber-50 border-amber-200 text-amber-900{% else %}bg-emerald-50/60 border-emerald-200 text-emerald-900{% endif %}">
+            <span class="font-semibold truncate">{% trans "Policy Check" %}</span>
+            <span class="font-mono font-bold shrink-0 ml-1">{% if product.compliance_status == 'rejected' %}🚫{% elif product.compliance_status == 'manual_review' %}⚠️{% else %}✓{% endif %}</span>
+          </button>
+        </div>
+      </div>
 
-        {% if product.status == 'awaiting_info' or product.status == 'blocked' %}
-        <!-- Publishing Gate Caution -->
-        <div class="publishing-gate-caution bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-3.5 flex items-start gap-2.5 text-xs sm:text-sm">
-          <span class="text-base shrink-0" aria-hidden="true">⚠️</span>
-          <div>
-            <span class="font-bold">
-              {% if product.status == 'awaiting_info' %}{% trans "Caution: Product has pending clarifications" %}{% else %}{% trans "Caution: Product is blocked" %}{% endif %}
-            </span>
-            <p class="text-amber-800 mt-0.5">
-              {% trans "Resolve pending doubts or unblock before publishing listings to external marketplaces to avoid inaccurate product claims." %}
-            </p>
+    </div>
+
+    <!-- Right Column: Tabbed Category Workspace (7 cols) -->
+    <div id="detailWorkspaceCard" class="order-1 lg:order-2 lg:col-span-7 w-full bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden min-w-0">
+
+      <!-- Category Tab Navigation Bar (Single-line horizontal rail, anti-apilación) -->
+      <div id="detailWorkspaceTablist" role="tablist" aria-label="{% trans 'Product workspace sections' %}"
+           class="flex items-center overflow-x-auto flex-nowrap whitespace-nowrap no-scrollbar border-b border-slate-200 bg-slate-100/80 px-2 pt-1.5 gap-1">
+        <button type="button" role="tab" id="tabBtnWorkspaceListing"
+                data-workspace-tab="listing" aria-selected="true"
+                onclick="switchWorkspaceTab('listing')"
+                class="px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition cursor-pointer min-h-[42px]">
+          <span aria-hidden="true">📝</span>
+          <span>{% trans "Listing & Pricing" %}</span>
+        </button>
+
+        <button type="button" role="tab" id="tabBtnWorkspaceChannels"
+                data-workspace-tab="channels" aria-selected="false"
+                onclick="switchWorkspaceTab('channels')"
+                class="px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition cursor-pointer min-h-[42px]">
+          <span aria-hidden="true">🏪</span>
+          <span>{% trans "Channels & Storefront" %}</span>
+          <span class="font-mono tabular-nums text-xs px-1.5 py-0.5 rounded-full {% if active_listing_links %}bg-emerald-100 text-emerald-800{% else %}bg-slate-200/80 text-slate-700{% endif %}">
+            {{ active_listing_links|length }}
+          </span>
+          {% if product.needs_platform_sync %}
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse" title="{% trans 'Out of Sync' %}" aria-hidden="true"></span>
+          {% endif %}
+        </button>
+
+        <button type="button" role="tab" id="tabBtnWorkspaceNotes"
+                data-workspace-tab="notes" aria-selected="false"
+                onclick="switchWorkspaceTab('notes')"
+                class="px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition cursor-pointer min-h-[42px]">
+          <span aria-hidden="true">💡</span>
+          <span>{% trans "Notes & Doubts" %}</span>
+          {% if pending_clarifications.exists %}
+          <span class="font-mono tabular-nums text-xs px-1.5 py-0.5 rounded-full bg-amber-200 text-amber-950">
+            {{ pending_clarifications.count }}
+          </span>
+          {% elif resolved_clarifications.exists %}
+          <span class="font-mono tabular-nums text-xs px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+            {{ resolved_clarifications.count }}
+          </span>
+          {% endif %}
+        </button>
+
+        <button type="button" role="tab" id="tabBtnWorkspaceCompliance"
+                data-workspace-tab="compliance" aria-selected="false"
+                onclick="switchWorkspaceTab('compliance')"
+                class="px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition cursor-pointer min-h-[42px]">
+          <span aria-hidden="true">🛡️</span>
+          <span>{% trans "Policy & Compliance" %}</span>
+          <span class="font-mono tabular-nums text-xs px-1.5 py-0.5 rounded-full
+            {% if product.compliance_status == 'rejected' %}bg-rose-100 text-rose-900
+            {% elif product.compliance_status == 'manual_review' %}bg-amber-100 text-amber-950
+            {% else %}bg-emerald-100 text-emerald-800{% endif %}">
+            {% if product.compliance_status == 'rejected' %}🚫{% elif product.compliance_status == 'manual_review' %}⚠️{% else %}✓{% endif %}
+            {{ product.compliance_risk_score }}
+          </span>
+        </button>
+      </div>
+
+      <!-- Contextual Alert Strip for Flagged Policy or Unapplied Clarifications (visible on Listing tab) -->
+      <div id="workspaceListingTopAlerts">
+        {% if has_unapplied_clarifications %}
+        <div class="ai-regeneration-callout bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-3 flex items-start justify-between gap-3">
+          <div class="flex items-start gap-2.5">
+            <span class="text-base shrink-0" aria-hidden="true">💡</span>
+            <div class="text-xs sm:text-sm">
+              <span class="font-bold text-amber-950">{% trans "New clarification responses available!" %}</span>
+              <span class="text-amber-800">{% trans "Answers from assistant have been provided. Re-generate the listing copy to include these details in the AI description." %}</span>
+            </div>
           </div>
+          <button type="button" onclick="switchWorkspaceTab('notes')" class="shrink-0 text-xs font-bold text-amber-900 underline hover:text-amber-950 cursor-pointer">
+            {% trans "View Notes" %} &rarr;
+          </button>
         </div>
         {% endif %}
 
-        <!-- Active Listing Tiles -->
-        {% if active_listing_links %}
-        <div class="space-y-3" id="activeListingTilesList">
-          {% for link in active_listing_links %}
-          <div data-site-slug="{{ link.site.slug }}" data-link-id="{{ link.id }}"
-               class="p-3 sm:p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition shadow-xs space-y-2.5">
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" aria-hidden="true"></span>
-                <span class="font-bold text-sm text-slate-900 truncate">{{ link.site.name }}</span>
-                {% if link.compliance_status_info and link.compliance_status_info.status != 'approved' %}
-                <span class="text-xs font-bold px-2 py-0.5 rounded-full {% if link.compliance_status_info.status == 'rejected' %}bg-rose-100 text-rose-800 border border-rose-300{% else %}bg-amber-100 text-amber-900 border border-amber-300{% endif %} shrink-0">
-                  🛡️ {{ link.compliance_status_info.clauses|join:", " }}
+        {% if product.compliance_status != 'approved' %}
+        <div class="bg-amber-50/70 border-b border-amber-200/80 px-4 py-2.5 flex items-center justify-between gap-2 text-xs">
+          <span class="font-semibold text-amber-950 flex items-center gap-1.5 min-w-0">
+            <span aria-hidden="true">{% if product.compliance_status == 'rejected' %}🚫{% else %}⚠️{% endif %}</span>
+            <span class="truncate">{% trans "ClauseGuard flagged policy notices for this item." %}</span>
+          </span>
+          <button type="button" onclick="switchWorkspaceTab('compliance')" class="shrink-0 font-bold text-amber-900 hover:text-amber-950 underline cursor-pointer">
+            {% trans "Review Policy" %} ({{ product.compliance_risk_score }}/100) &rarr;
+          </button>
+        </div>
+        {% endif %}
+
+        <!-- Sleek High-Contrast AI Vision Command Bar (replaces oversized gradient banner) -->
+        <div class="bg-slate-900 text-white px-4 py-3 sm:px-6 sm:py-3.5 border-b border-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="min-w-0">
+            <h2 class="font-bold text-sm sm:text-base flex items-center gap-2 text-white">
+              <span class="text-emerald-400" aria-hidden="true">✨</span>
+              <span>{% trans "Gemini Multimodal Vision" %}</span>
+            </h2>
+            <p class="text-xs text-slate-300 mt-0.5">
+              {% trans "Analyzes attached photos & raw notes to draft an SEO marketplace title and description." %}
+            </p>
+          </div>
+
+          {% if can_manage %}
+          <form method="post" action="{% url 'inventory:generate_ai' product.pk %}" id="aiForm" class="shrink-0">
+            {% csrf_token %}
+            <button type="submit" id="aiBtn"
+                    class="w-full sm:w-auto whitespace-nowrap px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-extrabold text-xs sm:text-sm rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px]">
+              <span id="aiIcon" aria-hidden="true">⚡</span>
+              <span id="aiText">{% trans "Generate AI Listing" %}</span>
+            </button>
+          </form>
+          {% else %}
+          <span class="text-xs bg-slate-800 text-slate-300 border border-slate-700 px-2.5 py-1 rounded-lg shrink-0">{% trans "Manager Only" %}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Unified Product Staging Form (Covers Tab 1: Listing & Pricing AND Tab 2: Storefront & Taxonomy) -->
+      <form method="post" id="productStagingForm">
+        {% csrf_token %}
+
+        <!-- =============================================================== -->
+        <!-- TAB PANEL 1: LISTING & PRICING                                  -->
+        <!-- =============================================================== -->
+        <div id="workspacePanelListing" role="tabpanel" aria-labelledby="tabBtnWorkspaceListing" data-workspace-panel="listing">
+          <div class="p-3.5 sm:p-6 space-y-5">
+
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2">
+                <h2 class="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider">{% trans "Marketplace Listing Copy" %}</h2>
+                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full {% if product.is_sold %}bg-purple-100 text-purple-900 border border-purple-200{% else %}bg-emerald-100 text-emerald-800{% endif %}">
+                  {% if product.is_sold %}
+                    {% if product.sold_channel_type == 'in_store' %}
+                      🏪 {% trans "Sold: In-Store" %}
+                    {% elif product.sold_channel_type == 'marketplace' and product.sold_marketplace %}
+                      🌐 {% trans "Sold on" %} {{ product.sold_marketplace.name }}
+                    {% elif product.sold_channel_type == 'other' %}
+                      📦 {% trans "Sold: Other" %}
+                    {% else %}
+                      🏷️ {% trans "Status: Sold" %}
+                    {% endif %}
+                  {% else %}
+                    {% trans "Status: Available for Sale" %}
+                  {% endif %}
+                </span>
+              </div>
+
+              <!-- 1-Tap Copy Full Listing Pack -->
+              <button type="button" id="btnCopyFullListingPack" onclick="copyFullListingPack(this)"
+                      class="text-xs font-bold text-slate-800 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] border border-slate-300/80 px-3 py-1.5 rounded-lg transition inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      title="{% trans 'Copy formatted Title, Price, and Description together' %}">
+                <span aria-hidden="true">📦</span>
+                <span>{% trans "Copy Full Ad Pack" %}</span>
+              </button>
+            </div>
+
+            {% if form.non_field_errors %}
+            <div role="alert" class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-semibold space-y-1">
+              {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Title Field with Live Character Counter & Copy Button -->
+            <div>
+              <div class="flex flex-wrap items-center justify-between gap-1.5 mb-1.5">
+                <div class="flex items-center gap-2">
+                  <label for="id_ai_title" class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider">
+                    {% trans "Listing Title" %}
+                  </label>
+                  <span id="titleCharCounter" class="font-mono tabular-nums text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                    0 / 255
+                  </span>
+                </div>
+                <button type="button" onclick="copyToClipboard('id_ai_title', this)"
+                        class="text-xs sm:text-sm font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md transition cursor-pointer">
+                  <span aria-hidden="true">📋</span> {% trans "Copy Title" %}
+                </button>
+              </div>
+              {{ form.ai_title }}
+              {% if form.ai_title.errors %}
+              <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.ai_title.errors.0 }}</p>
+              {% endif %}
+            </div>
+
+            <!-- Description Field with Live Character Counter & Copy Button -->
+            <div>
+              <div class="flex flex-wrap items-center justify-between gap-1.5 mb-1.5">
+                <div class="flex items-center gap-2">
+                  <label for="id_ai_description" class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider">
+                    {% trans "Listing Description / Copy" %}
+                  </label>
+                  <span id="descCharCounter" class="font-mono tabular-nums text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                    0 {% trans "chars" %}
+                  </span>
+                </div>
+                <button type="button" onclick="copyToClipboard('id_ai_description', this)"
+                        class="text-xs sm:text-sm font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md transition cursor-pointer">
+                  <span aria-hidden="true">📋</span> {% trans "Copy Description" %}
+                </button>
+              </div>
+              {{ form.ai_description }}
+              {% if form.ai_description.errors %}
+              <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.ai_description.errors.0 }}</p>
+              {% endif %}
+            </div>
+
+            <!-- Pricing, Status & Origin Pallet Controls -->
+            <div class="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+              <div>
+                <label for="id_sale_price" class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  {% trans "Sale Price (€)" %}
+                </label>
+                <div class="relative flex items-center">
+                  <span class="absolute left-3 text-slate-400 font-bold text-base sm:text-sm font-mono">€</span>
+                  <input type="number" step="0.01" min="0" name="sale_price" id="id_sale_price"
+                         value="{{ form.sale_price.value|unlocalize|default:'' }}"
+                         placeholder="0.00"
+                         {% if not can_manage %}readonly disabled{% endif %}
+                         class="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-mono tabular-nums font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 {% if not can_manage %}bg-slate-50 cursor-not-allowed text-slate-600{% endif %}">
+                </div>
+                {% if form.sale_price.errors %}
+                <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.sale_price.errors.0 }}</p>
+                {% endif %}
+                <!-- Benchmark Valuation References -->
+                {% if product.estimated_retail_price is not None or product.estimated_resale_price is not None %}
+                <div class="mt-2 space-y-1.5" id="detail-valuation-benchmarks">
+                  <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                    {% if product.estimated_retail_price is not None %}
+                    <span id="ref-retail-price" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium">
+                      <span class="text-slate-400" aria-hidden="true">🏷️</span> <span class="font-semibold">{% trans "New Retail (MSRP):" %}</span> <span class="font-mono tabular-nums font-bold">€{{ product.estimated_retail_price|floatformat:2 }}</span>
+                    </span>
+                    {% endif %}
+                    {% if product.estimated_resale_price is not None %}
+                    <span id="ref-resale-price" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/60 font-medium">
+                      <span class="text-emerald-500" aria-hidden="true">✨</span> <span class="font-semibold">{% trans "Estimated resale:" %}</span> <span class="font-mono tabular-nums font-bold">€{{ product.estimated_resale_price|floatformat:2 }}</span>
+                    </span>
+                    {% endif %}
+                  </div>
+                  {% if can_manage and product.estimated_resale_price is not None %}
+                  <div>
+                    <button type="button" id="btnApplyResalePrice" data-resale="{{ product.estimated_resale_price|unlocalize }}"
+                            class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded transition cursor-pointer shadow-2xs active:scale-95">
+                      <span aria-hidden="true">✨</span> {% blocktrans with price=product.estimated_resale_price|floatformat:2 %}Apply resale (€{{ price }}){% endblocktrans %}
+                    </button>
+                  </div>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
+
+              <div>
+                <label for="id_status" class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  {% trans "Lifecycle Status" %}
+                </label>
+                {{ form.status }}
+                {% if form.status.errors %}
+                <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.status.errors.0 }}</p>
+                {% endif %}
+              </div>
+
+              <div>
+                <label for="{{ form.pallet.id_for_label }}" class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span class="flex items-center gap-1.5">
+                    <span aria-hidden="true">📦</span>
+                    <span>{% trans "Origin Pallet" %}</span>
+                  </span>
+                </label>
+                {{ form.pallet }}
+                {% if form.pallet.errors %}
+                <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.pallet.errors.0 }}</p>
+                {% endif %}
+              </div>
+
+              <!-- Sold Status & Channel Attribution -->
+              <div class="sm:col-span-3 rounded-xl p-4 bg-slate-50 border border-slate-200 space-y-3">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <label class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-0.5">
+                      {% trans "Sold Status" %}
+                    </label>
+                    <label class="flex items-center gap-2.5 cursor-pointer select-none py-1">
+                      {{ form.is_sold }}
+                      <span class="text-sm font-semibold text-slate-800">{% trans "Mark Product as Sold" %}</span>
+                    </label>
+                  </div>
+                  {% if product.is_sold %}
+                  <div class="text-right">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold {% if product.sold_channel_type == 'in_store' %}bg-emerald-100 text-emerald-800 border border-emerald-300{% elif product.sold_channel_type == 'marketplace' %}bg-blue-100 text-blue-800 border border-blue-300{% else %}bg-purple-100 text-purple-800 border border-purple-300{% endif %}">
+                      {% if product.sold_channel_type == 'in_store' %}🏪 {{ product.sale_channel_display }}{% elif product.sold_channel_type == 'marketplace' %}🌐 {{ product.sale_channel_display }}{% else %}📦 {{ product.sale_channel_display }}{% endif %}
+                    </span>
+                    {% if product.sold_at %}
+                    <p class="text-xs text-slate-500 mt-1 font-mono">{% trans "Sold on" %} {{ product.sold_at|date:"M d, Y H:i" }}</p>
+                    {% endif %}
+                    {% if product.sold_channel_notes %}
+                    <p class="text-xs text-slate-600 font-medium italic mt-0.5">"{{ product.sold_channel_notes }}"</p>
+                    {% endif %}
+                  </div>
+                  {% endif %}
+                </div>
+
+                <!-- Collapsible Channel Controls (Visible when #id_is_sold is checked) -->
+                <div id="soldChannelContainer" class="pt-2 border-t border-slate-200 space-y-3 {% if not form.is_sold.value and not product.is_sold %}hidden{% endif %}">
+                  <div>
+                    <label for="id_sold_channel_type" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      {% trans "Where was it sold?" %} <span class="text-rose-500">*</span>
+                    </label>
+
+                    <!-- 1-Click Quick Picks -->
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                      <span class="text-xs text-slate-500 font-medium">{% trans "Quick picks:" %}</span>
+                      <button type="button" id="btnQuickInStore" data-channel="in_store" onclick="selectSaleChannel('in_store')"
+                              class="quick-channel-btn inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-300 hover:border-emerald-300 transition shadow-2xs cursor-pointer">
+                        🏪 {% trans "In-Store (Tienda física)" %}
+                      </button>
+                      {% for item in site_links_data %}
+                        {% if item.link and item.link.is_active %}
+                        <button type="button" onclick="selectSaleMarketplace('{{ item.site.id }}')"
+                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-300 hover:border-blue-300 transition shadow-2xs cursor-pointer">
+                          🌐 {{ item.site.name }}
+                        </button>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        {{ form.sold_channel_type }}
+                        {% if form.sold_channel_type.errors %}
+                        <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.sold_channel_type.errors.0 }}</p>
+                        {% endif %}
+                      </div>
+                      <div id="soldMarketplaceWrapper" class="{% if form.sold_channel_type.value != 'marketplace' and product.sold_channel_type != 'marketplace' %}hidden{% endif %}">
+                        <label for="id_sold_marketplace" class="sr-only">{% trans "Sold Marketplace" %}</label>
+                        {{ form.sold_marketplace }}
+                        {% if form.sold_marketplace.errors %}
+                        <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.sold_marketplace.errors.0 }}</p>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label for="id_sold_channel_notes" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      {% trans "Sale Reference / Notes" %} <span class="text-slate-500 font-normal">({% trans "Optional" %})</span>
+                    </label>
+                    {{ form.sold_channel_notes }}
+                    {% if form.sold_channel_notes.errors %}
+                    <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.sold_channel_notes.errors.0 }}</p>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- =============================================================== -->
+        <!-- TAB PANEL 2: CHANNELS & STOREFRONT                              -->
+        <!-- =============================================================== -->
+        <div id="workspacePanelChannels" role="tabpanel" aria-labelledby="tabBtnWorkspaceChannels" data-workspace-panel="channels" hidden="until-found">
+          <div class="p-3.5 sm:p-6 space-y-6">
+
+            <!-- External Marketplace Listing Links Section -->
+            <div id="marketplaceLinksCard" class="space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                  <span class="text-base sm:text-lg" aria-hidden="true">🔗</span>
+                  <div>
+                    <h2 class="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider">
+                      {% trans "Marketplace Listing Links" %}
+                    </h2>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+                      {% trans "Track and share active listings across external resale platforms." %}
+                    </p>
+                  </div>
+                </div>
+                <span id="activeLinksCountBadge" class="font-mono tabular-nums text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
+                  {{ active_listing_links|length }} {% trans "published" %}
+                </span>
+              </div>
+
+              {% if product.status == 'awaiting_info' or product.status == 'blocked' %}
+              <!-- Publishing Gate Caution -->
+              <div class="publishing-gate-caution bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-3.5 flex items-start gap-2.5 text-xs sm:text-sm">
+                <span class="text-base shrink-0" aria-hidden="true">⚠️</span>
+                <div>
+                  <span class="font-bold">
+                    {% if product.status == 'awaiting_info' %}{% trans "Caution: Product has pending clarifications" %}{% else %}{% trans "Caution: Product is blocked" %}{% endif %}
+                  </span>
+                  <p class="text-amber-800 mt-0.5">
+                    {% trans "Resolve pending doubts or unblock before publishing listings to external marketplaces to avoid inaccurate product claims." %}
+                  </p>
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- Active Listing Tiles -->
+              {% if active_listing_links %}
+              <div class="space-y-3" id="activeListingTilesList">
+                {% for link in active_listing_links %}
+                <div data-site-slug="{{ link.site.slug }}" data-link-id="{{ link.id }}"
+                     class="p-3 sm:p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition shadow-2xs space-y-2.5">
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" aria-hidden="true"></span>
+                      <span class="font-bold text-sm text-slate-900 truncate">{{ link.site.name }}</span>
+                      {% if link.compliance_status_info and link.compliance_status_info.status != 'approved' %}
+                      <span class="text-xs font-bold px-2 py-0.5 rounded-full {% if link.compliance_status_info.status == 'rejected' %}bg-rose-100 text-rose-800 border border-rose-300{% else %}bg-amber-100 text-amber-900 border border-amber-300{% endif %} shrink-0">
+                        🛡️ {{ link.compliance_status_info.clauses|join:", " }}
+                      </span>
+                      {% endif %}
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      <span class="font-mono tabular-nums text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
+                        {{ link.clicks_count }} {% trans "clicks" %}
+                      </span>
+                      <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
+                        {% trans "Listed" %}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Action Bar (min-h-[40px] tap targets for mobile) -->
+                  <div class="flex items-center gap-1.5 sm:gap-2 pt-0.5">
+                    <button type="button" onclick="copyLinkUrl('{{ link.url|escapejs }}', this)"
+                            class="flex-1 min-w-0 py-2 px-3 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 min-h-[40px] transition cursor-pointer"
+                            title="{% trans 'Copy listing URL to clipboard' %}" aria-label="{% trans 'Copy URL for' %} {{ link.site.name }}">
+                      <span aria-hidden="true">📋</span>
+                      <span class="truncate">{% trans "Copy Link" %}</span>
+                    </button>
+                    <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+                       class="py-2 px-3.5 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 text-emerald-800 border border-emerald-200/80 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1 min-h-[40px] transition shrink-0"
+                       title="{% trans 'Open external listing in new tab' %}" aria-label="{% trans 'Open listing for' %} {{ link.site.name }}">
+                      <span aria-hidden="true">↗</span>
+                      <span>{% trans "View" %}</span>
+                    </a>
+                    {% if can_manage %}
+                    <button type="button" onclick="openEditListingModal('{{ link.id }}', '{{ link.site.id }}', '{{ link.site.name|escapejs }}', '{{ link.url|escapejs }}')"
+                            class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 active:bg-slate-200 rounded-lg min-h-[40px] min-w-[40px] flex items-center justify-center transition border border-slate-200 shrink-0 cursor-pointer"
+                            title="{% trans 'Edit or remove listing link' %}" aria-label="{% trans 'Manage link for' %} {{ link.site.name }}">
+                      <span aria-hidden="true">⚙️</span>
+                    </button>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              {% else %}
+              <!-- Compact Empty State -->
+              <div id="noActiveLinksState" class="p-5 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-1.5">
+                <span class="text-2xl block select-none" aria-hidden="true">🌐</span>
+                <p class="text-xs sm:text-sm font-bold text-slate-700">
+                  {% trans "No marketplace links active yet." %}
+                </p>
+                <p class="text-xs text-slate-500 max-w-sm mx-auto">
+                  {% trans "Add links to external listings to track clicks and enable 1-tap quick sharing with buyers." %}
+                </p>
+              </div>
+              {% endif %}
+
+              <!-- Progressive Disclosure: Add Marketplace Link Trigger -->
+              {% if can_manage %}
+              <div class="pt-1 flex flex-col sm:flex-row items-center justify-between gap-2">
+                {% if unlinked_sites %}
+                <button type="button" id="openAddListingBtn" onclick="openAddListingModal()"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-2xs cursor-pointer min-h-[40px]">
+                  <span aria-hidden="true">➕</span>
+                  <span>{% trans "Add Marketplace Link" %}</span>
+                </button>
+                {% else %}
+                <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+                  <span class="text-emerald-600 font-bold" aria-hidden="true">✓</span>
+                  {% trans "All platforms linked" %} ({{ active_listing_links|length }}/{{ active_listing_links|length }})
                 </span>
                 {% endif %}
               </div>
-              <div class="flex items-center gap-1.5 shrink-0">
-                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
-                  {{ link.clicks_count }} {% trans "clicks" %}
-                </span>
-                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
-                  {% trans "Listed" %}
-                </span>
-              </div>
-            </div>
+              {% endif %}
 
-            <!-- Action Bar (min-h-[40px] tap targets for mobile) -->
-            <div class="flex items-center gap-1.5 sm:gap-2 pt-0.5">
-              <button type="button" onclick="copyLinkUrl('{{ link.url|escapejs }}', this)"
-                      class="flex-1 min-w-0 py-2 px-3 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 min-h-[40px] transition cursor-pointer"
-                      title="{% trans 'Copy listing URL to clipboard' %}" aria-label="{% trans 'Copy URL for' %} {{ link.site.name }}">
-                <span aria-hidden="true">📋</span>
-                <span class="truncate">{% trans "Copy Link" %}</span>
-              </button>
-              <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
-                 class="py-2 px-3.5 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 text-emerald-800 border border-emerald-200/80 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1 min-h-[40px] transition shrink-0"
-                 title="{% trans 'Open external listing in new tab' %}" aria-label="{% trans 'Open listing for' %} {{ link.site.name }}">
-                <span aria-hidden="true">↗</span>
-                <span>{% trans "View" %}</span>
-              </a>
-              {% if can_manage %}
-              <button type="button" onclick="openEditListingModal('{{ link.id }}', '{{ link.site.id }}', '{{ link.site.name|escapejs }}', '{{ link.url|escapejs }}')"
-                      class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 active:bg-slate-200 rounded-lg min-h-[40px] min-w-[40px] flex items-center justify-center transition border border-slate-200 shrink-0 cursor-pointer"
-                      title="{% trans 'Edit or remove listing link' %}" aria-label="{% trans 'Manage link for' %} {{ link.site.name }}">
-                <span aria-hidden="true">⚙️</span>
-              </button>
+              {% if extra_inactive_links %}
+              <!-- Inactive/Archived Platforms with Existing Links (Collapsible) -->
+              <details class="pt-2 border-t border-slate-100 group">
+                <summary class="text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer select-none hover:text-slate-800 transition py-1 flex items-center justify-between">
+                  <span>{% trans "Archived / Deactivated Marketplace Links" %} ({{ extra_inactive_links|length }})</span>
+                  <span class="text-slate-400 group-open:rotate-180 transition-transform" aria-hidden="true">&darr;</span>
+                </summary>
+                <div class="pt-2 space-y-2">
+                  {% for link in extra_inactive_links %}
+                  <div class="p-2.5 rounded-lg border border-amber-200 bg-amber-50/50 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="font-bold text-slate-700 shrink-0">{{ link.site.name }}</span>
+                      <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="text-emerald-700 hover:underline truncate max-w-[200px] sm:max-w-none">
+                        {{ link.url }}
+                      </a>
+                    </div>
+                    {% if can_manage %}
+                    <button type="submit" form="deleteArchivedLinkForm_{{ link.id }}" class="text-rose-600 hover:text-rose-800 font-bold p-1 cursor-pointer">{% trans "Delete" %}</button>
+                    {% endif %}
+                  </div>
+                  {% endfor %}
+                </div>
+              </details>
               {% endif %}
             </div>
-          </div>
-          {% endfor %}
-        </div>
-        {% else %}
-        <!-- Compact Empty State -->
-        <div id="noActiveLinksState" class="p-5 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-1.5">
-          <span class="text-2xl block select-none" aria-hidden="true">🌐</span>
-          <p class="text-xs sm:text-sm font-bold text-slate-700">
-            {% trans "No marketplace links active yet." %}
-          </p>
-          <p class="text-xs text-slate-500 max-w-sm mx-auto">
-            {% trans "Add links to external listings to track clicks and enable 1-tap quick sharing with buyers." %}
-          </p>
-        </div>
-        {% endif %}
 
-        <!-- Progressive Disclosure: Add Marketplace Link Trigger -->
-        {% if can_manage %}
-        <div class="pt-1 flex flex-col sm:flex-row items-center justify-between gap-2">
-          {% if unlinked_sites %}
-          <button type="button" id="openAddListingBtn" onclick="openAddListingModal()"
-                  class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-xs cursor-pointer min-h-[40px]">
-            <span aria-hidden="true">➕</span>
-            <span>{% trans "Add Marketplace Link" %}</span>
-          </button>
-          {% else %}
-          <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full inline-flex items-center gap-1">
-            <span class="text-emerald-600 font-bold" aria-hidden="true">✓</span>
-            {% trans "All platforms linked" %} ({{ active_listing_links|length }}/{{ active_listing_links|length }})
-          </span>
-          {% endif %}
-        </div>
-        {% endif %}
-
-        {% if extra_inactive_links %}
-        <!-- Inactive/Archived Platforms with Existing Links (Collapsible) -->
-        <details class="pt-2 border-t border-slate-100 group">
-          <summary class="text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer select-none hover:text-slate-800 transition py-1 flex items-center justify-between">
-            <span>{% trans "Archived / Deactivated Marketplace Links" %} ({{ extra_inactive_links|length }})</span>
-            <span class="text-slate-400 group-open:rotate-180 transition-transform" aria-hidden="true">&darr;</span>
-          </summary>
-          <div class="pt-2 space-y-2">
-            {% for link in extra_inactive_links %}
-            <div class="p-2.5 rounded-lg border border-amber-200 bg-amber-50/50 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="font-bold text-slate-700 shrink-0">{{ link.site.name }}</span>
-                <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="text-emerald-700 hover:underline truncate max-w-[200px] sm:max-w-none">
-                  {{ link.url }}
-                </a>
+            <!-- Public Storefront Taxonomy & Visibility Controls (Now accessible on both Mobile and Desktop inside Channels tab!) -->
+            <div id="storefrontTaxonomySection" class="pt-5 border-t border-slate-200 space-y-4">
+              <input type="hidden" name="storefront_controls_present" value="1">
+              <div class="flex items-center justify-between">
+                <h3 class="text-xs sm:text-sm font-bold text-teal-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>🏪</span> {% trans "Public Storefront & Taxonomy (Rápido Pack)" %}
+                </h3>
+                <span class="text-xs font-mono text-slate-500">{{ product.public_reference }}</span>
               </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="id_category" class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    {% trans "Storefront Category" %}
+                  </label>
+                  {{ form.category }}
+                </div>
+                <div>
+                  <label for="id_condition" class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    {% trans "Condition State" %}
+                  </label>
+                  {{ form.condition }}
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                  {{ form.is_public }}
+                  <span class="text-xs sm:text-sm font-semibold text-slate-800">{% trans "Visible in Public Storefront" %}</span>
+                </label>
+                <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                  {{ form.is_featured }}
+                  <span class="text-xs sm:text-sm font-semibold text-slate-800">{% trans "Featured (⭐)" %}</span>
+                </label>
+                <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                  {{ form.is_reserved }}
+                  <span class="text-xs sm:text-sm font-semibold text-slate-800">{% trans "Reserved (⏳)" %}</span>
+                </label>
+              </div>
+
+              <!-- Conversion & Analytics Counters -->
+              <div class="grid grid-cols-3 gap-2.5 sm:gap-3 text-center">
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                  <div class="text-xs font-semibold text-slate-500 uppercase truncate">{% trans "Public Views" %}</div>
+                  <div id="metric-views-count" class="font-mono tabular-nums text-base sm:text-lg font-extrabold text-slate-900">{{ product.views_count }}</div>
+                </div>
+                <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-2.5">
+                  <div class="text-xs font-semibold text-emerald-800 uppercase truncate">{% trans "WhatsApp Clicks" %}</div>
+                  <div id="metric-whatsapp-clicks" class="font-mono tabular-nums text-base sm:text-lg font-extrabold text-emerald-900">{{ product.whatsapp_clicks }}</div>
+                </div>
+                <div class="bg-blue-50/70 border border-blue-200 rounded-xl p-2.5">
+                  <div class="text-xs font-semibold text-blue-800 uppercase truncate">{% trans "Platform Clicks" %}</div>
+                  <div id="metric-platform-clicks" class="font-mono tabular-nums text-base sm:text-lg font-extrabold text-blue-900">{{ product.total_marketplace_clicks }}</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Shared Persistent Save Bar for Tab 1 (Listing) & Tab 2 (Storefront) -->
+        {% if can_manage %}
+        <div id="stagingFormSaveBar" class="px-3.5 sm:px-6 py-3.5 bg-slate-50/90 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2 text-xs text-slate-500">
+            <span id="unsavedChangesBadge" class="hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 font-bold border border-amber-300">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" aria-hidden="true"></span>
+              <span>{% trans "Unsaved changes" %}</span>
+            </span>
+            <span class="hidden sm:inline font-mono text-slate-500">{% trans "Shortcut: Ctrl+S" %}</span>
+          </div>
+          <button type="submit" id="btnSaveListingChanges"
+                  class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-bold text-sm rounded-xl shadow-xs transition cursor-pointer">
+            {% trans "Save Listing Changes" %}
+          </button>
+        </div>
+        {% endif %}
+
+      </form>
+
+      {% if can_manage and extra_inactive_links %}
+        {% for link in extra_inactive_links %}
+        <form id="deleteArchivedLinkForm_{{ link.id }}" method="post" action="{% url 'inventory:manage_link' product.pk %}" class="hidden">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="delete">
+          <input type="hidden" name="link_id" value="{{ link.id }}">
+        </form>
+        {% endfor %}
+      {% endif %}
+
+      <!-- =============================================================== -->
+      <!-- TAB PANEL 3: NOTES & DOUBTS                                     -->
+      <!-- =============================================================== -->
+      <div id="workspacePanelNotes" role="tabpanel" aria-labelledby="tabBtnWorkspaceNotes" data-workspace-panel="notes" hidden="until-found">
+        <div class="p-3.5 sm:p-6 space-y-6">
+
+          <!-- Product Clarifications & Notes Hub -->
+          <div id="clarifications-section" class="space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-base sm:text-lg" aria-hidden="true">💡</span>
+                <h3 class="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
+                  {% trans "Product Clarifications & Notes" %}
+                </h3>
+              </div>
+              <div class="flex items-center gap-1.5 text-xs font-bold">
+                {% if pending_clarifications.exists %}
+                <span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                  {{ pending_clarifications.count }} {% trans "pending" %}
+                </span>
+                {% endif %}
+                {% if resolved_clarifications.exists %}
+                <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  {{ resolved_clarifications.count }} {% trans "resolved" %}
+                </span>
+                {% endif %}
+                {% if not pending_clarifications.exists and not resolved_clarifications.exists %}
+                <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
+                  {% trans "None" %}
+                </span>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Pending Clarifications List -->
+            {% if pending_clarifications.exists %}
+            <div class="space-y-3">
+              <h4 class="text-xs sm:text-sm font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                <span aria-hidden="true">⚠️</span> {% trans "Pending Doubts (Needs Answer)" %}
+              </h4>
+              {% for clarif in pending_clarifications %}
+              <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 space-y-2.5">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="px-2 py-0.5 text-xs font-bold uppercase tracking-wider rounded-md bg-amber-200 text-amber-900">
+                      {{ clarif.get_category_display }}
+                    </span>
+                    <span class="text-xs text-slate-500 font-mono">
+                      {{ clarif.asked_by.username|default:"Manager" }} &bull; {{ clarif.created_at|date:"M d, H:i" }}
+                    </span>
+                  </div>
+                  {% if can_manage %}
+                  <form method="post" action="{% url 'inventory:delete_clarification' product.pk clarif.pk %}" class="inline"
+                        data-confirm-message="{% trans 'Dismiss this clarification question?' %}">
+                    {% csrf_token %}
+                    <button type="submit" aria-label="{% trans 'Dismiss question' %}"
+                            class="text-sm text-slate-500 hover:text-rose-600 transition p-1 cursor-pointer" title="{% trans 'Dismiss question' %}">
+                      ✕
+                    </button>
+                  </form>
+                  {% endif %}
+                </div>
+
+                <p class="text-sm sm:text-base font-semibold text-slate-900 leading-snug">
+                  {{ clarif.question }}
+                </p>
+
+                <!-- Inline Answer Form -->
+                <form method="post" action="{% url 'inventory:answer_clarification' product.pk clarif.pk %}" class="space-y-2 pt-1">
+                  {% csrf_token %}
+                  <div class="flex flex-col sm:flex-row gap-2">
+                    <input type="text" name="answer" required aria-label="{% trans 'Answer to clarification question' %}"
+                           placeholder="{% trans 'Enter answer (e.g. 52 cm chest, composition tag...)' %}"
+                           class="flex-1 px-3.5 py-2 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+                    <button type="submit"
+                            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-lg transition whitespace-nowrap shadow-xs cursor-pointer">
+                      {% trans "Answer" %}
+                    </button>
+                  </div>
+                </form>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Resolved Clarifications & Direct Notes List -->
+            {% if resolved_clarifications.exists %}
+            <div class="space-y-2.5 pt-2 border-t border-slate-100">
+              <h4 class="text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wider">
+                {% trans "Resolved Clarifications & Notes" %}
+              </h4>
+              {% for clarif in resolved_clarifications %}
+              <div class="bg-emerald-50/50 border border-emerald-200 rounded-xl p-3.5 space-y-1.5 text-xs sm:text-sm">
+                <div class="flex items-center justify-between text-xs gap-2">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="px-2 py-0.5 font-bold uppercase tracking-wider rounded-md {% if clarif.is_direct_note %}bg-teal-100 text-teal-800 border border-teal-200{% else %}bg-emerald-100 text-emerald-800 border border-emerald-200{% endif %} text-xs">
+                      {{ clarif.get_category_display }}
+                    </span>
+                    {% if clarif.is_direct_note %}
+                    <span class="px-1.5 py-0.5 font-semibold rounded bg-slate-100 text-slate-700 text-xs">
+                      📝 {% trans "Direct Note" %}
+                    </span>
+                    {% else %}
+                    <span class="px-1.5 py-0.5 font-semibold rounded bg-emerald-100 text-emerald-800 text-xs">
+                      ❓ {% trans "Resolved Doubt" %}
+                    </span>
+                    {% endif %}
+                    <span class="text-slate-500 font-mono">
+                      {{ clarif.answered_by.username|default:clarif.asked_by.username|default:"Staff" }} &bull; {{ clarif.answered_at|default:clarif.created_at|date:"M d, H:i" }}
+                    </span>
+                  </div>
+                  {% if can_manage %}
+                  <form method="post" action="{% url 'inventory:delete_clarification' product.pk clarif.pk %}" class="inline shrink-0"
+                        data-confirm-message="{% trans 'Delete this clarification note?' %}">
+                    {% csrf_token %}
+                    <button type="submit" aria-label="{% trans 'Delete note' %}"
+                            class="text-sm text-slate-500 hover:text-rose-600 transition p-1 cursor-pointer" title="{% trans 'Delete note' %}">
+                      ✕
+                    </button>
+                  </form>
+                  {% endif %}
+                </div>
+
+                {% if clarif.is_direct_note %}
+                <p class="text-slate-900 font-medium bg-white p-2.5 rounded-lg border border-emerald-100 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">{{ clarif.answer }}</p>
+                {% else %}
+                <p class="text-slate-800 font-medium">
+                  <span class="font-bold text-slate-900">Q:</span> {{ clarif.question }}
+                </p>
+                <p class="text-emerald-950 font-semibold bg-white p-2.5 rounded-lg border border-emerald-100 text-xs sm:text-sm">
+                  <span class="text-emerald-700">✓</span> {{ clarif.answer }}
+                </p>
+                {% endif %}
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Add Clarification Forms -->
+            {% if not product.is_deleted %}
+            <div class="pt-3 border-t border-slate-100 space-y-3">
               {% if can_manage %}
-              <form method="post" action="{% url 'inventory:manage_link' product.pk %}" class="inline">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="link_id" value="{{ link.id }}">
-                <button type="submit" class="text-rose-600 hover:text-rose-800 font-bold p-1 cursor-pointer">{% trans "Delete" %}</button>
-              </form>
+              <!-- Manager Dual Mode Switcher -->
+              <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-xl" role="tablist">
+                <button type="button" id="tabBtnDirectNote" onclick="switchClarificationTab('direct')"
+                        role="tab" aria-selected="true" aria-controls="panelDirectNote"
+                        class="flex-1 py-1.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition shadow-2xs bg-white text-slate-900 cursor-pointer">
+                  📝 {% trans "Add Direct Note" %}
+                </button>
+                <button type="button" id="tabBtnAskDoubt" onclick="switchClarificationTab('doubt')"
+                        role="tab" aria-selected="false" aria-controls="panelAskDoubt"
+                        class="flex-1 py-1.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition text-slate-600 hover:text-slate-900 cursor-pointer">
+                  ❓ {% trans "Ask Assistant (Doubt)" %}
+                </button>
+              </div>
+
+              <!-- Manager Panel 1: Direct Note Form -->
+              <div id="panelDirectNote" role="tabpanel" aria-labelledby="tabBtnDirectNote" class="space-y-2.5">
+                <p class="text-xs text-slate-500">
+                  {% trans "Record supplemental measurements, composition tags, or condition details discovered after intake. Instantly saved and available for AI copywriting without setting product to Awaiting Info." %}
+                </p>
+                <form method="post" action="{% url 'inventory:add_direct_clarification' product.pk %}" class="space-y-2.5">
+                  {% csrf_token %}
+                  <div>
+                    <label for="directNoteCategory" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      {% trans "Category" %}
+                    </label>
+                    <select id="directNoteCategory" name="category" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-emerald-500">
+                      {% for cat_val, cat_label in categories %}
+                      <option value="{{ cat_val }}">{{ cat_label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div>
+                    <label for="directNoteText" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      {% trans "Clarification Note / Details" %}
+                    </label>
+                    <textarea id="directNoteText" name="note" rows="2" required
+                              placeholder="{% trans 'E.g., Pit-to-pit: 54cm, length: 70cm, YKK zipper, 100% heavy cotton.' %}"
+                              class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"></textarea>
+                  </div>
+                  <div class="flex justify-end">
+                    <button type="submit"
+                            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-xs cursor-pointer">
+                      ➕ {% trans "Save Clarification Note" %}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Manager Panel 2: Ask Doubt Form -->
+              <div id="panelAskDoubt" role="tabpanel" aria-labelledby="tabBtnAskDoubt" class="hidden space-y-2.5">
+                <p class="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                  ⚠️ {% trans "Asking a doubt will transition the product lifecycle status to 'Awaiting Info' and alert the sourcing assistant to provide an answer." %}
+                </p>
+                <form method="post" action="{% url 'inventory:add_clarification' product.pk %}" class="space-y-2.5">
+                  {% csrf_token %}
+                  <div>
+                    <label for="askDoubtCategory" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      {% trans "Category" %}
+                    </label>
+                    <select id="askDoubtCategory" name="category" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-amber-500">
+                      {% for cat_val, cat_label in categories %}
+                      <option value="{{ cat_val }}">{{ cat_label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div>
+                    <label for="askDoubtQuestion" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      {% trans "Question for Assistant" %}
+                    </label>
+                    <textarea id="askDoubtQuestion" name="question" rows="2" required
+                              placeholder="{% trans 'What is missing? E.g., Please check armpit-to-armpit measurement or internal wash label.' %}"
+                              class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"></textarea>
+                  </div>
+                  <div class="flex justify-end">
+                    <button type="submit"
+                            class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-xs cursor-pointer">
+                      ❓ {% trans "Send Doubt to Assistant" %}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {% else %}
+              <!-- Assistant Direct Note Form -->
+              <div class="space-y-2.5">
+                <h4 class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <span aria-hidden="true">➕</span> {% trans "Add Clarification Note" %}
+                </h4>
+                <p class="text-xs text-slate-500">
+                  {% trans "Discovered extra measurements, tags, or details after intake? Add them here to enrich the product listing." %}
+                </p>
+                <form method="post" action="{% url 'inventory:add_direct_clarification' product.pk %}" class="space-y-2.5">
+                  {% csrf_token %}
+                  <div>
+                    <label for="assistantNoteCategory" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      {% trans "Category" %}
+                    </label>
+                    <select id="assistantNoteCategory" name="category" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-emerald-500">
+                      {% for cat_val, cat_label in categories %}
+                      <option value="{{ cat_val }}">{{ cat_label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div>
+                    <label for="assistantNoteText" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      {% trans "Clarification Note / Details" %}
+                    </label>
+                    <textarea id="assistantNoteText" name="note" rows="2" required
+                              placeholder="{% trans 'E.g., Pit-to-pit: 54cm, length: 70cm, composition: 100% cotton.' %}"
+                              class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"></textarea>
+                  </div>
+                  <div class="flex justify-end">
+                    <button type="submit"
+                            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-xs cursor-pointer">
+                      ➕ {% trans "Save Clarification Note" %}
+                    </button>
+                  </div>
+                </form>
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Preserved Raw Notes Card (Accessible in Notes Tab on all devices) -->
+          <div id="intakeNotesCard" class="bg-amber-50/60 rounded-2xl border border-amber-200 p-4 sm:p-5 space-y-2">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs sm:text-sm font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                <span>📝</span> {% trans "Preserved Intake Notes" %}
+              </h3>
+              <span class="text-xs text-amber-700 font-semibold">{% trans "Read-Only" %}</span>
+            </div>
+            <p class="text-sm sm:text-base text-amber-950 font-mono whitespace-pre-wrap leading-relaxed">{% if product.raw_note %}{{ product.raw_note }}{% else %}<span class="italic text-amber-700/70">{% trans "No field notes provided during intake." %}</span>{% endif %}</p>
+            <div class="pt-2 border-t border-amber-200/60 text-xs text-amber-800 flex justify-between font-mono">
+              <span>{% trans "Cataloged by" %} {{ product.created_by.username|default:"System" }}</span>
+              <span>{{ product.created_at|date:"M d, Y H:i" }}</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- =============================================================== -->
+      <!-- TAB PANEL 4: POLICY & COMPLIANCE (CLAUSEGUARD)                  -->
+      <!-- =============================================================== -->
+      <div id="workspacePanelCompliance" role="tabpanel" aria-labelledby="tabBtnWorkspaceCompliance" data-workspace-panel="compliance" hidden="until-found">
+        <div id="clauseGuardCard" class="p-3.5 sm:p-6 space-y-4 min-w-0">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 min-w-0">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-base sm:text-lg shrink-0" aria-hidden="true">🛡️</span>
+              <div class="min-w-0">
+                <h2 class="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider break-words">
+                  {% trans "ClauseGuard Policy Compliance" %}
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-600 mt-0.5 break-words">
+                  {% trans "Two-stage advisory T&C check across marketplaces (top-3 clauses only)." %}
+                </p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+              <span id="clauseGuardVerdictBadge" class="text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider
+                {% if product.compliance_status == 'rejected' %}bg-rose-100 text-rose-900 border border-rose-300
+                {% elif product.compliance_status == 'manual_review' %}bg-amber-100 text-amber-950 border border-amber-300
+                {% else %}bg-emerald-100 text-emerald-900 border border-emerald-300{% endif %}">
+                {% if product.compliance_status == 'rejected' %}
+                  🚫 {% trans "Policy Violation" %}
+                {% elif product.compliance_status == 'manual_review' %}
+                  ⚠️ {% trans "Manual Review" %}
+                {% else %}
+                  ✅ {% trans "Approved" %}
+                {% endif %}
+              </span>
+              <span id="clauseGuardRiskScore" class="font-mono tabular-nums text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 border border-slate-300">
+                {% trans "Risk" %} {{ product.compliance_risk_score }}/100
+              </span>
+            </div>
+          </div>
+
+          <!-- Stage & Token Economics Bar -->
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-slate-700 min-w-0">
+            <span class="font-semibold break-words">
+              {{ product.get_compliance_stage_display }}
+            </span>
+            <span id="clauseGuardTokenSavings" class="font-mono tabular-nums text-emerald-800 font-bold break-words">
+              {% blocktrans with used=compliance_telemetry.tokens_used|default:0 baseline=compliance_telemetry.naive_baseline_tokens|default:12000 saved=compliance_telemetry.tokens_saved_percent|default:100 %}Tokens: {{ used }} vs ~{{ baseline }} full T&C · Saved {{ saved }}%{% endblocktrans %}
+            </span>
+          </div>
+
+          <!-- Per-Platform Compatibility Matrix -->
+          {% if compliance_platforms %}
+          <div class="space-y-2 min-w-0">
+            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              {% trans "Platform Compatibility Matrix" %}
+            </h3>
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0" id="clauseGuardPlatformMatrix">
+              {% for plat in compliance_platforms %}
+              <span data-platform-slug="{{ plat.slug }}"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border break-words max-w-full
+                      {% if plat.status == 'rejected' %}bg-rose-50 text-rose-900 border-rose-300
+                      {% elif plat.status == 'manual_review' %}bg-amber-50 text-amber-950 border-amber-300
+                      {% else %}bg-emerald-50 text-emerald-900 border-emerald-200{% endif %}">
+                {% if plat.status == 'rejected' %}
+                  <span aria-hidden="true">🚫</span>
+                {% elif plat.status == 'manual_review' %}
+                  <span aria-hidden="true">⚠️</span>
+                {% else %}
+                  <span aria-hidden="true">✅</span>
+                {% endif %}
+                <span>{{ plat.name }}</span>
+                {% if plat.clauses %}
+                  <span class="font-mono text-xs opacity-90">({{ plat.clauses|join:", " }})</span>
+                {% endif %}
+              </span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Matched / Violated Policy Clauses -->
+          {% if compliance_clauses %}
+          <div class="space-y-2 min-w-0" id="clauseGuardCitationsList">
+            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              {% trans "Flagged Policy Clauses" %}
+            </h3>
+            {% for clause in compliance_clauses %}
+            <div class="p-3 rounded-xl border text-xs sm:text-sm space-y-1 min-w-0
+              {% if clause.severity == 'critical' %}bg-rose-50/70 border-rose-200 text-rose-950
+              {% else %}bg-amber-50/70 border-amber-200 text-amber-950{% endif %}">
+              <div class="flex flex-wrap items-center justify-between gap-1.5 min-w-0">
+                <span class="font-bold break-words">
+                  <span class="font-mono">[{{ clause.code }}]</span> {{ clause.title }}
+                </span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-white/90 border border-slate-200 text-slate-800 shrink-0">
+                  {{ clause.site_name }}
+                </span>
+              </div>
+              {% if clause.explanation %}
+              <p class="text-xs leading-relaxed break-words">{{ clause.explanation }}</p>
+              {% endif %}
+              {% if clause.excerpt %}
+              <p class="text-xs font-mono text-slate-700 break-words">
+                {% trans "Trigger:" %} {{ clause.excerpt }}
+              </p>
               {% endif %}
             </div>
             {% endfor %}
           </div>
-        </details>
-        {% endif %}
+          {% elif compliance_summary %}
+          <p class="text-xs sm:text-sm text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-xl p-3 break-words">
+            ✅ {{ compliance_summary }}
+          </p>
+          {% endif %}
 
-      </div>
-
-      <!-- Preserved Raw Notes Card (Hidden on Mobile) -->
-      <div class="hidden lg:block bg-amber-50/60 rounded-2xl border border-amber-200 p-5 space-y-2">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs sm:text-sm font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-            <span>📝</span> {% trans "Preserved Intake Notes" %}
-          </h3>
-          <span class="text-xs text-amber-700 font-semibold">{% trans "Read-Only" %}</span>
-        </div>
-        <p class="text-sm sm:text-base text-amber-950 font-mono whitespace-pre-wrap leading-relaxed">
-          {% if product.raw_note %}{{ product.raw_note }}{% else %}<span class="italic text-amber-700/70">{% trans "No field notes provided during intake." %}</span>{% endif %}
-        </p>
-        <div class="pt-2 border-t border-amber-200/60 text-xs text-amber-800 flex justify-between">
-          <span>{% trans "Cataloged by" %} {{ product.created_by.username|default:"System" }}</span>
-          <span>{{ product.created_at|date:"M d, Y H:i" }}</span>
-        </div>
-      </div>
-
-      <!-- Product Clarifications & Notes Card -->
-      <div id="clarifications-section" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div class="flex items-center gap-2">
-            <span class="text-base sm:text-lg" aria-hidden="true">💡</span>
-            <h3 class="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
-              {% trans "Product Clarifications & Notes" %}
-            </h3>
-          </div>
-          <div class="flex items-center gap-1.5 text-xs font-bold">
-            {% if pending_clarifications.exists %}
-            <span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-              {{ pending_clarifications.count }} {% trans "pending" %}
-            </span>
-            {% endif %}
-            {% if resolved_clarifications.exists %}
-            <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-              {{ resolved_clarifications.count }} {% trans "resolved" %}
-            </span>
-            {% endif %}
-            {% if not pending_clarifications.exists and not resolved_clarifications.exists %}
-            <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
-              {% trans "None" %}
-            </span>
-            {% endif %}
-          </div>
-        </div>
-
-        <!-- Pending Clarifications List -->
-        {% if pending_clarifications.exists %}
-        <div class="space-y-3">
-          <h4 class="text-xs sm:text-sm font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-            <span aria-hidden="true">⚠️</span> {% trans "Pending Doubts (Needs Answer)" %}
-          </h4>
-          {% for clarif in pending_clarifications %}
-          <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 space-y-2.5">
-            <div class="flex items-start justify-between gap-2">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="px-2 py-0.5 text-xs font-bold uppercase tracking-wider rounded-md bg-amber-200 text-amber-900">
-                  {{ clarif.get_category_display }}
-                </span>
-                <span class="text-xs text-slate-500">
-                  {{ clarif.asked_by.username|default:"Manager" }} &bull; {{ clarif.created_at|date:"M d, H:i" }}
-                </span>
-              </div>
-              {% if can_manage %}
-              <form method="post" action="{% url 'inventory:delete_clarification' product.pk clarif.pk %}" class="inline"
-                    data-confirm-message="{% trans 'Dismiss this clarification question?' %}">
-                {% csrf_token %}
-                <button type="submit" aria-label="{% trans 'Dismiss question' %}"
-                        class="text-sm text-slate-500 hover:text-rose-600 transition p-1 cursor-pointer" title="{% trans 'Dismiss question' %}">
-                  ✕
-                </button>
-              </form>
-              {% endif %}
-            </div>
-
-            <p class="text-sm sm:text-base font-semibold text-slate-900 leading-snug">
-              {{ clarif.question }}
+          <!-- Auto-Sanitized Copy Actions -->
+          {% if compliance_sanitized_actions %}
+          <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-950 text-xs sm:text-sm space-y-1 min-w-0">
+            <p class="font-bold flex items-center gap-1.5">
+              <span aria-hidden="true">✍️</span> {% trans "Auto-Sanitized Copywriting Notes" %}
             </p>
-
-            <!-- Inline Answer Form -->
-            <form method="post" action="{% url 'inventory:answer_clarification' product.pk clarif.pk %}" class="space-y-2 pt-1">
-              {% csrf_token %}
-              <div class="flex flex-col sm:flex-row gap-2">
-                <input type="text" name="answer" required aria-label="{% trans 'Answer to clarification question' %}"
-                       placeholder="{% trans 'Enter answer (e.g. 52 cm chest, composition tag...)' %}"
-                       class="flex-1 px-3.5 py-2 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
-                <button type="submit"
-                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-lg transition whitespace-nowrap shadow-sm cursor-pointer">
-                  {% trans "Answer" %}
-                </button>
-              </div>
-            </form>
+            <ul class="list-disc list-inside text-xs space-y-0.5 pl-1 break-words">
+              {% for note in compliance_sanitized_actions %}
+              <li>{{ note }}</li>
+              {% endfor %}
+            </ul>
           </div>
-          {% endfor %}
-        </div>
-        {% endif %}
+          {% endif %}
 
-        <!-- Resolved Clarifications & Direct Notes List -->
-        {% if resolved_clarifications.exists %}
-        <div class="space-y-2.5 pt-2 border-t border-slate-100">
-          <h4 class="text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wider">
-            {% trans "Resolved Clarifications & Notes" %}
-          </h4>
-          {% for clarif in resolved_clarifications %}
-          <div class="bg-emerald-50/50 border border-emerald-200 rounded-xl p-3.5 space-y-1.5 text-xs sm:text-sm">
-            <div class="flex items-center justify-between text-xs gap-2">
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="px-2 py-0.5 font-bold uppercase tracking-wider rounded-md {% if clarif.is_direct_note %}bg-teal-100 text-teal-800 border border-teal-200{% else %}bg-emerald-100 text-emerald-800 border border-emerald-200{% endif %} text-xs">
-                  {{ clarif.get_category_display }}
-                </span>
-                {% if clarif.is_direct_note %}
-                <span class="px-1.5 py-0.5 font-semibold rounded bg-slate-100 text-slate-700 text-xs">
-                  📝 {% trans "Direct Note" %}
-                </span>
-                {% else %}
-                <span class="px-1.5 py-0.5 font-semibold rounded bg-emerald-100 text-emerald-800 text-xs">
-                  ❓ {% trans "Resolved Doubt" %}
-                </span>
-                {% endif %}
-                <span class="text-slate-500">
-                  {{ clarif.answered_by.username|default:clarif.asked_by.username|default:"Staff" }} &bull; {{ clarif.answered_at|default:clarif.created_at|date:"M d, H:i" }}
-                </span>
-              </div>
-              {% if can_manage %}
-              <form method="post" action="{% url 'inventory:delete_clarification' product.pk clarif.pk %}" class="inline shrink-0"
-                    data-confirm-message="{% trans 'Delete this clarification note?' %}">
-                {% csrf_token %}
-                <button type="submit" aria-label="{% trans 'Delete note' %}"
-                        class="text-sm text-slate-500 hover:text-rose-600 transition p-1 cursor-pointer" title="{% trans 'Delete note' %}">
-                  ✕
-                </button>
-              </form>
-              {% endif %}
-            </div>
-
-            {% if clarif.is_direct_note %}
-            <p class="text-slate-900 font-medium bg-white p-2.5 rounded-lg border border-emerald-100 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
-              {{ clarif.answer }}
-            </p>
-            {% else %}
-            <p class="text-slate-800 font-medium">
-              <span class="font-bold text-slate-900">Q:</span> {{ clarif.question }}
-            </p>
-            <p class="text-emerald-950 font-semibold bg-white p-2.5 rounded-lg border border-emerald-100 text-xs sm:text-sm">
-              <span class="text-emerald-700">✓</span> {{ clarif.answer }}
-            </p>
-            {% endif %}
-          </div>
-          {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- Add Clarification Forms -->
-        {% if not product.is_deleted %}
-        <div class="pt-3 border-t border-slate-100 space-y-3">
+          <!-- Manager On-Demand Targeted Re-Verify Action -->
           {% if can_manage %}
-          <!-- Manager Dual Mode Switcher -->
-          <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-xl" role="tablist">
-            <button type="button" id="tabBtnDirectNote" onclick="switchClarificationTab('direct')"
-                    role="tab" aria-selected="true" aria-controls="panelDirectNote"
-                    class="flex-1 py-1.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition shadow-xs bg-white text-slate-900 cursor-pointer">
-              📝 {% trans "Add Direct Note" %}
-            </button>
-            <button type="button" id="tabBtnAskDoubt" onclick="switchClarificationTab('doubt')"
-                    role="tab" aria-selected="false" aria-controls="panelAskDoubt"
-                    class="flex-1 py-1.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition text-slate-600 hover:text-slate-900 cursor-pointer">
-              ❓ {% trans "Ask Assistant (Doubt)" %}
-            </button>
-          </div>
-
-          <!-- Manager Panel 1: Direct Note Form -->
-          <div id="panelDirectNote" role="tabpanel" aria-labelledby="tabBtnDirectNote" class="space-y-2.5">
-            <p class="text-xs text-slate-500">
-              {% trans "Record supplemental measurements, composition tags, or condition details discovered after intake. Instantly saved and available for AI copywriting without setting product to Awaiting Info." %}
-            </p>
-            <form method="post" action="{% url 'inventory:add_direct_clarification' product.pk %}" class="space-y-2.5">
+          <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 min-w-0">
+            <span class="text-xs text-slate-600 break-words font-mono">
+              {% if product.compliance_checked_at %}
+                {% trans "Last checked:" %} {{ product.compliance_checked_at|date:"M d, Y H:i" }}
+              {% else %}
+                {% trans "Evaluated locally via Stage 1 rules." %}
+              {% endif %}
+            </span>
+            <form method="post" action="{% url 'inventory:product_verify_compliance' product.pk %}" class="shrink-0">
               {% csrf_token %}
-              <div>
-                <label for="directNoteCategory" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                  {% trans "Category" %}
-                </label>
-                <select id="directNoteCategory" name="category" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-emerald-500">
-                  {% for cat_val, cat_label in categories %}
-                  <option value="{{ cat_val }}">{{ cat_label }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div>
-                <label for="directNoteText" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                  {% trans "Clarification Note / Details" %}
-                </label>
-                <textarea id="directNoteText" name="note" rows="2" required
-                          placeholder="{% trans 'E.g., Pit-to-pit: 54cm, length: 70cm, YKK zipper, 100% heavy cotton.' %}"
-                          class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"></textarea>
-              </div>
-              <div class="flex justify-end">
-                <button type="submit"
-                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-sm cursor-pointer">
-                  ➕ {% trans "Save Clarification Note" %}
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <!-- Manager Panel 2: Ask Doubt Form -->
-          <div id="panelAskDoubt" role="tabpanel" aria-labelledby="tabBtnAskDoubt" class="hidden space-y-2.5">
-            <p class="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
-              ⚠️ {% trans "Asking a doubt will transition the product lifecycle status to 'Awaiting Info' and alert the sourcing assistant to provide an answer." %}
-            </p>
-            <form method="post" action="{% url 'inventory:add_clarification' product.pk %}" class="space-y-2.5">
-              {% csrf_token %}
-              <div>
-                <label for="askDoubtCategory" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                  {% trans "Category" %}
-                </label>
-                <select id="askDoubtCategory" name="category" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-amber-500">
-                  {% for cat_val, cat_label in categories %}
-                  <option value="{{ cat_val }}">{{ cat_label }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div>
-                <label for="askDoubtQuestion" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                  {% trans "Question for Assistant" %}
-                </label>
-                <textarea id="askDoubtQuestion" name="question" rows="2" required
-                          placeholder="{% trans 'What is missing? E.g., Please check armpit-to-armpit measurement or internal wash label.' %}"
-                          class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"></textarea>
-              </div>
-              <div class="flex justify-end">
-                <button type="submit"
-                        class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-sm cursor-pointer">
-                  ❓ {% trans "Send Doubt to Assistant" %}
-                </button>
-              </div>
-            </form>
-          </div>
-
-          {% else %}
-          <!-- Assistant Direct Note Form -->
-          <div class="space-y-2.5">
-            <h4 class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <span aria-hidden="true">➕</span> {% trans "Add Clarification Note" %}
-            </h4>
-            <p class="text-xs text-slate-500">
-              {% trans "Discovered extra measurements, tags, or details after intake? Add them here to enrich the product listing." %}
-            </p>
-            <form method="post" action="{% url 'inventory:add_direct_clarification' product.pk %}" class="space-y-2.5">
-              {% csrf_token %}
-              <div>
-                <label for="assistantNoteCategory" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                  {% trans "Category" %}
-                </label>
-                <select id="assistantNoteCategory" name="category" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-emerald-500">
-                  {% for cat_val, cat_label in categories %}
-                  <option value="{{ cat_val }}">{{ cat_label }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div>
-                <label for="assistantNoteText" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                  {% trans "Clarification Note / Details" %}
-                </label>
-                <textarea id="assistantNoteText" name="note" rows="2" required
-                          placeholder="{% trans 'E.g., Pit-to-pit: 54cm, length: 70cm, composition: 100% cotton.' %}"
-                          class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"></textarea>
-              </div>
-              <div class="flex justify-end">
-                <button type="submit"
-                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-sm cursor-pointer">
-                  ➕ {% trans "Save Clarification Note" %}
-                </button>
-              </div>
+              <button type="submit" id="verifyComplianceBtn"
+                      class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white text-xs sm:text-sm font-bold rounded-xl shadow-2xs transition cursor-pointer min-h-[38px]">
+                <span aria-hidden="true">🛡️</span>
+                <span>{% trans "Verify Compliance (AI)" %}</span>
+              </button>
             </form>
           </div>
           {% endif %}
         </div>
-        {% endif %}
       </div>
 
-      <!-- Product State Change History / Audit Trail Card (Hidden on Mobile) -->
-      <div id="status-history-section" class="hidden lg:block bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div class="flex items-center gap-2">
-            <span class="text-base sm:text-lg">📜</span>
-            <h3 class="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
-              {% trans "Lifecycle Audit Trail" %}
-            </h3>
-          </div>
-          <span id="status-logs-count-badge" class="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
-            {{ status_logs|length }} {% trans "changes" %}
-          </span>
-        </div>
+    </div>
 
-        {% if status_logs %}
-        <div class="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
-          {% for log in status_logs %}
-          <div class="status-log-entry relative text-xs sm:text-sm {% if forloop.counter > 4 %}hidden extra-status-log{% endif %}">
-            <!-- Timeline Node Dot -->
-            <div class="absolute -left-6 top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- DEPRIORITIZED FOOTER DISCLOSURE: PRODUCT STATE CHANGE HISTORY / LOGS  -->
+  <!-- ===================================================================== -->
+  <details id="status-history-disclosure" class="bg-slate-100/70 hover:bg-slate-100 border border-slate-200/80 rounded-2xl transition group">
+    <summary id="status-history-card" class="list-none cursor-pointer select-none px-4 py-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
+      <div class="flex items-center gap-2">
+        <span class="text-sm opacity-75" aria-hidden="true">📜</span>
+        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">
+          {% trans "Lifecycle Audit Trail" %}
+        </h3>
+        <span id="status-logs-count-badge" class="font-mono tabular-nums text-xs font-semibold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-600">
+          {{ status_logs|length }} {% trans "changes" %}
+        </span>
+      </div>
+      <div class="flex items-center gap-2 text-xs font-medium text-slate-500">
+        <span>{% trans "Archival state log (click to expand)" %}</span>
+        <span class="text-slate-400 group-open:rotate-180 transition-transform" aria-hidden="true">▼</span>
+      </div>
+    </summary>
+
+    <!-- Collapsible Audit Timeline Body (Hidden until expanded) -->
+    <div id="status-history-section" class="px-4 pb-4 pt-2 border-t border-slate-200/70 bg-white rounded-b-2xl space-y-2.5">
+      {% if status_logs %}
+      <div class="divide-y divide-slate-100">
+        {% for log in status_logs %}
+        <div class="status-log-entry py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs {% if forloop.counter > 6 %}hidden extra-status-log{% endif %}">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full shrink-0
               {% if log.to_status == 'ready' %}bg-emerald-500
               {% elif log.to_status == 'published' %}bg-blue-500
               {% elif log.to_status == 'sold' %}bg-purple-500
               {% elif log.to_status == 'awaiting_info' %}bg-amber-500
               {% elif log.to_status == 'price_pending' %}bg-amber-600
               {% elif log.to_status == 'blocked' %}bg-rose-500
-              {% else %}bg-slate-400{% endif %}">
-            </div>
+              {% else %}bg-slate-400{% endif %}" aria-hidden="true"></span>
 
-            <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-2 hover:bg-slate-100/60 transition">
-              <!-- Transition Badges & Time -->
-              <div class="flex flex-wrap items-center justify-between gap-1.5">
-                <div class="flex flex-wrap items-center gap-1.5 font-bold text-xs">
-                  {% if log.from_status %}
-                  <span class="px-2 py-0.5 rounded-full
-                    {% if log.from_status == 'ready' %}bg-emerald-100 text-emerald-800
-                    {% elif log.from_status == 'published' %}bg-blue-100 text-blue-800
-                    {% elif log.from_status == 'sold' %}bg-purple-100 text-purple-800
-                    {% elif log.from_status == 'awaiting_info' %}bg-amber-100 text-amber-800
-                    {% elif log.from_status == 'price_pending' %}bg-amber-100 text-amber-900
-                    {% elif log.from_status == 'blocked' %}bg-rose-100 text-rose-800
-                    {% else %}bg-slate-200 text-slate-700{% endif %}">
-                    {{ log.get_from_status_display }}
-                  </span>
-                  <span class="text-slate-400 font-normal">&rarr;</span>
-                  {% else %}
-                  <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">
-                    {% trans "New" %}
-                  </span>
-                  <span class="text-slate-400 font-normal">&rarr;</span>
-                  {% endif %}
+            {% if log.from_status %}
+            <span class="px-2 py-0.5 rounded-md font-semibold bg-slate-100 text-slate-700">
+              {{ log.get_from_status_display }}
+            </span>
+            <span class="text-slate-400">&rarr;</span>
+            {% else %}
+            <span class="px-2 py-0.5 rounded-md font-semibold bg-slate-100 text-slate-600">
+              {% trans "New" %}
+            </span>
+            <span class="text-slate-400">&rarr;</span>
+            {% endif %}
 
-                  <span class="px-2 py-0.5 rounded-full
-                    {% if log.to_status == 'ready' %}bg-emerald-100 text-emerald-800
-                    {% elif log.to_status == 'published' %}bg-blue-100 text-blue-800
-                    {% elif log.to_status == 'sold' %}bg-purple-100 text-purple-800
-                    {% elif log.to_status == 'awaiting_info' %}bg-amber-100 text-amber-800
-                    {% elif log.to_status == 'price_pending' %}bg-amber-100 text-amber-900
-                    {% elif log.to_status == 'blocked' %}bg-rose-100 text-rose-800
-                    {% else %}bg-slate-200 text-slate-700{% endif %}">
-                    {{ log.get_to_status_display }}
-                  </span>
-                </div>
+            <span class="px-2 py-0.5 rounded-md font-bold
+              {% if log.to_status == 'ready' %}bg-emerald-100 text-emerald-800
+              {% elif log.to_status == 'published' %}bg-blue-100 text-blue-800
+              {% elif log.to_status == 'sold' %}bg-purple-100 text-purple-800
+              {% elif log.to_status == 'awaiting_info' %}bg-amber-100 text-amber-800
+              {% elif log.to_status == 'price_pending' %}bg-amber-100 text-amber-900
+              {% elif log.to_status == 'blocked' %}bg-rose-100 text-rose-800
+              {% else %}bg-slate-200 text-slate-700{% endif %}">
+              {{ log.get_to_status_display }}
+            </span>
 
-                <time class="text-xs text-slate-500 font-medium whitespace-nowrap" datetime="{{ log.created_at|date:'c' }}">
-                  {{ log.created_at|date:"d M Y, H:i" }}
-                </time>
-              </div>
-
-              <!-- Actor Attribution -->
-              <div class="flex items-center justify-between text-xs text-slate-600 gap-2">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                  <span class="text-slate-400">👤</span>
-                  {% if log.changed_by %}
-                  <span class="font-bold text-slate-800">{{ log.changed_by.username }}</span>
-                  <span class="px-1.5 py-0.5 rounded text-xs font-semibold {% if log.changed_by.is_staff or log.changed_by.is_superuser %}bg-indigo-100 text-indigo-800{% else %}bg-slate-200 text-slate-700{% endif %}">
-                    {% if log.changed_by.is_staff or log.changed_by.is_superuser %}{% trans "Manager" %}{% else %}{% trans "Assistant" %}{% endif %}
-                  </span>
-                  {% else %}
-                  <span class="italic text-slate-500">{% trans "System / Automatic" %}</span>
-                  {% endif %}
-                </div>
-
-                {% if log.trigger %}
-                <span class="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-xs font-mono text-slate-600">
-                  {{ log.trigger }}
-                </span>
-                {% endif %}
-              </div>
-
-              <!-- Notes / Description -->
-              {% if log.notes %}
-              <p class="text-xs sm:text-sm text-slate-700 bg-white/80 p-2 rounded-lg border border-slate-200/60 font-medium">
-                {{ log.notes }}
-              </p>
-              {% endif %}
-            </div>
+            {% if log.notes %}
+            <span class="text-slate-600 font-medium break-words">&mdash; {{ log.notes }}</span>
+            {% endif %}
           </div>
-          {% endfor %}
-        </div>
 
-        {% if status_logs|length > 4 %}
-        <div class="pt-2 text-center">
-          <button type="button" id="toggleStatusLogsBtn" aria-expanded="false"
-                  class="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition">
-            {% trans "View full history" %} ({{ status_logs|length }})
-          </button>
-        </div>
-        {% endif %}
+          <div class="flex flex-wrap items-center gap-2 text-slate-500 shrink-0 font-mono">
+            {% if log.changed_by %}
+            <span class="font-sans font-semibold text-slate-700">{{ log.changed_by.username }}</span>
+            <span class="font-sans px-1.5 py-0.5 rounded text-xs font-semibold {% if log.changed_by.is_staff or log.changed_by.is_superuser %}bg-indigo-50 text-indigo-800{% else %}bg-slate-100 text-slate-700{% endif %}">
+              {% if log.changed_by.is_staff or log.changed_by.is_superuser %}{% trans "Manager" %}{% else %}{% trans "Assistant" %}{% endif %}
+            </span>
+            {% else %}
+            <span class="font-sans italic text-slate-500">{% trans "System / Automatic" %}</span>
+            {% endif %}
 
-        {% else %}
-        <p class="text-xs sm:text-sm text-slate-500 italic">
-          {% trans "No status transitions recorded yet." %}
-        </p>
-        {% endif %}
+            {% if log.trigger %}
+            <span class="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-600">
+              {{ log.trigger }}
+            </span>
+            {% endif %}
+
+            <time class="text-slate-500 whitespace-nowrap" datetime="{{ log.created_at|date:'c' }}">
+              {{ log.created_at|date:"d M Y, H:i" }}
+            </time>
+          </div>
+        </div>
+        {% endfor %}
       </div>
 
-    </div>
-
-    <!-- Right Column: Staging, AI Generator & Sales Form (7 cols) -->
-    <div class="order-1 lg:order-2 lg:col-span-7 space-y-6">
-
-      {% if has_unapplied_clarifications %}
-      <!-- AI Regeneration Callout -->
-      <div class="ai-regeneration-callout bg-amber-50 border border-amber-300 text-amber-900 rounded-2xl p-4 flex items-start gap-3 shadow-sm">
-        <span class="text-xl shrink-0" aria-hidden="true">💡</span>
-        <div class="space-y-1">
-          <h4 class="font-bold text-xs sm:text-sm uppercase tracking-wider text-amber-950">{% trans "New clarification responses available!" %}</h4>
-          <p class="text-xs sm:text-sm text-amber-800">
-            {% trans "Answers from assistant have been provided. Re-generate the listing copy to include these details in the AI description." %}
-          </p>
-        </div>
+      {% if status_logs|length > 6 %}
+      <div class="pt-1 text-center">
+        <button type="button" id="toggleStatusLogsBtn" aria-expanded="false"
+                class="text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition cursor-pointer">
+          {% trans "View full history" %} ({{ status_logs|length }})
+        </button>
       </div>
       {% endif %}
 
-      <!-- AI Action Banner -->
-      <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-5 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 class="font-extrabold text-base sm:text-lg flex items-center gap-2">
-            <span aria-hidden="true">✨</span> {% trans "Gemini Multimodal Vision" %}
-          </h2>
-          <p class="text-xs sm:text-sm text-emerald-100 mt-0.5">
-            {% trans "Analyzes attached photos & raw notes to draft an SEO marketplace title and description." %}
-          </p>
-        </div>
-
-        {% if can_manage %}
-        <form method="post" action="{% url 'inventory:generate_ai' product.pk %}" id="aiForm">
-          {% csrf_token %}
-          <button type="submit" id="aiBtn"
-                  class="whitespace-nowrap px-4 py-2.5 bg-white hover:bg-emerald-50 text-emerald-900 font-bold text-xs sm:text-sm rounded-xl shadow-md transition flex items-center gap-1.5">
-            <span id="aiIcon" aria-hidden="true">⚡</span>
-            <span id="aiText">{% trans "Generate AI Listing" %}</span>
-          </button>
-        </form>
-        {% else %}
-        <span class="text-xs sm:text-sm bg-white/20 text-white px-3 py-1.5 rounded-lg">{% trans "Manager Only" %}</span>
-        {% endif %}
-      </div>
-
-      <!-- Listing Staging Form Card -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-6 space-y-5">
-        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-          <h2 class="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider">{% trans "Marketplace Listing Copy" %}</h2>
-          <div class="flex items-center gap-2">
-            {% if product.sale_price is not None %}
-            <span class="text-xs sm:text-sm font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-              €{{ product.sale_price|floatformat:2 }}
-            </span>
-            {% endif %}
-            <span class="text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-full {% if product.is_sold %}bg-purple-100 text-purple-900 border border-purple-200{% else %}bg-emerald-100 text-emerald-800{% endif %}">
-              {% if product.is_sold %}
-                {% if product.sold_channel_type == 'in_store' %}
-                  🏪 {% trans "Sold: In-Store" %}
-                {% elif product.sold_channel_type == 'marketplace' and product.sold_marketplace %}
-                  🌐 {% trans "Sold on" %} {{ product.sold_marketplace.name }}
-                {% elif product.sold_channel_type == 'other' %}
-                  📦 {% trans "Sold: Other" %}
-                {% else %}
-                  🏷️ {% trans "Status: Sold" %}
-                {% endif %}
-              {% else %}
-                {% trans "Status: Available for Sale" %}
-              {% endif %}
-            </span>
-          </div>
-        </div>
-
-        <form method="post" class="space-y-5">
-          {% csrf_token %}
-
-          {% if form.non_field_errors %}
-          <div role="alert" class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-semibold space-y-1">
-            {% for error in form.non_field_errors %}
-              <p>{{ error }}</p>
-            {% endfor %}
-          </div>
-          {% endif %}
-
-          <!-- Title Field with Copy Button -->
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <label for="id_ai_title" class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider">
-                {% trans "Listing Title" %}
-              </label>
-              <button type="button" onclick="copyToClipboard('id_ai_title', this)"
-                      class="text-xs sm:text-sm font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md transition">
-                <span aria-hidden="true">📋</span> {% trans "Copy Title" %}
-              </button>
-            </div>
-            {{ form.ai_title }}
-            {% if form.ai_title.errors %}
-            <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.ai_title.errors.0 }}</p>
-            {% endif %}
-          </div>
-
-          <!-- Description Field with Copy Button -->
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <label for="id_ai_description" class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider">
-                {% trans "Listing Description / Copy" %}
-              </label>
-              <button type="button" onclick="copyToClipboard('id_ai_description', this)"
-                      class="text-xs sm:text-sm font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md transition">
-                <span aria-hidden="true">📋</span> {% trans "Copy Description" %}
-              </button>
-            </div>
-            {{ form.ai_description }}
-            {% if form.ai_description.errors %}
-            <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.ai_description.errors.0 }}</p>
-            {% endif %}
-          </div>
-
-          <!-- Pricing & Status Controls -->
-          <div class="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-            <div>
-              <label for="id_sale_price" class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                {% trans "Sale Price (€)" %}
-              </label>
-              <div class="relative flex items-center">
-                <span class="absolute left-3 text-slate-400 font-bold text-base sm:text-sm">€</span>
-                <input type="number" step="0.01" min="0" name="sale_price" id="id_sale_price"
-                       value="{{ form.sale_price.value|unlocalize|default:'' }}"
-                       placeholder="0.00"
-                       {% if not can_manage %}readonly disabled{% endif %}
-                       class="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 {% if not can_manage %}bg-slate-50 cursor-not-allowed text-slate-600{% endif %}">
-              </div>
-              {% if form.sale_price.errors %}
-              <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.sale_price.errors.0 }}</p>
-              {% endif %}
-              <!-- Benchmark Valuation References -->
-              {% if product.estimated_retail_price is not None or product.estimated_resale_price is not None %}
-              <div class="mt-2 space-y-1.5" id="detail-valuation-benchmarks">
-                <div class="flex flex-wrap items-center gap-1.5 text-xs">
-                  {% if product.estimated_retail_price is not None %}
-                  <span id="ref-retail-price" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium">
-                    <span class="text-slate-400" aria-hidden="true">🏷️</span> <span class="font-semibold">{% trans "New Retail (MSRP):" %}</span> <span class="font-mono font-bold">€{{ product.estimated_retail_price|floatformat:2 }}</span>
-                  </span>
-                  {% endif %}
-                  {% if product.estimated_resale_price is not None %}
-                  <span id="ref-resale-price" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/60 font-medium">
-                    <span class="text-emerald-500" aria-hidden="true">✨</span> <span class="font-semibold">{% trans "Estimated resale:" %}</span> <span class="font-mono font-bold">€{{ product.estimated_resale_price|floatformat:2 }}</span>
-                  </span>
-                  {% endif %}
-                </div>
-                {% if can_manage and product.estimated_resale_price is not None %}
-                <div>
-                  <button type="button" id="btnApplyResalePrice" data-resale="{{ product.estimated_resale_price|unlocalize }}"
-                          class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded transition cursor-pointer shadow-xs active:scale-95">
-                    <span aria-hidden="true">✨</span> {% blocktrans with price=product.estimated_resale_price|floatformat:2 %}Apply resale (€{{ price }}){% endblocktrans %}
-                  </button>
-                </div>
-                {% endif %}
-              </div>
-              {% endif %}
-            </div>
-
-            <div>
-              <label for="id_status" class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                {% trans "Lifecycle Status" %}
-              </label>
-              {{ form.status }}
-              {% if form.status.errors %}
-              <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.status.errors.0 }}</p>
-              {% endif %}
-            </div>
-
-            <div>
-              <label for="{{ form.pallet.id_for_label }}" class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                <span class="flex items-center gap-1.5">
-                  <span aria-hidden="true">📦</span>
-                  <span>{% trans "Origin Pallet" %}</span>
-                </span>
-              </label>
-              {{ form.pallet }}
-              {% if form.pallet.errors %}
-              <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.pallet.errors.0 }}</p>
-              {% endif %}
-            </div>
-
-            <div class="sm:col-span-3 rounded-xl p-4 bg-slate-50 border border-slate-200 space-y-3">
-              <div class="flex items-center justify-between">
-                <div>
-                  <label class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-0.5">
-                    {% trans "Sold Status" %}
-                  </label>
-                  <label class="flex items-center gap-2.5 cursor-pointer select-none py-1">
-                    {{ form.is_sold }}
-                    <span class="text-sm font-semibold text-slate-800">{% trans "Mark Product as Sold" %}</span>
-                  </label>
-                </div>
-                {% if product.is_sold %}
-                <div class="text-right">
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold {% if product.sold_channel_type == 'in_store' %}bg-emerald-100 text-emerald-800 border border-emerald-300{% elif product.sold_channel_type == 'marketplace' %}bg-blue-100 text-blue-800 border border-blue-300{% else %}bg-purple-100 text-purple-800 border border-purple-300{% endif %}">
-                    {% if product.sold_channel_type == 'in_store' %}🏪 {{ product.sale_channel_display }}{% elif product.sold_channel_type == 'marketplace' %}🌐 {{ product.sale_channel_display }}{% else %}📦 {{ product.sale_channel_display }}{% endif %}
-                  </span>
-                  {% if product.sold_at %}
-                  <p class="text-xs text-slate-500 mt-1">{% trans "Sold on" %} {{ product.sold_at|date:"M d, Y H:i" }}</p>
-                  {% endif %}
-                  {% if product.sold_channel_notes %}
-                  <p class="text-xs text-slate-600 font-medium italic mt-0.5">"{{ product.sold_channel_notes }}"</p>
-                  {% endif %}
-                </div>
-                {% endif %}
-              </div>
-
-              <!-- Collapsible Channel Controls (Visible when #id_is_sold is checked) -->
-              <div id="soldChannelContainer" class="pt-2 border-t border-slate-200 space-y-3 {% if not form.is_sold.value and not product.is_sold %}hidden{% endif %}">
-                <div>
-                  <label for="id_sold_channel_type" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    {% trans "Where was it sold?" %} <span class="text-rose-500">*</span>
-                  </label>
-
-                  <!-- 1-Click Quick Picks -->
-                  <div class="flex flex-wrap items-center gap-2 mb-2">
-                    <span class="text-xs text-slate-500 font-medium">{% trans "Quick picks:" %}</span>
-                    <button type="button" id="btnQuickInStore" data-channel="in_store" onclick="selectSaleChannel('in_store')"
-                            class="quick-channel-btn inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-300 hover:border-emerald-300 transition shadow-xs cursor-pointer">
-                      🏪 {% trans "In-Store (Tienda física)" %}
-                    </button>
-                    {% for item in site_links_data %}
-                      {% if item.link and item.link.is_active %}
-                      <button type="button" onclick="selectSaleMarketplace('{{ item.site.id }}')"
-                              class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-300 hover:border-blue-300 transition shadow-xs cursor-pointer">
-                        🌐 {{ item.site.name }}
-                      </button>
-                      {% endif %}
-                    {% endfor %}
-                  </div>
-
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      {{ form.sold_channel_type }}
-                      {% if form.sold_channel_type.errors %}
-                      <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.sold_channel_type.errors.0 }}</p>
-                      {% endif %}
-                    </div>
-                    <div id="soldMarketplaceWrapper" class="{% if form.sold_channel_type.value != 'marketplace' and product.sold_channel_type != 'marketplace' %}hidden{% endif %}">
-                      <label for="id_sold_marketplace" class="sr-only">{% trans "Sold Marketplace" %}</label>
-                      {{ form.sold_marketplace }}
-                      {% if form.sold_marketplace.errors %}
-                      <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.sold_marketplace.errors.0 }}</p>
-                      {% endif %}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label for="id_sold_channel_notes" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    {% trans "Sale Reference / Notes" %} <span class="text-slate-500 font-normal">({% trans "Optional" %})</span>
-                  </label>
-                  {{ form.sold_channel_notes }}
-                  {% if form.sold_channel_notes.errors %}
-                  <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.sold_channel_notes.errors.0 }}</p>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Public Storefront Taxonomy & Visibility Controls (Hidden on Mobile) -->
-          <div class="hidden lg:block pt-4 border-t border-slate-100 space-y-4">
-            <input type="hidden" name="storefront_controls_present" value="1">
-            <div class="flex items-center justify-between">
-              <h3 class="text-xs sm:text-sm font-bold text-teal-900 uppercase tracking-wider flex items-center gap-1.5">
-                <span>🏪</span> {% trans "Public Storefront & Taxonomy (Rápido Pack)" %}
-              </h3>
-              <span class="text-xs font-mono text-slate-500">{{ product.public_reference }}</span>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label for="id_category" class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  {% trans "Storefront Category" %}
-                </label>
-                {{ form.category }}
-              </div>
-              <div>
-                <label for="id_condition" class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  {% trans "Condition State" %}
-                </label>
-                {{ form.condition }}
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-              <label class="flex items-center gap-2.5 cursor-pointer select-none">
-                {{ form.is_public }}
-                <span class="text-xs sm:text-sm font-semibold text-slate-800">{% trans "Visible in Public Storefront" %}</span>
-              </label>
-              <label class="flex items-center gap-2.5 cursor-pointer select-none">
-                {{ form.is_featured }}
-                <span class="text-xs sm:text-sm font-semibold text-slate-800">{% trans "Featured (⭐)" %}</span>
-              </label>
-              <label class="flex items-center gap-2.5 cursor-pointer select-none">
-                {{ form.is_reserved }}
-                <span class="text-xs sm:text-sm font-semibold text-slate-800">{% trans "Reserved (⏳)" %}</span>
-              </label>
-            </div>
-
-            <!-- Conversion & Analytics Counters -->
-            <div class="grid grid-cols-3 gap-3 text-center">
-              <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
-                <div class="text-xs font-semibold text-slate-500 uppercase">{% trans "Public Views" %}</div>
-                <div id="metric-views-count" class="text-base sm:text-lg font-extrabold text-slate-900">{{ product.views_count }}</div>
-              </div>
-              <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-2.5">
-                <div class="text-xs font-semibold text-emerald-800 uppercase">{% trans "WhatsApp Clicks" %}</div>
-                <div id="metric-whatsapp-clicks" class="text-base sm:text-lg font-extrabold text-emerald-900">{{ product.whatsapp_clicks }}</div>
-              </div>
-              <div class="bg-blue-50/70 border border-blue-200 rounded-xl p-2.5">
-                <div class="text-xs font-semibold text-blue-800 uppercase">{% trans "Platform Clicks" %}</div>
-                <div id="metric-platform-clicks" class="text-base sm:text-lg font-extrabold text-blue-900">{{ product.total_marketplace_clicks }}</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Action Buttons -->
-          {% if can_manage %}
-          <div class="pt-3 flex items-center justify-end gap-3">
-            <button type="submit"
-                    class="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm sm:text-base rounded-xl shadow-sm transition">
-              {% trans "Save Listing Changes" %}
-            </button>
-          </div>
-          {% endif %}
-
-        </form>
-      </div>
-
-      <!-- ClauseGuard Policy Compliance & Platform Matrix Card -->
-      <div id="clauseGuardCard" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 sm:p-6 space-y-4 min-w-0">
-        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 min-w-0">
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="text-base sm:text-lg shrink-0" aria-hidden="true">🛡️</span>
-            <div class="min-w-0">
-              <h2 class="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider break-words">
-                {% trans "ClauseGuard Policy Compliance" %}
-              </h2>
-              <p class="text-xs sm:text-sm text-slate-600 mt-0.5 break-words">
-                {% trans "Two-stage advisory T&C check across marketplaces (top-3 clauses only)." %}
-              </p>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-1.5 shrink-0">
-            <span id="clauseGuardVerdictBadge" class="text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider
-              {% if product.compliance_status == 'rejected' %}bg-rose-100 text-rose-900 border border-rose-300
-              {% elif product.compliance_status == 'manual_review' %}bg-amber-100 text-amber-950 border border-amber-300
-              {% else %}bg-emerald-100 text-emerald-900 border border-emerald-300{% endif %}">
-              {% if product.compliance_status == 'rejected' %}
-                🚫 {% trans "Policy Violation" %}
-              {% elif product.compliance_status == 'manual_review' %}
-                ⚠️ {% trans "Manual Review" %}
-              {% else %}
-                ✅ {% trans "Approved" %}
-              {% endif %}
-            </span>
-            <span id="clauseGuardRiskScore" class="font-mono tabular-nums text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 border border-slate-300">
-              {% trans "Risk" %} {{ product.compliance_risk_score }}/100
-            </span>
-          </div>
-        </div>
-
-        <!-- Stage & Token Economics Bar -->
-        <div class="flex flex-wrap items-center justify-between gap-2 text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-slate-700 min-w-0">
-          <span class="font-semibold break-words">
-            {{ product.get_compliance_stage_display }}
-          </span>
-          <span id="clauseGuardTokenSavings" class="font-mono tabular-nums text-emerald-800 font-bold break-words">
-            {% blocktrans with used=compliance_telemetry.tokens_used|default:0 baseline=compliance_telemetry.naive_baseline_tokens|default:12000 saved=compliance_telemetry.tokens_saved_percent|default:100 %}Tokens: {{ used }} vs ~{{ baseline }} full T&C · Saved {{ saved }}%{% endblocktrans %}
-          </span>
-        </div>
-
-        <!-- Per-Platform Compatibility Matrix -->
-        {% if compliance_platforms %}
-        <div class="space-y-2 min-w-0">
-          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">
-            {% trans "Platform Compatibility Matrix" %}
-          </h3>
-          <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0" id="clauseGuardPlatformMatrix">
-            {% for plat in compliance_platforms %}
-            <span data-platform-slug="{{ plat.slug }}"
-                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border break-words max-w-full
-                    {% if plat.status == 'rejected' %}bg-rose-50 text-rose-900 border-rose-300
-                    {% elif plat.status == 'manual_review' %}bg-amber-50 text-amber-950 border-amber-300
-                    {% else %}bg-emerald-50 text-emerald-900 border-emerald-200{% endif %}">
-              {% if plat.status == 'rejected' %}
-                <span aria-hidden="true">🚫</span>
-              {% elif plat.status == 'manual_review' %}
-                <span aria-hidden="true">⚠️</span>
-              {% else %}
-                <span aria-hidden="true">✅</span>
-              {% endif %}
-              <span>{{ plat.name }}</span>
-              {% if plat.clauses %}
-                <span class="font-mono text-xs opacity-90">({{ plat.clauses|join:", " }})</span>
-              {% endif %}
-            </span>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-
-        <!-- Matched / Violated Policy Clauses -->
-        {% if compliance_clauses %}
-        <div class="space-y-2 min-w-0" id="clauseGuardCitationsList">
-          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">
-            {% trans "Flagged Policy Clauses" %}
-          </h3>
-          {% for clause in compliance_clauses %}
-          <div class="p-3 rounded-xl border text-xs sm:text-sm space-y-1 min-w-0
-            {% if clause.severity == 'critical' %}bg-rose-50/70 border-rose-200 text-rose-950
-            {% else %}bg-amber-50/70 border-amber-200 text-amber-950{% endif %}">
-            <div class="flex flex-wrap items-center justify-between gap-1.5 min-w-0">
-              <span class="font-bold break-words">
-                <span class="font-mono">[{{ clause.code }}]</span> {{ clause.title }}
-              </span>
-              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-white/90 border border-slate-200 text-slate-800 shrink-0">
-                {{ clause.site_name }}
-              </span>
-            </div>
-            {% if clause.explanation %}
-            <p class="text-xs leading-relaxed break-words">{{ clause.explanation }}</p>
-            {% endif %}
-            {% if clause.excerpt %}
-            <p class="text-xs font-mono text-slate-700 break-words">
-              {% trans "Trigger:" %} {{ clause.excerpt }}
-            </p>
-            {% endif %}
-          </div>
-          {% endfor %}
-        </div>
-        {% elif compliance_summary %}
-        <p class="text-xs sm:text-sm text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-xl p-3 break-words">
-          ✅ {{ compliance_summary }}
-        </p>
-        {% endif %}
-
-        <!-- Auto-Sanitized Copy Actions -->
-        {% if compliance_sanitized_actions %}
-        <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-950 text-xs sm:text-sm space-y-1 min-w-0">
-          <p class="font-bold flex items-center gap-1.5">
-            <span aria-hidden="true">✍️</span> {% trans "Auto-Sanitized Copywriting Notes" %}
-          </p>
-          <ul class="list-disc list-inside text-xs space-y-0.5 pl-1 break-words">
-            {% for note in compliance_sanitized_actions %}
-            <li>{{ note }}</li>
-            {% endfor %}
-          </ul>
-        </div>
-        {% endif %}
-
-        <!-- Manager On-Demand Targeted Re-Verify Action -->
-        {% if can_manage %}
-        <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 min-w-0">
-          <span class="text-xs text-slate-600 break-words">
-            {% if product.compliance_checked_at %}
-              {% trans "Last checked:" %} {{ product.compliance_checked_at|date:"M d, Y H:i" }}
-            {% else %}
-              {% trans "Evaluated locally via Stage 1 rules." %}
-            {% endif %}
-          </span>
-          <form method="post" action="{% url 'inventory:product_verify_compliance' product.pk %}" class="shrink-0">
-            {% csrf_token %}
-            <button type="submit" id="verifyComplianceBtn"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition cursor-pointer min-h-[38px]">
-              <span aria-hidden="true">🛡️</span>
-              <span>{% trans "Verify Compliance (AI)" %}</span>
-            </button>
-          </form>
-        </div>
-        {% endif %}
-      </div>
-
+      {% else %}
+      <p class="text-xs sm:text-sm text-slate-500 italic py-2">
+        {% trans "No status transitions recorded yet." %}
+      </p>
+      {% endif %}
     </div>
-
-  </div>
+  </details>
 
 <!-- Full-Size Image Inspection Lightbox Modal with Cropper.js (Parity with Intake) -->
 <div id="imagePreviewModal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
@@ -1416,7 +1594,7 @@
   <div class="bg-slate-900 rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-700/80 overflow-hidden flex flex-col max-h-[92vh]">
     <div class="px-4 py-3 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between text-white">
       <div class="flex items-center gap-2">
-        <span id="modalCoverBadge" class="hidden bg-amber-400 text-slate-950 text-xs font-black px-1.5 py-0.5 rounded shadow-xs">
+        <span id="modalCoverBadge" class="hidden bg-amber-400 text-slate-950 text-xs font-black px-1.5 py-0.5 rounded shadow-2xs">
           ⭐ {% trans "Cover" %}
         </span>
         <h2 id="modalPhotoTitle" class="text-xs sm:text-sm font-bold text-slate-100">
@@ -1451,7 +1629,7 @@
         </button>
       </div>
       <button type="button" id="applyCropBtn"
-              class="px-3 py-1.5 min-h-[36px] rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs transition cursor-pointer">
+              class="px-3 py-1.5 min-h-[36px] rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs transition cursor-pointer">
         <span>✂️</span>
         <span id="applyCropBtnText">{% trans "Apply crop & rotate" %}</span>
       </button>
@@ -1463,7 +1641,7 @@
         <button type="button" id="modalPrevBtn"
                 class="p-1.5 px-2.5 min-h-[34px] rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white font-bold text-xs disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
                 title="{% trans 'Previous photo' %}">◀</button>
-        <span id="modalPhotoCounter" class="font-medium text-slate-300 truncate"></span>
+        <span id="modalPhotoCounter" class="font-medium text-slate-300 truncate font-mono"></span>
         <button type="button" id="modalNextBtn"
                 class="p-1.5 px-2.5 min-h-[34px] rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white font-bold text-xs disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
                 title="{% trans 'Next photo' %}">▶</button>
@@ -1482,6 +1660,203 @@
 {% block extra_scripts %}
 <script src="{% static 'inventory/vendor/cropper.min.js' %}"></script>
 <script>
+  // =========================================================================
+  // Workspace Category Tabs Engine (ARIA Tablist + hidden="until-found" + URL Hash)
+  // =========================================================================
+  const workspaceTabButtons = Array.from(document.querySelectorAll('#detailWorkspaceTablist [role="tab"]'));
+  const workspaceTabPanels = Array.from(document.querySelectorAll('#detailWorkspaceCard [data-workspace-panel]'));
+  const workspaceListingTopAlerts = document.getElementById('workspaceListingTopAlerts');
+  const stagingFormSaveBar = document.getElementById('stagingFormSaveBar');
+
+  function switchWorkspaceTab(tabKey, updateHash = false) {
+    if (!tabKey) return;
+    const targetBtn = workspaceTabButtons.find(btn => btn.getAttribute('data-workspace-tab') === tabKey);
+    if (!targetBtn) return;
+
+    workspaceTabButtons.forEach(btn => {
+      const isSelected = (btn === targetBtn);
+      btn.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      btn.setAttribute('tabindex', isSelected ? '0' : '-1');
+    });
+
+    workspaceTabPanels.forEach(panel => {
+      const isMatch = (panel.getAttribute('data-workspace-panel') === tabKey);
+      if (isMatch) {
+        panel.removeAttribute('hidden');
+      } else {
+        panel.setAttribute('hidden', 'until-found');
+      }
+    });
+
+    // Show AI command bar on Listing tab only
+    if (workspaceListingTopAlerts) {
+      workspaceListingTopAlerts.classList.toggle('hidden', tabKey !== 'listing');
+    }
+
+    // Show shared form Save bar on Listing & Channels tabs (which share #productStagingForm)
+    if (stagingFormSaveBar) {
+      const usesStagingForm = (tabKey === 'listing' || tabKey === 'channels');
+      stagingFormSaveBar.classList.toggle('hidden', !usesStagingForm);
+    }
+
+    // Scroll active tab into view inside the horizontal tablist without scrolling the page
+    if (typeof targetBtn.scrollIntoView === 'function') {
+      try {
+        targetBtn.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      } catch (e) {
+        // Fallback ignored
+      }
+    }
+
+    if (updateHash && window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', `#tab-${tabKey}`);
+    }
+  }
+
+  // Keyboard roving navigation (ArrowLeft, ArrowRight, Home, End) on #detailWorkspaceTablist
+  const workspaceTablistEl = document.getElementById('detailWorkspaceTablist');
+  if (workspaceTablistEl) {
+    workspaceTablistEl.addEventListener('keydown', (e) => {
+      const currentTab = e.target.closest('[role="tab"]');
+      if (!currentTab) return;
+      const idx = workspaceTabButtons.indexOf(currentTab);
+      if (idx === -1) return;
+
+      let nextIdx = -1;
+      if (e.key === 'ArrowRight') {
+        nextIdx = (idx + 1) % workspaceTabButtons.length;
+      } else if (e.key === 'ArrowLeft') {
+        nextIdx = (idx - 1 + workspaceTabButtons.length) % workspaceTabButtons.length;
+      } else if (e.key === 'Home') {
+        nextIdx = 0;
+      } else if (e.key === 'End') {
+        nextIdx = workspaceTabButtons.length - 1;
+      }
+
+      if (nextIdx !== -1) {
+        e.preventDefault();
+        const nextBtn = workspaceTabButtons[nextIdx];
+        const nextKey = nextBtn.getAttribute('data-workspace-tab');
+        switchWorkspaceTab(nextKey, true);
+        nextBtn.focus();
+      }
+    });
+  }
+
+  // Sync tab state when browser Find-in-Page (Ctrl+F) reveals a hidden="until-found" panel
+  workspaceTabPanels.forEach(panel => {
+    panel.addEventListener('beforematch', () => {
+      const tabKey = panel.getAttribute('data-workspace-panel');
+      if (tabKey) {
+        switchWorkspaceTab(tabKey, true);
+      }
+    });
+  });
+
+  // Resolve initial tab from URL hash or query parameter (?tab=...)
+  function initWorkspaceTabFromLocation() {
+    const hash = (window.location.hash || '').toLowerCase();
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = (params.get('tab') || '').toLowerCase();
+
+    if (hash === '#clarifications-section' || hash === '#tab-notes' || tabParam === 'notes') {
+      switchWorkspaceTab('notes', false);
+    } else if (hash === '#marketplacelinkscard' || hash === '#tab-channels' || tabParam === 'channels') {
+      switchWorkspaceTab('channels', false);
+    } else if (hash === '#clauseguardcard' || hash === '#tab-compliance' || tabParam === 'compliance') {
+      switchWorkspaceTab('compliance', false);
+    } else if (hash === '#status-history-section' || hash === '#status-history-disclosure' || hash === '#status-history-card') {
+      const histDisclosure = document.getElementById('status-history-disclosure');
+      if (histDisclosure) histDisclosure.open = true;
+    } else {
+      switchWorkspaceTab('listing', false);
+    }
+  }
+  initWorkspaceTabFromLocation();
+  window.addEventListener('hashchange', initWorkspaceTabFromLocation);
+
+  // =========================================================================
+  // Live Character Counters, Unsaved Changes Indicator & Copy Full Pack
+  // =========================================================================
+  const aiTitleInput = document.getElementById('id_ai_title');
+  const aiDescInput = document.getElementById('id_ai_description');
+  const titleCharCounter = document.getElementById('titleCharCounter');
+  const descCharCounter = document.getElementById('descCharCounter');
+  const productStagingForm = document.getElementById('productStagingForm');
+  const unsavedChangesBadge = document.getElementById('unsavedChangesBadge');
+
+  function updateCopyCharCounters() {
+    if (aiTitleInput && titleCharCounter) {
+      const len = (aiTitleInput.value || '').length;
+      titleCharCounter.textContent = `${len} / 255`;
+    }
+    if (aiDescInput && descCharCounter) {
+      const val = aiDescInput.value || '';
+      const chars = val.length;
+      const lines = val.trim() ? val.trim().split(/\r\n|\r|\n/).length : 0;
+      descCharCounter.textContent = lines > 0 ? `${chars} {% trans "chars" %} · ${lines} {% trans "lines" %}` : `${chars} {% trans "chars" %}`;
+    }
+  }
+  if (aiTitleInput) aiTitleInput.addEventListener('input', updateCopyCharCounters);
+  if (aiDescInput) aiDescInput.addEventListener('input', updateCopyCharCounters);
+  updateCopyCharCounters();
+
+  if (productStagingForm && unsavedChangesBadge) {
+    productStagingForm.addEventListener('input', () => {
+      unsavedChangesBadge.classList.remove('hidden');
+    });
+    productStagingForm.addEventListener('change', () => {
+      unsavedChangesBadge.classList.remove('hidden');
+    });
+    productStagingForm.addEventListener('submit', () => {
+      unsavedChangesBadge.classList.add('hidden');
+    });
+  }
+
+  // Ctrl+S / Cmd+S keyboard shortcut to save product staging changes from any active tab
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      if (productStagingForm && document.getElementById('btnSaveListingChanges')) {
+        e.preventDefault();
+        productStagingForm.requestSubmit(document.getElementById('btnSaveListingChanges'));
+      }
+    }
+  });
+
+  function copyFullListingPack(btn) {
+    const titleVal = aiTitleInput ? aiTitleInput.value.trim() : '';
+    const descVal = aiDescInput ? aiDescInput.value.trim() : '';
+    const priceInput = document.getElementById('id_sale_price');
+    const priceVal = priceInput && priceInput.value ? `€${parseFloat(priceInput.value).toFixed(2)}` : '';
+
+    const parts = [];
+    if (titleVal) parts.push(titleVal);
+    if (priceVal) parts.push(`{% trans "Price" %}: ${priceVal}`);
+    if (descVal) parts.push(descVal);
+
+    const payload = parts.join('\n\n').trim();
+    if (!payload) {
+      if (btn) {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<span aria-hidden="true">⚠️</span> <span>{% trans "Nothing to copy!" %}</span>';
+        setTimeout(() => { btn.innerHTML = orig; }, 1600);
+      }
+      return;
+    }
+
+    navigator.clipboard.writeText(payload).then(() => {
+      if (btn) {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<span aria-hidden="true">✅</span> <span>{% trans "Copied!" %}</span>';
+        btn.classList.add('bg-emerald-100', 'text-emerald-900', 'border-emerald-300');
+        setTimeout(() => {
+          btn.innerHTML = orig;
+          btn.classList.remove('bg-emerald-100', 'text-emerald-900', 'border-emerald-300');
+        }, 1500);
+      }
+    }).catch(err => console.error('Failed to copy pack:', err));
+  }
+
   function setMainImage(url) {
     const mainImg = document.getElementById('mainImage');
     if (mainImg && url) {
@@ -1524,9 +1899,9 @@
     if (!reorderFeedbackBanner) return;
     reorderFeedbackText.textContent = message;
     if (isSuccess) {
-      reorderFeedbackBanner.className = 'p-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-semibold flex items-center justify-between gap-2 shadow-xs transition-all';
+      reorderFeedbackBanner.className = 'p-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-semibold flex items-center justify-between gap-2 shadow-2xs transition-all';
     } else {
-      reorderFeedbackBanner.className = 'p-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-xs font-semibold flex items-center justify-between gap-2 shadow-xs transition-all';
+      reorderFeedbackBanner.className = 'p-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-xs font-semibold flex items-center justify-between gap-2 shadow-2xs transition-all';
     }
     reorderFeedbackBanner.classList.remove('hidden');
     setTimeout(() => {
@@ -1542,12 +1917,12 @@
       const badge = item.querySelector('.thumb-index-badge');
       if (badge) {
         if (idx === 0) {
-          badge.className = 'thumb-index-badge absolute top-1 left-1 bg-amber-400 text-slate-950 font-black text-xs px-1.5 py-0.5 rounded-md shadow-sm pointer-events-none select-none z-10';
+          badge.className = 'thumb-index-badge font-mono absolute top-1 left-1 bg-amber-400 text-slate-950 font-black text-xs px-1.5 py-0.5 rounded-md shadow-xs pointer-events-none select-none z-10';
           badge.innerHTML = '⭐ #1';
           item.classList.remove('border-slate-200');
           item.classList.add('border-amber-400');
         } else {
-          badge.className = 'thumb-index-badge absolute top-1 left-1 bg-slate-900/75 font-bold text-white text-xs px-1.5 py-0.5 rounded-md shadow-sm pointer-events-none select-none z-10';
+          badge.className = 'thumb-index-badge font-mono absolute top-1 left-1 bg-slate-900/75 font-bold text-white text-xs px-1.5 py-0.5 rounded-md shadow-xs pointer-events-none select-none z-10';
           badge.textContent = `#${idx + 1}`;
           item.classList.remove('border-amber-400');
           item.classList.add('border-slate-200');
@@ -1646,7 +2021,7 @@
 
       const deleteForms = document.querySelectorAll('.thumb-delete-form');
       if (isReorderMode) {
-        toggleReorderBtn.className = 'text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-600 rounded-lg px-2.5 py-1 transition flex items-center gap-1 active:scale-95 shadow-xs';
+        toggleReorderBtn.className = 'text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-600 rounded-lg px-2.5 py-1 transition flex items-center gap-1 active:scale-95 shadow-2xs cursor-pointer';
         toggleReorderIcon.textContent = '✓';
         toggleReorderText.textContent = "{% trans 'Done' %}";
         controlBars.forEach(bar => bar.classList.remove('hidden'));
@@ -1655,7 +2030,7 @@
           item.setAttribute('draggable', 'true');
         });
       } else {
-        toggleReorderBtn.className = 'text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg px-2.5 py-1 transition flex items-center gap-1 active:scale-95 shadow-xs';
+        toggleReorderBtn.className = 'text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg px-2.5 py-1 transition flex items-center gap-1 active:scale-95 shadow-2xs cursor-pointer';
         toggleReorderIcon.textContent = '🔄';
         toggleReorderText.textContent = "{% trans 'Reorder' %}";
         controlBars.forEach(bar => bar.classList.add('hidden'));
@@ -1814,6 +2189,7 @@
         saleInput.value = parseFloat(resaleVal).toFixed(2);
         saleInput.focus();
         saleInput.classList.add('ring-2', 'ring-emerald-500');
+        if (unsavedChangesBadge) unsavedChangesBadge.classList.remove('hidden');
         setTimeout(() => saleInput.classList.remove('ring-2', 'ring-emerald-500'), 1200);
       }
     });
@@ -1852,6 +2228,7 @@
       soldChannelTypeSelect.value = channelType;
       toggleMarketplaceSelect();
     }
+    if (unsavedChangesBadge) unsavedChangesBadge.classList.remove('hidden');
   }
 
   function selectSaleMarketplace(siteId) {
@@ -1866,6 +2243,7 @@
     if (soldMarketplaceSelect) {
       soldMarketplaceSelect.value = siteId;
     }
+    if (unsavedChangesBadge) unsavedChangesBadge.classList.remove('hidden');
   }
 
   if (isSoldCheckbox) {
@@ -1958,22 +2336,22 @@
     if (!tabDirect || !tabDoubt || !panelDirect || !panelDoubt) return;
 
     if (mode === "direct") {
-      tabDirect.classList.add("bg-white", "text-slate-900", "shadow-xs");
+      tabDirect.classList.add("bg-white", "text-slate-900", "shadow-2xs");
       tabDirect.classList.remove("text-slate-600");
       tabDirect.setAttribute("aria-selected", "true");
 
-      tabDoubt.classList.remove("bg-white", "text-slate-900", "shadow-xs");
+      tabDoubt.classList.remove("bg-white", "text-slate-900", "shadow-2xs");
       tabDoubt.classList.add("text-slate-600");
       tabDoubt.setAttribute("aria-selected", "false");
 
       panelDirect.classList.remove("hidden");
       panelDoubt.classList.add("hidden");
     } else {
-      tabDoubt.classList.add("bg-white", "text-slate-900", "shadow-xs");
+      tabDoubt.classList.add("bg-white", "text-slate-900", "shadow-2xs");
       tabDoubt.classList.remove("text-slate-600");
       tabDoubt.setAttribute("aria-selected", "true");
 
-      tabDirect.classList.remove("bg-white", "text-slate-900", "shadow-xs");
+      tabDirect.classList.remove("bg-white", "text-slate-900", "shadow-2xs");
       tabDirect.classList.add("text-slate-600");
       tabDirect.setAttribute("aria-selected", "false");
 
@@ -1984,8 +2362,10 @@
 
 
   // =========================================================================
-  // Enhanced Detail View Photo Upload Component Engine (Phase 34)
+  // Enhanced Detail View Photo Upload Component Engine (Phase 34 + Progressive Disclosure)
   // =========================================================================
+  const detailAddPhotosDisclosure = document.getElementById('detailAddPhotosDisclosure');
+  const photoGalleryCard = document.getElementById('photoGalleryCard');
   const detailDropZone = document.getElementById('detailDropZone');
   const detailImageInput = document.getElementById('detailImageInput');
   const detailCameraInput = document.getElementById('detailCameraInput');
@@ -2009,8 +2389,19 @@
   const detailExistingCount = detailSlotCountEl ? parseInt(detailSlotCountEl.dataset.existing || '0', 10) : 0;
   const detailAvailableSlots = Math.max(0, detailMaxImages - detailExistingCount);
 
+  // Auto-open the Add More Photos disclosure when dragging external files over the gallery card
+  if (photoGalleryCard && detailAddPhotosDisclosure) {
+    photoGalleryCard.addEventListener('dragover', (e) => {
+      if (typeof isReorderMode !== 'undefined' && isReorderMode) return;
+      if (e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files')) {
+        detailAddPhotosDisclosure.open = true;
+      }
+    });
+  }
+
   function showDetailUploadAlert(msg) {
     if (!detailUploadAlert || !detailUploadAlertText) return;
+    if (detailAddPhotosDisclosure) detailAddPhotosDisclosure.open = true;
     detailUploadAlertText.textContent = msg;
     detailUploadAlert.classList.remove('hidden');
   }
@@ -2028,6 +2419,7 @@
   function showDetailCompression(show, text) {
     if (!detailCompressionIndicator) return;
     if (show) {
+      if (detailAddPhotosDisclosure) detailAddPhotosDisclosure.open = true;
       if (text && detailCompressionIndicatorText) {
         detailCompressionIndicatorText.textContent = text;
       }
@@ -2128,6 +2520,7 @@
     const incoming = Array.from(filesList || []);
     if (incoming.length === 0) return;
 
+    if (detailAddPhotosDisclosure) detailAddPhotosDisclosure.open = true;
     hideDetailUploadAlert();
     showDetailCompression(true, "{% trans 'Optimizing photos to WebP (2560px)...' %}");
 
@@ -2190,13 +2583,14 @@
       return;
     }
 
+    if (detailAddPhotosDisclosure) detailAddPhotosDisclosure.open = true;
     detailPendingContainer.classList.remove('hidden');
     if (detailPendingCount) detailPendingCount.textContent = detailPendingFiles.length.toString();
     detailPendingGrid.innerHTML = '';
 
     detailPendingFiles.forEach((file, index) => {
       const card = document.createElement('div');
-      card.className = 'relative aspect-square rounded-xl overflow-hidden border-2 border-emerald-400 bg-slate-100 shadow-xs group';
+      card.className = 'relative aspect-square rounded-xl overflow-hidden border-2 border-emerald-400 bg-slate-100 shadow-2xs group';
 
       const img = document.createElement('img');
       img.className = 'w-full h-full object-cover select-none';
@@ -2205,13 +2599,13 @@
       card.appendChild(img);
 
       const badge = document.createElement('span');
-      badge.className = 'absolute top-1 left-1 bg-emerald-600 font-bold text-white text-xs px-1.5 py-0.5 rounded-md shadow-xs pointer-events-none select-none';
+      badge.className = 'font-mono absolute top-1 left-1 bg-emerald-600 font-bold text-white text-xs px-1.5 py-0.5 rounded-md shadow-2xs pointer-events-none select-none';
       badge.textContent = `+${index + 1}`;
       card.appendChild(badge);
 
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
-      delBtn.className = 'absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center text-xs font-black shadow-sm transition active:scale-90 cursor-pointer';
+      delBtn.className = 'absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center text-xs font-black shadow-xs transition active:scale-90 cursor-pointer';
       delBtn.title = "{% trans 'Remove from upload queue' %}";
       delBtn.setAttribute('aria-label', "{% trans 'Remove photo from upload queue' %}");
       delBtn.textContent = '✕';
@@ -2226,7 +2620,7 @@
 
       const editBtn = document.createElement('button');
       editBtn.type = 'button';
-      editBtn.className = 'photo-edit-btn absolute bottom-1 right-1 px-1.5 py-1 min-w-[28px] min-h-[28px] rounded-md bg-slate-900/80 hover:bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-sm transition active:scale-90 cursor-pointer';
+      editBtn.className = 'photo-edit-btn absolute bottom-1 right-1 px-1.5 py-1 min-w-[28px] min-h-[28px] rounded-md bg-slate-900/80 hover:bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-xs transition active:scale-90 cursor-pointer';
       editBtn.title = "{% trans 'Crop or rotate photo' %}";
       editBtn.setAttribute('aria-label', "{% trans 'Crop or rotate photo' %}");
       editBtn.textContent = '✂️';
@@ -2815,7 +3209,7 @@
       <form method="post" action="{% url 'inventory:product_soft_delete' product.pk %}">
         {% csrf_token %}
         <button type="submit" id="btnConfirmDeleteProduct"
-                class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-xs cursor-pointer">
+                class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-2xs cursor-pointer">
           {% trans "Yes, Move to Trash" %}
         </button>
       </form>
@@ -2843,15 +3237,12 @@
       </button>
       <button type="button" id="btnProceedActionConfirm"
               onclick="if (pendingConfirmForm) { pendingConfirmForm.dataset.confirmed = 'true'; pendingConfirmForm.submit(); }"
-              class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-xs cursor-pointer">
+              class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-2xs cursor-pointer">
         {% trans "Confirm" %}
       </button>
     </div>
   </div>
 </div>
-
-
-
 
 {% if can_manage %}
 <!-- Add Marketplace Listing Modal -->
@@ -2910,7 +3301,7 @@
           {% trans "Cancel" %}
         </button>
         <button type="submit"
-                class="px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition shadow-xs cursor-pointer min-h-[40px]">
+                class="px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition shadow-2xs cursor-pointer min-h-[40px]">
           {% trans "Save Listing Link" %}
         </button>
       </div>
@@ -2952,7 +3343,7 @@
 
       <div class="flex justify-end gap-2 pt-1">
         <button type="submit"
-                class="w-full sm:w-auto px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition shadow-xs cursor-pointer min-h-[40px]">
+                class="w-full sm:w-auto px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition shadow-2xs cursor-pointer min-h-[40px]">
           {% trans "Update URL" %}
         </button>
       </div>
@@ -2976,6 +3367,5 @@
   </div>
 </div>
 {% endif %}
-
 
 {% endblock %}
