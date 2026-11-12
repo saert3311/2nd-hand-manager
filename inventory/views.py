@@ -517,9 +517,10 @@ def product_detail_view(request, pk):
         if link.site_id not in active_site_ids
     ]
 
-    pending_clarifications = product.clarifications.filter(status=ClarificationStatus.PENDING)
-    resolved_clarifications = product.clarifications.filter(status=ClarificationStatus.RESOLVED)
-    has_unapplied_clarifications = resolved_clarifications.exists()
+    all_clarifications = list(product.clarifications.all())
+    pending_clarifications = [c for c in all_clarifications if c.status == ClarificationStatus.PENDING]
+    resolved_clarifications = [c for c in all_clarifications if c.status == ClarificationStatus.RESOLVED]
+    has_unapplied_clarifications = bool(resolved_clarifications)
 
     available_slots = max(0, 10 - product.images.count())
 

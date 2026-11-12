@@ -419,8 +419,8 @@
       <div id="listingReadinessChecklist" class="bg-white rounded-2xl shadow-xs border border-slate-200 p-3.5 space-y-2.5">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">{% trans "Staging Readiness" %}</span>
-          <span class="font-mono tabular-nums text-xs font-bold px-2 py-0.5 rounded-full {% if product.images.exists and product.ai_title and product.ai_description and product.sale_price and product.compliance_status == 'approved' %}bg-emerald-100 text-emerald-800{% else %}bg-slate-100 text-slate-700{% endif %}">
-            {% if product.status == 'published' %}🚀 {% trans "Live" %}{% elif product.status == 'ready' %}✅ {% trans "Ready" %}{% else %}{% trans "In Progress" %}{% endif %}
+          <span class="font-mono tabular-nums text-xs font-bold px-2 py-0.5 rounded-full {% if product.status == 'sold' %}bg-purple-100 text-purple-900{% elif product.status == 'blocked' %}bg-rose-100 text-rose-900{% elif product.images.exists and product.ai_title and product.ai_description and product.sale_price and product.compliance_status == 'approved' %}bg-emerald-100 text-emerald-800{% else %}bg-slate-100 text-slate-700{% endif %}">
+            {% if product.status == 'sold' %}🏷️ {% trans "Sold" %}{% elif product.status == 'blocked' %}⛔ {% trans "Blocked" %}{% elif product.status == 'published' %}🚀 {% trans "Live" %}{% elif product.status == 'ready' %}✅ {% trans "Ready" %}{% else %}{% trans "In Progress" %}{% endif %}
           </span>
         </div>
         <div class="grid grid-cols-2 gap-2 text-xs">
@@ -457,7 +457,7 @@
         <div id="detailWorkspaceTablist" role="tablist" aria-label="{% trans 'Product workspace sections' %}"
              class="flex items-center overflow-x-auto flex-nowrap whitespace-nowrap no-scrollbar px-2 pt-1.5 gap-1">
           <button type="button" role="tab" id="tabBtnWorkspaceListing"
-                  data-workspace-tab="listing" aria-selected="true"
+                  data-workspace-tab="listing" aria-selected="true" aria-controls="workspacePanelListing" tabindex="0"
                   onclick="switchWorkspaceTab('listing')"
                   class="px-2.5 sm:px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition cursor-pointer min-h-[42px]">
             <span aria-hidden="true">📝</span>
@@ -465,7 +465,7 @@
           </button>
 
           <button type="button" role="tab" id="tabBtnWorkspaceChannels"
-                  data-workspace-tab="channels" aria-selected="false"
+                  data-workspace-tab="channels" aria-selected="false" aria-controls="workspacePanelChannels" tabindex="-1"
                   onclick="switchWorkspaceTab('channels')"
                   class="px-2.5 sm:px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition cursor-pointer min-h-[42px]">
             <span aria-hidden="true">🏪</span>
@@ -479,24 +479,24 @@
           </button>
 
           <button type="button" role="tab" id="tabBtnWorkspaceNotes"
-                  data-workspace-tab="notes" aria-selected="false"
+                  data-workspace-tab="notes" aria-selected="false" aria-controls="workspacePanelNotes" tabindex="-1"
                   onclick="switchWorkspaceTab('notes')"
                   class="px-2.5 sm:px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition cursor-pointer min-h-[42px]">
             <span aria-hidden="true">💡</span>
             <span>{% trans "Notes" %}</span>
-            {% if pending_clarifications.exists %}
+            {% if pending_clarifications %}
             <span class="font-mono tabular-nums text-xs px-1.5 py-0.5 rounded-full bg-amber-200 text-amber-950">
-              {{ pending_clarifications.count }}
+              {{ pending_clarifications|length }}
             </span>
-            {% elif resolved_clarifications.exists %}
+            {% elif resolved_clarifications %}
             <span class="font-mono tabular-nums text-xs px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900">
-              {{ resolved_clarifications.count }}
+              {{ resolved_clarifications|length }}
             </span>
             {% endif %}
           </button>
 
           <button type="button" role="tab" id="tabBtnWorkspaceCompliance"
-                  data-workspace-tab="compliance" aria-selected="false"
+                  data-workspace-tab="compliance" aria-selected="false" aria-controls="workspacePanelCompliance" tabindex="-1"
                   onclick="switchWorkspaceTab('compliance')"
                   class="px-2.5 sm:px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition cursor-pointer min-h-[42px]">
             <span aria-hidden="true">🛡️</span>
@@ -505,7 +505,7 @@
               {% if product.compliance_status == 'rejected' %}bg-rose-100 text-rose-900
               {% elif product.compliance_status == 'manual_review' %}bg-amber-200/80 text-amber-950
               {% else %}bg-emerald-100 text-emerald-900{% endif %}">
-              {{ product.compliance_risk_score }}
+              {{ product.compliance_risk_score }}<span class="sr-only">/100</span>
             </span>
           </button>
         </div>
@@ -984,12 +984,18 @@
                     {% trans "Storefront Category" %}
                   </label>
                   {{ form.category }}
+                  {% if form.category.errors %}
+                  <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.category.errors.0 }}</p>
+                  {% endif %}
                 </div>
                 <div>
                   <label for="id_condition" class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                     {% trans "Condition State" %}
                   </label>
                   {{ form.condition }}
+                  {% if form.condition.errors %}
+                  <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.condition.errors.0 }}</p>
+                  {% endif %}
                 </div>
               </div>
 
@@ -1007,6 +1013,13 @@
                   <span class="text-xs sm:text-sm font-semibold text-slate-800">{% trans "Reserved (⏳)" %}</span>
                 </label>
               </div>
+              {% if form.is_public.errors or form.is_featured.errors or form.is_reserved.errors %}
+              <div role="alert" class="text-xs text-rose-600 font-semibold space-y-0.5">
+                {% for error in form.is_public.errors %}<p>{{ error }}</p>{% endfor %}
+                {% for error in form.is_featured.errors %}<p>{{ error }}</p>{% endfor %}
+                {% for error in form.is_reserved.errors %}<p>{{ error }}</p>{% endfor %}
+              </div>
+              {% endif %}
 
               <!-- Conversion & Analytics Counters -->
               <div class="grid grid-cols-3 gap-2.5 sm:gap-3 text-center">
@@ -1073,17 +1086,17 @@
                 </h3>
               </div>
               <div class="flex items-center gap-1.5 text-xs font-bold">
-                {% if pending_clarifications.exists %}
+                {% if pending_clarifications %}
                 <span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-                  {{ pending_clarifications.count }} {% trans "pending" %}
+                  {{ pending_clarifications|length }} {% trans "pending" %}
                 </span>
                 {% endif %}
-                {% if resolved_clarifications.exists %}
+                {% if resolved_clarifications %}
                 <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  {{ resolved_clarifications.count }} {% trans "resolved" %}
+                  {{ resolved_clarifications|length }} {% trans "resolved" %}
                 </span>
                 {% endif %}
-                {% if not pending_clarifications.exists and not resolved_clarifications.exists %}
+                {% if not pending_clarifications and not resolved_clarifications %}
                 <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
                   {% trans "None" %}
                 </span>
@@ -1092,7 +1105,7 @@
             </div>
 
             <!-- Pending Clarifications List -->
-            {% if pending_clarifications.exists %}
+            {% if pending_clarifications %}
             <div class="space-y-3">
               <h4 class="text-xs sm:text-sm font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
                 <span aria-hidden="true">⚠️</span> {% trans "Pending Doubts (Needs Answer)" %}
@@ -1143,7 +1156,7 @@
             {% endif %}
 
             <!-- Resolved Clarifications & Direct Notes List -->
-            {% if resolved_clarifications.exists %}
+            {% if resolved_clarifications %}
             <div class="space-y-2.5 pt-2 border-t border-slate-100">
               <h4 class="text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wider">
                 {% trans "Resolved Clarifications & Notes" %}
@@ -1778,7 +1791,7 @@
     });
   });
 
-  // Resolve initial tab from URL hash or query parameter (?tab=...)
+  // Resolve initial tab from URL hash, query parameter (?tab=...), or server validation errors
   function initWorkspaceTabFromLocation() {
     const hash = (window.location.hash || '').toLowerCase();
     const params = new URLSearchParams(window.location.search);
@@ -1793,8 +1806,11 @@
     } else if (hash === '#status-history-section' || hash === '#status-history-disclosure' || hash === '#status-history-card') {
       const histDisclosure = document.getElementById('status-history-disclosure');
       if (histDisclosure) histDisclosure.open = true;
-    } else {
       switchWorkspaceTab('listing', false);
+    } else {
+      const errorPanel = workspaceTabPanels.find(panel => panel.querySelector('[role="alert"]'));
+      const errorTabKey = errorPanel ? errorPanel.getAttribute('data-workspace-panel') : null;
+      switchWorkspaceTab(errorTabKey || 'listing', false);
     }
   }
   initWorkspaceTabFromLocation();
@@ -1826,60 +1842,126 @@
   if (aiDescInput) aiDescInput.addEventListener('input', updateCopyCharCounters);
   updateCopyCharCounters();
 
-  if (productStagingForm && unsavedChangesBadge) {
-    productStagingForm.addEventListener('input', () => {
-      unsavedChangesBadge.classList.remove('hidden');
-    });
-    productStagingForm.addEventListener('change', () => {
-      unsavedChangesBadge.classList.remove('hidden');
-    });
-    productStagingForm.addEventListener('submit', () => {
-      unsavedChangesBadge.classList.add('hidden');
-    });
+  if (productStagingForm) {
+    // Reveal hidden tab before browser native validation focuses an invalid control
+    productStagingForm.addEventListener('invalid', (e) => {
+      const panel = e.target.closest('[data-workspace-panel]');
+      const tabKey = panel ? panel.getAttribute('data-workspace-panel') : null;
+      if (tabKey && panel.hasAttribute('hidden')) {
+        switchWorkspaceTab(tabKey, false);
+      }
+    }, true);
+
+    if (unsavedChangesBadge) {
+      productStagingForm.addEventListener('input', () => {
+        unsavedChangesBadge.classList.remove('hidden');
+      });
+      productStagingForm.addEventListener('change', () => {
+        unsavedChangesBadge.classList.remove('hidden');
+      });
+      productStagingForm.addEventListener('submit', () => {
+        unsavedChangesBadge.classList.add('hidden');
+      });
+    }
   }
 
-  // Ctrl+S / Cmd+S keyboard shortcut to save product staging changes from any active tab
+  // Ctrl+S / Cmd+S keyboard shortcut only saves #productStagingForm when a staging form tab is active
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-      if (productStagingForm && document.getElementById('btnSaveListingChanges')) {
+      const saveBtn = document.getElementById('btnSaveListingChanges');
+      const isFormTabVisible = stagingFormSaveBar && !stagingFormSaveBar.classList.contains('hidden');
+      if (productStagingForm && saveBtn && isFormTabVisible) {
         e.preventDefault();
-        productStagingForm.requestSubmit(document.getElementById('btnSaveListingChanges'));
+        productStagingForm.requestSubmit(saveBtn);
       }
     }
   });
+
+  function flashButtonState(btn, html, addClasses, durationMs = 1500) {
+    if (!btn) return;
+    if (!btn.dataset.origHtml) {
+      btn.dataset.origHtml = btn.innerHTML;
+    }
+    if (btn._copyResetTimer) {
+      clearTimeout(btn._copyResetTimer);
+    }
+    const prevAdded = (btn.dataset.feedbackClasses || '').split(' ').filter(Boolean);
+    if (prevAdded.length) btn.classList.remove(...prevAdded);
+
+    btn.innerHTML = html;
+    if (addClasses.length) {
+      btn.classList.add(...addClasses);
+      btn.dataset.feedbackClasses = addClasses.join(' ');
+    }
+    btn._copyResetTimer = setTimeout(() => {
+      if (btn.dataset.origHtml) {
+        btn.innerHTML = btn.dataset.origHtml;
+        delete btn.dataset.origHtml;
+      }
+      if (addClasses.length) btn.classList.remove(...addClasses);
+      delete btn.dataset.feedbackClasses;
+      btn._copyResetTimer = null;
+    }, durationMs);
+  }
+
+  function writeClipboardSafe(text) {
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise((resolve, reject) => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (ok) resolve();
+        else reject(new Error('Clipboard unavailable'));
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  function copyTextWithFeedback(text, btn, successClasses = ['bg-emerald-100', 'text-emerald-900', 'border-emerald-300']) {
+    if (!text) {
+      flashButtonState(
+        btn,
+        '<span aria-hidden="true">⚠️</span> <span>{% trans "Nothing to copy!" %}</span>',
+        ['bg-amber-100', 'text-amber-900'],
+        1600
+      );
+      return;
+    }
+    writeClipboardSafe(text)
+      .then(() => {
+        flashButtonState(
+          btn,
+          '<span aria-hidden="true">✅</span> <span>{% trans "Copied!" %}</span>',
+          successClasses,
+          1500
+        );
+      })
+      .catch(err => console.warn('Clipboard copy unavailable:', err));
+  }
 
   function copyFullListingPack(btn) {
     const titleVal = aiTitleInput ? aiTitleInput.value.trim() : '';
     const descVal = aiDescInput ? aiDescInput.value.trim() : '';
     const priceInput = document.getElementById('id_sale_price');
-    const priceVal = priceInput && priceInput.value ? `€${parseFloat(priceInput.value).toFixed(2)}` : '';
+    const parsedPrice = priceInput && priceInput.value ? Number.parseFloat(priceInput.value) : NaN;
+    const priceVal = Number.isFinite(parsedPrice) ? `€${parsedPrice.toFixed(2)}` : '';
 
     const parts = [];
     if (titleVal) parts.push(titleVal);
     if (priceVal) parts.push(`{% trans "Price" %}: ${priceVal}`);
     if (descVal) parts.push(descVal);
 
-    const payload = parts.join('\n\n').trim();
-    if (!payload) {
-      if (btn) {
-        const orig = btn.innerHTML;
-        btn.innerHTML = '<span aria-hidden="true">⚠️</span> <span>{% trans "Nothing to copy!" %}</span>';
-        setTimeout(() => { btn.innerHTML = orig; }, 1600);
-      }
-      return;
-    }
-
-    navigator.clipboard.writeText(payload).then(() => {
-      if (btn) {
-        const orig = btn.innerHTML;
-        btn.innerHTML = '<span aria-hidden="true">✅</span> <span>{% trans "Copied!" %}</span>';
-        btn.classList.add('bg-emerald-100', 'text-emerald-900', 'border-emerald-300');
-        setTimeout(() => {
-          btn.innerHTML = orig;
-          btn.classList.remove('bg-emerald-100', 'text-emerald-900', 'border-emerald-300');
-        }, 1500);
-      }
-    }).catch(err => console.error('Failed to copy pack:', err));
+    copyTextWithFeedback(parts.join('\n\n').trim(), btn);
   }
 
   function setMainImage(url) {
@@ -2140,44 +2222,13 @@
 
   function copyToClipboard(elementId, btn) {
     const input = document.getElementById(elementId);
-    if (!input || !input.value.trim()) {
-      if (btn) {
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span aria-hidden="true">⚠️</span> {% trans "Nothing to copy!" %}';
-        btn.classList.add('bg-amber-100', 'text-amber-900');
-        setTimeout(() => {
-          btn.innerHTML = originalText;
-          btn.classList.remove('bg-amber-100', 'text-amber-900');
-        }, 1600);
-      }
-      return;
-    }
-    navigator.clipboard.writeText(input.value.trim()).then(() => {
-      const originalText = btn.innerHTML;
-      btn.innerHTML = '<span aria-hidden="true">✅</span> {% trans "Copied!" %}';
-      btn.classList.add('bg-emerald-200', 'text-emerald-900');
-      setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.classList.remove('bg-emerald-200', 'text-emerald-900');
-      }, 1500);
-    }).catch(err => {
-      console.error('Failed to copy', err);
-    });
+    const val = input ? input.value.trim() : '';
+    copyTextWithFeedback(val, btn, ['bg-emerald-200', 'text-emerald-900']);
   }
 
   function copyLinkUrl(url, btn) {
     if (!url) return;
-    navigator.clipboard.writeText(url).then(() => {
-      const originalText = btn.innerHTML;
-      btn.innerHTML = '<span aria-hidden="true">✅</span> {% trans "Copied!" %}';
-      btn.classList.add('bg-emerald-200', 'text-emerald-900');
-      setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.classList.remove('bg-emerald-200', 'text-emerald-900');
-      }, 1500);
-    }).catch(err => {
-      console.error('Failed to copy', err);
-    });
+    copyTextWithFeedback(url, btn, ['bg-emerald-200', 'text-emerald-900']);
   }
 
   const aiForm = document.getElementById('aiForm');

@@ -1,12 +1,17 @@
 import io
+import os
 from decimal import Decimal
 
 from django.contrib.auth.models import Group, User
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.db import connection
+from django.test import TestCase, override_settings
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import translation
 from PIL import Image
+from playwright.sync_api import sync_playwright
 
 from inventory.models import (
     Category,
@@ -19,6 +24,7 @@ from inventory.models import (
     ProductImage,
     ProductListingLink,
     ProductStatus,
+    SaleChannelType,
 )
 
 
@@ -242,3 +248,275 @@ class ProductDetailTabbedRedesignTests(TestCase):
             self.assertIn("Copy Ad", html_en)
             self.assertIn("Regenerate with AI", html_en)
             self.assertIn("Archival state log (click to expand)", html_en)
+
+    def test_tabs_include_aria_controls_and_risk_score_sr_context(self):
+        """Workspace tabs expose aria-controls and risk score includes sr-only /100 context."""
+        self.client.login(username="mgr_tabs", password="password123")
+        url = reverse("inventory:product_detail", kwargs={"pk": self.product.pk})
+        resp = self.client.get(url)
+        html = resp.content.decode("utf-8")
+
+        self.assertIn('id="tabBtnWorkspaceListing"', html)
+        self.assertIn('aria-controls="workspacePanelListing"', html)
+        self.assertIn('aria-controls="workspacePanelChannels"', html)
+        self.assertIn('aria-controls="workspacePanelNotes"', html)
+        self.assertIn('aria-controls="workspacePanelCompliance"', html)
+        self.assertIn('<span class="sr-only">/100</span>', html)
+
+    def test_readiness_checklist_reflects_sold_and_blocked_states_accurately(self):
+        """Sold and blocked products do not show 'In Progress' inside Staging Readiness."""
+        self.client.login(username="mgr_tabs", password="password123")
+        url = reverse("inventory:product_detail", kwargs={"pk": self.product.pk})
+
+        self.product.is_sold = True
+        self.product.sold_channel_type = SaleChannelType.IN_STORE
+        self.product.status = ProductStatus.SOLD
+        self.product.save()
+
+        with translation.override("en"):
+            html_sold = self.client.get(url).content.decode("utf-8")
+            checklist_start = html_sold.index('id="listingReadinessChecklist"')
+            checklist_snippet = html_sold[checklist_start : checklist_start + 700]
+            self.assertIn("Sold", checklist_snippet)
+            self.assertNotIn("In Progress", checklist_snippet)
+
+        self.product.is_sold = False
+        self.product.sold_channel_type = ""
+        self.product.status = ProductStatus.BLOCKED
+        self.product.save()
+
+        with translation.override("en"):
+            html_blocked = self.client.get(url).content.decode("utf-8")
+            checklist_start = html_blocked.index('id="listingReadinessChecklist"')
+            checklist_snippet = html_blocked[checklist_start : checklist_start + 700]
+            self.assertIn("Blocked", checklist_snippet)
+            self.assertNotIn("In Progress", checklist_snippet)
+
+    def test_tab2_storefront_errors_render_inside_channels_panel(self):
+        """Invalid POST data for Tab 2 category/condition renders role='alert' errors inside #workspacePanelChannels."""
+        self.client.login(username="mgr_tabs", password="password123")
+        url = reverse("inventory:product_detail", kwargs={"pk": self.product.pk})
+
+        resp = self.client.post(
+            url,
+            {
+                "ai_title": self.product.ai_title,
+                "ai_description": self.product.ai_description,
+                "sale_price": "145.00",
+                "status": ProductStatus.READY,
+                "category": "999999",
+                "condition": "invalid_condition_choice",
+                "storefront_controls_present": "1",
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode("utf-8")
+        panel_start = html.index('id="workspacePanelChannels"')
+        panel_end = html.index('id="stagingFormSaveBar"')
+        channels_html = html[panel_start:panel_end]
+        self.assertIn('role="alert"', channels_html)
+
+    def test_clarifications_avoid_repeated_count_and_exists_sql_queries(self):
+        """Detail GET reuses prefetched clarifications instead of emitting repeated .count()/.exists() SQL."""
+        ProductClarification.objects.create(
+            product=self.product,
+            question="¿Tiene caja?",
+            asked_by=self.manager,
+        )
+        ProductClarification.objects.create(
+            product=self.product,
+            question="¿Funciona?",
+            answer="Sí",
+            is_direct_note=True,
+            asked_by=self.manager,
+        )
+        self.client.login(username="mgr_tabs", password="password123")
+        url = reverse("inventory:product_detail", kwargs={"pk": self.product.pk})
+
+        with CaptureQueriesContext(connection) as ctx:
+            resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+
+        per_product_clarif_queries = [
+            q["sql"]
+            for q in ctx.captured_queries
+            if "inventory_productclarification" in q["sql"].lower()
+            and ("select 1 as" in q["sql"].lower() or 'product_id" =' in q["sql"].lower() and "inner join" not in q["sql"].lower() or 'product_id" in' in q["sql"].lower())
+        ]
+        # Single prefetch query rather than 10+ separate COUNT/EXISTS round-trips
+        self.assertLessEqual(
+            len(per_product_clarif_queries),
+            1,
+            f"Unexpected per-product clarification queries: {per_product_clarif_queries}",
+        )
+
+
+@override_settings(TURNSTILE_ENABLED=False)
+class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
+    """Real Chrome Playwright behavioral tests for the tabbed Product Detail workspace."""
+
+    @classmethod
+    def setUpClass(cls):
+        os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+        super().setUpClass()
+
+    def setUp(self):
+        self.managers_group, _ = Group.objects.get_or_create(name="managers")
+        self.manager = User.objects.create_user(
+            username="mgr_browser_tabs", password="password123", is_staff=True
+        )
+        self.manager.groups.add(self.managers_group)
+
+        self.wallapop, _ = MarketplaceSite.objects.get_or_create(
+            slug="wallapop",
+            defaults={"name": "Wallapop", "base_url": "https://es.wallapop.com", "is_active": True},
+        )
+        self.product = Product.objects.create(
+            raw_note="Sony WH-1000XM4 nota inicial de prueba.",
+            ai_title="Sony WH-1000XM4 Bluetooth",
+            ai_description="Con estuche original.",
+            sale_price=Decimal("140.00"),
+            estimated_resale_price=Decimal("155.00"),
+            status=ProductStatus.READY,
+            created_by=self.manager,
+        )
+        ProductImage.objects.create(product=self.product, image=_create_sample_image())
+        ProductClarification.objects.create(
+            product=self.product,
+            question="¿Incluye cable USB-C?",
+            asked_by=self.manager,
+        )
+
+    def _login(self, page):
+        page.goto(f"{self.live_server_url}{reverse('inventory:login')}", wait_until="load")
+        page.fill("#id_username", "mgr_browser_tabs")
+        page.fill("#id_password", "password123")
+        with page.expect_navigation():
+            page.click("#loginSubmitBtn")
+
+    def test_tabs_keyboard_deeplink_beforematch_counters_validation_and_clipboard(self):
+        """Verifies ARIA keyboard nav, ?tab=/#hash, beforematch, live counters, cross-tab validation, Ctrl+S guard, and copy helpers."""
+        detail_url = f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.product.pk})}"
+
+        with sync_playwright() as p:
+            browser = p.chromium.launch(channel="chrome", headless=True)
+            context = browser.new_context(
+                viewport={"width": 1280, "height": 850},
+                locale="en-US",
+                extra_http_headers={"Accept-Language": "en"},
+            )
+            page = context.new_page()
+            page_errors = []
+            page.on("pageerror", lambda err: page_errors.append(str(err)))
+
+            # Record clipboard writes via stub that works consistently in headless Chrome
+            page.add_init_script("""
+                window.__copiedPayloads = [];
+                try {
+                    Object.defineProperty(navigator, 'clipboard', {
+                        configurable: true,
+                        value: {
+                            writeText: (txt) => {
+                                window.__copiedPayloads.push(txt);
+                                return Promise.resolve();
+                            }
+                        }
+                    });
+                } catch (e) {}
+            """)
+
+            self._login(page)
+
+            # 1. URL query ?tab=notes activates Notes tab immediately
+            page.goto(f"{detail_url}?tab=notes", wait_until="load")
+            page.wait_for_selector("#detailWorkspaceTablist")
+            self.assertEqual(page.locator("#tabBtnWorkspaceNotes").get_attribute("aria-selected"), "true")
+            self.assertTrue(page.locator("#workspacePanelNotes").is_visible())
+
+            # 2. Keyboard roving focus: Home -> Listing, ArrowRight -> Channels, End -> Compliance
+            page.locator("#tabBtnWorkspaceNotes").focus()
+            page.keyboard.press("Home")
+            self.assertEqual(page.locator("#tabBtnWorkspaceListing").get_attribute("aria-selected"), "true")
+            page.keyboard.press("ArrowRight")
+            self.assertEqual(page.locator("#tabBtnWorkspaceChannels").get_attribute("aria-selected"), "true")
+            page.keyboard.press("End")
+            self.assertEqual(page.locator("#tabBtnWorkspaceCompliance").get_attribute("aria-selected"), "true")
+
+            # 3. Find-in-page beforematch on hidden="until-found" switches tab automatically
+            page.evaluate("""() => {
+                const panel = document.getElementById('workspacePanelNotes');
+                panel.dispatchEvent(new Event('beforematch'));
+            }""")
+            self.assertEqual(page.locator("#tabBtnWorkspaceNotes").get_attribute("aria-selected"), "true")
+            self.assertTrue(page.locator("#workspacePanelNotes").is_visible())
+
+            # 4. Ctrl+S inside Tab 3 (Notes) MUST NOT submit #productStagingForm or clear unsent note text
+            page.fill("#directNoteText", "Borrador de nota que no debe perderse")
+            page.locator("#directNoteText").press("Control+s")
+            page.wait_for_timeout(300)
+            self.assertEqual(page.locator("#directNoteText").input_value(), "Borrador de nota que no debe perderse")
+            self.assertEqual(page.locator("#tabBtnWorkspaceNotes").get_attribute("aria-selected"), "true")
+
+            # 5. Cross-tab HTML5 invalid input on Tab 1 must switch back to Listing when saving from Tab 2
+            page.click("#tabBtnWorkspaceListing")
+            page.fill("#id_sale_price", "-5")
+            page.click("#tabBtnWorkspaceChannels")
+            self.assertEqual(page.locator("#tabBtnWorkspaceChannels").get_attribute("aria-selected"), "true")
+            page.click("#btnSaveListingChanges")
+            page.wait_for_timeout(200)
+            self.assertEqual(page.locator("#tabBtnWorkspaceListing").get_attribute("aria-selected"), "true")
+            self.assertEqual(page.evaluate("document.activeElement?.id"), "id_sale_price")
+
+            # Fix sale_price and verify live counters + unsaved badge update
+            page.fill("#id_sale_price", "149.50")
+            title_text = "Sony WH-1000XM4 Edicion Prueba"
+            page.fill("#id_ai_title", title_text)
+            page.fill("#id_ai_description", "Linea 1\nLinea 2")
+            self.assertIn(f"{len(title_text)} / 255", page.locator("#titleCharCounter").inner_text())
+            self.assertIn("2 lines", page.locator("#descCharCounter").inner_text())
+            self.assertFalse(page.locator("#unsavedChangesBadge").evaluate("el => el.classList.contains('hidden')"))
+
+            # 6. Copy Ad formats payload AND rapid double-click does not lock label as "Copied!"
+            orig_copy_label = page.locator("#btnCopyFullListingPack").inner_text().strip()
+            page.click("#btnCopyFullListingPack")
+            page.wait_for_timeout(80)
+            page.click("#btnCopyFullListingPack")
+            page.wait_for_timeout(1750)
+            restored_copy_label = page.locator("#btnCopyFullListingPack").inner_text().strip()
+            self.assertEqual(restored_copy_label, orig_copy_label)
+            copied = page.evaluate("window.__copiedPayloads")
+            self.assertTrue(len(copied) >= 1)
+            self.assertIn("Sony WH-1000XM4 Edicion Prueba", copied[-1])
+            self.assertIn("€149.50", copied[-1])
+            self.assertNotIn("NaN", copied[-1])
+
+            # 7. Simulated non-HTTPS LAN context (navigator.clipboard = undefined) does not throw
+            page.evaluate("Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });")
+            page.click("#btnCopyFullListingPack")
+            page.wait_for_timeout(150)
+
+            # 8. Ctrl+S from Tab 1 saves form to DB
+            with page.expect_navigation():
+                page.locator("#id_ai_title").press("Control+s")
+            self.product.refresh_from_db()
+            self.assertEqual(self.product.ai_title, "Sony WH-1000XM4 Edicion Prueba")
+
+            # 9. Narrow OPPO A74 320x711 scroll hint hides once scrolled to right end
+            page.set_viewport_size({"width": 320, "height": 711})
+            page.wait_for_timeout(150)
+            self.assertFalse(
+                page.locator("#detailWorkspaceTabScrollHint").evaluate("el => el.classList.contains('hidden')")
+            )
+            page.evaluate("""() => {
+                const tl = document.getElementById('detailWorkspaceTablist');
+                tl.scrollLeft = tl.scrollWidth;
+                tl.dispatchEvent(new Event('scroll'));
+            }""")
+            page.wait_for_timeout(100)
+            self.assertTrue(
+                page.locator("#detailWorkspaceTabScrollHint").evaluate("el => el.classList.contains('hidden')")
+            )
+
+            self.assertEqual(page_errors, [], f"Unexpected browser JS errors: {page_errors}")
+            context.close()
+            browser.close()
