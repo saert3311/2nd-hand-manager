@@ -78,19 +78,19 @@ class ProductDetailTabbedRedesignTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
 
-        # Verify tablist and 4 category tab buttons
+        # Verify tablist, scroll hint, calm AI toolbar, and 4 category tab buttons
         self.assertIn('id="detailWorkspaceTablist"', html)
+        self.assertIn('id="detailWorkspaceTabScrollHint"', html)
+        self.assertIn('id="aiCommandToolbar"', html)
         self.assertIn('role="tablist"', html)
         self.assertIn('id="tabBtnWorkspaceListing"', html)
         self.assertIn('id="tabBtnWorkspaceChannels"', html)
         self.assertIn('id="tabBtnWorkspaceNotes"', html)
         self.assertIn('id="tabBtnWorkspaceCompliance"', html)
 
-        # Default active tab is Listing & Pricing
-        self.assertIn(
-            'id="tabBtnWorkspaceListing"\n                data-workspace-tab="listing" aria-selected="true"',
-            html,
-        )
+        # Default active tab is Listing
+        self.assertIn('id="tabBtnWorkspaceListing"', html)
+        self.assertRegex(html, r'id="tabBtnWorkspaceListing"\s+data-workspace-tab="listing"\s+aria-selected="true"')
         self.assertIn('id="workspacePanelListing" role="tabpanel" aria-labelledby="tabBtnWorkspaceListing"', html)
 
         # Inactive panels use hidden="until-found" and keep bare panel containers without padding/border
@@ -222,21 +222,23 @@ class ProductDetailTabbedRedesignTests(TestCase):
         with translation.override("es"):
             resp_es = self.client.get(url, HTTP_ACCEPT_LANGUAGE="es")
             html_es = resp_es.content.decode("utf-8")
-            self.assertIn("Ficha y Precio", html_es)
-            self.assertIn("Canales y Tienda", html_es)
-            self.assertIn("Notas y Dudas", html_es)
-            self.assertIn("Políticas y Cumplimiento", html_es)
+            self.assertIn("Anuncio", html_es)
+            self.assertIn("Canales", html_es)
+            self.assertIn("Notas", html_es)
+            self.assertIn("Políticas", html_es)
             self.assertIn("Preparación del anuncio", html_es)
-            self.assertIn("Copiar anuncio completo", html_es)
+            self.assertIn("Copiar anuncio", html_es)
+            self.assertIn("Regenerar con IA", html_es)
             self.assertIn("Registro histórico de estados (clic para desplegar)", html_es)
 
         with translation.override("en"):
             resp_en = self.client.get(url, HTTP_ACCEPT_LANGUAGE="en")
             html_en = resp_en.content.decode("utf-8")
-            self.assertIn("Listing & Pricing", html_en)
-            self.assertIn("Channels & Storefront", html_en)
-            self.assertIn("Notes & Doubts", html_en)
-            self.assertIn("Policy & Compliance", html_en)
+            self.assertIn("Listing", html_en)
+            self.assertIn("Channels", html_en)
+            self.assertIn("Notes", html_en)
+            self.assertIn("Policy", html_en)
             self.assertIn("Staging Readiness", html_en)
-            self.assertIn("Copy Full Ad Pack", html_en)
+            self.assertIn("Copy Ad", html_en)
+            self.assertIn("Regenerate with AI", html_en)
             self.assertIn("Archival state log (click to expand)", html_en)

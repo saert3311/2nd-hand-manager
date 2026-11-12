@@ -452,102 +452,109 @@
     <!-- Right Column: Tabbed Category Workspace (7 cols) -->
     <div id="detailWorkspaceCard" class="order-1 lg:order-2 lg:col-span-7 w-full bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden min-w-0">
 
-      <!-- Category Tab Navigation Bar (Single-line horizontal rail, anti-apilación) -->
-      <div id="detailWorkspaceTablist" role="tablist" aria-label="{% trans 'Product workspace sections' %}"
-           class="flex items-center overflow-x-auto flex-nowrap whitespace-nowrap no-scrollbar border-b border-slate-200 bg-slate-100/80 px-2 pt-1.5 gap-1">
-        <button type="button" role="tab" id="tabBtnWorkspaceListing"
-                data-workspace-tab="listing" aria-selected="true"
-                onclick="switchWorkspaceTab('listing')"
-                class="px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition cursor-pointer min-h-[42px]">
-          <span aria-hidden="true">📝</span>
-          <span>{% trans "Listing & Pricing" %}</span>
-        </button>
+      <!-- Category Tab Navigation Bar (Single-line horizontal rail, unclipped on desktop + scroll cue on ultra-narrow screens) -->
+      <div class="relative border-b border-slate-200 bg-slate-100/80">
+        <div id="detailWorkspaceTablist" role="tablist" aria-label="{% trans 'Product workspace sections' %}"
+             class="flex items-center overflow-x-auto flex-nowrap whitespace-nowrap no-scrollbar px-2 pt-1.5 gap-1">
+          <button type="button" role="tab" id="tabBtnWorkspaceListing"
+                  data-workspace-tab="listing" aria-selected="true"
+                  onclick="switchWorkspaceTab('listing')"
+                  class="px-2.5 sm:px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition cursor-pointer min-h-[42px]">
+            <span aria-hidden="true">📝</span>
+            <span>{% trans "Listing" %}</span>
+          </button>
 
-        <button type="button" role="tab" id="tabBtnWorkspaceChannels"
-                data-workspace-tab="channels" aria-selected="false"
-                onclick="switchWorkspaceTab('channels')"
-                class="px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition cursor-pointer min-h-[42px]">
-          <span aria-hidden="true">🏪</span>
-          <span>{% trans "Channels & Storefront" %}</span>
-          <span class="font-mono tabular-nums text-xs px-1.5 py-0.5 rounded-full {% if active_listing_links %}bg-emerald-100 text-emerald-800{% else %}bg-slate-200/80 text-slate-700{% endif %}">
-            {{ active_listing_links|length }}
-          </span>
-          {% if product.needs_platform_sync %}
-          <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse" title="{% trans 'Out of Sync' %}" aria-hidden="true"></span>
-          {% endif %}
-        </button>
+          <button type="button" role="tab" id="tabBtnWorkspaceChannels"
+                  data-workspace-tab="channels" aria-selected="false"
+                  onclick="switchWorkspaceTab('channels')"
+                  class="px-2.5 sm:px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition cursor-pointer min-h-[42px]">
+            <span aria-hidden="true">🏪</span>
+            <span>{% trans "Channels" %}</span>
+            <span class="font-mono tabular-nums text-xs px-1.5 py-0.5 rounded-full {% if active_listing_links %}bg-emerald-100 text-emerald-900{% else %}bg-slate-200 text-slate-800{% endif %}">
+              {{ active_listing_links|length }}
+            </span>
+            {% if product.needs_platform_sync %}
+            <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse" title="{% trans 'Out of Sync' %}" aria-hidden="true"></span>
+            {% endif %}
+          </button>
 
-        <button type="button" role="tab" id="tabBtnWorkspaceNotes"
-                data-workspace-tab="notes" aria-selected="false"
-                onclick="switchWorkspaceTab('notes')"
-                class="px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition cursor-pointer min-h-[42px]">
-          <span aria-hidden="true">💡</span>
-          <span>{% trans "Notes & Doubts" %}</span>
-          {% if pending_clarifications.exists %}
-          <span class="font-mono tabular-nums text-xs px-1.5 py-0.5 rounded-full bg-amber-200 text-amber-950">
-            {{ pending_clarifications.count }}
-          </span>
-          {% elif resolved_clarifications.exists %}
-          <span class="font-mono tabular-nums text-xs px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-            {{ resolved_clarifications.count }}
-          </span>
-          {% endif %}
-        </button>
+          <button type="button" role="tab" id="tabBtnWorkspaceNotes"
+                  data-workspace-tab="notes" aria-selected="false"
+                  onclick="switchWorkspaceTab('notes')"
+                  class="px-2.5 sm:px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition cursor-pointer min-h-[42px]">
+            <span aria-hidden="true">💡</span>
+            <span>{% trans "Notes" %}</span>
+            {% if pending_clarifications.exists %}
+            <span class="font-mono tabular-nums text-xs px-1.5 py-0.5 rounded-full bg-amber-200 text-amber-950">
+              {{ pending_clarifications.count }}
+            </span>
+            {% elif resolved_clarifications.exists %}
+            <span class="font-mono tabular-nums text-xs px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900">
+              {{ resolved_clarifications.count }}
+            </span>
+            {% endif %}
+          </button>
 
-        <button type="button" role="tab" id="tabBtnWorkspaceCompliance"
-                data-workspace-tab="compliance" aria-selected="false"
-                onclick="switchWorkspaceTab('compliance')"
-                class="px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition cursor-pointer min-h-[42px]">
-          <span aria-hidden="true">🛡️</span>
-          <span>{% trans "Policy & Compliance" %}</span>
-          <span class="font-mono tabular-nums text-xs px-1.5 py-0.5 rounded-full
-            {% if product.compliance_status == 'rejected' %}bg-rose-100 text-rose-900
-            {% elif product.compliance_status == 'manual_review' %}bg-amber-100 text-amber-950
-            {% else %}bg-emerald-100 text-emerald-800{% endif %}">
-            {% if product.compliance_status == 'rejected' %}🚫{% elif product.compliance_status == 'manual_review' %}⚠️{% else %}✓{% endif %}
-            {{ product.compliance_risk_score }}
-          </span>
-        </button>
+          <button type="button" role="tab" id="tabBtnWorkspaceCompliance"
+                  data-workspace-tab="compliance" aria-selected="false"
+                  onclick="switchWorkspaceTab('compliance')"
+                  class="px-2.5 sm:px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition cursor-pointer min-h-[42px]">
+            <span aria-hidden="true">🛡️</span>
+            <span>{% trans "Policy" %}</span>
+            <span class="font-mono tabular-nums text-xs px-1.5 py-0.5 rounded-full
+              {% if product.compliance_status == 'rejected' %}bg-rose-100 text-rose-900
+              {% elif product.compliance_status == 'manual_review' %}bg-amber-200/80 text-amber-950
+              {% else %}bg-emerald-100 text-emerald-900{% endif %}">
+              {{ product.compliance_risk_score }}
+            </span>
+          </button>
+        </div>
+        <!-- Visual right-edge scroll hint rendered only when horizontally clipped on tiny viewports -->
+        <div id="detailWorkspaceTabScrollHint" aria-hidden="true"
+             class="hidden pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-slate-100 via-slate-100/80 to-transparent flex items-center justify-end pr-1 text-slate-600 text-xs font-bold">
+          ›
+        </div>
       </div>
 
-      <!-- Contextual Alert Strip for Flagged Policy or Unapplied Clarifications (visible on Listing tab) -->
+      <!-- Contextual Alert Strip & Calm AI Command Toolbar (visible on Listing tab) -->
       <div id="workspaceListingTopAlerts">
-        {% if has_unapplied_clarifications %}
-        <div class="ai-regeneration-callout bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-3 flex items-start justify-between gap-3">
-          <div class="flex items-start gap-2.5">
-            <span class="text-base shrink-0" aria-hidden="true">💡</span>
-            <div class="text-xs sm:text-sm">
-              <span class="font-bold text-amber-950">{% trans "New clarification responses available!" %}</span>
-              <span class="text-amber-800">{% trans "Answers from assistant have been provided. Re-generate the listing copy to include these details in the AI description." %}</span>
-            </div>
+        {% if has_unapplied_clarifications or product.compliance_status != 'approved' %}
+        <div class="bg-amber-50/80 border-b border-amber-200/90 px-3.5 py-2 sm:px-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-xs">
+          {% if has_unapplied_clarifications %}
+          <div class="ai-regeneration-callout flex items-center gap-1.5 text-amber-950 font-medium min-w-0">
+            <span aria-hidden="true">💡</span>
+            <span class="truncate font-semibold">{% trans "New assistant replies" %}</span>
+            <button type="button" onclick="switchWorkspaceTab('notes')" class="font-bold text-amber-900 hover:text-amber-950 underline shrink-0 cursor-pointer">
+              {% trans "View Notes" %} &rarr;
+            </button>
           </div>
-          <button type="button" onclick="switchWorkspaceTab('notes')" class="shrink-0 text-xs font-bold text-amber-900 underline hover:text-amber-950 cursor-pointer">
-            {% trans "View Notes" %} &rarr;
-          </button>
-        </div>
-        {% endif %}
+          {% endif %}
 
-        {% if product.compliance_status != 'approved' %}
-        <div id="clauseGuardQuickNotice" class="bg-amber-50/70 border-b border-amber-200/80 px-4 py-2.5 flex items-center justify-between gap-2 text-xs">
-          <span class="font-semibold text-amber-950 flex items-center gap-1.5 min-w-0">
+          {% if product.compliance_status != 'approved' %}
+          <div id="clauseGuardQuickNotice" class="flex items-center gap-1.5 text-amber-950 font-medium min-w-0">
             <span aria-hidden="true">{% if product.compliance_status == 'rejected' %}🚫{% else %}⚠️{% endif %}</span>
-            <span class="truncate">{% trans "ClauseGuard flagged policy notices for this item." %}</span>
-          </span>
-          <button type="button" onclick="switchWorkspaceTab('compliance')" class="shrink-0 font-bold text-amber-900 hover:text-amber-950 underline cursor-pointer">
-            {% trans "Review Policy" %} ({{ product.compliance_risk_score }}/100) &rarr;
-          </button>
+            <span class="truncate font-semibold">{% trans "Policy Risk" %}: {{ product.compliance_risk_score }}/100</span>
+            <button type="button" onclick="switchWorkspaceTab('compliance')" class="font-bold text-amber-900 hover:text-amber-950 underline shrink-0 cursor-pointer">
+              {% trans "Review Policy" %} &rarr;
+            </button>
+          </div>
+          {% endif %}
         </div>
         {% endif %}
 
-        <!-- Sleek High-Contrast AI Vision Command Bar (replaces oversized gradient banner) -->
-        <div class="bg-slate-900 text-white px-4 py-3 sm:px-6 sm:py-3.5 border-b border-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <!-- Calm High-Contrast AI Vision Toolbar -->
+        <div id="aiCommandToolbar" class="bg-emerald-50/50 px-3.5 py-3 sm:px-6 sm:py-3.5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           <div class="min-w-0">
-            <h2 class="font-bold text-sm sm:text-base flex items-center gap-2 text-white">
-              <span class="text-emerald-400" aria-hidden="true">✨</span>
+            <h2 class="font-bold text-sm sm:text-base flex items-center gap-1.5 text-slate-900">
+              <span aria-hidden="true">✨</span>
               <span>{% trans "Gemini Multimodal Vision" %}</span>
             </h2>
-            <p class="text-xs text-slate-300 mt-0.5">
-              {% trans "Analyzes attached photos & raw notes to draft an SEO marketplace title and description." %}
+            <p class="text-xs sm:text-sm text-slate-700 mt-0.5 leading-snug">
+              {% if product.ai_title or product.ai_description %}
+                {% trans "Synced with attached photos and notes." %}
+              {% else %}
+                {% trans "Draft SEO title & description from photos and notes." %}
+              {% endif %}
             </p>
           </div>
 
@@ -555,13 +562,19 @@
           <form method="post" action="{% url 'inventory:generate_ai' product.pk %}" id="aiForm" class="shrink-0">
             {% csrf_token %}
             <button type="submit" id="aiBtn"
-                    class="w-full sm:w-auto whitespace-nowrap px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-extrabold text-xs sm:text-sm rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px]">
+                    class="w-full sm:w-auto whitespace-nowrap px-4 py-2 bg-emerald-700 hover:bg-emerald-800 active:scale-[0.98] text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px]">
               <span id="aiIcon" aria-hidden="true">⚡</span>
-              <span id="aiText">{% trans "Generate AI Listing" %}</span>
+              <span id="aiText">
+                {% if product.ai_title or product.ai_description %}
+                  {% trans "Regenerate with AI" %}
+                {% else %}
+                  {% trans "Generate with AI" %}
+                {% endif %}
+              </span>
             </button>
           </form>
           {% else %}
-          <span class="text-xs bg-slate-800 text-slate-300 border border-slate-700 px-2.5 py-1 rounded-lg shrink-0">{% trans "Manager Only" %}</span>
+          <span class="text-xs bg-slate-200 text-slate-800 px-2.5 py-1 rounded-lg font-semibold shrink-0">{% trans "Manager Only" %}</span>
           {% endif %}
         </div>
       </div>
@@ -576,32 +589,30 @@
         <div id="workspacePanelListing" role="tabpanel" aria-labelledby="tabBtnWorkspaceListing" data-workspace-panel="listing">
           <div class="p-3.5 sm:p-6 space-y-5">
 
-            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-              <div class="flex items-center gap-2">
-                <h2 class="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider">{% trans "Marketplace Listing Copy" %}</h2>
-                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full {% if product.is_sold %}bg-purple-100 text-purple-900 border border-purple-200{% else %}bg-emerald-100 text-emerald-800{% endif %}">
-                  {% if product.is_sold %}
-                    {% if product.sold_channel_type == 'in_store' %}
-                      🏪 {% trans "Sold: In-Store" %}
-                    {% elif product.sold_channel_type == 'marketplace' and product.sold_marketplace %}
-                      🌐 {% trans "Sold on" %} {{ product.sold_marketplace.name }}
-                    {% elif product.sold_channel_type == 'other' %}
-                      📦 {% trans "Sold: Other" %}
-                    {% else %}
-                      🏷️ {% trans "Status: Sold" %}
-                    {% endif %}
+            <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+              <div class="flex flex-wrap items-center gap-2 min-w-0">
+                <h2 class="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider">{% trans "Listing Copy" %}</h2>
+                {% if product.is_sold %}
+                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-900 border border-purple-200">
+                  {% if product.sold_channel_type == 'in_store' %}
+                    🏪 {% trans "Sold: In-Store" %}
+                  {% elif product.sold_channel_type == 'marketplace' and product.sold_marketplace %}
+                    🌐 {% trans "Sold on" %} {{ product.sold_marketplace.name }}
+                  {% elif product.sold_channel_type == 'other' %}
+                    📦 {% trans "Sold: Other" %}
                   {% else %}
-                    {% trans "Status: Available for Sale" %}
+                    🏷️ {% trans "Status: Sold" %}
                   {% endif %}
                 </span>
+                {% endif %}
               </div>
 
               <!-- 1-Tap Copy Full Listing Pack -->
               <button type="button" id="btnCopyFullListingPack" onclick="copyFullListingPack(this)"
-                      class="text-xs font-bold text-slate-800 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] border border-slate-300/80 px-3 py-1.5 rounded-lg transition inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      class="shrink-0 text-xs font-bold text-slate-800 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] border border-slate-300/80 px-3 py-1.5 rounded-lg transition inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
                       title="{% trans 'Copy formatted Title, Price, and Description together' %}">
                 <span aria-hidden="true">📦</span>
-                <span>{% trans "Copy Full Ad Pack" %}</span>
+                <span>{% trans "Copy Ad" %}</span>
               </button>
             </div>
 
@@ -620,7 +631,7 @@
                   <label for="id_ai_title" class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider">
                     {% trans "Listing Title" %}
                   </label>
-                  <span id="titleCharCounter" class="font-mono tabular-nums text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                  <span id="titleCharCounter" class="font-mono tabular-nums text-xs text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md font-semibold">
                     0 / 255
                   </span>
                 </div>
@@ -642,7 +653,7 @@
                   <label for="id_ai_description" class="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider">
                     {% trans "Listing Description / Copy" %}
                   </label>
-                  <span id="descCharCounter" class="font-mono tabular-nums text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                  <span id="descCharCounter" class="font-mono tabular-nums text-xs text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md font-semibold">
                     0 {% trans "chars" %}
                   </span>
                 </div>
@@ -1667,6 +1678,14 @@
   const workspaceTabPanels = Array.from(document.querySelectorAll('#detailWorkspaceCard [data-workspace-panel]'));
   const workspaceListingTopAlerts = document.getElementById('workspaceListingTopAlerts');
   const stagingFormSaveBar = document.getElementById('stagingFormSaveBar');
+  const workspaceTablistEl = document.getElementById('detailWorkspaceTablist');
+  const workspaceTabScrollHint = document.getElementById('detailWorkspaceTabScrollHint');
+
+  function updateWorkspaceTabScrollHint() {
+    if (!workspaceTablistEl || !workspaceTabScrollHint) return;
+    const hasMoreRight = (workspaceTablistEl.scrollWidth - workspaceTablistEl.clientWidth - workspaceTablistEl.scrollLeft) > 8;
+    workspaceTabScrollHint.classList.toggle('hidden', !hasMoreRight);
+  }
 
   function switchWorkspaceTab(tabKey, updateHash = false) {
     if (!tabKey) return;
@@ -1707,6 +1726,7 @@
         // Fallback ignored
       }
     }
+    updateWorkspaceTabScrollHint();
 
     if (updateHash && window.history && window.history.replaceState) {
       window.history.replaceState(null, '', `#tab-${tabKey}`);
@@ -1714,7 +1734,12 @@
   }
 
   // Keyboard roving navigation (ArrowLeft, ArrowRight, Home, End) on #detailWorkspaceTablist
-  const workspaceTablistEl = document.getElementById('detailWorkspaceTablist');
+  if (workspaceTablistEl) {
+    workspaceTablistEl.addEventListener('scroll', updateWorkspaceTabScrollHint, { passive: true });
+    window.addEventListener('resize', updateWorkspaceTabScrollHint);
+    updateWorkspaceTabScrollHint();
+  }
+
   if (workspaceTablistEl) {
     workspaceTablistEl.addEventListener('keydown', (e) => {
       const currentTab = e.target.closest('[role="tab"]');
