@@ -2592,6 +2592,9 @@ msgstr "Usar precio de reventa estimado"
 msgid "Apply resale (€{{ price }})"
 msgstr "Aplicar reventa (€{{ price }})"
 
+msgid "Apply resale (€%(price)s)"
+msgstr "Aplicar reventa (€%(price)s)"
+
 msgid "E.g., Pit-to-pit: 54cm, length: 70cm, YKK zipper, 100% heavy cotton."
 msgstr ""
 "Ej., Sisa a sisa: 54cm, largo: 70cm, cremallera YKK, 100% algodón grueso."
@@ -3843,3 +3846,97 @@ msgid "JSON list of strong trigger phrases in ES/EN for deterministic Stage 1 ma
 msgstr ""
 "Lista JSON de frases de activación fuerte en ES/EN para coincidencia "
 "determinista en Fase 1"
+
+msgid "Staging Readiness"
+msgstr "Preparación del anuncio"
+
+msgid "In Progress"
+msgstr "En curso"
+
+msgid "Live"
+msgstr "Publicado"
+
+msgid "Copywriting"
+msgstr "Redacción"
+
+msgid "Sale Price"
+msgstr "Precio de venta"
+
+msgid "Channels"
+msgstr "Canales"
+
+msgid "Policy Check"
+msgstr "Control de políticas"
+
+msgid "Product workspace sections"
+msgstr "Secciones de trabajo del producto"
+
+msgid "Listing & Pricing"
+msgstr "Ficha y Precio"
+
+msgid "Channels & Storefront"
+msgstr "Canales y Tienda"
+
+msgid "Notes & Doubts"
+msgstr "Notas y Dudas"
+
+msgid "Policy & Compliance"
+msgstr "Políticas y Cumplimiento"
+
+msgid "View Notes"
+msgstr "Ver notas"
+
+msgid "ClauseGuard flagged policy notices for this item."
+msgstr "ClauseGuard detectó avisos de políticas en este artículo."
+
+msgid "Review Policy"
+msgstr "Revisar políticas"
+
+msgid "Copy Full Ad Pack"
+msgstr "Copiar anuncio completo"
+
+msgid "Copy formatted Title, Price, and Description together"
+msgstr "Copiar título, precio y descripción formateados juntos"
+
+msgid "chars"
+msgstr "caract."
+
+msgid "lines"
+msgstr "líneas"
+
+msgid "Unsaved changes"
+msgstr "Cambios sin guardar"
+
+msgid "Shortcut: Ctrl+S"
+msgstr "Atajo: Ctrl+S"
+
+msgid "Archival state log (click to expand)"
+msgstr "Registro histórico de estados (clic para desplegar)"
+
+msgid "Listing"
+msgstr "Anuncio"
+
+msgid "Policy"
+msgstr "Políticas"
+
+msgid "Copy Ad"
+msgstr "Copiar anuncio"
+
+msgid "Listing Copy"
+msgstr "Ficha del anuncio"
+
+msgid "Generate with AI"
+msgstr "Generar con IA"
+
+msgid "Regenerate with AI"
+msgstr "Regenerar con IA"
+
+msgid "Draft SEO title & description from photos and notes."
+msgstr "Redacta un título SEO y descripción desde tus fotos y notas."
+
+msgid "Synced with attached photos and notes."
+msgstr "Sincronizado con las fotos y notas adjuntas."
+
+msgid "New assistant replies"
+msgstr "Nuevas respuestas del asistente"
+

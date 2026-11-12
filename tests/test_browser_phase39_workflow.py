@@ -185,6 +185,7 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
 
             # Test Clarifications Hub tablist and tabpanel
             print("Testing Clarifications Hub accessible tabs...")
+            page.click("#tabBtnWorkspaceNotes")
             tab_direct = page.locator("#tabBtnDirectNote")
             tab_doubt = page.locator("#tabBtnAskDoubt")
             self.assertEqual(tab_direct.get_attribute("aria-selected"), "true")
@@ -200,6 +201,7 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
 
             # Test Form Validation Errors with role='alert'
             print("Testing inline form error rendering with role='alert'...")
+            page.click("#tabBtnWorkspaceListing")
             page.check('input[name="is_sold"]')
             # Do NOT select a sold channel -> triggers validation error on submit
             page.click('button:has-text("Guardar cambios"), button:has-text("Save Listing Changes")')
@@ -219,6 +221,7 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
             # STEP 6: Accessible Action Confirmation Modal (Replaces native confirm())
             # -------------------------------------------------------------
             print("\n[Step 6] Testing accessible #actionConfirmModal (No native dialogs)...")
+            page.click("#tabBtnWorkspaceChannels")
             wallapop_row = page.locator('div[data-site-slug="wallapop"]')
             self.assertTrue(wallapop_row.is_visible())
 

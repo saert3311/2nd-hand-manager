@@ -179,6 +179,7 @@ class BrowserRefinedLifecycleTests(StaticLiveServerTestCase):
             page.screenshot(path="screenshots/06_staging_ready.png")
 
             # 8. Add Marketplace Listing Link -> Auto-transitions to PUBLISHED
+            page.click("#tabBtnWorkspaceChannels")
             page.click("#openAddListingBtn")
             page.wait_for_selector("#addListingModal:not(.hidden)")
             page.select_option("#addModalSiteSelect", label="Wallapop")
@@ -193,6 +194,7 @@ class BrowserRefinedLifecycleTests(StaticLiveServerTestCase):
             page.screenshot(path="screenshots/07_staging_published.png")
 
             # 9. Deactivate/Delete Marketplace Link -> Auto-reverts to READY
+            page.click("#tabBtnWorkspaceChannels")
             wallapop_row = page.locator('div[data-site-slug="wallapop"]')
             self.assertTrue(wallapop_row.is_visible())
             wallapop_row.locator('button[onclick*="openEditListingModal"]').click()

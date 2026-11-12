@@ -754,3 +754,25 @@ Task 179: PolicyClause Schema (weak_keywords, exception_phrases) + Curated Seed 
 | Over-stemming short Spanish words (`gas` → `ga`, `gris` → `gri`, `tenis` → `teni`) causing false matches | Medium | Only stem tokens with `len >= 4` and maintain an explicit `_INVARIANT_STEMS` set (`gas`, `gris`, `pais`, `seis`, `tres`, `dos`, `mas`, `plus`, `tenis`, `chasis`, `crisis`, `dosis`, `tesis`, `gafas`, `alicates`). |
 | Existing databases already ran migration `0026` and wouldn't pick up updated `DEFAULT_POLICY_CLAUSES_SEED` keywords | High | Add data migration `0027` (and update `ensure_default_policy_clauses(sync_defaults=True)`) to backfill `hard_block_keywords`, `weak_keywords`, and `exception_phrases` on the 12 default clauses. |
 | Changing `category` on a product previously cleared via `STAGE_2_TARGETED` could unnecessarily wipe Stage 2 clearance | Medium | Record `stage2_cleared_text_hash` in `compliance_report`; if text hash is unchanged and the new category triggers no category rule violation, preserve `STAGE_2_TARGETED` clearance. |
+
+---
+
+## Phase 50: Product Detail Tabbed Workspace Redesign & Audit Log Deprioritization
+
+### Architectural Decisions
+1. **4-Tab Category Switcher (`#detailWorkspaceTablist`)**:
+   - *Decision*: Replace the 7-card vertically stacked right/left column sprawl on `/products/<pk>/` with a single-row horizontal tablist (`role="tablist"`, `overflow-x-auto flex-nowrap whitespace-nowrap no-scrollbar`) containing 4 category tabs: `Listing & Pricing` (`tab-listing`), `Channels & Storefront` (`tab-channels`), `Notes & Doubts` (`tab-notes`), and `Policy & Compliance` (`tab-compliance`).
+   - *Rationale*: Eliminates vertical scroll fatigue while keeping every category 1 click away, with live counter/status badges on each tab and zero *apilación* on `320×711` / `360×800` OPPO A74 viewports.
+2. **Unified Staging Form Wrapper (`#productStagingForm`)**:
+   - *Decision*: Wrap both Tab 1 (`Listing & Pricing`) and Tab 2 (`Channels & Storefront` — specifically the `Public Storefront & Taxonomy` controls) inside the single `<form method="post" id="productStagingForm">` with a shared Save footer bar (`#stagingFormSaveBar`).
+   - *Rationale*: Switching between Tab 1 and Tab 2 never loses unsaved edits, and unlocked mobile access to `Public Storefront & Taxonomy` (`category`, `condition`, `is_public`, `is_featured`, `is_reserved`) works seamlessly with a single Save action or `Ctrl+S` / `Cmd+S`.
+3. **Searchable Hidden Tab Panels (`hidden="until-found"` + `beforematch`)**:
+   - *Decision*: Use `hidden="until-found"` on inactive `[role="tabpanel"]` elements with a child styling wrapper and a `beforematch` listener (`modern-web-guidance: tabs` & `search-hidden-content`).
+   - *Rationale*: Allows native browser Find-in-Page (`Ctrl+F`) to match text inside inactive tabs and automatically switch to the matching tab while keeping all panels in the DOM for server-rendered tests.
+4. **Extreme Deprioritization of Lifecycle State Log (`#status-history-section`)**:
+   - *Decision*: Move `#status-history-section` out of the main 2-column grid to the bottom of the page as a quiet, collapsed-by-default native `<details id="status-history-disclosure">` footer drawer with a compact single-line-per-event timeline.
+   - *Rationale*: State transition logs are archival telemetry rarely consulted during daily staging; collapsing them at the footer saves ~350px of vertical height while keeping them 1 click away.
+5. **Progressive Disclosure for "Add More Photos" (`#detailAddPhotosDisclosure`)**:
+   - *Decision*: Wrap `#detailPhotoUploadContainer` inside `<details id="detailAddPhotosDisclosure">` (collapsed by default when `product.images.exists` is `True`, auto-opened when `product.images.count == 0` or when files are selected/dragged).
+   - *Rationale*: Cuts left-column height by ~45% on products that already have photos while preserving 1-tap camera/gallery upload ergonomics.
+

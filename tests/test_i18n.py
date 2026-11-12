@@ -92,7 +92,7 @@ class InternationalizationTests(TestCase):
         content = response.content.decode("utf-8")
         self.assertIn("Volver al Panel", content)
         self.assertIn("Notas de Entrada Preservadas", content)
-        self.assertIn("Generar Publicación con IA", content)
+        self.assertIn("Regenerar con IA", content)
         self.assertIn("Guardar Cambios de Publicación", content)
         # Verify raw note is preserved unchanged
         self.assertIn("Original 1994 Pink Floyd tour tee, size XL", content)
