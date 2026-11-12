@@ -1,0 +1,119 @@
+{% extends "inventory/base.html" %}
+{% load i18n static %}
+
+{% block title %}{% trans "Edit Provider" %} - {{ provider.name }} - 2ndHand Staging{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+  <!-- Header with Back Link -->
+  <div class="space-y-2">
+    <div>
+      <a href="{% url 'inventory:pallets' %}?tab=providers" class="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition">
+        &larr; {% trans "Back to Providers" %}
+      </a>
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2 min-w-0 break-words">
+        <span aria-hidden="true">{{ provider.type_icon }}</span>
+        <span>{% trans "Edit Provider" %}: {{ provider.name }}</span>
+      </h1>
+      <div class="flex flex-wrap items-center gap-1.5">
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">
+          📦 {{ pallets_count }} {% trans "pallets" %}
+        </span>
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200">
+          🏷️ {{ products_count }} {% trans "items" %}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Card -->
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <form method="post" action="{% url 'inventory:provider_edit' provider.pk %}" class="p-5 sm:p-6 space-y-4" novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+      <div role="alert" class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold space-y-1">
+        {% for error in form.non_field_errors %}
+          <div>⚠️ {{ error }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="{{ form.name.id_for_label }}" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5">
+            {% trans "Provider Name" %} <span class="text-rose-500">*</span>
+          </label>
+          {{ form.name }}
+          {% if form.name.errors %}
+          <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+            {% for error in form.name.errors %}{{ error }}{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+        <div>
+          <label for="{{ form.provider_type.id_for_label }}" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5">
+            {% trans "Origin Type" %} <span class="text-rose-500">*</span>
+          </label>
+          {{ form.provider_type }}
+          {% if form.provider_type.errors %}
+          <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+            {% for error in form.provider_type.errors %}{{ error }}{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="sm:col-span-2">
+          <label for="{{ form.contact_info.id_for_label }}" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <span>{% trans "Contact Info" %}</span>
+            <span class="text-slate-400 font-normal lowercase text-xs">({% trans "Optional" %})</span>
+          </label>
+          {{ form.contact_info }}
+          {% if form.contact_info.errors %}
+          <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+            {% for error in form.contact_info.errors %}{{ error }}{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div>
+        <label for="{{ form.notes.id_for_label }}" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+          <span>{% trans "Notes" %}</span>
+          <span class="text-slate-400 font-normal lowercase text-xs">({% trans "Optional" %})</span>
+        </label>
+        {{ form.notes }}
+        {% if form.notes.errors %}
+        <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+          {% for error in form.notes.errors %}{{ error }}{% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <label class="flex items-center gap-2.5 cursor-pointer select-none pt-1">
+        {{ form.is_active }}
+        <span class="text-sm font-semibold text-slate-800">{% trans "Active in intake & staging selectors" %}</span>
+      </label>
+
+      <!-- Actions -->
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+        <a href="{% url 'inventory:pallets' %}?tab=providers"
+           class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold rounded-xl transition min-h-[42px] inline-flex items-center">
+          {% trans "Cancel" %}
+        </a>
+
+        <button type="submit" id="btnSaveProvider"
+                class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-base sm:text-sm cursor-pointer min-h-[42px]">
+          <span>💾</span>
+          <span>{% trans "Save Changes" %}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

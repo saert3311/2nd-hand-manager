@@ -1,234 +1,525 @@
 {% extends "inventory/base.html" %}
 {% load i18n l10n static %}
 
-{% block title %}{% trans "Pallets - 2ndHand Staging" %}{% endblock %}
+{% block title %}{% trans "Pallets & Providers - 2ndHand Staging" %}{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto space-y-6">
 
   <!-- Header -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div>
+    <div class="min-w-0">
       <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-        <span>📦</span> {% trans "Liquidation Pallets" %}
+        <span>📦</span> {% trans "Liquidation Pallets" %} &amp; {% trans "Providers" %}
       </h1>
       <p class="text-xs sm:text-sm text-slate-500 mt-1">
-        {% trans "Create and track pallets, acquisition costs, estimated values, and item counts." %}
+        {% trans "Create and track pallets, acquisition costs, estimated values, suppliers, and ROI." %}
       </p>
     </div>
-    <div>
+    <div class="shrink-0">
       <a href="{% url 'inventory:intake' %}" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition">
         <span>📷</span> {% trans "Go to Intake" %}
       </a>
     </div>
   </div>
 
-  <!-- Pallet Creation Card -->
-  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-    <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50">
-      <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-        <span>➕</span> {% trans "Register New Pallet" %}
-      </h2>
-      <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
-        {% trans "Auto-numbers the next sequential pallet. Financial amounts are optional and strictly confidential to managers." %}
-      </p>
-    </div>
+  <!-- Hub Tab Switcher -->
+  <div class="bg-white p-1.5 rounded-2xl border border-slate-200 shadow-2xs">
+    <nav id="originsHubTabs" role="tablist" aria-label="{% trans 'Origins Workspace' %}"
+         class="flex items-center gap-1.5 overflow-x-auto flex-nowrap whitespace-nowrap no-scrollbar">
+      <button type="button"
+              id="tabBtnPallets"
+              role="tab"
+              aria-selected="{% if active_tab != 'providers' %}true{% else %}false{% endif %}"
+              aria-controls="panelPallets"
+              onclick="switchOriginsTab('pallets')"
+              class="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer min-h-[42px] {% if active_tab != 'providers' %}bg-slate-900 text-white shadow-xs{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
+        <span aria-hidden="true">📦</span>
+        <span>{% trans "Pallets" %}</span>
+        <span class="px-2 py-0.5 rounded-full text-xs {% if active_tab != 'providers' %}bg-slate-700 text-white{% else %}bg-slate-200 text-slate-700{% endif %}">
+          {{ pallets|length }}
+        </span>
+      </button>
 
-    <form method="post" action="{% url 'inventory:pallets' %}" class="p-5 sm:p-6 space-y-4" novalidate>
-      {% csrf_token %}
-
-      {% if form.non_field_errors %}
-      <div role="alert" class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold space-y-1">
-        {% for error in form.non_field_errors %}
-          <div>⚠️ {{ error }}</div>
-        {% endfor %}
-      </div>
-      {% endif %}
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Number -->
-        <div>
-          <label for="id_number" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5">
-            {% trans "Pallet #" %} <span class="text-rose-500">*</span>
-          </label>
-          <input type="number" min="1" max="2147483647" name="number" id="id_number"
-                 value="{{ form.number.value|unlocalize|default:'' }}" required
-                 class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
-          {% if form.number.errors %}
-          <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
-            {% for error in form.number.errors %}{{ error }}{% endfor %}
-          </div>
-          {% endif %}
-        </div>
-
-        <!-- Received Date -->
-        <div>
-          <label for="id_received_date" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5">
-            {% trans "Received Date" %} <span class="text-rose-500">*</span>
-          </label>
-          <input type="date" name="received_date" id="id_received_date"
-                 value="{{ form.received_date.value|date:'Y-m-d'|default:form.received_date.value|default:'' }}" required
-                 class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
-          {% if form.received_date.errors %}
-          <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
-            {% for error in form.received_date.errors %}{{ error }}{% endfor %}
-          </div>
-          {% endif %}
-        </div>
-
-        <!-- Purchase Price -->
-        <div>
-          <label for="id_purchase_price" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-            <span>{% trans "Cost (€)" %}</span>
-            <span class="text-slate-400 font-normal lowercase text-xs">({% trans "Optional" %})</span>
-          </label>
-          <div class="relative flex items-center">
-            <span class="absolute left-3 text-slate-400 font-bold text-base sm:text-sm">€</span>
-            <input type="number" step="0.01" min="0" max="9999999.99" name="purchase_price" id="id_purchase_price"
-                   value="{{ form.purchase_price.value|unlocalize|default:'' }}"
-                   placeholder="0.00" inputmode="decimal"
-                   class="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
-          </div>
-          {% if form.purchase_price.errors %}
-          <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
-            {% for error in form.purchase_price.errors %}{{ error }}{% endfor %}
-          </div>
-          {% endif %}
-        </div>
-
-        <!-- Estimated Value -->
-        <div>
-          <label for="id_estimated_value" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-            <span>{% trans "Est. Value (€)" %}</span>
-            <span class="text-slate-400 font-normal lowercase text-xs">({% trans "Optional" %})</span>
-          </label>
-          <div class="relative flex items-center">
-            <span class="absolute left-3 text-slate-400 font-bold text-base sm:text-sm">€</span>
-            <input type="number" step="0.01" min="0" max="9999999.99" name="estimated_value" id="id_estimated_value"
-                   value="{{ form.estimated_value.value|unlocalize|default:'' }}"
-                   placeholder="0.00" inputmode="decimal"
-                   class="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
-          </div>
-          {% if form.estimated_value.errors %}
-          <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
-            {% for error in form.estimated_value.errors %}{{ error }}{% endfor %}
-          </div>
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- Notes -->
-      <div>
-        <label for="id_notes" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-          <span>{% trans "Notes & Manifest Details" %}</span>
-          <span class="text-slate-400 font-normal lowercase text-xs">({% trans "Optional" %})</span>
-        </label>
-        <textarea name="notes" id="id_notes" rows="2" maxlength="2000"
-                  placeholder="{% trans 'Supplier, condition notes, manifest details (optional)' %}"
-                  class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white resize-y">{{ form.notes.value|default:'' }}</textarea>
-        {% if form.notes.errors %}
-        <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
-          {% for error in form.notes.errors %}{{ error }}{% endfor %}
-        </div>
-        {% endif %}
-      </div>
-
-      <!-- Submit Button -->
-      <div class="pt-2 flex justify-end">
-        <button type="submit" id="btnCreatePallet"
-                class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-base sm:text-sm cursor-pointer">
-          <span>➕</span>
-          <span>{% trans "Create Pallet" %}</span>
-        </button>
-      </div>
-    </form>
+      <button type="button"
+              id="tabBtnProviders"
+              role="tab"
+              aria-selected="{% if active_tab == 'providers' %}true{% else %}false{% endif %}"
+              aria-controls="panelProviders"
+              onclick="switchOriginsTab('providers')"
+              class="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer min-h-[42px] {% if active_tab == 'providers' %}bg-slate-900 text-white shadow-xs{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
+        <span aria-hidden="true">🏢</span>
+        <span>{% trans "Providers" %}</span>
+        <span class="px-2 py-0.5 rounded-full text-xs {% if active_tab == 'providers' %}bg-slate-700 text-white{% else %}bg-slate-200 text-slate-700{% endif %}">
+          {{ providers_stats|length }}
+        </span>
+      </button>
+    </nav>
   </div>
 
-  <!-- Existing Pallets List -->
-  <div class="space-y-4">
-    <div class="flex items-center justify-between">
-      <h2 class="text-lg font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-        <span>📋</span> {% trans "Recorded Pallets" %}
-        <span class="text-xs bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded-full">{{ pallets.count }}</span>
-      </h2>
-    </div>
+  <!-- TAB 1: PALLETS PANEL -->
+  <section id="panelPallets" role="tabpanel" aria-labelledby="tabBtnPallets"
+           class="space-y-6 {% if active_tab == 'providers' %}hidden{% endif %}">
 
-    {% if pallets %}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="palletsListContainer">
-      {% for pallet in pallets %}
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 flex flex-col justify-between hover:border-slate-300 transition" id="pallet-card-{{ pallet.id }}">
-        <div class="space-y-3">
-          <!-- Top Row: Pallet Number & Active Items Badge -->
-          <div class="flex items-start justify-between gap-2">
-            <div>
-              <span class="text-xs uppercase font-extrabold tracking-wider text-slate-600">{% trans "Pallet" %}</span>
-              <h3 class="text-xl font-black text-slate-900 tracking-tight">Pallet #{{ pallet.number }}</h3>
+    <!-- Pallet Creation Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50">
+        <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+          <span>➕</span> {% trans "Register New Pallet" %}
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+          {% trans "Auto-numbers the next sequential pallet. Financial amounts are optional and strictly confidential to managers." %}
+        </p>
+      </div>
+
+      <form method="post" action="{% url 'inventory:pallets' %}" class="p-5 sm:p-6 space-y-4" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div role="alert" class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold space-y-1">
+          {% for error in form.non_field_errors %}
+            <div>⚠️ {{ error }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <!-- Number -->
+          <div>
+            <label for="id_number" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5">
+              {% trans "Pallet #" %} <span class="text-rose-500">*</span>
+            </label>
+            <input type="number" min="1" max="2147483647" name="number" id="id_number"
+                   value="{{ form.number.value|unlocalize|default:'' }}" required
+                   class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+            {% if form.number.errors %}
+            <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+              {% for error in form.number.errors %}{{ error }}{% endfor %}
             </div>
-            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200">
-              <span aria-hidden="true">📦</span>
-              <span>{{ pallet.products_count }} {% trans "items" %}</span>
-            </span>
+            {% endif %}
+          </div>
+
+          <!-- Provider -->
+          <div>
+            <label for="{{ form.provider.id_for_label }}" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between gap-1">
+              <span>{% trans "Provider" %}</span>
+              <span class="text-slate-400 font-normal lowercase text-xs">({% trans "Optional" %})</span>
+            </label>
+            {{ form.provider }}
+            {% if form.provider.errors %}
+            <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+              {% for error in form.provider.errors %}{{ error }}{% endfor %}
+            </div>
+            {% endif %}
           </div>
 
           <!-- Received Date -->
-          <div class="text-xs text-slate-500 flex items-center gap-1.5">
-            <span aria-hidden="true">📅</span>
-            <span>{% trans "Received:" %} <strong class="text-slate-700 font-semibold">{{ pallet.received_date|date:"Y-m-d" }}</strong></span>
+          <div>
+            <label for="id_received_date" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5">
+              {% trans "Received Date" %} <span class="text-rose-500">*</span>
+            </label>
+            <input type="date" name="received_date" id="id_received_date"
+                   value="{{ form.received_date.value|date:'Y-m-d'|default:form.received_date.value|default:'' }}" required
+                   class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+            {% if form.received_date.errors %}
+            <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+              {% for error in form.received_date.errors %}{{ error }}{% endfor %}
+            </div>
+            {% endif %}
           </div>
 
-          <!-- Financials (Manager Exclusive) -->
-          <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 grid grid-cols-2 gap-2 text-xs">
-            <div>
-              <span class="text-slate-500 font-medium block">{% trans "Purchase Cost" %}</span>
-              <span class="font-bold text-slate-800 font-mono text-sm">
-                {% if pallet.purchase_price is not None %}€{{ pallet.purchase_price|floatformat:2 }}{% else %}—{% endif %}
-              </span>
+          <!-- Purchase Price -->
+          <div>
+            <label for="id_purchase_price" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between gap-1">
+              <span>{% trans "Cost (€)" %}</span>
+              <span class="text-slate-400 font-normal lowercase text-xs">({% trans "Optional" %})</span>
+            </label>
+            <div class="relative flex items-center">
+              <span class="absolute left-3 text-slate-400 font-bold text-base sm:text-sm">€</span>
+              <input type="number" step="0.01" min="0" max="9999999.99" name="purchase_price" id="id_purchase_price"
+                     value="{{ form.purchase_price.value|unlocalize|default:'' }}"
+                     placeholder="0.00" inputmode="decimal"
+                     class="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
             </div>
-            <div>
-              <span class="text-slate-500 font-medium block">{% trans "Est. Value" %}</span>
-              <span class="font-bold text-emerald-800 font-mono text-sm">
-                {% if pallet.estimated_value is not None %}€{{ pallet.estimated_value|floatformat:2 }}{% else %}—{% endif %}
-              </span>
+            {% if form.purchase_price.errors %}
+            <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+              {% for error in form.purchase_price.errors %}{{ error }}{% endfor %}
             </div>
+            {% endif %}
           </div>
 
-          <!-- Notes -->
-          {% if pallet.notes %}
-          <p class="text-xs text-slate-600 leading-relaxed bg-amber-50/50 p-2.5 rounded-lg border border-amber-100 line-clamp-3">
-            {{ pallet.notes }}
-          </p>
+          <!-- Estimated Value -->
+          <div>
+            <label for="id_estimated_value" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between gap-1">
+              <span>{% trans "Est. Value (€)" %}</span>
+              <span class="text-slate-400 font-normal lowercase text-xs">({% trans "Optional" %})</span>
+            </label>
+            <div class="relative flex items-center">
+              <span class="absolute left-3 text-slate-400 font-bold text-base sm:text-sm">€</span>
+              <input type="number" step="0.01" min="0" max="9999999.99" name="estimated_value" id="id_estimated_value"
+                     value="{{ form.estimated_value.value|unlocalize|default:'' }}"
+                     placeholder="0.00" inputmode="decimal"
+                     class="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+            </div>
+            {% if form.estimated_value.errors %}
+            <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+              {% for error in form.estimated_value.errors %}{{ error }}{% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label for="id_notes" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <span>{% trans "Notes & Manifest Details" %}</span>
+            <span class="text-slate-400 font-normal lowercase text-xs">({% trans "Optional" %})</span>
+          </label>
+          <textarea name="notes" id="id_notes" rows="2" maxlength="2000"
+                    placeholder="{% trans 'Supplier, condition notes, manifest details (optional)' %}"
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white resize-y">{{ form.notes.value|default:'' }}</textarea>
+          {% if form.notes.errors %}
+          <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+            {% for error in form.notes.errors %}{{ error }}{% endfor %}
+          </div>
           {% endif %}
         </div>
 
-        <!-- Card Footer: Actions -->
-        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-          <a href="{% url 'inventory:pallet_edit' pallet.pk %}"
-             class="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition min-h-[36px]">
-            <span>✏️</span> {% trans "Edit" %}
-          </a>
-
-          <button type="button"
-                  onclick="confirmDeletePallet({{ pallet.id }}, {{ pallet.number }}, {{ pallet.products_count }})"
-                  class="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-lg transition min-h-[36px] cursor-pointer">
-            <span>🗑️</span> {% trans "Delete" %}
+        <!-- Submit Button -->
+        <div class="pt-2 flex justify-end">
+          <button type="submit" id="btnCreatePallet"
+                  class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-base sm:text-sm cursor-pointer">
+            <span>➕</span>
+            <span>{% trans "Create Pallet" %}</span>
           </button>
         </div>
-      </div>
-      {% endfor %}
+      </form>
     </div>
-    {% else %}
-    <!-- Empty State -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center space-y-3">
-      <div class="w-14 h-14 mx-auto rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-3xl">
-        📦
+
+    <!-- Existing Pallets List -->
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+          <span>📋</span> {% trans "Recorded Pallets" %}
+          <span class="text-xs bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded-full">{{ pallets.count }}</span>
+        </h2>
       </div>
-      <h3 class="text-lg font-bold text-slate-800">{% trans "No pallets recorded yet" %}</h3>
-      <p class="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
-        {% trans "Create your first liquidation pallet above to start attributing intake products." %}
-      </p>
+
+      {% if pallets %}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="palletsListContainer">
+        {% for pallet in pallets %}
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 flex flex-col justify-between hover:border-slate-300 transition min-w-0" id="pallet-card-{{ pallet.id }}">
+          <div class="space-y-3 min-w-0">
+            <!-- Top Row: Pallet Number & Active Items Badge -->
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <span class="text-xs uppercase font-extrabold tracking-wider text-slate-600">{% trans "Pallet" %}</span>
+                <h3 class="text-xl font-black text-slate-900 tracking-tight">Pallet #{{ pallet.number }}</h3>
+              </div>
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200 shrink-0">
+                <span aria-hidden="true">📦</span>
+                <span>{{ pallet.products_count }} {% trans "items" %}</span>
+              </span>
+            </div>
+
+            <!-- Provider Attribution Pill -->
+            {% if pallet.provider %}
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-50 text-teal-900 border border-teal-200 break-words max-w-full">
+                <span aria-hidden="true">{{ pallet.provider.type_icon }}</span>
+                <span class="break-words">{{ pallet.provider.name }}</span>
+              </span>
+            </div>
+            {% endif %}
+
+            <!-- Received Date -->
+            <div class="text-xs text-slate-500 flex items-center gap-1.5">
+              <span aria-hidden="true">📅</span>
+              <span>{% trans "Received:" %} <strong class="text-slate-700 font-semibold">{{ pallet.received_date|date:"Y-m-d" }}</strong></span>
+            </div>
+
+            <!-- Financials (Manager Exclusive) -->
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span class="text-slate-500 font-medium block">{% trans "Purchase Cost" %}</span>
+                <span class="font-bold text-slate-800 font-mono text-sm">
+                  {% if pallet.purchase_price is not None %}€{{ pallet.purchase_price|floatformat:2 }}{% else %}—{% endif %}
+                </span>
+              </div>
+              <div>
+                <span class="text-slate-500 font-medium block">{% trans "Est. Value" %}</span>
+                <span class="font-bold text-emerald-800 font-mono text-sm">
+                  {% if pallet.estimated_value is not None %}€{{ pallet.estimated_value|floatformat:2 }}{% else %}—{% endif %}
+                </span>
+              </div>
+              {% if pallet.sold_products_count > 0 %}
+              <div class="col-span-2 pt-2 border-t border-slate-200/80 flex items-center justify-between">
+                <span class="text-slate-600 font-semibold">{% trans "Sold Revenue" %} ({{ pallet.sold_products_count }})</span>
+                <span class="font-extrabold text-emerald-700 font-mono">€{{ pallet.realized_revenue|floatformat:2 }}</span>
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Notes -->
+            {% if pallet.notes %}
+            <p class="text-xs text-slate-600 leading-relaxed bg-amber-50/50 p-2.5 rounded-lg border border-amber-100 line-clamp-3 break-words">
+              {{ pallet.notes }}
+            </p>
+            {% endif %}
+          </div>
+
+          <!-- Card Footer: Actions -->
+          <div class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5">
+              <a href="{% url 'inventory:pallet_edit' pallet.pk %}"
+                 class="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition min-h-[36px]">
+                <span>✏️</span> {% trans "Edit" %}
+              </a>
+              <a href="{% url 'inventory:dashboard' %}?pallet={{ pallet.pk }}"
+                 class="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-xs font-bold rounded-lg transition min-h-[36px]">
+                <span>🔍</span> {% trans "Items" %}
+              </a>
+            </div>
+
+            <button type="button"
+                    onclick="confirmDeletePallet({{ pallet.id }}, {{ pallet.number }}, {{ pallet.products_count }})"
+                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-lg transition min-h-[36px] cursor-pointer">
+              <span>🗑️</span> {% trans "Delete" %}
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <!-- Empty State -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center space-y-3">
+        <div class="w-14 h-14 mx-auto rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-3xl">
+          📦
+        </div>
+        <h3 class="text-lg font-bold text-slate-800">{% trans "No pallets recorded yet" %}</h3>
+        <p class="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
+          {% trans "Create your first liquidation pallet above to start attributing intake products." %}
+        </p>
+      </div>
+      {% endif %}
     </div>
-    {% endif %}
-  </div>
+  </section>
+
+  <!-- TAB 2: PROVIDERS & ROI PANEL -->
+  <section id="panelProviders" role="tabpanel" aria-labelledby="tabBtnProviders"
+           class="space-y-6 {% if active_tab != 'providers' %}hidden{% endif %}">
+
+    <!-- Provider Creation Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50">
+        <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+          <span>🏢</span> {% trans "Register New Provider" %}
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+          {% trans "Track wholesale liquidators, direct lots, and in-store walk-in buyout channels with unified ROI." %}
+        </p>
+      </div>
+
+      <form method="post" action="{% url 'inventory:provider_create' %}" class="p-5 sm:p-6 space-y-4" novalidate>
+        {% csrf_token %}
+
+        {% if provider_form.non_field_errors %}
+        <div role="alert" class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold space-y-1">
+          {% for error in provider_form.non_field_errors %}
+            <div>⚠️ {{ error }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label for="{{ provider_form.name.id_for_label }}" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5">
+              {% trans "Provider Name" %} <span class="text-rose-500">*</span>
+            </label>
+            {{ provider_form.name }}
+            {% if provider_form.name.errors %}
+            <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+              {% for error in provider_form.name.errors %}{{ error }}{% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div>
+            <label for="{{ provider_form.provider_type.id_for_label }}" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5">
+              {% trans "Origin Type" %} <span class="text-rose-500">*</span>
+            </label>
+            {{ provider_form.provider_type }}
+            {% if provider_form.provider_type.errors %}
+            <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+              {% for error in provider_form.provider_type.errors %}{{ error }}{% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div>
+            <label for="{{ provider_form.contact_info.id_for_label }}" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between gap-1">
+              <span>{% trans "Contact Info" %}</span>
+              <span class="text-slate-400 font-normal lowercase text-xs">({% trans "Optional" %})</span>
+            </label>
+            {{ provider_form.contact_info }}
+            {% if provider_form.contact_info.errors %}
+            <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+              {% for error in provider_form.contact_info.errors %}{{ error }}{% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div>
+          <label for="{{ provider_form.notes.id_for_label }}" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <span>{% trans "Notes" %}</span>
+            <span class="text-slate-400 font-normal lowercase text-xs">({% trans "Optional" %})</span>
+          </label>
+          {{ provider_form.notes }}
+          {% if provider_form.notes.errors %}
+          <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
+            {% for error in provider_form.notes.errors %}{{ error }}{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+          <label class="flex items-center gap-2.5 cursor-pointer select-none">
+            {{ provider_form.is_active }}
+            <span class="text-sm font-semibold text-slate-800">{% trans "Active in intake & staging selectors" %}</span>
+          </label>
+
+          <button type="submit" id="btnCreateProvider"
+                  class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-base sm:text-sm cursor-pointer">
+            <span>➕</span>
+            <span>{% trans "Create Provider" %}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Existing Providers & ROI List -->
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+          <span>📊</span> {% trans "Providers & ROI Performance" %}
+          <span class="text-xs bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded-full">{{ providers_stats|length }}</span>
+        </h2>
+      </div>
+
+      {% if providers_stats %}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="providersListContainer">
+        {% for stat in providers_stats %}
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 flex flex-col justify-between hover:border-slate-300 transition min-w-0" id="provider-card-{{ stat.provider.id }}">
+          <div class="space-y-3 min-w-0">
+            <!-- Header Row -->
+            <div class="flex flex-wrap items-start justify-between gap-2">
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-1.5 mb-1">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                    <span aria-hidden="true">{{ stat.provider.type_icon }}</span>
+                    <span>{{ stat.provider.get_provider_type_display }}</span>
+                  </span>
+                  {% if not stat.provider.is_active %}
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                    {% trans "Inactive" %}
+                  </span>
+                  {% endif %}
+                </div>
+                <h3 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight break-words">{{ stat.provider.name }}</h3>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">
+                  📦 {{ stat.pallets_count }} {% trans "pallets" %}
+                </span>
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                  🏷️ {{ stat.total_products_count }} {% trans "items" %}
+                </span>
+              </div>
+            </div>
+
+            {% if stat.provider.contact_info %}
+            <p class="text-xs text-slate-600 flex items-center gap-1.5 break-words">
+              <span aria-hidden="true">📞</span>
+              <span>{{ stat.provider.contact_info }}</span>
+            </p>
+            {% endif %}
+
+            <!-- ROI Metrics Grid (Manager Exclusive) -->
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200/80 grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <span class="text-slate-500 font-medium block">{% trans "Total Cost" %}</span>
+                <span class="font-bold text-slate-900 font-mono tabular-nums text-sm">
+                  €{{ stat.total_cost|floatformat:2 }}
+                </span>
+              </div>
+              <div>
+                <span class="text-slate-500 font-medium block">{% trans "Sold Revenue" %} ({{ stat.sold_products_count }})</span>
+                <span class="font-bold text-emerald-800 font-mono tabular-nums text-sm">
+                  €{{ stat.realized_revenue|floatformat:2 }}
+                </span>
+              </div>
+              <div>
+                <span class="text-slate-500 font-medium block">{% trans "Net Margin / ROI" %}</span>
+                <span class="font-extrabold font-mono tabular-nums text-sm {% if stat.net_margin >= 0 %}text-emerald-700{% else %}text-rose-700{% endif %}">
+                  {% if stat.net_margin >= 0 %}+{% endif %}€{{ stat.net_margin|floatformat:2 }}{% if stat.roi_pct is not None %} ({{ stat.roi_pct }}%){% endif %}
+                </span>
+              </div>
+              <div>
+                <span class="text-slate-500 font-medium block">{% trans "Active Stock Value" %} ({{ stat.active_products_count }})</span>
+                <span class="font-bold text-indigo-800 font-mono tabular-nums text-sm">
+                  €{{ stat.active_stock_value|floatformat:2 }}
+                </span>
+              </div>
+            </div>
+
+            {% if stat.provider.notes %}
+            <p class="text-xs text-slate-600 leading-relaxed bg-amber-50/50 p-2.5 rounded-lg border border-amber-100 line-clamp-2 break-words">
+              {{ stat.provider.notes }}
+            </p>
+            {% endif %}
+          </div>
+
+          <!-- Card Footer -->
+          <div class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <a href="{% url 'inventory:provider_edit' stat.provider.pk %}"
+                 class="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition min-h-[36px]">
+                <span>✏️</span> {% trans "Edit" %}
+              </a>
+              <a href="{% url 'inventory:dashboard' %}?provider={{ stat.provider.pk }}"
+                 class="inline-flex items-center gap-1 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-200 text-xs font-bold rounded-lg transition min-h-[36px]">
+                <span>🔍</span> {% trans "View Products" %}
+              </a>
+            </div>
+
+            <button type="button"
+                    data-provider-id="{{ stat.provider.id }}"
+                    data-provider-name="{{ stat.provider.name|escape }}"
+                    data-pallets-count="{{ stat.pallets_count }}"
+                    data-products-count="{{ stat.total_products_count }}"
+                    onclick="confirmDeleteProviderFromBtn(this)"
+                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-lg transition min-h-[36px] cursor-pointer">
+              <span>🗑️</span> {% trans "Delete" %}
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center space-y-3">
+        <div class="w-14 h-14 mx-auto rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-3xl">
+          🏢
+        </div>
+        <h3 class="text-lg font-bold text-slate-800">{% trans "No providers recorded yet" %}</h3>
+        <p class="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
+          {% trans "Create your first supplier or acquisition origin above to link pallets and direct purchases." %}
+        </p>
+      </div>
+      {% endif %}
+    </div>
+  </section>
 
   <!-- Delete Pallet Accessible Modal Dialog -->
   <div id="deletePalletModal" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
@@ -262,9 +553,79 @@
     </div>
   </div>
 
+  <!-- Delete Provider Accessible Modal Dialog -->
+  <div id="deleteProviderModal" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
+       role="dialog" aria-modal="true" aria-labelledby="deleteProviderModalTitle">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+      <div class="p-5 sm:p-6 space-y-3">
+        <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center text-2xl mx-auto" aria-hidden="true">
+          ⚠️
+        </div>
+        <h3 id="deleteProviderModalTitle" class="text-lg font-bold text-slate-900 text-center">
+          {% trans "Delete Provider" %}
+        </h3>
+        <p id="deleteProviderModalWarning" class="text-xs sm:text-sm text-slate-600 text-center leading-relaxed"></p>
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
+        <button type="button" onclick="closeDeleteProviderModal()"
+                class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs sm:text-sm font-bold rounded-xl transition cursor-pointer min-h-[40px]">
+          {% trans "Cancel" %}
+        </button>
+        <form id="deleteProviderForm" method="post" action="">
+          {% csrf_token %}
+          <button type="submit" id="btnConfirmDeleteProvider"
+                  class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer min-h-[40px]">
+            {% trans "Confirm Delete" %}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
+  function switchOriginsTab(tabName) {
+    const isProviders = tabName === "providers";
+    const panelPallets = document.getElementById("panelPallets");
+    const panelProviders = document.getElementById("panelProviders");
+    const btnPallets = document.getElementById("tabBtnPallets");
+    const btnProviders = document.getElementById("tabBtnProviders");
+
+    if (!panelPallets || !panelProviders || !btnPallets || !btnProviders) return;
+
+    panelPallets.classList.toggle("hidden", isProviders);
+    panelProviders.classList.toggle("hidden", !isProviders);
+    btnPallets.setAttribute("aria-selected", isProviders ? "false" : "true");
+    btnProviders.setAttribute("aria-selected", isProviders ? "true" : "false");
+
+    const activeClasses = ["bg-slate-900", "text-white", "shadow-xs"];
+    const inactiveClasses = ["text-slate-600", "hover:text-slate-900", "hover:bg-slate-100"];
+
+    if (isProviders) {
+      btnProviders.classList.add(...activeClasses);
+      btnProviders.classList.remove(...inactiveClasses);
+      btnPallets.classList.remove(...activeClasses);
+      btnPallets.classList.add(...inactiveClasses);
+    } else {
+      btnPallets.classList.add(...activeClasses);
+      btnPallets.classList.remove(...inactiveClasses);
+      btnProviders.classList.remove(...activeClasses);
+      btnProviders.classList.add(...inactiveClasses);
+    }
+
+    if (window.history && window.history.replaceState) {
+      const url = new URL(window.location.href);
+      if (isProviders) {
+        url.searchParams.set("tab", "providers");
+      } else {
+        url.searchParams.delete("tab");
+      }
+      window.history.replaceState({}, "", url.toString());
+    }
+  }
+
   function confirmDeletePallet(palletId, palletNumber, itemCount) {
     const modal = document.getElementById("deletePalletModal");
     const form = document.getElementById("deletePalletForm");
@@ -282,9 +643,43 @@
     modal.classList.add("hidden");
   }
 
+  function confirmDeleteProviderFromBtn(btn) {
+    const providerId = btn.dataset.providerId;
+    const providerName = btn.dataset.providerName || "";
+    const palletsCount = btn.dataset.palletsCount || "0";
+    const productsCount = btn.dataset.productsCount || "0";
+
+    const modal = document.getElementById("deleteProviderModal");
+    const form = document.getElementById("deleteProviderForm");
+    const warning = document.getElementById("deleteProviderModalWarning");
+
+    form.action = `/pallets/providers/${providerId}/delete/`;
+    warning.textContent = "";
+
+    const prefix = document.createTextNode("{% trans 'Are you sure you want to delete provider' %} ");
+    const strongName = document.createElement("strong");
+    strongName.textContent = providerName;
+    const questionMark = document.createTextNode("?");
+    const br1 = document.createElement("br");
+    const br2 = document.createElement("br");
+    const detail = document.createElement("span");
+    detail.className = "text-slate-500";
+    detail.textContent = `{% trans "Its" %} ${palletsCount} {% trans "pallets" %} / ${productsCount} {% trans "products will remain intact with no provider assigned." %}`;
+
+    warning.append(prefix, strongName, questionMark, br1, br2, detail);
+    modal.classList.remove("hidden");
+    document.getElementById("btnConfirmDeleteProvider").focus();
+  }
+
+  function closeDeleteProviderModal() {
+    const modal = document.getElementById("deleteProviderModal");
+    modal.classList.add("hidden");
+  }
+
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
       closeDeletePalletModal();
+      closeDeleteProviderModal();
     }
   });
 </script>

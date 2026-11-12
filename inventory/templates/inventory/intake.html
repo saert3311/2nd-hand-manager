@@ -209,23 +209,23 @@
         </div>
       </div>
 
-      <!-- Pallet Attribution (Sticky Selector) -->
+      <!-- Unified Product Origin Attribution (Sticky Selector) -->
       <div>
-        <label for="{{ form.pallet.id_for_label }}" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+        <label for="id_origin" class="block text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
           <span class="flex items-center gap-1.5">
             <span aria-hidden="true">📦</span>
-            <span>{% trans "Pallet Attribution" %}</span>
+            <span>{% trans "Product Origin" %}</span>
             <span class="text-slate-500 font-normal lowercase">({% trans "Optional" %})</span>
           </span>
         </label>
-        {{ form.pallet }}
-        {% if form.pallet.errors %}
+        {{ form.origin }}
+        {% if form.origin.errors %}
         <div role="alert" class="text-rose-600 text-xs sm:text-sm font-semibold mt-1">
-          {% for error in form.pallet.errors %}{{ error }}{% endfor %}
+          {% for error in form.origin.errors %}{{ error }}{% endfor %}
         </div>
         {% endif %}
         <p class="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
-          {% trans "Pre-selected based on last item cataloged. Change if this item belongs to a different pallet or standalone." %}
+          {% trans "Pre-selected from your last item. Choose an active pallet or a direct origin (walk-in / supplier)." %}
         </p>
       </div>
 
