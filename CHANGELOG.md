@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-11-12
+
 ### Added
 - **ClauseGuard Stage 1 Precision, Category Rules & Latency Optimization (Phase 49)**:
   - **Strong vs. Weak Keywords & Exception Phrases**: Extended `PolicyClause` (`weak_keywords`, `exception_phrases`, migration `0027`, and `PolicyClauseAdmin`) and expanded the curated bilingual seed across all 12 global/platform rules so ambiguous single words (`pistola`, `pirata`, `falso`, `tabaco`, `whisky`, `mascota`, `insulina`, `nicotina`, `llanta`, `nevera`, `dni`) trigger cautious `MANUAL_REVIEW` unless corroborated, while benign compounds (`pistola de silicona`, `disfraz de pirata`, `vaso de whisky`, `nevera para insulina`, `llanta de bicicleta`, `funda para dni`, `pastillero semanal para medicamentos`) pass cleanly (`0` false positives on benchmark corpus).
