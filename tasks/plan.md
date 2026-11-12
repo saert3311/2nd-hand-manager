@@ -776,3 +776,28 @@ Task 179: PolicyClause Schema (weak_keywords, exception_phrases) + Curated Seed 
    - *Decision*: Wrap `#detailPhotoUploadContainer` inside `<details id="detailAddPhotosDisclosure">` (collapsed by default when `product.images.exists` is `True`, auto-opened when `product.images.count == 0` or when files are selected/dragged).
    - *Rationale*: Cuts left-column height by ~45% on products that already have photos while preserving 1-tap camera/gallery upload ergonomics.
 
+---
+
+## Phase 51: Product Origins & Providers Co-Living with Pallets (`feat/product-origins-providers`)
+
+### Overview
+Extend the Phase 46 `Pallet` tracking architecture with a `Provider` hierarchy (`Provider → Pallet → Product` and direct `Provider → Product` for walk-in buyouts and loose wholesale lots), Manager-only per-item `acquisition_cost` for non-pallet items, a single sticky `<optgroup>` Origin picker on `/intake/`, a unified Pallets & Providers ROI Hub at `/pallets/`, composable `?provider=` filtering on `/dashboard/`, and strict financial privacy for Assistants and the Public Storefront.
+
+### Architecture Decisions
+1. **Cascading Hierarchy & Golden Sync Invariant (`inventory/models.py`)**:
+   - *Decision*: Add `Provider` (`ProviderType`: `WHOLESALER`, `WALK_IN`, `OTHER`) and add nullable `provider = ForeignKey(Provider, on_delete=SET_NULL)` to both `Pallet` and `Product`, plus nullable `Product.acquisition_cost`.
+   - *Rationale*: Querying all products from a provider works in a single `Product.objects.filter(provider=...)` lookup without complex `Q(provider=...) | Q(pallet__provider=...)` branching, while `Product.save()` and `Pallet.save()` guarantee `product.provider == product.pallet.provider` whenever `product.pallet` is assigned.
+2. **Seeded Single Walk-In Provider (`Compra en Tienda / Particular`)**:
+   - *Decision*: Pre-seed one `WALK_IN` provider via migration (`0028`/`0029`) rather than creating `Provider` rows per individual walk-in citizen.
+   - *Rationale*: Keeps the mobile intake `<select>` compact and fast on `320×711` / `360×800` screens while storing individual seller details in product notes.
+3. **Zero Double-Counting Provider ROI Aggregation (`inventory/services/origin_service.py` or `views.py`)**:
+   - *Decision*: Provider Total Cost sums `Pallet.purchase_price` across the provider's pallets plus `Product.acquisition_cost` **only** where `pallet__isnull=True` and `is_deleted=False`.
+   - *Rationale*: Prevents double-counting if a standalone item with an `acquisition_cost` is later moved onto a pallet with a bulk `purchase_price`.
+4. **Unified Sticky Origin Picker with Full Legacy Compatibility (`inventory/forms.py`, `inventory/views.py`, `intake.html`)**:
+   - *Decision*: Render `#id_origin` (`OriginChoiceField` with `<optgroup>` for Active Pallets `pallet:<id>` and Direct Providers `provider:<id>`) on `/intake/`, persisted via `request.session["last_intake_origin"]`, while keeping `pallet` legacy POST / `last_intake_pallet_id` support in `ProductIntakeForm` & `product_intake_view`.
+   - *Rationale*: Gives assistants a 1-tap single dropdown for both pallets and direct origins without breaking existing unit tests or session expectations.
+5. **Manager-Only Cost Firewall & Storefront Isolation**:
+   - *Decision*: Keep `Product.acquisition_cost`, `Pallet.purchase_price`, `Pallet.estimated_value`, and `/pallets/` (`Provider` CRUD + ROI metrics) strictly gated behind `is_manager` (`@manager_required`), and strip `provider_id`, `pallet_id`, `acquisition_cost` from `storefront/views.py` `SAFE_PUBLIC_PRODUCT_FIELDS` / `_sanitize_public_product()`.
+   - *Rationale*: Protects commercial margins and supplier identities from assistants and public shoppers.
+
+
