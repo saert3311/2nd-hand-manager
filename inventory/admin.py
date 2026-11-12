@@ -32,6 +32,7 @@ from .models import (
     ProductListingLink,
     ProductStatus,
     ProductStatusLog,
+    Provider,
     PushSubscription,
     SaleChannelType,
     StorefrontConfiguration,
@@ -363,11 +364,13 @@ class ProductAdmin(admin.ModelAdmin):
         "id",
         "display_title",
         "category",
+        "provider",
         "pallet",
         "condition",
         "status",
         "compliance_badge_col",
         "needs_platform_sync_col",
+        "acquisition_cost_display",
         "sale_price_display",
         "estimated_resale_price_display",
         "estimated_retail_price_display",
@@ -387,6 +390,7 @@ class ProductAdmin(admin.ModelAdmin):
         "status",
         "compliance_status",
         "category",
+        "provider",
         "pallet",
         "condition",
         "needs_platform_sync",
@@ -399,7 +403,7 @@ class ProductAdmin(admin.ModelAdmin):
         "sold_marketplace",
         "created_at",
     )
-    search_fields = ("ai_title", "raw_note", "ai_description")
+    search_fields = ("ai_title", "raw_note", "ai_description", "provider__name")
     inlines = [ProductImageInline, ProductListingLinkInline, ProductClarificationInline, ProductStatusLogInline]
     readonly_fields = (
         "created_at",
@@ -415,7 +419,7 @@ class ProductAdmin(admin.ModelAdmin):
         "whatsapp_clicks",
     )
     actions = ["soft_delete_selected", "restore_selected", "recheck_stage1_compliance"]
-    list_select_related = ("category", "pallet", "created_by", "batch_session", "sold_marketplace")
+    list_select_related = ("category", "provider", "pallet", "created_by", "batch_session", "sold_marketplace")
 
     def has_module_permission(self, request):
         return bool(request.user and request.user.is_active and is_manager(request.user))
@@ -449,6 +453,13 @@ class ProductAdmin(admin.ModelAdmin):
 
     needs_platform_sync_col.short_description = _("Sync")
     needs_platform_sync_col.admin_order_field = "needs_platform_sync"
+
+    def acquisition_cost_display(self, obj):
+        if obj.acquisition_cost is not None:
+            return f"€{obj.acquisition_cost:.2f}"
+        return "-"
+
+    acquisition_cost_display.short_description = _("Acq. Cost (€)")
 
     def sale_price_display(self, obj):
         if obj.sale_price is not None:
@@ -863,10 +874,66 @@ class CategoryAdmin(admin.ModelAdmin):
         return bool(request.user and request.user.is_active and is_manager(request.user))
 
 
+@admin.register(Provider, site=admin_site)
+class ProviderAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "provider_type",
+        "pallets_count",
+        "products_count",
+        "is_active",
+        "created_by",
+        "created_at",
+    )
+    list_filter = ("provider_type", "is_active", "created_at")
+    search_fields = ("name", "slug", "contact_info", "notes")
+    prepopulated_fields = {"slug": ("name",)}
+    readonly_fields = ("created_at", "updated_at")
+    ordering = ["name"]
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(
+                _pallets_count=Count("pallets", distinct=True),
+                _products_count=Count("products", filter=Q(products__is_deleted=False), distinct=True),
+            )
+        )
+
+    def pallets_count(self, obj):
+        return getattr(obj, "_pallets_count", obj.pallets.count())
+
+    pallets_count.short_description = _("Pallets")
+    pallets_count.admin_order_field = "_pallets_count"
+
+    def products_count(self, obj):
+        return getattr(obj, "_products_count", obj.products.filter(is_deleted=False).count())
+
+    products_count.short_description = _("Products")
+    products_count.admin_order_field = "_products_count"
+
+    def has_module_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_change_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_add_permission(self, request):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+    def has_delete_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and is_manager(request.user))
+
+
 @admin.register(Pallet, site=admin_site)
 class PalletAdmin(admin.ModelAdmin):
     list_display = (
         "number",
+        "provider",
         "received_date",
         "products_count",
         "purchase_price_display",
@@ -874,8 +941,9 @@ class PalletAdmin(admin.ModelAdmin):
         "created_by",
         "created_at",
     )
-    list_filter = ("received_date", "created_at")
-    search_fields = ("number", "notes", "created_by__username")
+    list_filter = ("provider", "received_date", "created_at")
+    search_fields = ("number", "notes", "provider__name", "created_by__username")
+    list_select_related = ("provider", "created_by")
     readonly_fields = ("created_at", "updated_at")
     ordering = ["-number"]
 

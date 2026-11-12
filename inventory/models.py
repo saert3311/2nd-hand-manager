@@ -24,6 +24,12 @@ HTTP_URL_VALIDATOR = URLValidator(
 )
 
 
+class ProviderType(models.TextChoices):
+    WHOLESALER = "wholesaler", _("Wholesale / Liquidation Supplier")
+    WALK_IN = "walk_in", _("In-Store Walk-In / Individual")
+    OTHER = "other", _("Other Origin")
+
+
 class ProductStatus(models.TextChoices):
     DRAFT = "draft", _("Draft")
     PRICE_PENDING = "price_pending", _("Price Pending")
@@ -301,6 +307,103 @@ class StorefrontConfiguration(models.Model):
         return obj
 
 
+class Provider(models.Model):
+    """
+    Represents a commercial origin or supplier for pallets and standalone products
+    (e.g. liquidation wholesalers or the built-in in-store walk-in buyout origin).
+    """
+
+    WALK_IN_DEFAULT_SLUG = "compra-en-tienda-particular"
+
+    name = models.CharField(
+        max_length=120,
+        unique=True,
+        verbose_name=_("Provider Name"),
+        help_text=_("Supplier, liquidator, or acquisition origin name"),
+    )
+    slug = models.SlugField(
+        max_length=120,
+        unique=True,
+        blank=True,
+        verbose_name=_("Slug"),
+        help_text=_("URL-safe unique identifier (auto-generated if left blank)"),
+    )
+    provider_type = models.CharField(
+        max_length=20,
+        choices=ProviderType.choices,
+        default=ProviderType.WHOLESALER,
+        db_index=True,
+        verbose_name=_("Origin Type"),
+        help_text=_("Classification of acquisition channel"),
+    )
+    contact_info = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name=_("Contact Info"),
+        help_text=_("Optional phone, email, or warehouse location (Manager only)"),
+    )
+    notes = models.TextField(
+        blank=True,
+        default="",
+        verbose_name=_("Notes"),
+        help_text=_("Optional commercial terms, invoice, or supplier notes"),
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        verbose_name=_("Is Active"),
+        help_text=_("Whether this origin appears in mobile intake and staging selectors"),
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="created_providers",
+        verbose_name=_("Created By"),
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("Created At"),
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_("Updated At"),
+    )
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = _("Provider")
+        verbose_name_plural = _("Providers")
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def type_icon(self) -> str:
+        if self.provider_type == ProviderType.WALK_IN:
+            return "🏪"
+        if self.provider_type == ProviderType.WHOLESALER:
+            return "🏢"
+        return "🏷️"
+
+    @property
+    def display_label(self) -> str:
+        return f"{self.type_icon} {self.name}"
+
+    def save(self, *args, **kwargs):
+        if not self.slug and self.name:
+            base_slug = slugify(self.name)[:110] or "provider"
+            candidate = base_slug
+            suffix = 2
+            while Provider.objects.filter(slug=candidate).exclude(pk=self.pk).exists():
+                candidate = f"{base_slug[:100]}-{suffix}"
+                suffix += 1
+            self.slug = candidate
+        super().save(*args, **kwargs)
+
+
 class Pallet(models.Model):
     """
     Represents an acquired liquidation pallet or inventory lot.
@@ -310,6 +413,15 @@ class Pallet(models.Model):
         db_index=True,
         verbose_name=_("Pallet Number"),
         help_text=_("Sequential pallet identification number"),
+    )
+    provider = models.ForeignKey(
+        "Provider",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="pallets",
+        verbose_name=_("Provider"),
+        help_text=_("Commercial supplier or origin that delivered this pallet"),
     )
     received_date = models.DateField(
         default=timezone.localdate,
@@ -369,12 +481,24 @@ class Pallet(models.Model):
         verbose_name = _("Pallet")
         verbose_name_plural = _("Pallets")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._initial_provider_id = self.__dict__.get("provider_id")
+
     def __str__(self):
         return f"Pallet #{self.number} ({self.received_date})"
 
     @property
     def display_name(self) -> str:
         return f"Pallet #{self.number} ({self.received_date})"
+
+    def save(self, *args, **kwargs):
+        is_adding = self._state.adding
+        initial_provider_id = getattr(self, "_initial_provider_id", None)
+        super().save(*args, **kwargs)
+        if not is_adding and self.provider_id != initial_provider_id:
+            Product.objects.filter(pallet_id=self.pk).update(provider_id=self.provider_id)
+        self._initial_provider_id = self.provider_id
 
 
 _deleting_product_pks = ContextVar("deleting_product_pks", default=frozenset())
@@ -488,6 +612,27 @@ class Product(models.Model):
         related_name="products",
         verbose_name=_("Pallet"),
         help_text=_("Origin liquidation pallet to which this product belongs"),
+    )
+    provider = models.ForeignKey(
+        "Provider",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="products",
+        verbose_name=_("Provider"),
+        help_text=_("Commercial origin provider (auto-synced from pallet when assigned)"),
+    )
+    acquisition_cost = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(Decimal("0.00")),
+            MaxValueValidator(Decimal("9999999.99")),
+        ],
+        verbose_name=_("Acquisition Cost (€)"),
+        help_text=_("Individual purchase cost for non-pallet items (Manager only)"),
     )
     condition = models.CharField(
         max_length=30,
@@ -1003,7 +1148,38 @@ class Product(models.Model):
             return "draft"
         return "status_updated"
 
+    @property
+    def origin_display(self) -> str:
+        if self.pallet_id and self.pallet:
+            if self.provider_id and self.provider:
+                return f"Pallet #{self.pallet.number} · {self.provider.name}"
+            return f"Pallet #{self.pallet.number}"
+        if self.provider_id and self.provider:
+            return self.provider.name
+        return ""
+
     def save(self, *args, changed_by=None, trigger=None, notes=None, skip_auto_compliance=False, **kwargs):
+        # Golden Sync Invariant: pallet-assigned products always inherit pallet.provider
+        if self.pallet_id:
+            prev_provider_id = self.provider_id
+            cached_pallet = self._state.fields_cache.get("pallet")
+            if cached_pallet is not None and cached_pallet.pk == self.pallet_id:
+                new_provider_id = cached_pallet.provider_id
+            else:
+                new_provider_id = (
+                    Pallet.objects.filter(pk=self.pallet_id)
+                    .values_list("provider_id", flat=True)
+                    .first()
+                )
+            self.provider_id = new_provider_id
+            if new_provider_id != prev_provider_id:
+                self._state.fields_cache.pop("provider", None)
+            if kwargs.get("update_fields") is not None:
+                uf = set(kwargs["update_fields"])
+                if "pallet" in uf or "pallet_id" in uf:
+                    uf.add("provider")
+                    kwargs["update_fields"] = list(uf)
+
         initial_status = getattr(self, "_initial_status", None)
         initial_is_sold = getattr(self, "_initial_is_sold", None)
         is_adding = self._state.adding
