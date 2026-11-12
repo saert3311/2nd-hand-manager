@@ -438,15 +438,16 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             # Manager sets Category, Condition, is_public, is_featured and description
             print("\n[PART III - STEP 3] Manager configuring Storefront Controls & Description...")
             fashion_cat = Category.objects.get(slug="moda-y-accesorios")
-            page.select_option("#id_category", str(fashion_cat.pk))
-            page.select_option("#id_condition", ProductCondition.VERY_GOOD)
-            page.check("#id_is_public")
-            page.check("#id_is_featured")
             page.fill(
                 'textarea[name="ai_description"]',
                 "Auténtica chaqueta Barbour Beaufort encerada en color verde oliva. Talla C40. Fabricada en Inglaterra."
             )
-            page.click('button:has-text("Guardar cambios"), button:has-text("Save Listing Changes")')
+            page.click("#tabBtnWorkspaceChannels")
+            page.select_option("#id_category", str(fashion_cat.pk))
+            page.select_option("#id_condition", ProductCondition.VERY_GOOD)
+            page.check("#id_is_public")
+            page.check("#id_is_featured")
+            page.click("#btnSaveListingChanges")
             page.wait_for_load_state("networkidle")
 
             product.refresh_from_db()
@@ -478,6 +479,7 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
 
             # Open staging detail to see the 'Ver en Tienda Pública' button
             page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': product.pk})}")
+            page.click("#tabBtnWorkspaceChannels")
             page.wait_for_selector('a:has-text("Ver en Tienda Pública"), a:has-text("View in Storefront")')
             view_storefront_btn = page.locator('a:has-text("Ver en Tienda Pública"), a:has-text("View in Storefront")')
             self.assertTrue(view_storefront_btn.is_visible())

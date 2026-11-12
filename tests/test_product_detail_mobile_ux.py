@@ -174,15 +174,12 @@ class ProductDetailMobileUXTests(TestCase):
         # 3. Edit button on existing photo thumbnail
         self.assertIn('class="photo-edit-btn absolute bottom-1 right-1', html)
 
-        # 4. Hidden on mobile sections: notes, history, taxonomy
-        self.assertIn('<!-- Preserved Raw Notes Card (Hidden on Mobile) -->', html)
-        self.assertIn('hidden lg:block bg-amber-50/60', html)
-
-        self.assertIn('<!-- Product State Change History / Audit Trail Card (Hidden on Mobile) -->', html)
-        self.assertIn('id="status-history-section" class="hidden lg:block', html)
-
-        self.assertIn('<!-- Public Storefront Taxonomy & Visibility Controls (Hidden on Mobile) -->', html)
-        self.assertIn('hidden lg:block pt-4 border-t', html)
+        # 4. Tabbed workspace and deprioritized audit disclosure (Phase 50)
+        self.assertIn('id="detailWorkspaceTablist"', html)
+        self.assertIn('id="intakeNotesCard"', html)
+        self.assertIn('id="status-history-disclosure"', html)
+        self.assertIn('id="status-history-section"', html)
+        self.assertIn('id="storefrontTaxonomySection"', html)
 
         # 5. Flex ordering: Gemini & listing copy on top on mobile
         self.assertIn('flex flex-col lg:grid lg:grid-cols-12 gap-6', html)

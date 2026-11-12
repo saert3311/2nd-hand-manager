@@ -350,6 +350,8 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 # 5. Staging Product Detail view (and ClauseGuard card on flagged item)
                 page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.p_flagged.pk})}")
                 page.wait_for_load_state("networkidle")
+                self.assertTrue(page.locator("#clauseGuardQuickNotice").is_visible())
+                page.click("#tabBtnWorkspaceCompliance")
                 self.assertTrue(page.locator("#clauseGuardCard").is_visible())
                 self.assertTrue(page.locator("#clauseGuardPlatformMatrix").is_visible())
                 self.assertTrue(page.locator("#clauseGuardCitationsList").is_visible())
@@ -359,20 +361,23 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 page.wait_for_load_state("networkidle")
                 self._assert_no_horizontal_overflow(page, f"staging_detail_{label}", width, height)
 
-                # Verify hidden sections on narrow mobile viewports (notes, history)
+                # Verify deprioritized audit trail is collapsed by default
                 self.assertFalse(page.locator("#status-history-section").is_visible())
 
                 # Verify mobile order: Gemini AI banner appears before photo gallery on mobile
                 ai_box = page.locator("#aiForm").bounding_box()
                 gallery_box = page.locator("#galleryThumbnailsGrid").bounding_box()
-                marketplace_box = page.locator("#marketplaceLinksCard").bounding_box()
                 if ai_box and gallery_box:
                     self.assertLess(ai_box["y"], gallery_box["y"])
-                if gallery_box and marketplace_box:
-                    self.assertLess(gallery_box["y"], marketplace_box["y"])
 
-                # Test Detail View Add More Photos & Lightbox Cropper on Mobile
-                # 6. Test Marketplace Links Mobile Redesign: Active Tiles & Modals
+                # Switch to Notes & Doubts tab and verify zero overflow
+                page.click("#tabBtnWorkspaceNotes")
+                self._assert_no_horizontal_overflow(page, f"staging_detail_notes_{label}", width, height)
+
+                # 6. Switch to Channels & Storefront tab and test Marketplace Links Mobile Redesign: Active Tiles & Modals
+                page.click("#tabBtnWorkspaceChannels")
+                self._assert_no_horizontal_overflow(page, f"staging_detail_channels_{label}", width, height)
+                self.assertTrue(page.locator("#marketplaceLinksCard").is_visible())
                 self.assertTrue(page.locator('[data-site-slug="vinted"]').is_visible())
                 page.click("#openAddListingBtn")
                 page.wait_for_selector("#addListingModal:not(.hidden)", timeout=5000)

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Product Detail Tabbed Workspace Redesign & Audit Log Deprioritization (Phase 50)**:
+  - **Accessible 4-Tab Category Workspace (`#detailWorkspaceTablist`)**: Reorganized the right-hand workspace of `/products/<pk>/` into four WAI-ARIA tabs (`Listing & Pricing`, `Channels & Storefront`, `Notes & Doubts`, and `Policy & Compliance`) styled via `aria-selected` bottom indicator with `ArrowLeft`/`ArrowRight`/`Home`/`End` keyboard navigation, URL hash deep-linking (`#tab-listing`, `#tab-channels`, `#tab-notes`, `#tab-compliance`, `#clarifications-section`), and `hidden="until-found"` + `beforematch` auto-tab activation for native browser `Ctrl+F` search.
+  - **Deprioritized Archival State History Drawer (`#status-history-disclosure`)**: Moved `#status-history-section` out of the primary 2-column grid to the bottom of the page inside a collapsed-by-default native `<details>` disclosure drawer with a compact single-line-per-event audit timeline.
+  - **Progressive Disclosure Photo Upload (`#detailAddPhotosDisclosure`)**: Wrapped the "Add More Photos" dropzone in a collapsible `<details>` disclosure when photos already exist (auto-expanding on file selection or dragover).
+  - **High-Agency Staging UX Enhancements**: Added the interactive **Staging Readiness Checklist** (`#listingReadinessChecklist`) with 1-click tab/field jumps (`Copywriting`, `Sale Price`, `Channels`, `Policy Check`), **1-Tap Copy Full Ad Pack** (`#btnCopyFullListingPack`), **Live Character & Line Counters** (`#titleCharCounter`, `#descCharCounter`) in `font-mono tabular-nums`, **Unsaved Changes Indicator** (`#unsavedChangesBadge`) with `Ctrl+S` / `Cmd+S` save shortcut, a compact dark-slate AI Vision command bar, and full mobile access to `Public Storefront & Taxonomy` (`Rápido Pack`) and `Preserved Intake Notes` inside their respective tabs.
+  - **Bilingual Localization & Automated Test Suite**: Added Spanish and English translations in `locale/` compiled via `manage.py compile_locales`, unit tests in `tests/test_product_detail_tabs.py`, and updated Playwright responsive tests (`tests/test_oppo_a74_responsive.py`, `tests/test_browser_phase39_workflow.py`, `tests/test_browser_lifecycle.py`, `tests/test_browser_daily_workflow.py`).
+
 ## [2.8.0] - 2026-11-12
 
 ### Added

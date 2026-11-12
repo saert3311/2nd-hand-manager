@@ -3931,18 +3931,26 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 3. Wrap `#detailPhotoUploadContainer` inside a progressive-disclosure `<details id="detailAddPhotosDisclosure">` drawer when photos already exist (auto-opening on file selection or dragover).
 4. Relocate `#status-history-section` out of the main grid to the bottom of the page as a quiet, collapsed-by-default native `<details id="status-history-disclosure">` footer drawer with a compact single-line-per-event timeline.
 **Acceptance criteria:**
-- [ ] `#detailWorkspaceTablist` renders 4 category tabs (`#tabBtnWorkspaceListing`, `#tabBtnWorkspaceChannels`, `#tabBtnWorkspaceNotes`, `#tabBtnWorkspaceCompliance`) with live badges and keyboard navigation.
-- [ ] Tab panels (`#workspacePanelListing`, `#workspacePanelChannels`, `#workspacePanelNotes`, `#workspacePanelCompliance`) use `hidden="until-found"` on inactive panels and auto-switch on `beforematch` or URL hash.
-- [ ] `#status-history-section` / `#status-history-disclosure` is collapsed by default at the bottom of the page.
-- [ ] `#btnCopyFullListingPack`, `#titleCharCounter`, `#descCharCounter`, `#listingReadinessChecklist`, and `#unsavedChangesBadge` function cleanly.
-- [ ] Zero horizontal overflow on OPPO A74 (`360×800` and `320×711`) and mobile (`390×844`) viewports.
+- [x] `#detailWorkspaceTablist` renders 4 category tabs (`#tabBtnWorkspaceListing`, `#tabBtnWorkspaceChannels`, `#tabBtnWorkspaceNotes`, `#tabBtnWorkspaceCompliance`) with live badges and keyboard navigation.
+- [x] Tab panels (`#workspacePanelListing`, `#workspacePanelChannels`, `#workspacePanelNotes`, `#workspacePanelCompliance`) use `hidden="until-found"` on inactive panels and auto-switch on `beforematch` or URL hash.
+- [x] `#status-history-section` / `#status-history-disclosure` is collapsed by default at the bottom of the page.
+- [x] `#btnCopyFullListingPack`, `#titleCharCounter`, `#descCharCounter`, `#listingReadinessChecklist`, and `#unsavedChangesBadge` function cleanly.
+- [x] Zero horizontal overflow on OPPO A74 (`360×800` and `320×711`) and mobile (`390×844`) viewports.
 
 ---
 
 ### Task 184: Bilingual Translations, Unit/Browser Test Suite & Visual Verification (`locale/`, `tests/`, `CHANGELOG.md`)
 **Description:** Add Spanish translations in `locale/es/LC_MESSAGES/django.po` for all new workspace tab labels, readiness checklist pills, copy full pack button, character counters, and collapsed audit trail summary. Compile binary `.mo` catalogs (`python manage.py compile_locales`). Create `tests/test_product_detail_tabs.py` and update existing Playwright/view tests (`tests/test_product_detail_mobile_ux.py`, `tests/test_oppo_a74_responsive.py`, `tests/test_browser_phase39_workflow.py`, `tests/test_browser_lifecycle.py`, `tests/test_browser_daily_workflow.py`) to verify tab switching, keyboard navigation, audit log deprioritization, and mobile responsiveness. Update `CHANGELOG.md`.
 **Acceptance criteria:**
-- [ ] `python manage.py compile_locales` compiles cleanly with 0 untranslated or fuzzy strings.
-- [ ] `tests/test_product_detail_tabs.py` and all existing unit + Playwright browser tests pass (`python manage.py test`).
-- [ ] `python manage.py check` and `ruff check .` pass with 0 errors.
+- [x] `python manage.py compile_locales` compiles cleanly with 0 untranslated or fuzzy strings.
+- [x] `tests/test_product_detail_tabs.py` and all existing unit + Playwright browser tests pass (`python manage.py test`).
+- [x] `python manage.py check` and `ruff check .` pass with 0 errors.
+
+---
+
+### Checkpoint 50: Product Detail Tabbed Workspace Redesign Complete
+- [x] 4-tab accessible category switcher (`Listing & Pricing`, `Channels & Storefront`, `Notes & Doubts`, `Policy & Compliance`) live on `/products/<pk>/`.
+- [x] Product state change history (`#status-history-disclosure`) moved to bottom of page and collapsed by default.
+- [x] Staging Readiness Checklist, 1-Tap Copy Full Ad Pack, live character/line counters, unsaved changes indicator, and `Ctrl+S` save shortcut active.
+- [x] 100% of unit and Playwright browser tests, `manage.py check`, `compile_locales`, and `ruff check .` pass with 0 errors.
 

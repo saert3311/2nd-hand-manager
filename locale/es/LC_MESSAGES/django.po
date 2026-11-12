@@ -3843,3 +3843,70 @@ msgid "JSON list of strong trigger phrases in ES/EN for deterministic Stage 1 ma
 msgstr ""
 "Lista JSON de frases de activación fuerte en ES/EN para coincidencia "
 "determinista en Fase 1"
+
+msgid "Staging Readiness"
+msgstr "Preparación del anuncio"
+
+msgid "In Progress"
+msgstr "En curso"
+
+msgid "Live"
+msgstr "Publicado"
+
+msgid "Copywriting"
+msgstr "Redacción"
+
+msgid "Sale Price"
+msgstr "Precio de venta"
+
+msgid "Channels"
+msgstr "Canales"
+
+msgid "Policy Check"
+msgstr "Control de políticas"
+
+msgid "Product workspace sections"
+msgstr "Secciones de trabajo del producto"
+
+msgid "Listing & Pricing"
+msgstr "Ficha y Precio"
+
+msgid "Channels & Storefront"
+msgstr "Canales y Tienda"
+
+msgid "Notes & Doubts"
+msgstr "Notas y Dudas"
+
+msgid "Policy & Compliance"
+msgstr "Políticas y Cumplimiento"
+
+msgid "View Notes"
+msgstr "Ver notas"
+
+msgid "ClauseGuard flagged policy notices for this item."
+msgstr "ClauseGuard detectó avisos de políticas en este artículo."
+
+msgid "Review Policy"
+msgstr "Revisar políticas"
+
+msgid "Copy Full Ad Pack"
+msgstr "Copiar anuncio completo"
+
+msgid "Copy formatted Title, Price, and Description together"
+msgstr "Copiar título, precio y descripción formateados juntos"
+
+msgid "chars"
+msgstr "caract."
+
+msgid "lines"
+msgstr "líneas"
+
+msgid "Unsaved changes"
+msgstr "Cambios sin guardar"
+
+msgid "Shortcut: Ctrl+S"
+msgstr "Atajo: Ctrl+S"
+
+msgid "Archival state log (click to expand)"
+msgstr "Registro histórico de estados (clic para desplegar)"
+
