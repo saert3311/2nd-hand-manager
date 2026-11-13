@@ -800,4 +800,34 @@ Extend the Phase 46 `Pallet` tracking architecture with a `Provider` hierarchy (
    - *Decision*: Keep `Product.acquisition_cost`, `Pallet.purchase_price`, `Pallet.estimated_value`, and `/pallets/` (`Provider` CRUD + ROI metrics) strictly gated behind `is_manager` (`@manager_required`), and strip `provider_id`, `pallet_id`, `acquisition_cost` from `storefront/views.py` `SAFE_PUBLIC_PRODUCT_FIELDS` / `_sanitize_public_product()`.
    - *Rationale*: Protects commercial margins and supplier identities from assistants and public shoppers.
 
+---
+
+## Phase 52: Unified Forgiving & Multi-Field Product Search (`feat/product-search-improvements`)
+
+### Overview
+Upgrade product search across both the internal Staging Dashboard (`/dashboard/`) and the Public Storefront (`/tienda/`) into a forgiving, multi-token, multi-field search engine using zero-dependency SQLite and Django ORM primitives. Eliminates Spanish accent mismatches (`camara` ↔ `cámara`), non-ASCII uppercase/lowercase mismatches (`CÁMARA` ↔ `cámara`, `NIÑO` ↔ `niño`), multi-word order failures (`"taladro bosch"`), and blind spots in searchable product attributes while scoping dashboard status tab counters to the active search query.
+
+### Technical Design
+1. **SQLite Deterministic Unicode Case & Accent Folding (`inventory/services/search_service.py`, `inventory/apps.py`)**:
+   - Implement `fold_search_text(text: str) -> str` using `unicodedata.normalize("NFKD", text.casefold())` with combining marks stripped.
+   - Implement `sqlite_unaccent_like(pattern, value, escape=None) -> bool` with a C-speed substring fast path for standard `%term%` queries and an `@lru_cache` regex fallback for arbitrary wildcard/escape patterns.
+   - Register 2-arg and 3-arg `like` functions on every SQLite connection via `connection_created` in `inventory/apps.py`.
+2. **Multi-Token `AND` Engine, Smart Shorthands & Scope Firewall (`inventory/services/search_service.py`)**:
+   - Extend `build_search_query(query_str: str, scope: str = "internal") -> Q` to tokenize multi-word input (supporting quoted phrases `"..."`) and combine token conditions with `AND`.
+   - Parse smart shorthands:
+     - Exact Product ID / Reference: `#42`, `ref:42`, `ref.#0042`, `ref #42` → `Q(pk=42)`.
+     - Pallet shorthand (internal scope): `pale:5`, `palet:5`, `pallet:5`, `pale#5`, `pallet#5` → `Q(pallet__number=5)`.
+     - Price range shorthands: `<20`, `<=20`, `>50`, `>=50`, `15..50` → `Q(sale_price__...)`.
+   - Expand field coverage by scope:
+     - `scope="internal"`: `ai_title`, `raw_note`, `ai_description`, `category__name`, `category__name_en`, `provider__name`, `pallet__name`, `pallet__notes`, `sold_channel_notes`, `sold_marketplace__name`, `Exists(ProductClarification)` (`question` / `answer`), `Exists(ProductListingLink)` (`site__name` / `url`), integer `pk` / `pallet__number` match, and date patterns (`YYYY-MM-DD`, `DD/MM/YYYY`, `YYYY-MM`, `YYYY`).
+     - `scope="public"`: Strictly `ai_title`, `ai_description`, `category__name`, `category__name_en`, and integer `pk` / `#Ref` match (zero leakage of internal notes, providers, pallets, costs, sale notes, or clarifications).
+3. **Search-Scoped Dashboard Counters, Cross-Tab Recovery & Storefront Integration (`inventory/views.py`, `storefront/views.py`, `inventory/templates/inventory/dashboard.html`)**:
+   - Apply `build_search_query(search_query, scope="internal")` to both `products` (`.distinct()`) and `counts_qs` in `dashboard_view`.
+   - Compute `search_other_tabs` when the current status tab has 0 matches for `search_query` while other tabs contain matching items, and render clickable cross-tab recovery pills in the `dashboard.html` empty state.
+   - Wire `build_search_query(search_query, scope="public")` into `storefront/views.py` (`catalog_view`).
+4. **Bilingual Translations & Comprehensive Test Suite (`locale/`, `tests/test_product_search.py`, `tests/test_pagination_search.py`)**:
+   - Localize new search hint/recovery strings in `locale/es/LC_MESSAGES/django.po` and `locale/en/LC_MESSAGES/django.po` and compile via `compile_locales`.
+   - Author unit, integration, security firewall, and localization tests in `tests/test_product_search.py`.
+
+
 
