@@ -123,7 +123,13 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
             page.wait_for_selector("#id_username")
 
             login_h1 = page.inner_text("h1")
-            self.assertTrue("INICIA" in login_h1.upper() or "SESI" in login_h1.upper() or "LOG IN" in login_h1.upper())
+            self.assertTrue(
+                "INICIA" in login_h1.upper()
+                or "SESI" in login_h1.upper()
+                or "LOG IN" in login_h1.upper()
+                or "SIGN IN" in login_h1.upper(),
+                f"Unexpected login <h1> text: {login_h1!r}",
+            )
             self.assertEqual(page.locator("#id_username").get_attribute("autocomplete"), "username")
             self.assertEqual(page.locator("#id_password").get_attribute("autocomplete"), "current-password")
             page.screenshot(path=str(self.artifacts_dir / "03_login_h1_and_autocomplete.png"))

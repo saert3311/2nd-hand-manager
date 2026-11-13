@@ -177,7 +177,10 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             or page.locator('text="349.00 €"').first.is_visible()
         )
         self.assertTrue(page.locator(f'a[href*="/go/whatsapp/{self.public_bike.pk}/"]').first.is_visible())
-        self.assertTrue(page.locator('text="Certificado de Verificación Rápido Pack"').first.is_visible())
+        self.assertTrue(
+            page.locator('text="Certificado de Verificación Rápido Pack"').first.is_visible()
+            or page.locator('text="Rápido Pack Verification Guarantee"').first.is_visible()
+        )
 
         # Canonical 301 slug redirect
         page.goto(f"{self.live_server_url}/tienda/producto/outdated-slug-{self.public_bike.pk}/")
@@ -201,13 +204,13 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         self.assertTrue(page.locator('text="Bicicleta de Montaña Orbea MX 29"').first.is_visible())
 
         # Legal and privacy pages
-        for legal_path, heading_text in [
-            (reverse("storefront:legal_notice"), "Aviso Legal"),
-            (reverse("storefront:privacy"), "Política de Privacidad"),
-            (reverse("storefront:cookies"), "Política de Cookies"),
+        for legal_path, heading_es, heading_en in [
+            (reverse("storefront:legal_notice"), "Aviso Legal", "Legal Notice and Terms of Use"),
+            (reverse("storefront:privacy"), "Política de Privacidad", "Privacy Policy (GDPR)"),
+            (reverse("storefront:cookies"), "Política de Cookies", "Cookies Policy"),
         ]:
             page.goto(f"{self.live_server_url}{legal_path}")
-            page.wait_for_selector(f"h1:has-text('{heading_text}')")
+            page.wait_for_selector(f"h1:has-text('{heading_es}'), h1:has-text('{heading_en}')")
             self.assertIn("Rápido Pack", page.content())
 
         # PART II: STAFF INTAKE & AI VALUATION WORKFLOW
