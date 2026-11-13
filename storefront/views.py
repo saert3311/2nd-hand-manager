@@ -18,6 +18,7 @@ from inventory.models import (
     ProductListingLink,
     StorefrontConfiguration,
 )
+from inventory.services.search_service import build_search_query
 
 PUBLIC_PAGE_SIZE = 20
 
@@ -270,16 +271,7 @@ def catalog_view(request, category_slug: str | None = None, resolved_category: C
 
     if search_query:
         # Strict firewall: search ONLY public fields (ai_title, ai_description, category, reference id)
-        q_filter = (
-            Q(ai_title__icontains=search_query)
-            | Q(ai_description__icontains=search_query)
-            | Q(category__name__icontains=search_query)
-            | Q(category__name_en__icontains=search_query)
-        )
-        cleaned_ref = search_query.lower().replace("ref.", "").replace("ref", "").replace("#", "").strip()
-        if cleaned_ref.isdigit():
-            q_filter |= Q(pk=int(cleaned_ref))
-        qs = qs.filter(q_filter)
+        qs = qs.filter(build_search_query(search_query, scope="public"))
 
     if sort_by == "price_asc":
         qs = qs.order_by("is_sold", "sale_price", "-created_at")

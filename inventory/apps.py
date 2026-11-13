@@ -14,6 +14,9 @@ def ensure_default_role_groups(sender, **kwargs):
 
 def configure_sqlite_wal(sender, connection, **kwargs):
     if connection.vendor == "sqlite":
+        from .services.search_service import register_sqlite_search_functions
+
+        register_sqlite_search_functions(connection)
         db_name = str(connection.settings_dict.get("NAME", ""))
         if db_name and db_name != ":memory:" and "memorydb" not in db_name:
             try:
@@ -29,5 +32,11 @@ class InventoryConfig(AppConfig):
     name = 'inventory'
 
     def ready(self):
+        from django.db import connections
+
+        from .services.search_service import register_sqlite_search_functions
+
         post_migrate.connect(ensure_default_role_groups, sender=self)
         connection_created.connect(configure_sqlite_wal, dispatch_uid="inventory.sqlite_wal")
+        for conn in connections.all():
+            register_sqlite_search_functions(conn)
