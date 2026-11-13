@@ -109,7 +109,7 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           else
-            VERSION=$(python3 -c "import re; content = open('config/settings.py').read(); match = re.search(r'APP_VERSION\s*=\s*os\.getenv\([^\)]+,\s*[\x27\x22]([^\x27\x22]+)[\x27\x22]', content); print(match.group(1) if match else '2.8.0')")
+            VERSION=$(python3 -c "import re; content = open('config/settings.py').read(); match = re.search(r'APP_VERSION\s*=\s*os\.getenv\([^\)]+,\s*[\x27\x22]([^\x27\x22]+)[\x27\x22]', content); print(match.group(1) if match else '2.9.0')")
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           fi
 
@@ -286,7 +286,7 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           else
-            VERSION=$(python3 -c "import re; content = open('config/settings.py').read(); match = re.search(r'APP_VERSION\s*=\s*os\.getenv\([^\)]+,\s*[\x27\x22]([^\x27\x22]+)[\x27\x22]', content); print(match.group(1) if match else '2.8.0')")
+            VERSION=$(python3 -c "import re; content = open('config/settings.py').read(); match = re.search(r'APP_VERSION\s*=\s*os\.getenv\([^\)]+,\s*[\x27\x22]([^\x27\x22]+)[\x27\x22]', content); print(match.group(1) if match else '2.9.0')")
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           fi
 
