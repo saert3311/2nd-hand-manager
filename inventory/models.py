@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.urls import NoReverseMatch, reverse
@@ -495,10 +495,14 @@ class Pallet(models.Model):
     def save(self, *args, **kwargs):
         is_adding = self._state.adding
         initial_provider_id = getattr(self, "_initial_provider_id", None)
-        super().save(*args, **kwargs)
-        if not is_adding and self.provider_id != initial_provider_id:
-            Product.objects.filter(pallet_id=self.pk).update(provider_id=self.provider_id)
-        self._initial_provider_id = self.provider_id
+        update_fields = kwargs.get("update_fields")
+        provider_saved = update_fields is None or bool({"provider", "provider_id"} & set(update_fields))
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            if not is_adding and provider_saved and self.provider_id != initial_provider_id:
+                Product.objects.filter(pallet_id=self.pk).update(provider_id=self.provider_id)
+        if provider_saved:
+            self._initial_provider_id = self.provider_id
 
 
 _deleting_product_pks = ContextVar("deleting_product_pks", default=frozenset())
@@ -1159,8 +1163,12 @@ class Product(models.Model):
         return ""
 
     def save(self, *args, changed_by=None, trigger=None, notes=None, skip_auto_compliance=False, **kwargs):
-        # Golden Sync Invariant: pallet-assigned products always inherit pallet.provider
-        if self.pallet_id:
+        update_fields_arg = kwargs.get("update_fields")
+        # Golden Sync Invariant: pallet-assigned products inherit pallet.provider when origin fields may be written
+        if self.pallet_id and (
+            update_fields_arg is None
+            or bool({"pallet", "pallet_id", "provider", "provider_id"} & set(update_fields_arg))
+        ):
             prev_provider_id = self.provider_id
             cached_pallet = self._state.fields_cache.get("pallet")
             if cached_pallet is not None and cached_pallet.pk == self.pallet_id:
@@ -1174,11 +1182,12 @@ class Product(models.Model):
             self.provider_id = new_provider_id
             if new_provider_id != prev_provider_id:
                 self._state.fields_cache.pop("provider", None)
-            if kwargs.get("update_fields") is not None:
-                uf = set(kwargs["update_fields"])
+            if update_fields_arg is not None:
+                uf = set(update_fields_arg)
                 if "pallet" in uf or "pallet_id" in uf:
                     uf.add("provider")
-                    kwargs["update_fields"] = list(uf)
+                    update_fields_arg = list(uf)
+                    kwargs["update_fields"] = update_fields_arg
 
         initial_status = getattr(self, "_initial_status", None)
         initial_is_sold = getattr(self, "_initial_is_sold", None)
@@ -1187,7 +1196,6 @@ class Product(models.Model):
         title_changed_for_compliance = (self.ai_title or "") != (getattr(self, "_initial_ai_title", None) or "")
         desc_changed_for_compliance = (self.ai_description or "") != (getattr(self, "_initial_ai_description", None) or "")
         category_changed_for_compliance = self.category_id != getattr(self, "_initial_category_id", None)
-        update_fields_arg = kwargs.get("update_fields")
         compliance_fields_updated = (
             update_fields_arg is None
             or any(

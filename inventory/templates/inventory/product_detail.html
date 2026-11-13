@@ -3330,14 +3330,23 @@
       palletProviderMap = {};
     }
 
-    palletSelect.addEventListener("change", function() {
+    function syncProviderLockState(shouldUpdateValue) {
       const pid = palletSelect.value;
-      if (pid && Object.prototype.hasOwnProperty.call(palletProviderMap, pid)) {
+      const hasPallet = Boolean(pid);
+      if (shouldUpdateValue && hasPallet && Object.prototype.hasOwnProperty.call(palletProviderMap, pid)) {
         providerSelect.value = palletProviderMap[pid] || "";
-        if (syncHint) syncHint.classList.remove("hidden");
-      } else {
-        if (syncHint) syncHint.classList.add("hidden");
       }
+      providerSelect.disabled = hasPallet;
+      providerSelect.classList.toggle("opacity-60", hasPallet);
+      providerSelect.classList.toggle("cursor-not-allowed", hasPallet);
+      providerSelect.classList.toggle("bg-slate-100", hasPallet);
+      providerSelect.classList.toggle("bg-white", !hasPallet);
+      if (syncHint) syncHint.classList.toggle("hidden", !hasPallet);
+    }
+
+    syncProviderLockState(false);
+    palletSelect.addEventListener("change", function() {
+      syncProviderLockState(true);
     });
   })();
 

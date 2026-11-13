@@ -1,15 +1,20 @@
 import datetime
 import io
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import DatabaseError, connection
 from django.test import TestCase, override_settings
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import translation
 from PIL import Image
+from playwright.sync_api import sync_playwright
 
 from inventory.forms import ProductIntakeForm
 from inventory.models import (
@@ -118,6 +123,50 @@ class ProviderModelAndGoldenSyncTests(TestCase):
         prod_pallet.refresh_from_db()
         self.assertIsNone(prod_pallet.pallet)
 
+    def test_pallet_save_update_fields_without_provider_does_not_cascade(self):
+        p1 = Provider.objects.create(name="OrigSup", provider_type=ProviderType.WHOLESALER)
+        p2 = Provider.objects.create(name="OtherSup", provider_type=ProviderType.WHOLESALER)
+        pallet = Pallet.objects.create(number=404, received_date=datetime.date(2026, 10, 4), provider=p1)
+        prod = Product.objects.create(raw_note="Pallet unit", pallet=pallet)
+
+        pallet.provider = p2
+        pallet.purchase_price = Decimal("150.00")
+        pallet.save(update_fields=["purchase_price"])
+
+        pallet.refresh_from_db()
+        prod.refresh_from_db()
+        self.assertEqual(pallet.provider, p1)
+        self.assertEqual(prod.provider, p1)
+
+    def test_pallet_save_cascade_is_atomic_on_db_failure(self):
+        p1 = Provider.objects.create(name="AtomicSup1", provider_type=ProviderType.WHOLESALER)
+        p2 = Provider.objects.create(name="AtomicSup2", provider_type=ProviderType.WHOLESALER)
+        pallet = Pallet.objects.create(number=405, received_date=datetime.date(2026, 10, 4), provider=p1)
+        prod = Product.objects.create(raw_note="Atomic item", pallet=pallet)
+
+        pallet.provider = p2
+        with patch("django.db.models.query.QuerySet.update", side_effect=DatabaseError("Simulated update failure")):
+            with self.assertRaises(DatabaseError):
+                pallet.save()
+
+        pallet.refresh_from_db()
+        prod.refresh_from_db()
+        self.assertEqual(pallet.provider, p1)
+        self.assertEqual(prod.provider, p1)
+
+    def test_product_save_unrelated_update_fields_skips_pallet_query(self):
+        sup = Provider.objects.create(name="QuerySup", provider_type=ProviderType.WHOLESALER)
+        pallet = Pallet.objects.create(number=406, received_date=datetime.date(2026, 10, 4), provider=sup)
+        created = Product.objects.create(ai_title="Sync item", pallet=pallet)
+
+        fresh = Product.objects.get(pk=created.pk)
+        fresh.needs_platform_sync = True
+        with CaptureQueriesContext(connection) as ctx:
+            fresh.save(update_fields=["needs_platform_sync"], skip_auto_compliance=True)
+
+        sql_statements = " ".join(q["sql"].lower() for q in ctx.captured_queries)
+        self.assertNotIn("inventory_pallet", sql_statements)
+
 
 class OriginServiceAndROITests(TestCase):
     """Tests origin_service choices, token parser, and zero-double-counting ROI."""
@@ -212,6 +261,7 @@ class OriginServiceAndROITests(TestCase):
         self.assertEqual(stats["active_stock_value"], Decimal("250.00"))
         self.assertEqual(stats["net_margin"], Decimal("280.00"))
         self.assertEqual(stats["roi_pct"], Decimal("45.2"))
+        self.assertNotIn("pallet_est_value_total", stats)
 
 
 @override_settings(TURNSTILE_ENABLED=False)
@@ -336,6 +386,29 @@ class OriginIntakeAndPermissionsViewsTests(TestCase):
         self.assertEqual(resp_mgr_post.status_code, 302)
         product.refresh_from_db()
         self.assertEqual(product.acquisition_cost, Decimal("110.25"))
+
+    def test_product_detail_post_assigns_pallet_and_syncs_provider(self):
+        standalone = Product.objects.create(
+            ai_title="Monitor Standalone",
+            ai_description="24 inch",
+            sale_price=Decimal("120.00"),
+            provider=self.walkin,
+        )
+        self.client.force_login(self.manager)
+        # Simulates disabled #id_provider (omitted from POST) when pallet is selected
+        resp = self.client.post(
+            reverse("inventory:product_detail", kwargs={"pk": standalone.pk}),
+            {
+                "ai_title": "Monitor Standalone",
+                "ai_description": "24 inch",
+                "sale_price": "120.00",
+                "pallet": str(self.pallet.pk),
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+        standalone.refresh_from_db()
+        self.assertEqual(standalone.pallet, self.pallet)
+        self.assertEqual(standalone.provider, self.wholesaler)
 
 
 @override_settings(TURNSTILE_ENABLED=False)
@@ -524,3 +597,129 @@ class ProvidersHubAndDashboardFilterTests(TestCase):
 
             resp_dash = self.client.get(reverse("inventory:dashboard"), headers={"Accept-Language": "es"})
             self.assertContains(resp_dash, "Todos los proveedores")
+
+    def test_provider_create_invalid_post_stays_on_providers_tab(self):
+        self.client.force_login(self.manager)
+        resp = self.client.post(
+            reverse("inventory:provider_create"),
+            {"name": "IberiaLiquida", "provider_type": ProviderType.WHOLESALER},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context["active_tab"], "providers")
+        self.assertTrue(resp.context["provider_form"].errors)
+        self.assertContains(resp, 'role="alert"')
+
+    def test_pallet_edit_post_cascades_provider_to_products(self):
+        new_sup = Provider.objects.create(name="CascadePostSup", provider_type=ProviderType.WHOLESALER)
+        self.client.force_login(self.manager)
+        resp = self.client.post(
+            reverse("inventory:pallet_edit", kwargs={"pk": self.pallet.pk}),
+            {
+                "number": str(self.pallet.number),
+                "provider": str(new_sup.pk),
+                "received_date": "2026-10-10",
+                "purchase_price": "400.00",
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.prod_pallet.refresh_from_db()
+        self.assertEqual(self.prod_pallet.provider, new_sup)
+
+    def test_sanitize_public_product_clears_prefetched_fields_cache(self):
+        from storefront.views import _sanitize_public_product
+
+        fetched = Product.objects.select_related("provider", "pallet").get(pk=self.prod_pallet.pk)
+        sanitized = _sanitize_public_product(fetched)
+        self.assertIsNone(sanitized.provider_id)
+        self.assertIsNone(sanitized.pallet_id)
+        self.assertIsNone(sanitized.provider)
+        self.assertIsNone(sanitized.pallet)
+        self.assertIsNone(sanitized.acquisition_cost)
+
+    def test_dashboard_tab_counts_match_scoped_provider_filter(self):
+        self.client.force_login(self.manager)
+        resp = self.client.get(f"{reverse('inventory:dashboard')}?provider={self.supplier.pk}")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context["total_count"], 1)
+        self.assertEqual(resp.context["ready_count"], 1)
+
+
+@override_settings(TURNSTILE_ENABLED=False)
+class OriginInteractiveBrowserTests(StaticLiveServerTestCase):
+    """Browser TDD tests for Origin Provider locking on /products/<pk>/ and shared delete modal on /pallets/."""
+
+    def setUp(self):
+        managers_group, _created = Group.objects.get_or_create(name="managers")
+        self.manager = User.objects.create_user(username="mgr_browser_origin", password="pw")
+        self.manager.groups.add(managers_group)
+
+        self.supplier = Provider.objects.create(name="BrowserSup", provider_type=ProviderType.WHOLESALER)
+        self.pallet = Pallet.objects.create(
+            number=77,
+            received_date=datetime.date(2026, 10, 10),
+            purchase_price=Decimal("300.00"),
+            provider=self.supplier,
+        )
+        self.pallet_product = Product.objects.create(
+            ai_title="Browser Pallet Camera",
+            ai_description="Clean lens",
+            sale_price=Decimal("90.00"),
+            pallet=self.pallet,
+        )
+
+    def test_product_detail_locks_provider_while_pallet_selected_and_unlocks_on_clear(self):
+        with sync_playwright() as p:
+            browser = p.chromium.launch(channel="chrome", headless=True)
+            page = browser.new_page()
+            page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
+            page.fill("#id_username", "mgr_browser_origin")
+            page.fill("#id_password", "pw")
+            with page.expect_navigation():
+                page.click("#loginSubmitBtn")
+
+            page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.pallet_product.pk})}")
+            page.wait_for_load_state("networkidle")
+
+            provider_select = page.locator("#id_provider")
+            pallet_select = page.locator("#id_pallet")
+            self.assertTrue(provider_select.is_disabled())
+
+            # Clearing pallet unlocks provider selector
+            pallet_select.select_option("")
+            self.assertFalse(provider_select.is_disabled())
+
+            # Selecting pallet again locks provider and syncs its value
+            pallet_select.select_option(str(self.pallet.pk))
+            self.assertTrue(provider_select.is_disabled())
+            self.assertEqual(provider_select.input_value(), str(self.supplier.pk))
+
+            browser.close()
+
+    def test_pallets_hub_shared_delete_modal_works_for_pallet_and_provider(self):
+        with sync_playwright() as p:
+            browser = p.chromium.launch(channel="chrome", headless=True)
+            page = browser.new_page()
+            page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
+            page.fill("#id_username", "mgr_browser_origin")
+            page.fill("#id_password", "pw")
+            with page.expect_navigation():
+                page.click("#loginSubmitBtn")
+
+            page.goto(f"{self.live_server_url}{reverse('inventory:pallets')}")
+            page.wait_for_load_state("networkidle")
+
+            page.click(f"#pallet-card-{self.pallet.pk} button")
+            modal = page.locator("#deleteOriginModal")
+            self.assertTrue(modal.is_visible())
+            self.assertIn("Pallet #77", page.locator("#deleteOriginModalWarning").inner_text())
+            page.click("#deleteOriginModal button:has-text('Cancel')")
+            self.assertFalse(modal.is_visible())
+
+            page.click("#tabBtnProviders")
+            page.click(f"#provider-card-{self.supplier.pk} button")
+            self.assertTrue(modal.is_visible())
+            self.assertIn("BrowserSup", page.locator("#deleteOriginModalWarning").inner_text())
+            page.click("#deleteOriginModal button:has-text('Cancel')")
+            self.assertFalse(modal.is_visible())
+
+            browser.close()

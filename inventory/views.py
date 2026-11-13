@@ -59,7 +59,11 @@ from .services.image_service import (
     validate_image_file,
     validate_images_count,
 )
-from .services.origin_service import get_pallets_with_stats, get_providers_with_roi_stats
+from .services.origin_service import (
+    get_pallets_with_stats,
+    get_providers_with_roi_stats,
+    parse_origin_token,
+)
 from .services.search_service import build_search_query
 from .services.trash_service import (
     empty_all_trash,
@@ -168,25 +172,16 @@ def product_intake_view(request):
         initial_pallet = None
         initial_origin = ""
 
-        if last_origin == "none":
-            initial_origin = ""
-            initial_pallet = None
-        elif isinstance(last_origin, str) and last_origin.startswith("pallet:"):
-            raw_pid = last_origin.split(":", 1)[1]
-            if raw_pid.isdigit():
-                initial_pallet = Pallet.objects.filter(pk=int(raw_pid)).first()
+        if isinstance(last_origin, str) and last_origin and last_origin != "none":
+            try:
+                initial_pallet, initial_provider = parse_origin_token(last_origin)
                 if initial_pallet:
                     initial_origin = f"pallet:{initial_pallet.pk}"
-        elif isinstance(last_origin, str) and last_origin.startswith("provider:"):
-            raw_prid = last_origin.split(":", 1)[1]
-            if raw_prid.isdigit():
-                initial_provider = Provider.objects.filter(pk=int(raw_prid), is_active=True).first()
-                if initial_provider:
+                elif initial_provider:
                     initial_origin = f"provider:{initial_provider.pk}"
-        elif initial_pallet_id == "none":
-            initial_origin = ""
-            initial_pallet = None
-        elif initial_pallet_id is not None:
+            except ValidationError:
+                initial_pallet = None
+        elif last_origin is None and initial_pallet_id not in (None, "none"):
             initial_pallet = Pallet.objects.filter(pk=initial_pallet_id).first()
             if initial_pallet:
                 initial_origin = f"pallet:{initial_pallet.pk}"
@@ -248,6 +243,23 @@ def intake_identify_view(request):
     return JsonResponse(result, status=200)
 
 
+def _apply_dashboard_scope_filters(qs, platform_filter: str, pallet_filter: str, provider_filter: str):
+    if platform_filter:
+        qs = qs.filter(
+            listing_links__site__slug=platform_filter,
+            listing_links__is_active=True,
+        ).distinct()
+    if pallet_filter == "none":
+        qs = qs.filter(pallet__isnull=True)
+    elif pallet_filter.isdigit():
+        qs = qs.filter(pallet_id=int(pallet_filter))
+    if provider_filter == "none":
+        qs = qs.filter(provider__isnull=True)
+    elif provider_filter.isdigit():
+        qs = qs.filter(provider_id=int(provider_filter))
+    return qs
+
+
 @login_required
 def dashboard_view(request):
     """
@@ -301,27 +313,14 @@ def dashboard_view(request):
     )
     no_provider_count = Product.objects.filter(is_deleted=False, provider__isnull=True).count()
 
-    products = (
+    products = _apply_dashboard_scope_filters(
         Product.objects.select_related("category", "sold_marketplace", "pallet", "provider")
         .prefetch_related("images", "listing_links__site")
-        .all()
+        .all(),
+        platform_filter,
+        pallet_filter,
+        provider_filter,
     )
-
-    if platform_filter:
-        products = products.filter(
-            listing_links__site__slug=platform_filter,
-            listing_links__is_active=True,
-        ).distinct()
-
-    if pallet_filter == "none":
-        products = products.filter(pallet__isnull=True)
-    elif pallet_filter.isdigit():
-        products = products.filter(pallet_id=int(pallet_filter))
-
-    if provider_filter == "none":
-        products = products.filter(provider__isnull=True)
-    elif provider_filter.isdigit():
-        products = products.filter(provider_id=int(provider_filter))
 
     if status_filter == "erased":
         products = products.filter(is_deleted=True)
@@ -364,21 +363,13 @@ def dashboard_view(request):
             compliance_status__in=[ComplianceVerdict.MANUAL_REVIEW, ComplianceVerdict.REJECTED]
         )
 
-    # Calculate status counts (scoped to selected platform if active)
-    counts_qs = Product.objects.all()
-    if platform_filter:
-        counts_qs = counts_qs.filter(
-            listing_links__site__slug=platform_filter,
-            listing_links__is_active=True,
-        ).distinct()
-    if pallet_filter == "none":
-        counts_qs = counts_qs.filter(pallet__isnull=True)
-    elif pallet_filter.isdigit():
-        counts_qs = counts_qs.filter(pallet_id=int(pallet_filter))
-    if provider_filter == "none":
-        counts_qs = counts_qs.filter(provider__isnull=True)
-    elif provider_filter.isdigit():
-        counts_qs = counts_qs.filter(provider_id=int(provider_filter))
+    # Calculate status counts (scoped to selected platform, pallet, and provider filters)
+    counts_qs = _apply_dashboard_scope_filters(
+        Product.objects.all(),
+        platform_filter,
+        pallet_filter,
+        provider_filter,
+    )
 
     counts = counts_qs.aggregate(
         total_count=Count("id", filter=Q(is_deleted=False), distinct=True),

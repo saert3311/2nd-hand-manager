@@ -201,7 +201,7 @@
       <div class="flex items-center justify-between">
         <h2 class="text-lg font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
           <span>📋</span> {% trans "Recorded Pallets" %}
-          <span class="text-xs bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded-full">{{ pallets.count }}</span>
+          <span class="text-xs bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded-full">{{ pallets|length }}</span>
         </h2>
       </div>
 
@@ -521,60 +521,26 @@
     </div>
   </section>
 
-  <!-- Delete Pallet Accessible Modal Dialog -->
-  <div id="deletePalletModal" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
-       role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+  <!-- Shared Origin Delete Accessible Modal Dialog -->
+  <div id="deleteOriginModal" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
+       role="dialog" aria-modal="true" aria-labelledby="deleteOriginModalTitle">
     <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
       <div class="p-5 sm:p-6 space-y-3">
         <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center text-2xl mx-auto" aria-hidden="true">
           ⚠️
         </div>
-        <h3 id="deleteModalTitle" class="text-lg font-bold text-slate-900 text-center">
-          {% trans "Delete Pallet" %}
-        </h3>
-        <p id="deleteModalWarning" class="text-xs sm:text-sm text-slate-600 text-center leading-relaxed">
-          <!-- Populated dynamically via confirmDeletePallet() -->
-        </p>
+        <h3 id="deleteOriginModalTitle" class="text-lg font-bold text-slate-900 text-center"></h3>
+        <p id="deleteOriginModalWarning" class="text-xs sm:text-sm text-slate-600 text-center leading-relaxed"></p>
       </div>
 
       <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
-        <button type="button" onclick="closeDeletePalletModal()"
+        <button type="button" onclick="closeDeleteOriginModal()"
                 class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs sm:text-sm font-bold rounded-xl transition cursor-pointer min-h-[40px]">
           {% trans "Cancel" %}
         </button>
-        <form id="deletePalletForm" method="post" action="">
+        <form id="deleteOriginForm" method="post" action="">
           {% csrf_token %}
-          <button type="submit" id="btnConfirmDeletePallet"
-                  class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer min-h-[40px]">
-            {% trans "Confirm Delete" %}
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Delete Provider Accessible Modal Dialog -->
-  <div id="deleteProviderModal" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
-       role="dialog" aria-modal="true" aria-labelledby="deleteProviderModalTitle">
-    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
-      <div class="p-5 sm:p-6 space-y-3">
-        <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center text-2xl mx-auto" aria-hidden="true">
-          ⚠️
-        </div>
-        <h3 id="deleteProviderModalTitle" class="text-lg font-bold text-slate-900 text-center">
-          {% trans "Delete Provider" %}
-        </h3>
-        <p id="deleteProviderModalWarning" class="text-xs sm:text-sm text-slate-600 text-center leading-relaxed"></p>
-      </div>
-
-      <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
-        <button type="button" onclick="closeDeleteProviderModal()"
-                class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs sm:text-sm font-bold rounded-xl transition cursor-pointer min-h-[40px]">
-          {% trans "Cancel" %}
-        </button>
-        <form id="deleteProviderForm" method="post" action="">
-          {% csrf_token %}
-          <button type="submit" id="btnConfirmDeleteProvider"
+          <button type="submit" id="btnConfirmDeleteOrigin"
                   class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer min-h-[40px]">
             {% trans "Confirm Delete" %}
           </button>
@@ -626,60 +592,62 @@
     }
   }
 
-  function confirmDeletePallet(palletId, palletNumber, itemCount) {
-    const modal = document.getElementById("deletePalletModal");
-    const form = document.getElementById("deletePalletForm");
-    const warning = document.getElementById("deleteModalWarning");
+  function openDeleteOriginModal(modalTitle, actionUrl, questionPrefix, targetName, detailText) {
+    const modal = document.getElementById("deleteOriginModal");
+    const titleEl = document.getElementById("deleteOriginModalTitle");
+    const form = document.getElementById("deleteOriginForm");
+    const warning = document.getElementById("deleteOriginModalWarning");
 
-    form.action = `/pallets/${palletId}/delete/`;
-    warning.innerHTML = `{% trans "Are you sure you want to delete" %} <strong>Pallet #${palletNumber}</strong>?<br><br><span class="text-slate-500">{% trans "Its" %} ${itemCount} {% trans "associated products will remain intact and will become unassigned." %}</span>`;
+    titleEl.textContent = modalTitle;
+    form.action = actionUrl;
+    warning.textContent = "";
+
+    const strongName = document.createElement("strong");
+    strongName.textContent = targetName;
+    const detail = document.createElement("span");
+    detail.className = "text-slate-500";
+    detail.textContent = detailText;
+
+    warning.append(
+      document.createTextNode(`${questionPrefix} `),
+      strongName,
+      document.createTextNode("?"),
+      document.createElement("br"),
+      document.createElement("br"),
+      detail
+    );
 
     modal.classList.remove("hidden");
-    document.getElementById("btnConfirmDeletePallet").focus();
+    document.getElementById("btnConfirmDeleteOrigin").focus();
   }
 
-  function closeDeletePalletModal() {
-    const modal = document.getElementById("deletePalletModal");
-    modal.classList.add("hidden");
+  function closeDeleteOriginModal() {
+    document.getElementById("deleteOriginModal").classList.add("hidden");
+  }
+
+  function confirmDeletePallet(palletId, palletNumber, itemCount) {
+    openDeleteOriginModal(
+      "{% trans 'Delete Pallet' %}",
+      `/pallets/${palletId}/delete/`,
+      "{% trans 'Are you sure you want to delete' %}",
+      `Pallet #${palletNumber}`,
+      `{% trans "Its" %} ${itemCount} {% trans "associated products will remain intact and will become unassigned." %}`
+    );
   }
 
   function confirmDeleteProviderFromBtn(btn) {
-    const providerId = btn.dataset.providerId;
-    const providerName = btn.dataset.providerName || "";
-    const palletsCount = btn.dataset.palletsCount || "0";
-    const productsCount = btn.dataset.productsCount || "0";
-
-    const modal = document.getElementById("deleteProviderModal");
-    const form = document.getElementById("deleteProviderForm");
-    const warning = document.getElementById("deleteProviderModalWarning");
-
-    form.action = `/pallets/providers/${providerId}/delete/`;
-    warning.textContent = "";
-
-    const prefix = document.createTextNode("{% trans 'Are you sure you want to delete provider' %} ");
-    const strongName = document.createElement("strong");
-    strongName.textContent = providerName;
-    const questionMark = document.createTextNode("?");
-    const br1 = document.createElement("br");
-    const br2 = document.createElement("br");
-    const detail = document.createElement("span");
-    detail.className = "text-slate-500";
-    detail.textContent = `{% trans "Its" %} ${palletsCount} {% trans "pallets" %} / ${productsCount} {% trans "products will remain intact with no provider assigned." %}`;
-
-    warning.append(prefix, strongName, questionMark, br1, br2, detail);
-    modal.classList.remove("hidden");
-    document.getElementById("btnConfirmDeleteProvider").focus();
-  }
-
-  function closeDeleteProviderModal() {
-    const modal = document.getElementById("deleteProviderModal");
-    modal.classList.add("hidden");
+    openDeleteOriginModal(
+      "{% trans 'Delete Provider' %}",
+      `/pallets/providers/${btn.dataset.providerId}/delete/`,
+      "{% trans 'Are you sure you want to delete provider' %}",
+      btn.dataset.providerName || "",
+      `{% trans "Its" %} ${btn.dataset.palletsCount || "0"} {% trans "pallets" %} / ${btn.dataset.productsCount || "0"} {% trans "products will remain intact with no provider assigned." %}`
+    );
   }
 
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      closeDeletePalletModal();
-      closeDeleteProviderModal();
+      closeDeleteOriginModal();
     }
   });
 </script>

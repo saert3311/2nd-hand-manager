@@ -117,7 +117,6 @@ def get_providers_with_roi_stats() -> list[dict]:
         .annotate(
             pallets_count=Count("id"),
             pallet_cost_total=Coalesce(Sum("purchase_price"), Value(zero), output_field=dec_field),
-            pallet_est_value_total=Coalesce(Sum("estimated_value"), Value(zero), output_field=dec_field),
         )
     )
     pallet_stats_map = {row["provider_id"]: row for row in pallet_stats_qs}
@@ -172,7 +171,6 @@ def get_providers_with_roi_stats() -> list[dict]:
             "provider": provider,
             "pallets_count": pal.get("pallets_count", 0),
             "pallet_cost_total": pallet_cost,
-            "pallet_est_value_total": pal.get("pallet_est_value_total") or zero,
             "standalone_cost_total": standalone_cost,
             "total_cost": total_cost,
             "total_products_count": prod.get("total_products_count", 0),

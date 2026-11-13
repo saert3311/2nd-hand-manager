@@ -95,6 +95,8 @@ def _sanitize_public_product(product: Product) -> Product:
     product.__dict__["provider_id"] = None
     product.__dict__["pallet_id"] = None
     product.__dict__["acquisition_cost"] = None
+    product._state.fields_cache.pop("provider", None)
+    product._state.fields_cache.pop("pallet", None)
     return product
 
 
