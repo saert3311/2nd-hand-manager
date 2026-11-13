@@ -12,8 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality-gates:
-    name: Code Quality & Automated Tests
+  static-checks:
+    name: Static Analysis, Migrations & Locales
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,11 +27,12 @@ jobs:
         with:
           python-version: '3.13'
           cache: 'pip'
+          cache-dependency-path: requirements*.txt
 
-      - name: Install Dependencies
+      - name: Install Lint & Django Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
       - name: Gate 1 - Lint & Style Check (Ruff)
         run: |
@@ -41,11 +42,42 @@ jobs:
         run: |
           python manage.py check
 
-      - name: Gate 2b - Translation Catalog Compilation Check
+      - name: Gate 2b - Pending Migrations Check
+        run: |
+          python manage.py makemigrations --check --dry-run
+
+      - name: Gate 2c - Translation Catalog Compilation & Sync Check
         run: |
           python manage.py compile_locales
+          git diff --exit-code locale/
 
-      - name: Gate 3 - Unit & Integration Test Suite
+  quality-gates:
+    name: Automated Unit, Integration & Browser Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+          cache-dependency-path: requirements*.txt
+
+      - name: Install Dev & Test Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Install Playwright Chromium Browser
+        run: |
+          python -m playwright install --with-deps chromium
+
+      - name: Gate 3 - Unit, Integration & Browser Test Suite
         env:
           SECRET_KEY: ci-test-secret-key-12345
           DEBUG: 'False'
@@ -55,7 +87,7 @@ jobs:
 
   docker-build-and-smoke-test:
     name: Docker Build & Container Smoke Test
-    needs: quality-gates
+    needs: [static-checks, quality-gates]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -77,7 +109,7 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           else
-            VERSION=$(python3 -c "import re; content = open('config/settings.py').read(); match = re.search(r'APP_VERSION\s*=\s*os\.getenv\([^\)]+,\s*[\x27\x22]([^\x27\x22]+)[\x27\x22]', content); print(match.group(1) if match else '2.1.0')")
+            VERSION=$(python3 -c "import re; content = open('config/settings.py').read(); match = re.search(r'APP_VERSION\s*=\s*os\.getenv\([^\)]+,\s*[\x27\x22]([^\x27\x22]+)[\x27\x22]', content); print(match.group(1) if match else '2.9.0')")
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           fi
 
@@ -156,6 +188,15 @@ jobs:
             exit 1
           fi
 
+          # 1b. Verify Phase 52 SQLite unaccent_like Search Lookup Under Gunicorn
+          STATUS_SEARCH=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8000/tienda/?q=camara")
+          if [ "$STATUS_SEARCH" -eq 200 ]; then
+            echo "PASS: Public search endpoint (/tienda/?q=camara) responded with HTTP 200."
+          else
+            echo "ERROR: Public search (/tienda/?q=camara) responded with HTTP $STATUS_SEARCH instead of 200."
+            exit 1
+          fi
+
           # 2. Verify Internal Staff Portal & Staging Hub
           RESPONSE_STAFF=$(curl -s -L http://127.0.0.1:8000/panel/)
           echo "$RESPONSE_STAFF" | grep -i "2ndHand" > /dev/null
@@ -177,12 +218,20 @@ jobs:
             exit 1
           fi
 
-          # 3. Verify Pallet Management Route Protection & Authentication Redirect
+          # 3. Verify Pallet & Provider Hub Route Protection & Authentication Redirect
           STATUS_PALLETS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/pallets/)
           if [ "$STATUS_PALLETS" -eq 302 ]; then
             echo "PASS: Pallet management route (/pallets/) protected by authentication (HTTP 302 redirect)."
           else
             echo "ERROR: Expected HTTP 302 redirect on unauthenticated /pallets/, got $STATUS_PALLETS."
+            exit 1
+          fi
+
+          STATUS_PROVIDERS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/pallets/providers/create/)
+          if [ "$STATUS_PROVIDERS" -eq 302 ]; then
+            echo "PASS: Provider management route (/pallets/providers/create/) protected by authentication (HTTP 302 redirect)."
+          else
+            echo "ERROR: Expected HTTP 302 redirect on unauthenticated /pallets/providers/create/, got $STATUS_PROVIDERS."
             exit 1
           fi
 
@@ -193,7 +242,7 @@ jobs:
 
   publish-image:
     name: Build & Push to GitHub Container Registry (GHCR)
-    needs: [quality-gates, docker-build-and-smoke-test]
+    needs: [static-checks, quality-gates, docker-build-and-smoke-test]
     runs-on: ubuntu-latest
     if: (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) && github.event_name == 'push'
     permissions:
@@ -237,7 +286,7 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           else
-            VERSION=$(python3 -c "import re; content = open('config/settings.py').read(); match = re.search(r'APP_VERSION\s*=\s*os\.getenv\([^\)]+,\s*[\x27\x22]([^\x27\x22]+)[\x27\x22]', content); print(match.group(1) if match else '2.1.0')")
+            VERSION=$(python3 -c "import re; content = open('config/settings.py').read(); match = re.search(r'APP_VERSION\s*=\s*os\.getenv\([^\)]+,\s*[\x27\x22]([^\x27\x22]+)[\x27\x22]', content); print(match.group(1) if match else '2.9.0')")
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           fi
 

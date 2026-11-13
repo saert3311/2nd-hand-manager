@@ -73,7 +73,7 @@ Build a lightweight, responsive Django web application for a secondhand resellin
 # Environment Setup
 python -m venv .venv
 .venv\Scripts\Activate.ps1       # Windows PowerShell
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
 # Database Migrations
 python manage.py makemigrations
