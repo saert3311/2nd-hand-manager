@@ -493,7 +493,7 @@ def dashboard_view(request):
         "published_count": counts["published_count"] or 0,
         "out_of_sync_count": counts["out_of_sync_count"] or 0,
         "blocked_count": counts["blocked_count"] or 0,
-        "erased_count": counts["erased_count"] or 0,
+        "erased_count": (counts["erased_count"] or 0) if can_manage else 0,
         "flagged_compliance_count": counts["flagged_compliance_count"] or 0,
         "trash_metrics": trash_metrics,
         "can_manage": can_manage,

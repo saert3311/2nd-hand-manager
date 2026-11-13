@@ -51,6 +51,21 @@ class SearchServiceUnitTests(TestCase):
             ["taladro", "percutor profesional", "<50"],
         )
 
+    def test_tokenize_search_query_handles_spaced_shorthands_and_currency(self):
+        self.assertEqual(tokenize_search_query("<20 €"), ["<20"])
+        self.assertEqual(tokenize_search_query("> 50"), [">50"])
+        self.assertEqual(tokenize_search_query("<= 15,50 €"), ["<=15,50"])
+        self.assertEqual(tokenize_search_query("15..50 €"), ["15..50"])
+        self.assertEqual(tokenize_search_query("15 - 50€"), ["15-50€"])
+        self.assertEqual(tokenize_search_query("15 - 50 €"), ["15-50€"])
+        self.assertEqual(tokenize_search_query("Ref: 42"), ["ref:42"])
+        self.assertEqual(tokenize_search_query("# 42"), ["#42"])
+        self.assertEqual(tokenize_search_query("Pallet 5"), ["pallet:5"])
+        self.assertEqual(tokenize_search_query("Palé 5"), ["pallet:5"])
+        # Quoted phrases and year-month tokens must stay intact
+        self.assertEqual(tokenize_search_query('"Ref: 42" Ref: 7'), ["Ref: 42", "ref:7"])
+        self.assertEqual(tokenize_search_query("2026-10"), ["2026-10"])
+
 
 class ProductSearchIntegrationTests(TestCase):
     def setUp(self):
@@ -257,3 +272,74 @@ class ProductSearchIntegrationTests(TestCase):
                 resp_sec = self.client.get(self.storefront_url, {"q": secret_query})
                 self.assertEqual(resp_sec.status_code, 200)
                 self.assertEqual(len(resp_sec.context["products"]), 0)
+
+    def test_spaced_shorthands_end_to_end_matching(self):
+        self.assertEqual(list(Product.objects.filter(build_search_query("<20 €"))), [self.p_kids])
+        self.assertEqual(list(Product.objects.filter(build_search_query("> 200"))), [self.p_camera])
+        self.assertEqual(list(Product.objects.filter(build_search_query("40..50 €"))), [self.p_drill])
+        self.assertEqual(list(Product.objects.filter(build_search_query("40 - 50€"))), [self.p_drill])
+        self.assertEqual(list(Product.objects.filter(build_search_query("40 - 50 €"))), [self.p_drill])
+        self.assertEqual(list(Product.objects.filter(build_search_query(f"Ref: {self.p_camera.pk}"))), [self.p_camera])
+        self.assertEqual(list(Product.objects.filter(build_search_query(f"# {self.p_camera.pk}"))), [self.p_camera])
+        self.assertEqual(list(Product.objects.filter(build_search_query("Pallet 77"))), [self.p_drill])
+        self.assertEqual(list(Product.objects.filter(build_search_query("Palé 77"))), [self.p_drill])
+
+    def test_quoted_phrase_requires_contiguous_words(self):
+        self.assertEqual(list(Product.objects.filter(build_search_query('"taladro percutor"'))), [self.p_drill])
+        self.assertEqual(list(Product.objects.filter(build_search_query('"taladro bosch"'))), [])
+
+    def test_four_digit_pk_matches_by_pk_without_date_collision(self):
+        p_2025 = Product.objects.create(
+            pk=2025,
+            ai_title="Mesa roble macizo",
+            ai_description="Mesa de comedor clásica.",
+            raw_note="Nota mesa",
+            sale_price=Decimal("120.00"),
+            category=self.cat_tech,
+        )
+        self.assertIn(p_2025, Product.objects.filter(build_search_query("2025")))
+
+    def test_inactive_marketplace_listing_link_excluded_from_search(self):
+        ProductListingLink.objects.create(
+            product=self.p_drill,
+            site=self.wallapop,
+            url="https://es.wallapop.com/item/inactive-link-887766",
+            is_active=False,
+        )
+        self.assertEqual(list(Product.objects.filter(build_search_query("887766"))), [])
+
+    def test_assistant_cross_tab_recovery_excludes_erased_tab(self):
+        assistant = User.objects.create_user(username="search_asst", password="password123")
+        assistant.groups.add(self.asst_group)
+        self.p_drill.soft_delete(user=self.manager)
+
+        asst_client = Client()
+        asst_client.login(username="search_asst", password="password123")
+        resp = asst_client.get(self.dashboard_url, {"status": "all", "q": "taladro"})
+        self.assertEqual(resp.status_code, 200)
+        other_statuses = [t["status"] for t in resp.context["search_other_tabs"]]
+        self.assertNotIn("erased", other_statuses)
+        self.assertNotContains(resp, "status=erased")
+
+    def test_cross_tab_recovery_pills_do_not_carry_compliance_filter(self):
+        self.p_kids.is_sold = True
+        self.p_kids.sold_channel_type = SaleChannelType.IN_STORE
+        self.p_kids.save()
+
+        resp = self.client.get(
+            self.dashboard_url,
+            {"status": "ready", "q": "nino", "compliance": "flagged"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'id="searchCrossTabRecovery"')
+        content = resp.content.decode("utf-8")
+        recovery_section = content.split('id="searchCrossTabRecovery"', 1)[1].split("</div>\n    </div>", 1)[0]
+        self.assertNotIn("compliance=flagged", recovery_section)
+
+    def test_strict_orm_lookups_preserve_accents_outside_search(self):
+        # Standard Django __iexact and __icontains must NOT strip accents globally on SQLite
+        self.assertFalse(Category.objects.filter(name__iexact="tecnologia y electronica").exists())
+        self.assertFalse(Category.objects.filter(name__icontains="tecnologia").exists())
+        # Scoped search lookup and build_search_query remain accent-insensitive
+        self.assertTrue(Category.objects.filter(name__unaccent_icontains="tecnologia").exists())
+        self.assertIn(self.p_camera, Product.objects.filter(build_search_query("tecnologia")))

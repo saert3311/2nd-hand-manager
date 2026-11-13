@@ -661,7 +661,7 @@
       </p>
       <div class="flex flex-wrap items-center justify-center gap-2">
         {% for tab in search_other_tabs %}
-        <a href="?status={{ tab.status }}{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}&q={{ search_query|urlencode }}"
+        <a href="?status={{ tab.status }}{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}&q={{ search_query|urlencode }}"
            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 shadow-2xs transition">
           <span aria-hidden="true">{{ tab.icon }}</span>
           <span>{{ tab.label }}</span>

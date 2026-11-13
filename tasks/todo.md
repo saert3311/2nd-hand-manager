@@ -4009,14 +4009,14 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 
 ## Phase 52: Unified Forgiving & Multi-Field Product Search
 
-### Task 189: SQLite Unicode Case/Accent Folding & Multi-Token Scoped Search Engine (`inventory/apps.py`, `inventory/services/search_service.py`)
-**Description:** Implement `fold_search_text(text)` and `sqlite_unaccent_like(pattern, value, escape=None)` in `inventory/services/search_service.py` and register the 2-arg and 3-arg `like` functions on SQLite connections in `inventory/apps.py`. Upgrade `build_search_query(query_str, scope="internal")` to support multi-word `AND` tokenization (including quoted phrases), smart shorthands (`#42` / `ref:42` / `Ref. #0042`, `pale:5` / `pallet:5`, `<20`, `>50`, `15..50`), comprehensive internal field matching (`ai_title`, `raw_note`, `ai_description`, `category__name`, `category__name_en`, `provider__name`, `pallet__number`/`name`/`notes`, `sold_channel_notes`, `sold_marketplace__name`, `Exists(ProductClarification)`, `Exists(ProductListingLink)`, `pk`, and dates), and strict `scope="public"` field isolation (`ai_title`, `ai_description`, `category__name`, `category__name_en`, `pk`).
+### Task 189: Scoped SQLite Unicode Case/Accent Folding & Multi-Token Scoped Search Engine (`inventory/apps.py`, `inventory/services/search_service.py`)
+**Description:** Implement `fold_search_text(text)` (with ASCII fast path), `sqlite_unaccent_like(pattern, value, escape=None)`, and the custom `UnaccentIContains` (`__unaccent_icontains`) lookup registered on `CharField` and `TextField` in `inventory/services/search_service.py`, registering 2-arg and 3-arg `unaccent_like` functions on SQLite connections in `inventory/apps.py` without altering global `__iexact` / `__icontains` semantics. Upgrade `build_search_query(query_str, scope="internal")` to support multi-word `AND` tokenization (preserving quoted phrases verbatim while normalizing unquoted compact and spaced shorthands `#42` / `# 42` / `Ref: 42` / `Ref. #0042`, `pale:5` / `Pallet 5` / `Palé 5`, `<20 €`, `> 50`, `15..50 €`, `15 - 50 €`), comprehensive internal field matching (`ai_title`, `raw_note`, `ai_description`, `category__name`, `category__name_en`, `provider__name`, `pallet__number`/`name`/`notes`, `sold_channel_notes`, `sold_marketplace__name`, `Exists(ProductClarification)`, `Exists(ProductListingLink(is_active=True))`, `pk`, and dates), and strict `scope="public"` field isolation (`ai_title`, `ai_description`, `category__name`, `category__name_en`, `pk`).
 **Acceptance criteria:**
-- [x] SQLite `LIKE` / `__icontains` matches accented and unaccented text (`camara` ↔ `cámara`) as well as uppercase/lowercase Unicode (`CÁMARA` ↔ `cámara`, `NIÑO` ↔ `niño`).
-- [x] Multi-word queries (`"taladro bosch"`) match across fields in any word order via `AND` across tokens.
-- [x] `scope="internal"` searches all staging, origin, clarification, marketplace link, sale note, ID, and date fields without duplicating rows (`Exists` subqueries for 1-to-N relations).
+- [x] `__unaccent_icontains` matches accented and unaccented text (`camara` ↔ `cámara`) and Unicode case (`CÁMARA` ↔ `cámara`, `NIÑO` ↔ `niño`), while standard ORM `__iexact` / `__icontains` lookups stay strict outside search.
+- [x] Multi-word queries (`"taladro bosch"`) match across fields in any word order via `AND` across tokens, while quoted phrases (`"taladro percutor"`) require contiguous substrings.
+- [x] `scope="internal"` searches all staging, origin, clarification, active marketplace link, sale note, ID, and date fields without duplicating rows (`Exists` subqueries for 1-to-N relations).
 - [x] `scope="public"` searches only public fields and never leaks internal notes, providers, pallets, or clarifications.
-- [x] Smart shorthands (`#42`, `ref:42`, `pale:5`, `pallet:5`, `<20`, `15..50`) filter accurately.
+- [x] Smart shorthands (both compact and spaced, with optional `€`) filter accurately.
 **Verification:**
 - [x] `.venv\Scripts\python.exe manage.py test tests.test_pagination_search`
 

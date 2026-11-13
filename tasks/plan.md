@@ -808,16 +808,16 @@ Extend the Phase 46 `Pallet` tracking architecture with a `Provider` hierarchy (
 Upgrade product search across both the internal Staging Dashboard (`/dashboard/`) and the Public Storefront (`/tienda/`) into a forgiving, multi-token, multi-field search engine using zero-dependency SQLite and Django ORM primitives. Eliminates Spanish accent mismatches (`camara` ↔ `cámara`), non-ASCII uppercase/lowercase mismatches (`CÁMARA` ↔ `cámara`, `NIÑO` ↔ `niño`), multi-word order failures (`"taladro bosch"`), and blind spots in searchable product attributes while scoping dashboard status tab counters to the active search query.
 
 ### Technical Design
-1. **SQLite Deterministic Unicode Case & Accent Folding (`inventory/services/search_service.py`, `inventory/apps.py`)**:
-   - Implement `fold_search_text(text: str) -> str` using `unicodedata.normalize("NFKD", text.casefold())` with combining marks stripped.
+1. **Scoped SQLite Deterministic Unicode Case & Accent Folding (`inventory/services/search_service.py`, `inventory/apps.py`)**:
+   - Implement `fold_search_text(text: str) -> str` with an ASCII `.lower()` fast path and `unicodedata.normalize("NFKD", text.casefold())` with combining marks stripped.
    - Implement `sqlite_unaccent_like(pattern, value, escape=None) -> bool` with a C-speed substring fast path for standard `%term%` queries and an `@lru_cache` regex fallback for arbitrary wildcard/escape patterns.
-   - Register 2-arg and 3-arg `like` functions on every SQLite connection via `connection_created` in `inventory/apps.py`.
+   - Register 2-arg and 3-arg `unaccent_like` scalar functions on every SQLite connection via `connection_created` in `inventory/apps.py` (leaving SQLite's global `like` intact), and expose custom lookup `UnaccentIContains` (`__unaccent_icontains`) registered on `CharField` and `TextField` (falling back to standard `icontains` on non-SQLite backends).
 2. **Multi-Token `AND` Engine, Smart Shorthands & Scope Firewall (`inventory/services/search_service.py`)**:
-   - Extend `build_search_query(query_str: str, scope: str = "internal") -> Q` to tokenize multi-word input (supporting quoted phrases `"..."`) and combine token conditions with `AND`.
-   - Parse smart shorthands:
-     - Exact Product ID / Reference: `#42`, `ref:42`, `ref.#0042`, `ref #42` → `Q(pk=42)`.
-     - Pallet shorthand (internal scope): `pale:5`, `palet:5`, `pallet:5`, `pale#5`, `pallet#5` → `Q(pallet__number=5)`.
-     - Price range shorthands: `<20`, `<=20`, `>50`, `>=50`, `15..50` → `Q(sale_price__...)`.
+   - Extend `build_search_query(query_str: str, scope: str = "internal") -> Q` to tokenize multi-word input (preserving quoted phrases `"..."` verbatim while normalizing unquoted shorthands) and combine token conditions with `AND`.
+   - Parse smart shorthands (both compact and spaced, including trailing `€`):
+     - Exact Product ID / Reference: `#42`, `# 42`, `ref:42`, `Ref: 42`, `ref.#0042`, `ref #42` → `Q(pk=42)`.
+     - Pallet shorthand (internal scope): `pale:5`, `palet:5`, `pallet:5`, `Pallet 5`, `Palé 5`, `pale#5`, `pallet#5` → `Q(pallet__number=5)`.
+     - Price range shorthands: `<20`, `<20 €`, `<=20`, `> 50`, `>=50`, `15..50`, `15..50 €`, `15 - 50 €` → `Q(sale_price__...)`.
    - Expand field coverage by scope:
      - `scope="internal"`: `ai_title`, `raw_note`, `ai_description`, `category__name`, `category__name_en`, `provider__name`, `pallet__name`, `pallet__notes`, `sold_channel_notes`, `sold_marketplace__name`, `Exists(ProductClarification)` (`question` / `answer`), `Exists(ProductListingLink)` (`site__name` / `url`), integer `pk` / `pallet__number` match, and date patterns (`YYYY-MM-DD`, `DD/MM/YYYY`, `YYYY-MM`, `YYYY`).
      - `scope="public"`: Strictly `ai_title`, `ai_description`, `category__name`, `category__name_en`, and integer `pk` / `#Ref` match (zero leakage of internal notes, providers, pallets, costs, sale notes, or clarifications).
