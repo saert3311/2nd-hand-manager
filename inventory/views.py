@@ -25,6 +25,7 @@ from .forms import (
     ProductDirectClarificationForm,
     ProductIntakeForm,
     ProductUpdateForm,
+    ProviderForm,
     TurnstileAuthenticationForm,
 )
 from .models import (
@@ -42,6 +43,7 @@ from .models import (
     ProductListingLink,
     ProductStatus,
     ProductStatusLog,
+    Provider,
     PushSubscription,
     SaleChannelType,
 )
@@ -56,6 +58,11 @@ from .services.image_service import (
     process_and_convert_to_webp,
     validate_image_file,
     validate_images_count,
+)
+from .services.origin_service import (
+    get_pallets_with_stats,
+    get_providers_with_roi_stats,
+    parse_origin_token,
 )
 from .services.search_service import build_search_query
 from .services.trash_service import (
@@ -136,8 +143,16 @@ def product_intake_view(request):
                             order=idx,
                         )
 
-                # Persist sticky pallet in session
-                request.session["last_intake_pallet_id"] = product.pallet_id if product.pallet else "none"
+                # Persist sticky origin & legacy pallet ID in session
+                if product.pallet_id:
+                    request.session["last_intake_origin"] = f"pallet:{product.pallet_id}"
+                    request.session["last_intake_pallet_id"] = product.pallet_id
+                elif product.provider_id:
+                    request.session["last_intake_origin"] = f"provider:{product.provider_id}"
+                    request.session["last_intake_pallet_id"] = "none"
+                else:
+                    request.session["last_intake_origin"] = "none"
+                    request.session["last_intake_pallet_id"] = "none"
 
                 messages.success(
                     request,
@@ -152,17 +167,31 @@ def product_intake_view(request):
             except Exception as exc:
                 form.add_error(None, _("Error saving product: %(error)s") % {"error": exc})
     else:
+        last_origin = request.session.get("last_intake_origin")
         initial_pallet_id = request.session.get("last_intake_pallet_id")
         initial_pallet = None
-        if initial_pallet_id == "none":
-            initial_pallet = None
-        elif initial_pallet_id is not None:
+        initial_origin = ""
+
+        if isinstance(last_origin, str) and last_origin and last_origin != "none":
+            try:
+                initial_pallet, initial_provider = parse_origin_token(last_origin)
+                if initial_pallet:
+                    initial_origin = f"pallet:{initial_pallet.pk}"
+                elif initial_provider:
+                    initial_origin = f"provider:{initial_provider.pk}"
+            except ValidationError:
+                initial_pallet = None
+        elif last_origin is None and initial_pallet_id not in (None, "none"):
             initial_pallet = Pallet.objects.filter(pk=initial_pallet_id).first()
+            if initial_pallet:
+                initial_origin = f"pallet:{initial_pallet.pk}"
 
-        if initial_pallet is None and initial_pallet_id != "none":
+        if not initial_origin and last_origin != "none" and initial_pallet_id != "none":
             initial_pallet = Pallet.objects.order_by("-number").first()
+            if initial_pallet:
+                initial_origin = f"pallet:{initial_pallet.pk}"
 
-        initial_data = {}
+        initial_data = {"origin": initial_origin}
         if initial_pallet:
             initial_data["pallet"] = initial_pallet.pk
 
@@ -214,6 +243,23 @@ def intake_identify_view(request):
     return JsonResponse(result, status=200)
 
 
+def _apply_dashboard_scope_filters(qs, platform_filter: str, pallet_filter: str, provider_filter: str):
+    if platform_filter:
+        qs = qs.filter(
+            listing_links__site__slug=platform_filter,
+            listing_links__is_active=True,
+        ).distinct()
+    if pallet_filter == "none":
+        qs = qs.filter(pallet__isnull=True)
+    elif pallet_filter.isdigit():
+        qs = qs.filter(pallet_id=int(pallet_filter))
+    if provider_filter == "none":
+        qs = qs.filter(provider__isnull=True)
+    elif provider_filter.isdigit():
+        qs = qs.filter(provider_id=int(provider_filter))
+    return qs
+
+
 @login_required
 def dashboard_view(request):
     """
@@ -226,6 +272,7 @@ def dashboard_view(request):
     channel_filter = request.GET.get("channel", "").strip().lower()
     sync_filter = request.GET.get("sync", "").strip().lower()
     pallet_filter = request.GET.get("pallet", "").strip()
+    provider_filter = request.GET.get("provider", "").strip()
     compliance_filter = request.GET.get("compliance", "").strip().lower()
 
     # Query only marketplace sites that have at least one active published product
@@ -243,7 +290,7 @@ def dashboard_view(request):
     )
 
     available_pallets = (
-        Pallet.objects.annotate(
+        Pallet.objects.select_related("provider").annotate(
             products_count=Count(
                 "products",
                 filter=Q(products__is_deleted=False),
@@ -254,18 +301,26 @@ def dashboard_view(request):
     )
     unassigned_products_count = Product.objects.filter(is_deleted=False, pallet__isnull=True).count()
 
-    products = Product.objects.select_related("category", "sold_marketplace", "pallet").prefetch_related("images", "listing_links__site").all()
+    available_providers = (
+        Provider.objects.annotate(
+            products_count=Count(
+                "products",
+                filter=Q(products__is_deleted=False),
+                distinct=True,
+            )
+        )
+        .order_by("name")
+    )
+    no_provider_count = Product.objects.filter(is_deleted=False, provider__isnull=True).count()
 
-    if platform_filter:
-        products = products.filter(
-            listing_links__site__slug=platform_filter,
-            listing_links__is_active=True,
-        ).distinct()
-
-    if pallet_filter == "none":
-        products = products.filter(pallet__isnull=True)
-    elif pallet_filter.isdigit():
-        products = products.filter(pallet_id=int(pallet_filter))
+    products = _apply_dashboard_scope_filters(
+        Product.objects.select_related("category", "sold_marketplace", "pallet", "provider")
+        .prefetch_related("images", "listing_links__site")
+        .all(),
+        platform_filter,
+        pallet_filter,
+        provider_filter,
+    )
 
     if status_filter == "erased":
         products = products.filter(is_deleted=True)
@@ -308,17 +363,13 @@ def dashboard_view(request):
             compliance_status__in=[ComplianceVerdict.MANUAL_REVIEW, ComplianceVerdict.REJECTED]
         )
 
-    # Calculate status counts (scoped to selected platform if active)
-    counts_qs = Product.objects.all()
-    if platform_filter:
-        counts_qs = counts_qs.filter(
-            listing_links__site__slug=platform_filter,
-            listing_links__is_active=True,
-        ).distinct()
-    if pallet_filter == "none":
-        counts_qs = counts_qs.filter(pallet__isnull=True)
-    elif pallet_filter.isdigit():
-        counts_qs = counts_qs.filter(pallet_id=int(pallet_filter))
+    # Calculate status counts (scoped to selected platform, pallet, and provider filters)
+    counts_qs = _apply_dashboard_scope_filters(
+        Product.objects.all(),
+        platform_filter,
+        pallet_filter,
+        provider_filter,
+    )
 
     counts = counts_qs.aggregate(
         total_count=Count("id", filter=Q(is_deleted=False), distinct=True),
@@ -396,6 +447,9 @@ def dashboard_view(request):
         "pallet_filter": pallet_filter,
         "available_pallets": available_pallets,
         "unassigned_products_count": unassigned_products_count,
+        "provider_filter": provider_filter,
+        "available_providers": available_providers,
+        "no_provider_count": no_provider_count,
         "total_count": counts["total_count"] or 0,
         "ready_count": counts["ready_count"] or 0,
         "active_count": counts["active_count"] or 0,
@@ -426,7 +480,7 @@ def product_detail_view(request, pk):
     download ZIP, and edit pricing / sold status.
     """
     product = get_object_or_404(
-        Product.objects.select_related("category", "pallet").prefetch_related(
+        Product.objects.select_related("category", "pallet", "provider").prefetch_related(
             "images",
             "listing_links__site",
             "clarifications__asked_by",
@@ -523,11 +577,17 @@ def product_detail_view(request, pk):
     has_unapplied_clarifications = bool(resolved_clarifications)
 
     available_slots = max(0, 10 - product.images.count())
+    pallet_provider_map = (
+        {str(p.pk): (str(p.provider_id) if p.provider_id else "") for p in Pallet.objects.only("id", "provider_id")}
+        if can_manage
+        else {}
+    )
 
     context = {
         "product": product,
         "form": form,
         "can_manage": can_manage,
+        "pallet_provider_map_json": json.dumps(pallet_provider_map),
         "available_slots": available_slots,
         "site_links_data": site_links_data,
         "active_listing_links": active_listing_links,
@@ -1342,39 +1402,49 @@ def product_mark_platform_synced_view(request, pk):
     return redirect("inventory:product_detail", pk=pk)
 
 
+def _build_pallets_hub_context(request, pallet_form=None, provider_form=None, active_tab=None):
+    if pallet_form is None:
+        max_number = Pallet.objects.aggregate(Max("number"))["number__max"] or 0
+        pallet_form = PalletForm(initial={
+            "number": max_number + 1,
+            "received_date": timezone.localdate(),
+        })
+    if provider_form is None:
+        provider_form = ProviderForm(initial={"is_active": True}, auto_id="id_provider_%s")
+
+    resolved_tab = active_tab or request.GET.get("tab", "pallets").strip().lower()
+    if resolved_tab not in ("pallets", "providers"):
+        resolved_tab = "pallets"
+
+    pallets = get_pallets_with_stats()
+    providers_stats = get_providers_with_roi_stats()
+    return {
+        "form": pallet_form,
+        "provider_form": provider_form,
+        "pallets": pallets,
+        "providers_stats": providers_stats,
+        "active_tab": resolved_tab,
+        "can_manage": True,
+    }
+
+
 @login_required
 @manager_required
 def pallets_view(request):
     """
-    Manager view for listing and creating liquidation pallets.
+    Unified Manager hub for listing and creating liquidation pallets and origin providers.
     """
+    pallet_form = None
     if request.method == "POST":
-        form = PalletForm(request.POST)
-        if form.is_valid():
-            pallet = form.save(commit=False)
+        pallet_form = PalletForm(request.POST)
+        if pallet_form.is_valid():
+            pallet = pallet_form.save(commit=False)
             pallet.created_by = request.user
             pallet.save()
             messages.success(request, _("Pallet #%(number)s created successfully.") % {"number": pallet.number})
             return redirect("inventory:pallets")
-    else:
-        max_number = Pallet.objects.aggregate(Max("number"))["number__max"] or 0
-        form = PalletForm(initial={
-            "number": max_number + 1,
-            "received_date": timezone.localdate(),
-        })
 
-    pallets = (
-        Pallet.objects.annotate(
-            products_count=Count("products", filter=Q(products__is_deleted=False), distinct=True)
-        )
-        .order_by("-number")
-    )
-
-    context = {
-        "form": form,
-        "pallets": pallets,
-        "can_manage": True,
-    }
+    context = _build_pallets_hub_context(request, pallet_form=pallet_form)
     return render(request, "inventory/pallets.html", context)
 
 
@@ -1382,7 +1452,7 @@ def pallets_view(request):
 @manager_required
 def pallet_edit_view(request, pk):
     """
-    Manager view for editing pallet metadata and financials.
+    Manager view for editing pallet metadata, provider attribution, and financials.
     """
     pallet = get_object_or_404(Pallet, pk=pk)
 
@@ -1416,5 +1486,70 @@ def pallet_delete_view(request, pk):
     pallet.delete()
     messages.success(request, _("Pallet #%(number)s deleted.") % {"number": number})
     return redirect("inventory:pallets")
+
+
+@login_required
+@manager_required
+@require_POST
+def provider_create_view(request):
+    """
+    Manager endpoint to create a commercial origin provider from the Pallets & Providers Hub.
+    """
+    provider_form = ProviderForm(request.POST, auto_id="id_provider_%s")
+    if provider_form.is_valid():
+        provider = provider_form.save(commit=False)
+        provider.created_by = request.user
+        provider.save()
+        messages.success(request, _("Provider '%(name)s' created successfully.") % {"name": provider.name})
+        return redirect(f"{reverse('inventory:pallets')}?tab=providers")
+
+    context = _build_pallets_hub_context(
+        request,
+        provider_form=provider_form,
+        active_tab="providers",
+    )
+    return render(request, "inventory/pallets.html", context)
+
+
+@login_required
+@manager_required
+def provider_edit_view(request, pk):
+    """
+    Manager view for editing provider metadata, origin classification, and active state.
+    """
+    provider = get_object_or_404(Provider, pk=pk)
+
+    if request.method == "POST":
+        form = ProviderForm(request.POST, instance=provider)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _("Provider '%(name)s' updated successfully.") % {"name": provider.name})
+            return redirect(f"{reverse('inventory:pallets')}?tab=providers")
+    else:
+        form = ProviderForm(instance=provider)
+
+    context = {
+        "form": form,
+        "provider": provider,
+        "pallets_count": provider.pallets.count(),
+        "products_count": provider.products.filter(is_deleted=False).count(),
+        "can_manage": True,
+    }
+    return render(request, "inventory/provider_edit.html", context)
+
+
+@login_required
+@manager_required
+@require_POST
+def provider_delete_view(request, pk):
+    """
+    Manager endpoint to delete a provider.
+    Associated pallets and products remain intact with provider set to NULL.
+    """
+    provider = get_object_or_404(Provider, pk=pk)
+    name = provider.name
+    provider.delete()
+    messages.success(request, _("Provider '%(name)s' deleted.") % {"name": name})
+    return redirect(f"{reverse('inventory:pallets')}?tab=providers")
 
 

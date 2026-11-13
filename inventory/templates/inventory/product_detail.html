@@ -88,6 +88,13 @@
           <span>Pallet #{{ product.pallet.number }} ({{ product.pallet.received_date|date:"Y-m-d" }})</span>
         </span>
         {% endif %}
+        {% if product.provider %}
+        <span>&bull;</span>
+        <span id="product-provider-badge" class="product-provider-badge text-xs sm:text-sm font-bold text-teal-800 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-full shadow-2xs inline-flex items-center gap-1">
+          <span aria-hidden="true">{{ product.provider.type_icon }}</span>
+          <span>{{ product.provider.name }}</span>
+        </span>
+        {% endif %}
       </div>
 
       <div class="flex items-center gap-1.5 w-full sm:w-auto sm:gap-2">
@@ -732,6 +739,54 @@
                 {{ form.pallet }}
                 {% if form.pallet.errors %}
                 <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.pallet.errors.0 }}</p>
+                {% endif %}
+              </div>
+
+              <!-- Provider Origin & Manager-Only Acquisition Cost -->
+              <div class="sm:col-span-3 grid grid-cols-1 {% if can_manage %}sm:grid-cols-2{% endif %} gap-4 pt-3 border-t border-slate-100 items-start">
+                <div>
+                  <label for="{{ form.provider.id_for_label }}" class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                    <span class="flex items-center gap-1.5">
+                      <span aria-hidden="true">🏢</span>
+                      <span>{% trans "Origin Provider" %}</span>
+                    </span>
+                  </label>
+                  {{ form.provider }}
+                  {% if form.provider.errors %}
+                  <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.provider.errors.0 }}</p>
+                  {% endif %}
+                  <p id="providerAutoSyncHint" class="text-xs text-slate-500 mt-1 {% if not product.pallet %}hidden{% endif %}">
+                    {% trans "Automatically inherited from the selected pallet." %}
+                  </p>
+                </div>
+
+                {% if can_manage %}
+                <div id="acquisitionCostFieldGroup">
+                  <label for="id_acquisition_cost" class="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between gap-2">
+                    <span class="flex items-center gap-1.5">
+                      <span aria-hidden="true">💶</span>
+                      <span>{% trans "Acquisition Cost (€)" %}</span>
+                    </span>
+                    <span class="text-slate-400 font-normal lowercase text-xs">({% trans "Manager only" %})</span>
+                  </label>
+                  <div class="relative flex items-center">
+                    <span class="absolute left-3 text-slate-400 font-bold text-base sm:text-sm font-mono">€</span>
+                    <input type="number" step="0.01" min="0" max="9999999.99" name="acquisition_cost" id="id_acquisition_cost"
+                           value="{{ form.acquisition_cost.value|unlocalize|default:'' }}"
+                           placeholder="0.00" inputmode="decimal"
+                           class="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-mono tabular-nums font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+                  </div>
+                  {% if form.acquisition_cost.errors %}
+                  <p role="alert" class="text-xs text-rose-600 font-semibold mt-1">{{ form.acquisition_cost.errors.0 }}</p>
+                  {% endif %}
+                  <p class="text-xs text-slate-500 mt-1">
+                    {% if product.pallet %}
+                      {% trans "Note: Pallet items track cost at the Pallet level; individual cost is only counted for non-pallet items." %}
+                    {% else %}
+                      {% trans "Used for Provider ROI on walk-in buyouts and standalone items." %}
+                    {% endif %}
+                  </p>
+                </div>
                 {% endif %}
               </div>
 
@@ -3261,6 +3316,39 @@
       console.warn("Clipboard access denied or unavailable", e);
     }
   }
+
+  (function initPalletProviderSync() {
+    const palletSelect = document.getElementById("id_pallet");
+    const providerSelect = document.getElementById("id_provider");
+    const syncHint = document.getElementById("providerAutoSyncHint");
+    if (!palletSelect || !providerSelect) return;
+
+    let palletProviderMap = {};
+    try {
+      palletProviderMap = JSON.parse("{{ pallet_provider_map_json|escapejs }}" || "{}");
+    } catch (e) {
+      palletProviderMap = {};
+    }
+
+    function syncProviderLockState(shouldUpdateValue) {
+      const pid = palletSelect.value;
+      const hasPallet = Boolean(pid);
+      if (shouldUpdateValue && hasPallet && Object.prototype.hasOwnProperty.call(palletProviderMap, pid)) {
+        providerSelect.value = palletProviderMap[pid] || "";
+      }
+      providerSelect.disabled = hasPallet;
+      providerSelect.classList.toggle("opacity-60", hasPallet);
+      providerSelect.classList.toggle("cursor-not-allowed", hasPallet);
+      providerSelect.classList.toggle("bg-slate-100", hasPallet);
+      providerSelect.classList.toggle("bg-white", !hasPallet);
+      if (syncHint) syncHint.classList.toggle("hidden", !hasPallet);
+    }
+
+    syncProviderLockState(false);
+    palletSelect.addEventListener("change", function() {
+      syncProviderLockState(true);
+    });
+  })();
 
 </script>
 

@@ -4,6 +4,8 @@ from django import forms
 from django.conf import settings
 from django.contrib.admin.forms import AdminAuthenticationForm
 from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from .models import (
@@ -16,14 +18,20 @@ from .models import (
     ProductClarification,
     ProductCondition,
     ProductStatus,
+    Provider,
+    ProviderType,
     SaleChannelType,
 )
+from .services.origin_service import build_intake_origin_choices, parse_origin_token
 from .services.turnstile_service import verify_turnstile_token
 
 
 class PalletChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
-        return f"Pallet #{obj.number} ({obj.received_date.strftime('%Y-%m-%d')})"
+        base = f"Pallet #{obj.number} ({obj.received_date.strftime('%Y-%m-%d')})"
+        if obj.provider_id and obj.provider:
+            return f"{base} · {obj.provider.name}"
+        return base
 
 
 class TurnstileValidationMixin:
@@ -123,8 +131,18 @@ class ProductIntakeForm(forms.ModelForm):
         widget=forms.HiddenInput(attrs={"id": "id_estimated_resale_price"}),
     )
 
+    origin = forms.ChoiceField(
+        choices=(),
+        required=False,
+        label=_("Product Origin"),
+        widget=forms.Select(attrs={
+            "id": "id_origin",
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+        }),
+    )
+
     pallet = PalletChoiceField(
-        queryset=Pallet.objects.all().order_by("-number"),
+        queryset=Pallet.objects.select_related("provider").order_by("-number"),
         required=False,
         empty_label=_("— No Pallet (Individual Item) —"),
         label=_("Pallet Attribution"),
@@ -143,6 +161,35 @@ class ProductIntakeForm(forms.ModelForm):
             "estimated_retail_price",
             "estimated_resale_price",
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["origin"].choices = build_intake_origin_choices()
+        self.fields["pallet"].queryset = Pallet.objects.select_related("provider").order_by("-number")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if "origin" in self.data:
+            raw_origin = cleaned_data.get("origin", "")
+            try:
+                pallet, provider = parse_origin_token(raw_origin)
+            except ValidationError as exc:
+                self.add_error("origin", exc)
+                return cleaned_data
+            cleaned_data["pallet"] = pallet
+            cleaned_data["_resolved_provider"] = provider
+        else:
+            pallet = cleaned_data.get("pallet")
+            cleaned_data["_resolved_provider"] = pallet.provider if pallet else None
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if not instance.pallet_id:
+            instance.provider = self.cleaned_data.get("_resolved_provider")
+        if commit:
+            instance.save()
+        return instance
 
 
 class ProductUpdateForm(forms.ModelForm):
@@ -223,12 +270,36 @@ class ProductUpdateForm(forms.ModelForm):
         }),
     )
     pallet = PalletChoiceField(
-        queryset=Pallet.objects.all().order_by("-number"),
+        queryset=Pallet.objects.select_related("provider").order_by("-number"),
         required=False,
         empty_label=_("— No Pallet (Individual Item) —"),
         label=_("Origin Pallet"),
         widget=forms.Select(attrs={
             "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+        }),
+    )
+    provider = forms.ModelChoiceField(
+        queryset=Provider.objects.filter(is_active=True).order_by("name"),
+        required=False,
+        empty_label=_("— No Provider —"),
+        label=_("Origin Provider"),
+        widget=forms.Select(attrs={
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+        }),
+    )
+    acquisition_cost = forms.DecimalField(
+        min_value=Decimal("0.00"),
+        max_value=Decimal("9999999.99"),
+        decimal_places=2,
+        required=False,
+        label=_("Acquisition Cost (€)"),
+        widget=forms.NumberInput(attrs={
+            "step": "0.01",
+            "min": "0",
+            "max": "9999999.99",
+            "placeholder": "0.00",
+            "inputmode": "decimal",
+            "class": "w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-mono tabular-nums font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white",
         }),
     )
     sold_channel_notes = forms.CharField(
@@ -246,6 +317,8 @@ class ProductUpdateForm(forms.ModelForm):
         model = Product
         fields = [
             "pallet",
+            "provider",
+            "acquisition_cost",
             "ai_title",
             "ai_description",
             "sale_price",
@@ -283,11 +356,15 @@ class ProductUpdateForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        from django.db.models import Q
+        self.fields["pallet"].queryset = Pallet.objects.select_related("provider").order_by("-number")
         if self.instance and self.instance.sold_marketplace_id:
             self.fields["sold_marketplace"].queryset = MarketplaceSite.objects.filter(
                 Q(is_active=True) | Q(id=self.instance.sold_marketplace_id)
             ).order_by("order", "name")
+        if self.instance and self.instance.provider_id:
+            self.fields["provider"].queryset = Provider.objects.filter(
+                Q(is_active=True) | Q(id=self.instance.provider_id)
+            ).order_by("name")
 
     def clean(self):
         cleaned_data = super().clean()
@@ -295,6 +372,9 @@ class ProductUpdateForm(forms.ModelForm):
         is_sold = cleaned_data.get("is_sold")
         sold_channel_type = cleaned_data.get("sold_channel_type")
         sold_marketplace = cleaned_data.get("sold_marketplace")
+        pallet = cleaned_data.get("pallet")
+        if pallet is not None:
+            cleaned_data["provider"] = pallet.provider
 
         if self.instance and self.instance.pk:
             has_storefront_flag = "storefront_controls_present" in self.data
@@ -410,6 +490,15 @@ class PalletForm(forms.ModelForm):
             "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
         }),
     )
+    provider = forms.ModelChoiceField(
+        queryset=Provider.objects.filter(is_active=True).order_by("name"),
+        required=False,
+        empty_label=_("— No Provider —"),
+        label=_("Provider"),
+        widget=forms.Select(attrs={
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+        }),
+    )
     received_date = forms.DateField(
         label=_("Received Date"),
         widget=forms.DateInput(attrs={
@@ -463,8 +552,74 @@ class PalletForm(forms.ModelForm):
         model = Pallet
         fields = [
             "number",
+            "provider",
             "received_date",
             "purchase_price",
             "estimated_value",
             "notes",
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.provider_id:
+            self.fields["provider"].queryset = Provider.objects.filter(
+                Q(is_active=True) | Q(id=self.instance.provider_id)
+            ).order_by("name")
+
+
+class ProviderForm(forms.ModelForm):
+    name = forms.CharField(
+        max_length=120,
+        label=_("Provider Name"),
+        widget=forms.TextInput(attrs={
+            "maxlength": "120",
+            "placeholder": _("e.g. LiquiStock Valencia, Amazon Returns ES"),
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white",
+        }),
+    )
+    provider_type = forms.ChoiceField(
+        choices=ProviderType.choices,
+        label=_("Origin Type"),
+        widget=forms.Select(attrs={
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white",
+        }),
+    )
+    contact_info = forms.CharField(
+        max_length=255,
+        required=False,
+        label=_("Contact Info"),
+        widget=forms.TextInput(attrs={
+            "maxlength": "255",
+            "placeholder": _("Phone, email, or warehouse location (optional)"),
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white",
+        }),
+    )
+    notes = forms.CharField(
+        max_length=2000,
+        required=False,
+        label=_("Notes"),
+        widget=forms.Textarea(attrs={
+            "rows": 2,
+            "maxlength": "2000",
+            "placeholder": _("Commercial terms, minimum order, or supplier notes (optional)"),
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white resize-y",
+        }),
+    )
+
+    class Meta:
+        model = Provider
+        fields = [
+            "name",
+            "provider_type",
+            "contact_info",
+            "notes",
+            "is_active",
+        ]
+        labels = {
+            "is_active": _("Active in intake & staging selectors"),
+        }
+        widgets = {
+            "is_active": forms.CheckboxInput(attrs={
+                "class": "w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 transition cursor-pointer",
+            }),
+        }

@@ -30,7 +30,7 @@
            role="tablist">
         
         <!-- All -->
-        <a href="?status=all{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <a href="?status=all{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            aria-selected="{% if status_filter == 'all' %}true{% else %}false{% endif %}"
            class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'all' %}bg-white text-slate-900 shadow-xs ring-1 ring-slate-200/80 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
@@ -41,7 +41,7 @@
         </a>
 
         <!-- Ready to Publish -->
-        <a href="?status=ready{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <a href="?status=ready{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            id="tab-ready"
            aria-selected="{% if status_filter == 'ready' %}true{% else %}false{% endif %}"
@@ -54,7 +54,7 @@
         </a>
 
         <!-- Published -->
-        <a href="?status=published{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <a href="?status=published{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            id="tab-published"
            aria-selected="{% if status_filter == 'published' %}true{% else %}false{% endif %}"
@@ -72,7 +72,7 @@
         </a>
 
         <!-- Price Pending -->
-        <a href="?status=price_pending{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <a href="?status=price_pending{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            aria-selected="{% if status_filter == 'price_pending' %}true{% else %}false{% endif %}"
            class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'price_pending' %}bg-white text-amber-900 shadow-xs ring-1 ring-amber-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
@@ -84,7 +84,7 @@
         </a>
 
         <!-- Doubts -->
-        <a href="?status=awaiting_info{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <a href="?status=awaiting_info{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            aria-selected="{% if status_filter == 'awaiting_info' %}true{% else %}false{% endif %}"
            class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'awaiting_info' %}bg-white text-amber-900 shadow-xs ring-1 ring-amber-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
@@ -96,7 +96,7 @@
         </a>
 
         <!-- Sold -->
-        <a href="?status=sold{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <a href="?status=sold{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            aria-selected="{% if status_filter == 'sold' %}true{% else %}false{% endif %}"
            class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'sold' %}bg-white text-slate-900 shadow-xs ring-1 ring-slate-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
@@ -108,7 +108,7 @@
 
         <!-- Blocked -->
         {% if blocked_count > 0 or status_filter == 'blocked' %}
-        <a href="?status=blocked{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <a href="?status=blocked{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            aria-selected="{% if status_filter == 'blocked' %}true{% else %}false{% endif %}"
            class="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition duration-150 {% if status_filter == 'blocked' %}bg-white text-rose-900 shadow-xs ring-1 ring-rose-300 font-bold{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-200/60{% endif %}">
@@ -122,7 +122,7 @@
 
         <!-- Erased / Trash Category -->
         {% if can_manage or erased_count > 0 or status_filter == 'erased' %}
-        <a href="?status=erased{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+        <a href="?status=erased{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
            role="tab"
            id="tab-erased"
            aria-selected="{% if status_filter == 'erased' %}true{% else %}false{% endif %}"
@@ -152,6 +152,9 @@
         {% if pallet_filter %}
         <input type="hidden" name="pallet" value="{{ pallet_filter }}">
         {% endif %}
+        {% if provider_filter %}
+        <input type="hidden" name="provider" value="{{ provider_filter }}">
+        {% endif %}
         {% if channel_filter %}
         <input type="hidden" name="channel" value="{{ channel_filter }}">
         {% endif %}
@@ -165,7 +168,7 @@
                  class="w-full pl-10 pr-10 py-2.5 text-base sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-normal text-slate-800 placeholder:text-slate-400 transition">
           <span class="absolute left-3.5 top-3 text-slate-400 text-sm pointer-events-none" aria-hidden="true">🔍</span>
           {% if search_query %}
-          <a href="?status={{ status_filter }}{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}"
+          <a href="?status={{ status_filter }}{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}"
              class="absolute right-3 top-2.5 p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/60 text-sm font-bold transition"
              title="{% trans 'Clear search' %}"
              aria-label="{% trans 'Clear search' %}">&times;</a>
@@ -184,6 +187,9 @@
         {% endif %}
         {% if pallet_filter %}
         <input type="hidden" name="pallet" value="{{ pallet_filter }}">
+        {% endif %}
+        {% if provider_filter %}
+        <input type="hidden" name="provider" value="{{ provider_filter }}">
         {% endif %}
         {% if channel_filter %}
         <input type="hidden" name="channel" value="{{ channel_filter }}">
@@ -220,6 +226,9 @@
         {% if platform_filter %}
         <input type="hidden" name="platform" value="{{ platform_filter }}">
         {% endif %}
+        {% if provider_filter %}
+        <input type="hidden" name="provider" value="{{ provider_filter }}">
+        {% endif %}
         {% if channel_filter %}
         <input type="hidden" name="channel" value="{{ channel_filter }}">
         {% endif %}
@@ -248,10 +257,53 @@
       </form>
       {% endif %}
 
+      <!-- Provider Selector Form -->
+      {% if available_providers or no_provider_count > 0 or provider_filter %}
+      <form method="get" class="w-full sm:w-52 shrink-0" id="providerFilterForm">
+        {% if status_filter != 'all' %}
+        <input type="hidden" name="status" value="{{ status_filter }}">
+        {% endif %}
+        {% if search_query %}
+        <input type="hidden" name="q" value="{{ search_query }}">
+        {% endif %}
+        {% if platform_filter %}
+        <input type="hidden" name="platform" value="{{ platform_filter }}">
+        {% endif %}
+        {% if pallet_filter %}
+        <input type="hidden" name="pallet" value="{{ pallet_filter }}">
+        {% endif %}
+        {% if channel_filter %}
+        <input type="hidden" name="channel" value="{{ channel_filter }}">
+        {% endif %}
+        {% if compliance_filter %}
+        <input type="hidden" name="compliance" value="{{ compliance_filter }}">
+        {% endif %}
+        <div class="relative w-full">
+          <select name="provider" onchange="this.form.submit()"
+                  aria-label="{% trans 'Filter by provider' %}"
+                  class="w-full appearance-none pl-9 pr-9 py-2.5 text-base sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800 transition cursor-pointer">
+            <option value="">{% trans "All Providers" %}</option>
+            {% if no_provider_count > 0 or provider_filter == 'none' %}
+            <option value="none" {% if provider_filter == 'none' %}selected{% endif %}>
+              {% trans "— No Provider —" %} ({{ no_provider_count }})
+            </option>
+            {% endif %}
+            {% for pr in available_providers %}
+            <option value="{{ pr.id }}" {% if provider_filter == pr.id|stringformat:"s" %}selected{% endif %}>
+              {{ pr.type_icon }} {{ pr.name }} ({{ pr.products_count }})
+            </option>
+            {% endfor %}
+          </select>
+          <span class="absolute left-3 top-3 text-slate-400 text-sm pointer-events-none" aria-hidden="true">🏷️</span>
+          <span class="absolute right-3 top-3 text-slate-400 text-xs pointer-events-none" aria-hidden="true">▼</span>
+        </div>
+      </form>
+      {% endif %}
+
       <!-- ClauseGuard Policy Alerts Toggle -->
       {% if flagged_compliance_count > 0 or compliance_filter == 'flagged' %}
       <a id="complianceFilterBtn"
-         href="?status={{ status_filter }}{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if channel_filter %}&channel={{ channel_filter }}{% endif %}{% if sync_filter %}&sync={{ sync_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}{% if compliance_filter != 'flagged' %}&compliance=flagged{% endif %}"
+         href="?status={{ status_filter }}{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if channel_filter %}&channel={{ channel_filter }}{% endif %}{% if sync_filter %}&sync={{ sync_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}{% if compliance_filter != 'flagged' %}&compliance=flagged{% endif %}"
          class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs sm:text-sm font-bold rounded-xl border transition min-h-[42px] shrink-0 {% if compliance_filter == 'flagged' %}bg-amber-600 text-white border-amber-700 shadow-xs{% else %}bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300{% endif %}">
         <span aria-hidden="true">🛡️</span>
         <span>{% trans "Policy Alerts" %}</span>
@@ -262,7 +314,7 @@
       {% endif %}
 
       <!-- Active Filters Reset / Clear Button -->
-      {% if search_query or platform_filter or channel_filter or pallet_filter or compliance_filter %}
+      {% if search_query or platform_filter or channel_filter or pallet_filter or provider_filter or compliance_filter %}
       <div class="shrink-0 flex items-center">
         <a href="?status={{ status_filter }}"
            class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-transparent hover:border-rose-100 transition"
@@ -282,11 +334,11 @@
       <span class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">
         {% trans "Sync Status:" %}
       </span>
-      <a href="?status=published{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+      <a href="?status=published{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
          class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition {% if not sync_filter %}bg-slate-800 text-white shadow-xs{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
         {% trans "All Published" %} ({{ published_count }})
       </a>
-      <a href="?status=published&sync=out_of_sync{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+      <a href="?status=published&sync=out_of_sync{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
          class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition inline-flex items-center gap-1.5 {% if sync_filter == 'out_of_sync' %}bg-amber-600 text-white shadow-xs{% else %}bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200{% endif %}">
         <span aria-hidden="true">⚠️</span>
         <span>{% trans "Out of Sync" %} ({{ out_of_sync_count }})</span>
@@ -299,20 +351,20 @@
       <span class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">
         {% trans "Channel:" %}
       </span>
-      <a href="?status=sold{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+      <a href="?status=sold{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
          class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition {% if not channel_filter %}bg-slate-800 text-white shadow-xs{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
         {% trans "All Channels" %} ({{ sold_count }})
       </a>
-      <a href="?status=sold&channel=in_store{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+      <a href="?status=sold&channel=in_store{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
          class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition inline-flex items-center gap-1 {% if channel_filter == 'in_store' %}bg-emerald-700 text-white shadow-xs{% else %}bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200{% endif %}">
         <span>🏪</span> {% trans "In-Store" %} ({{ sold_in_store_count }})
       </a>
-      <a href="?status=sold&channel=marketplace{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+      <a href="?status=sold&channel=marketplace{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
          class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition inline-flex items-center gap-1 {% if channel_filter == 'marketplace' and not platform_filter %}bg-blue-700 text-white shadow-xs{% else %}bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200{% endif %}">
         <span>🌐</span> {% trans "Marketplaces" %} ({{ sold_marketplace_count }})
       </a>
       {% if sold_other_count > 0 %}
-      <a href="?status=sold&channel=other{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+      <a href="?status=sold&channel=other{% if platform_filter %}&platform={{ platform_filter }}{% endif %}{% if pallet_filter %}&pallet={{ pallet_filter }}{% endif %}{% if provider_filter %}&provider={{ provider_filter }}{% endif %}{% if compliance_filter %}&compliance={{ compliance_filter }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
          class="shrink-0 text-xs px-3 py-1.5 rounded-lg font-bold transition inline-flex items-center gap-1 {% if channel_filter == 'other' %}bg-purple-700 text-white shadow-xs{% else %}bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200{% endif %}">
         <span>📦</span> {% trans "Other" %} ({{ sold_other_count }})
       </a>
@@ -475,6 +527,12 @@
           {% if product.pallet %}
           <span class="product-card-pallet-badge text-xs font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-900 border border-indigo-200/90 shadow-xs flex items-center gap-1 backdrop-blur-xs">
             <span aria-hidden="true">📦</span> Pallet #{{ product.pallet.number }}
+          </span>
+          {% endif %}
+          {% if product.provider %}
+          <span class="product-card-provider-badge text-xs font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-900 border border-teal-200/90 shadow-xs flex items-center gap-1 backdrop-blur-xs max-w-full">
+            <span aria-hidden="true">{{ product.provider.type_icon }}</span>
+            <span class="truncate max-w-[140px]">{{ product.provider.name }}</span>
           </span>
           {% endif %}
           {% if product.compliance_status == 'rejected' %}

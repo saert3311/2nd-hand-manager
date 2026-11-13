@@ -15,11 +15,12 @@ def build_search_query(query_str: str) -> Q:
     if not cleaned:
         return Q()
 
-    # Base text condition: search title, notes, and AI description
+    # Base text condition: search title, notes, AI description, and origin provider
     text_q = (
         Q(ai_title__icontains=cleaned)
         | Q(raw_note__icontains=cleaned)
         | Q(ai_description__icontains=cleaned)
+        | Q(provider__name__icontains=cleaned)
     )
 
     date_q = Q()

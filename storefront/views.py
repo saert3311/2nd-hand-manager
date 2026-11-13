@@ -86,11 +86,17 @@ SORT_PARAM_ALIASES = {
 
 def _sanitize_public_product(product: Product) -> Product:
     """
-    Defense-in-depth firewall: ensures internal-only fields (raw_note, created_by_id)
-    are blanked in memory so no template or serializer can ever leak them.
+    Defense-in-depth firewall: ensures internal-only fields (raw_note, created_by_id,
+    origin provider/pallet, and acquisition_cost) are blanked in memory so no template
+    or serializer can ever leak them.
     """
     product.__dict__["raw_note"] = ""
     product.__dict__["created_by_id"] = None
+    product.__dict__["provider_id"] = None
+    product.__dict__["pallet_id"] = None
+    product.__dict__["acquisition_cost"] = None
+    product._state.fields_cache.pop("provider", None)
+    product._state.fields_cache.pop("pallet", None)
     return product
 
 

@@ -3954,3 +3954,55 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 - [x] Staging Readiness Checklist, 1-Tap Copy Full Ad Pack, live character/line counters, unsaved changes indicator, and `Ctrl+S` save shortcut active.
 - [x] 100% of unit and Playwright browser tests, `manage.py check`, `compile_locales`, and `ruff check .` pass with 0 errors.
 
+---
+
+## Phase 51: Product Origins & Providers Co-Living with Pallets
+
+### Task 185: Domain Models, Golden Sync Invariant, Seed Migration & Admin (`inventory/models.py`, `inventory/migrations/`, `inventory/admin.py`)
+**Description:** Add `ProviderType` and `Provider` model (`name`, `slug`, `provider_type`, `contact_info`, `notes`, `is_active`, `created_by`, timestamps), add `Pallet.provider` FK with cascade sync to its products on save, and add `Product.provider` FK + Manager-only `Product.acquisition_cost` with automatic `Pallet.provider → Product.provider` inheritance in `Product.save()`. Create schema migration and seed migration for `"Compra en Tienda / Particular"` (`WALK_IN`). Register `ProviderAdmin` and update `PalletAdmin` & `ProductAdmin` in `manager_admin_site`.
+**Acceptance criteria:**
+- [x] `Provider`, `Pallet.provider`, `Product.provider`, and `Product.acquisition_cost` migrate cleanly and seed `"Compra en Tienda / Particular"`.
+- [x] Linking a `Product` to a `Pallet` automatically syncs `product.provider = pallet.provider`; changing `Pallet.provider` cascades to all linked products.
+- [x] Deleting a `Provider` or `Pallet` uses `SET_NULL` without deleting products.
+- [x] `ProviderAdmin`, `PalletAdmin`, and `ProductAdmin` expose origin fields exclusively to managers.
+**Verification:**
+- [x] `.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`
+- [x] `.venv\Scripts\python.exe manage.py check`
+
+---
+
+### Task 186: Forms, Intake Sticky Unified Origin Picker & Product Detail Staging (`inventory/forms.py`, `inventory/views.py`, `intake.html`, `product_detail.html`, `storefront/views.py`)
+**Description:** Create `ProviderForm` and `OriginChoiceField` (`pallet:<id>`, `provider:<id>`, `""`), update `PalletForm` with optional `provider`, update `ProductIntakeForm` & `product_intake_view` to render the single sticky `#id_origin` `<optgroup>` dropdown (with `last_intake_origin` session persistence and backward-compatible `pallet` handling), and update `ProductUpdateForm` & `product_detail.html` to allow Managers to edit `pallet`, `provider`, and `acquisition_cost` (hidden from Assistants) and display `#product-provider-badge`. Harden `storefront/views.py` firewall against `provider_id`, `pallet_id`, and `acquisition_cost`.
+**Acceptance criteria:**
+- [x] `/intake/` renders a single sticky `#id_origin` dropdown with `<optgroup>` for Pallets and Direct Origins, never leaking costs.
+- [x] Session remembers `pallet:<id>`, `provider:<id>`, or `none` across consecutive intake submissions.
+- [x] `/products/<pk>/` lets Managers set `pallet`, `provider`, and `acquisition_cost`, while Assistants cannot see or edit `acquisition_cost`.
+- [x] Storefront never exposes `provider`, `pallet`, or `acquisition_cost`.
+
+---
+
+### Task 187: Unified Pallets & Providers ROI Hub + Dashboard Filtering & Card Badges (`inventory/views.py`, `inventory/urls.py`, `inventory/services/search_service.py`, `pallets.html`, `pallet_edit.html`, `provider_edit.html`, `dashboard.html`)
+**Description:** Upgrade `/pallets/` into a two-tab Manager hub (`?tab=pallets` and `?tab=providers`) with Provider creation, editing (`/pallets/providers/<pk>/edit/`), non-destructive deletion (`/pallets/providers/<pk>/delete/`), Pallet-to-Provider linking, and single-query/no-N+1 ROI calculations (Total Cost without double-counting, Realized Revenue, Net Margin, Active Stock Value, Pallet & Product counts). Add `?provider=<id>` / `?provider=none` filtering and `.product-card-provider-badge` pills to `/dashboard/` and `provider__name__icontains` to `build_search_query()`.
+**Acceptance criteria:**
+- [x] Managers can create, edit, and delete Providers and assign Providers to Pallets on `/pallets/` & `/pallets/<pk>/edit/`.
+- [x] Provider ROI cards accurately sum Pallet `purchase_price` + standalone (`pallet__isnull=True`) `acquisition_cost` with zero double-counting.
+- [x] `/dashboard/?provider=<id>` and `?provider=none` compose cleanly with status, pallet, platform, channel, compliance, and search filters.
+- [x] Assistants receive `403` on all `/pallets/` and `/pallets/providers/...` endpoints and never see financial costs.
+
+---
+
+### Task 188: Bilingual Translations, Comprehensive Automated & OPPO A74 Responsive Tests, Changelog (`locale/`, `tests/`, `CHANGELOG.md`, `config/settings.py`)
+**Description:** Add Spanish and English translations to `locale/es/LC_MESSAGES/django.po` and `locale/en/LC_MESSAGES/django.po`, compile with `manage.py compile_locales`, author comprehensive unit/integration/permission/ROI/privacy/localization tests in `tests/test_product_origins_providers.py`, update `tests/test_browser_daily_workflow.py` and `tests/test_oppo_a74_responsive.py` (`360×800` & `320×711` verification across `/pallets/?tab=providers`, `/intake/`, `/dashboard/`), and update `CHANGELOG.md`.
+**Acceptance criteria:**
+- [x] `python manage.py compile_locales` succeeds with zero untranslated strings.
+- [x] `python manage.py test` passes 100% across all test suites including Playwright responsive checks.
+- [x] `ruff check .` and `manage.py check` pass with 0 errors.
+
+---
+
+### Checkpoint 51: Product Origins & Providers Complete
+- [x] `Provider → Pallet → Product` and direct `Provider → Product` hierarchies live with automatic sync and zero double-counting ROI.
+- [x] Single sticky Origin dropdown active on `/intake/` with OPPO A74 (`360×800` & `320×711`) zero-overflow verification.
+- [x] All automated tests, `manage.py check`, `compile_locales`, and `ruff check .` pass cleanly.
+
+
