@@ -4049,5 +4049,24 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 - [x] Public Storefront search strictly isolated from internal-only fields.
 - [x] 100% of automated tests, `manage.py check`, `compile_locales`, and `ruff check .` pass cleanly.
 
+---
+
+## Test Suite Audit, Optimization & Reliability Improvements (`fix/test-suite-speed-and-quality`)
+
+### Task 192: Shared Helpers, Fast Hashing & Testing Media Serving (`config/settings.py`, `config/urls.py`, `tests/helpers.py`)
+- [x] Enable `MD5PasswordHasher` inside `if IS_TESTING:` in `config/settings.py`.
+- [x] Serve `MEDIA_URL` safely from `default_storage` inside `elif settings.IS_TESTING:` in `config/urls.py` (`_serve_testing_media`) and assert `img.complete && img.naturalWidth > 0` in Playwright browser suites.
+- [x] Add `tests/helpers.py` centralizing `make_test_image_bytes`, `make_test_image_file`, `create_user_with_group`, `create_role_users`, `get_test_artifact_dir`, `launch_test_browser`, `start_shared_browser`, `abort_nonessential_fonts`, and `assert_visible_images_loaded`.
+
+### Task 193: Playwright Consolidation, Artifact Isolation & Determinism (`tests/`)
+- [x] Direct test screenshots and sample images to `TemporaryDirectory` via `get_test_artifact_dir(..., repo_subdir=...)` unless `SAVE_TEST_SCREENSHOTS=1`, and remove unused `tmp_test_detail_images/` in `tests/test_detail_photo_upload_component.py`.
+- [x] Replace `wait_for_load_state("networkidle")` and `wait_for_timeout` sleeps with deterministic Playwright `expect`, `wait_for_function`, `expect_navigation`, and `wait_for_selector` waits; remove noisy `print()` calls from browser suites; share one browser per class where multi-method.
+- [x] Remove redundant `tests/test_browser_lifecycle.py` and trim `tests/test_dashboard_responsive.py` to tablet/desktop single-line tab-rail alignment checks (`768px`, `1024px`, `1440px`).
+
+### Task 194: Semantic Assertions, `setUpTestData` Refactor & Quality Gate (`tests/`, `CHANGELOG.md`)
+- [x] Replace brittle JS/Tailwind utility string checks with semantic DOM/ARIA checks in `tests/test_intake_identification_gate.py`, `tests/test_photo_reordering.py`, `tests/test_product_detail_tabs.py`, `tests/test_product_detail_mobile_ux.py`, `tests/test_intake_low_dpi.py`, and `tests/test_ui_accessibility.py`.
+- [x] Convert high-volume invariant fixtures in `TestCase` suites to `setUpTestData()` and `force_login()`.
+- [x] Run full `manage.py test`, `manage.py check`, `manage.py compile_locales`, and `ruff check .` with 0 failures/warnings.
+
 
 

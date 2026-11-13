@@ -1,16 +1,13 @@
-import os
-import shutil
 from io import BytesIO
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
 from PIL import Image
 
 from inventory.models import MarketplaceSite, Product, ProductImage, ProductListingLink, ProductStatus
-from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
+from tests.helpers import create_role_users
 
 User = get_user_model()
 
@@ -23,34 +20,12 @@ class DetailPhotoUploadComponentTests(TestCase):
     """
 
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        os.makedirs("tmp_test_detail_images", exist_ok=True)
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-        if os.path.exists("tmp_test_detail_images"):
-            shutil.rmtree("tmp_test_detail_images", ignore_errors=True)
+    def setUpTestData(cls):
+        cls.manager, cls.assistant = create_role_users(prefix="upload")
+        cls.manager.is_staff = True
+        cls.manager.save(update_fields=["is_staff"])
 
     def setUp(self):
-        self.mgr_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
-        self.asst_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
-
-        self.manager = User.objects.create_user(
-            username="manager_upload",
-            password="password123",
-            is_staff=True,
-        )
-        self.manager.groups.add(self.mgr_group)
-
-        self.assistant = User.objects.create_user(
-            username="assistant_upload",
-            password="password123",
-            is_staff=False,
-        )
-        self.assistant.groups.add(self.asst_group)
-
         self.product = Product.objects.create(
             ai_title="Cazadora Vintage Barbour",
             ai_description="Auténtica cazadora encerada.",
@@ -63,10 +38,10 @@ class DetailPhotoUploadComponentTests(TestCase):
         self.img2 = self._create_product_image(self.product, order=1)
 
         self.client_manager = Client()
-        self.client_manager.login(username="manager_upload", password="password123")
+        self.client_manager.force_login(self.manager)
 
         self.client_asst = Client()
-        self.client_asst.login(username="assistant_upload", password="password123")
+        self.client_asst.force_login(self.assistant)
 
     def _create_dummy_image_file(self, filename="sample.jpg", color=(40, 90, 160)):
         stream = BytesIO()

@@ -1,5 +1,6 @@
 import io
 import os
+import re
 from decimal import Decimal
 
 from django.contrib.auth.models import Group, User
@@ -11,7 +12,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import translation
 from PIL import Image
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 from inventory.models import (
     Category,
@@ -26,6 +27,7 @@ from inventory.models import (
     ProductStatus,
     SaleChannelType,
 )
+from tests.helpers import abort_nonessential_fonts, launch_test_browser
 
 
 def _create_sample_image(name="photo.jpg"):
@@ -137,13 +139,17 @@ class ProductDetailTabbedRedesignTests(TestCase):
         # 1. Product with existing photo -> <details id="detailAddPhotosDisclosure"> is closed (no open attr)
         resp_with_photos = self.client.get(url)
         html_with_photos = resp_with_photos.content.decode("utf-8")
-        self.assertIn('<details id="detailAddPhotosDisclosure" class="pt-3 border-t border-slate-100 group" >', html_with_photos)
+        match_closed = re.search(r'<details\s+[^>]*id="detailAddPhotosDisclosure"[^>]*>', html_with_photos)
+        self.assertIsNotNone(match_closed)
+        self.assertNotRegex(match_closed.group(0), r"\bopen\b")
 
         # 2. Product without photos -> <details id="detailAddPhotosDisclosure" ... open> is expanded
         self.product.images.all().delete()
         resp_no_photos = self.client.get(url)
         html_no_photos = resp_no_photos.content.decode("utf-8")
-        self.assertIn('<details id="detailAddPhotosDisclosure" class="pt-3 border-t border-slate-100 group" open>', html_no_photos)
+        match_open = re.search(r'<details\s+[^>]*id="detailAddPhotosDisclosure"[^>]*>', html_no_photos)
+        self.assertIsNotNone(match_open)
+        self.assertRegex(match_open.group(0), r"\bopen\b")
 
     def test_productivity_enhancements_readiness_checklist_copy_pack_and_counters(self):
         """Verifies Staging Readiness Checklist, 1-Tap Copy Full Ad Pack, and live counters."""
@@ -399,13 +405,14 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
         detail_url = f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.product.pk})}"
 
         with sync_playwright() as p:
-            browser = p.chromium.launch(channel="chrome", headless=True)
+            browser = launch_test_browser(p)
             context = browser.new_context(
                 viewport={"width": 1280, "height": 850},
                 locale="en-US",
                 extra_http_headers={"Accept-Language": "en"},
             )
             page = context.new_page()
+            abort_nonessential_fonts(page)
             page_errors = []
             page.on("pageerror", lambda err: page_errors.append(str(err)))
 
@@ -453,9 +460,8 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
             # 4. Ctrl+S inside Tab 3 (Notes) MUST NOT submit #productStagingForm or clear unsent note text
             page.fill("#directNoteText", "Borrador de nota que no debe perderse")
             page.locator("#directNoteText").press("Control+s")
-            page.wait_for_timeout(300)
-            self.assertEqual(page.locator("#directNoteText").input_value(), "Borrador de nota que no debe perderse")
-            self.assertEqual(page.locator("#tabBtnWorkspaceNotes").get_attribute("aria-selected"), "true")
+            expect(page.locator("#directNoteText")).to_have_value("Borrador de nota que no debe perderse")
+            expect(page.locator("#tabBtnWorkspaceNotes")).to_have_attribute("aria-selected", "true")
 
             # 5. Cross-tab HTML5 invalid input on Tab 1 must switch back to Listing when saving from Tab 2
             page.click("#tabBtnWorkspaceListing")
@@ -463,9 +469,8 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
             page.click("#tabBtnWorkspaceChannels")
             self.assertEqual(page.locator("#tabBtnWorkspaceChannels").get_attribute("aria-selected"), "true")
             page.click("#btnSaveListingChanges")
-            page.wait_for_timeout(200)
+            page.wait_for_function("() => document.activeElement && document.activeElement.id === 'id_sale_price'")
             self.assertEqual(page.locator("#tabBtnWorkspaceListing").get_attribute("aria-selected"), "true")
-            self.assertEqual(page.evaluate("document.activeElement?.id"), "id_sale_price")
 
             # Fix sale_price and verify live counters + unsaved badge update
             page.fill("#id_sale_price", "149.50")
@@ -479,11 +484,9 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
             # 6. Copy Ad formats payload AND rapid double-click does not lock label as "Copied!"
             orig_copy_label = page.locator("#btnCopyFullListingPack").inner_text().strip()
             page.click("#btnCopyFullListingPack")
-            page.wait_for_timeout(80)
             page.click("#btnCopyFullListingPack")
-            page.wait_for_timeout(1750)
-            restored_copy_label = page.locator("#btnCopyFullListingPack").inner_text().strip()
-            self.assertEqual(restored_copy_label, orig_copy_label)
+            page.wait_for_function("() => window.__copiedPayloads.length >= 1")
+            expect(page.locator("#btnCopyFullListingPack")).to_have_text(orig_copy_label, timeout=5000)
             copied = page.evaluate("window.__copiedPayloads")
             self.assertTrue(len(copied) >= 1)
             self.assertIn("Sony WH-1000XM4 Edicion Prueba", copied[-1])
@@ -493,7 +496,6 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
             # 7. Simulated non-HTTPS LAN context (navigator.clipboard = undefined) does not throw
             page.evaluate("Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });")
             page.click("#btnCopyFullListingPack")
-            page.wait_for_timeout(150)
 
             # 8. Ctrl+S from Tab 1 saves form to DB
             with page.expect_navigation():
@@ -503,19 +505,13 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
 
             # 9. Narrow OPPO A74 320x711 scroll hint hides once scrolled to right end
             page.set_viewport_size({"width": 320, "height": 711})
-            page.wait_for_timeout(150)
-            self.assertFalse(
-                page.locator("#detailWorkspaceTabScrollHint").evaluate("el => el.classList.contains('hidden')")
-            )
+            expect(page.locator("#detailWorkspaceTabScrollHint")).not_to_have_class(re.compile(r"\bhidden\b"))
             page.evaluate("""() => {
                 const tl = document.getElementById('detailWorkspaceTablist');
                 tl.scrollLeft = tl.scrollWidth;
                 tl.dispatchEvent(new Event('scroll'));
             }""")
-            page.wait_for_timeout(100)
-            self.assertTrue(
-                page.locator("#detailWorkspaceTabScrollHint").evaluate("el => el.classList.contains('hidden')")
-            )
+            expect(page.locator("#detailWorkspaceTabScrollHint")).to_have_class(re.compile(r"\bhidden\b"))
 
             self.assertEqual(page_errors, [], f"Unexpected browser JS errors: {page_errors}")
             context.close()

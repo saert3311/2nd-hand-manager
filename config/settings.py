@@ -144,6 +144,9 @@ if not OCI_STORAGE_ENDPOINT_URL and OCI_STORAGE_NAMESPACE and OCI_STORAGE_REGION
     )
 
 if IS_TESTING:
+    PASSWORD_HASHERS = [
+        'django.contrib.auth.hashers.MD5PasswordHasher',
+    ]
     STORAGES = {
         'default': {
             'BACKEND': 'django.core.files.storage.InMemoryStorage',

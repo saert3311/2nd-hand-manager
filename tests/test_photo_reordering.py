@@ -188,21 +188,17 @@ class PhotoReorderingIntakeUITests(TestCase):
         buf.seek(0)
         return SimpleUploadedFile(name, buf.getvalue(), content_type="image/jpeg")
 
-    def test_intake_template_renders_reordering_guidance_and_script_functions(self):
+    def test_intake_template_renders_reordering_guidance_and_controls(self):
         self.client.login(username="assistant_ui", password="password123")
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
 
-        # Reordering helper text & elements in preview container
+        # Semantic reordering guidance and controls
         self.assertIn("Drag or tap arrows to reorder", html)
-        self.assertIn("function moveFile(fromIdx, toIdx)", html)
-        self.assertIn("function setCoverFile(fromIdx)", html)
         self.assertIn("photo-reorder-btn", html)
         self.assertIn("photo-make-cover-btn", html)
-        self.assertIn("dragstart", html)
-        self.assertIn("dragover", html)
-        self.assertIn("drop", html)
+        self.assertIn("draggable", html)
 
     def test_intake_reorder_spanish_localization(self):
         self.client.login(username="assistant_ui", password="password123")

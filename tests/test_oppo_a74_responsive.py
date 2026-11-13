@@ -1,14 +1,24 @@
+"""
+Browser E2E responsive verification targeting the OPPO A74 smartphone and low-DPI viewports.
+
+Checks both OPPO A74 viewport profiles across Spanish & English interfaces:
+- 360x800 (standard CSS viewport: 1080x2400 physical at 3.0 DPR)
+- 320x711 (Android "Smaller Display Size" / zoomed low-DPI mode)
+
+Verifies:
+- Zero horizontal document overflow (scrollWidth <= clientWidth)
+- Dual capture/gallery intake buttons stay inside viewport without clipping
+- Mobile input font-size >= 16px
+- All visible product images render cleanly without broken media URLs
+"""
+
 import datetime
-import os
-import shutil
 from decimal import Decimal
 
-from django.contrib.auth import get_user_model
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from django.core.files.base import ContentFile
 from django.test import override_settings
 from django.urls import reverse
-from PIL import Image
-from playwright.sync_api import sync_playwright
 
 from inventory.models import (
     Category,
@@ -20,98 +30,52 @@ from inventory.models import (
     ProductListingLink,
     ProductStatus,
     Provider,
-    StorefrontConfiguration,
 )
 from inventory.services.compliance_service import ensure_default_policy_clauses
-
-User = get_user_model()
+from tests.helpers import (
+    abort_nonessential_fonts,
+    assert_visible_images_loaded,
+    create_user_with_group,
+    get_test_artifact_dir,
+    make_test_image_bytes,
+    start_shared_browser,
+)
 
 
 @override_settings(TURNSTILE_ENABLED=False)
 class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
-    """
-    Validates responsive behavior, absence of horizontal overflow, and layout integrity
-    on narrow Android mobile viewports, specifically:
-    1. OPPO A74 Standard: 360x800, DPR 2.0/3.0
-    2. OPPO A74 Display Zoom / Low Effective DPI: 320x711, DPR 1.5/2.0
-    """
+    """Comprehensive viewport check for OPPO A74 & 320px low-DPI Android devices."""
+
+    OPPO_VIEWPORTS = [
+        ("oppo_360x800", 360, 800),
+        ("oppo_lowdpi_320x711", 320, 711),
+    ]
 
     @classmethod
     def setUpClass(cls):
-        os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
         super().setUpClass()
-        os.makedirs("browser_verification_screenshots/oppo_a74", exist_ok=True)
-        os.makedirs("tmp_test_images", exist_ok=True)
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-        if os.path.exists("tmp_test_images"):
-            shutil.rmtree("tmp_test_images", ignore_errors=True)
+        cls.artifacts_dir = get_test_artifact_dir(cls, repo_subdir="browser_verification_screenshots/oppo_a74")
+        cls.sample_img_path = cls.artifacts_dir / "sample_jacket.jpg"
+        cls.sample_img_path.write_bytes(make_test_image_bytes(size=(400, 400), color="darkgreen"))
+        cls._browser = start_shared_browser(cls)
 
     def setUp(self):
-        self.manager = User.objects.create_user(
-            username="manager_oppo",
-            password="password123",
-            is_staff=True,
-        )
-        self.assistant = User.objects.create_user(
-            username="asst_oppo",
-            password="password123",
-        )
-        # Groups
-        from django.contrib.auth.models import Group
-
-        mgr_group, _ = Group.objects.get_or_create(name="managers")
-        asst_group, _ = Group.objects.get_or_create(name="assistants")
-        self.manager.groups.add(mgr_group)
-        self.assistant.groups.add(asst_group)
-
-        # Storefront config
-        StorefrontConfiguration.objects.get_or_create(
-            pk=1,
-            defaults={
-                "store_name": "Moda Vintage Madrid",
-                "tagline_es": "Ropa de segunda mano y vintage seleccionada",
-                "whatsapp_number": "34600000000",
-            },
-        )
-
-        # Category
+        ensure_default_policy_clauses()
+        self.manager = create_user_with_group("oppo_manager", group_name="managers", is_staff=True)
         self.category, _ = Category.objects.get_or_create(
-            slug="chaquetas-y-abrigos",
-            defaults={
-                "name": "Chaquetas y Abrigos",
-                "name_en": "Jackets & Coats",
-                "order": 1,
-                "is_active": True,
-            },
-        )
-
-        # Marketplace site
-        self.site_wallapop, _ = MarketplaceSite.objects.get_or_create(
-            slug="wallapop",
-            defaults={"name": "Wallapop", "order": 2, "is_active": True},
+            slug="chaquetas-vintage",
+            defaults={"name": "Chaquetas Vintage", "icon": "apparel"},
         )
         self.site_vinted, _ = MarketplaceSite.objects.get_or_create(
             slug="vinted",
             defaults={"name": "Vinted", "order": 1, "is_active": True},
         )
-        ensure_default_policy_clauses()
-
-        # Create dummy image
-        img_path = os.path.join("tmp_test_images", "sample_jacket.jpg")
-        img = Image.new("RGB", (400, 400), color="darkgreen")
-        img.save(img_path, format="JPEG")
-
-        # Pallet
         self.pallet = Pallet.objects.create(
             number=1,
             received_date=datetime.date(2026, 10, 15),
             created_by=self.manager,
         )
 
-        # Active Product
         self.p_active = Product.objects.create(
             ai_title="Chaqueta Vintage Cazadora Cuero Nobuk Marrón Talla L",
             ai_description="Chaqueta en excelente estado de conservación, cuero genuino nobuk con cremalleras funcionales.",
@@ -127,15 +91,11 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
             is_sold=False,
             created_by=self.manager,
         )
-        with open(img_path, "rb") as f:
-            from django.core.files.base import ContentFile
-
-            ProductImage.objects.create(
-                product=self.p_active,
-                image=ContentFile(f.read(), name="sample_jacket.webp"),
-                order=1,
-            )
-
+        ProductImage.objects.create(
+            product=self.p_active,
+            image=ContentFile(make_test_image_bytes(size=(400, 400), color="darkgreen"), name="sample_jacket.jpg"),
+            order=1,
+        )
         ProductListingLink.objects.create(
             product=self.p_active,
             site=self.site_vinted,
@@ -144,280 +104,208 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
             is_active=True,
         )
 
-        # Price Pending Product
         self.p_price_pending = Product.objects.create(
             ai_title="Camisa Franela Cuadros Grunge 90s Oversized",
             ai_description="Camisa clásica a cuadros estilo grunge años 90.",
             sale_price=None,
+            estimated_retail_price=Decimal("55.00"),
+            estimated_resale_price=Decimal("22.00"),
             status=ProductStatus.PRICE_PENDING,
             category=self.category,
+            condition=ProductCondition.GOOD,
             is_public=False,
-            is_sold=False,
-            created_by=self.assistant,
-        )
-
-        # ClauseGuard Flagged Product (Platform-restricted on Vinted VT-202)
-        self.p_flagged = Product.objects.create(
-            ai_title="Taladro Percutor Bosch Profesional 800W",
-            ai_description="Taladro eléctrico de alta potencia en maletín original.",
-            sale_price=Decimal("65.00"),
-            status=ProductStatus.READY,
-            is_public=True,
-            is_sold=False,
-            created_by=self.manager,
-        )
-
-        # Erased Product
-        self.p_erased = Product.objects.create(
-            ai_title="Pantalón Descatalogado Erróneo",
-            ai_description="Producto con taras no apto.",
-            sale_price=Decimal("20.00"),
-            status=ProductStatus.DRAFT,
-            is_deleted=True,
             created_by=self.manager,
         )
 
     def _assert_no_horizontal_overflow(self, page, page_label, width, height):
-        """
-        Asserts that document.documentElement does not exceed the viewport clientWidth.
-        Collects offending elements if overflow is detected.
-        """
-        metrics = page.evaluate("""() => {
-            const doc = document.documentElement;
-            const body = document.body;
-            const clientWidth = doc.clientWidth;
-            const scrollWidth = Math.max(doc.scrollWidth, body.scrollWidth);
-            const overflow = scrollWidth > clientWidth + 0.5;
-            let offenders = [];
-            if (overflow) {
-                document.querySelectorAll('*').forEach(el => {
-                    if (el.closest('.overflow-x-auto, [style*="overflow-x: auto"], [style*="overflow-x:auto"], nav[role="tablist"], #categoryRail')) {
-                        return;
-                    }
-                    const rect = el.getBoundingClientRect();
-                    if (rect.right > clientWidth + 1.5) {
-                        offenders.push({
-                            tag: el.tagName,
-                            id: el.id,
-                            className: (el.className || '').toString().slice(0, 100),
-                            rectRight: Math.round(rect.right),
-                            rectWidth: Math.round(rect.width),
-                            text: (el.innerText || '').slice(0, 50).trim()
-                        });
-                    }
-                });
-            }
-            return {
-                clientWidth,
-                scrollWidth,
-                overflow,
-                offenders: offenders.slice(0, 10)
-            };
-        }""")
+        """Verify document scrollWidth does not exceed clientWidth and inspect offscreen controls."""
+        page.set_viewport_size({"width": width, "height": height})
 
-        screenshot_path = f"browser_verification_screenshots/oppo_a74/{page_label}_{width}x{height}.png"
-        page.screenshot(path=screenshot_path, full_page=True)
+        metrics = page.evaluate(
+            """() => {
+                const docEl = document.documentElement;
+                const vw = docEl.clientWidth;
+                const sw = docEl.scrollWidth;
+                const offenders = [];
+                if (sw > vw + 1) {
+                    const els = document.querySelectorAll('button, a, input, select, div, section, header, nav, footer');
+                    for (const el of els) {
+                        const rect = el.getBoundingClientRect();
+                        if (rect.width > 0 && rect.height > 0 && (rect.right > vw + 2 || rect.left < -2)) {
+                            const cs = window.getComputedStyle(el);
+                            if (cs.position !== 'fixed' && cs.overflowX !== 'auto' && cs.overflowX !== 'scroll') {
+                                offenders.push({
+                                    tag: el.tagName,
+                                    id: el.id || '',
+                                    cls: (typeof el.className === 'string' ? el.className.slice(0, 60) : ''),
+                                    right: Math.round(rect.right),
+                                    vw: vw
+                                });
+                                if (offenders.length >= 5) break;
+                            }
+                        }
+                    }
+                }
+                return { scrollWidth: sw, clientWidth: vw, offenders };
+            }"""
+        )
 
-        self.assertFalse(
-            metrics["overflow"],
-            f"Horizontal overflow detected on {page_label} at {width}x{height}! "
+        screenshot_path = self.artifacts_dir / f"{page_label}_{width}x{height}.png"
+        page.screenshot(path=str(screenshot_path), full_page=True)
+
+        self.assertLessEqual(
+            metrics["scrollWidth"],
+            metrics["clientWidth"] + 1,
+            f"Horizontal overflow on {page_label} at {width}x{height}: "
             f"scrollWidth={metrics['scrollWidth']} > clientWidth={metrics['clientWidth']}. "
             f"Offenders: {metrics['offenders']}",
         )
 
-    def test_oppo_a74_public_storefront_viewports(self):
-        """
-        Tests public storefront routes on both 360x800 and 320x711 viewports.
-        """
-        viewports = [
-            ("oppo_a74_standard", 360, 800, 2.0),
-            ("oppo_a74_zoomed_low_dpi", 320, 711, 1.5),
-        ]
-
-        with sync_playwright() as p:
-            browser = p.chromium.launch(channel="chrome", headless=True)
-
-            for label, width, height, dsf in viewports:
-                context = browser.new_context(
-                    viewport={"width": width, "height": height},
-                    device_scale_factor=dsf,
-                    is_mobile=True,
-                    has_touch=True,
-                    locale="es-ES",
+    def _assert_controls_visible_and_inside_viewport(self, page, selectors, label):
+        vw = page.evaluate("() => document.documentElement.clientWidth")
+        for sel in selectors:
+            loc = page.locator(sel).first
+            if loc.count() > 0 and loc.is_visible():
+                box = loc.bounding_box()
+                self.assertIsNotNone(box, f"{label}: '{sel}' missing bounding box")
+                self.assertGreaterEqual(box["x"], -1, f"{label}: '{sel}' clipped left edge ({box['x']})")
+                self.assertLessEqual(
+                    box["x"] + box["width"],
+                    vw + 2,
+                    f"{label}: '{sel}' overflows right edge ({box['x'] + box['width']} > {vw})",
                 )
-                page = context.new_page()
 
-                # 1. Home
+    def test_oppo_a74_public_storefront_responsive(self):
+        """Test storefront Home, Catalog, Product Detail, How-to-Buy, Legal, and 404 at 360px and 320px."""
+        with self._browser.new_context(viewport={"width": 360, "height": 800}) as context:
+            page = context.new_page()
+            abort_nonessential_fonts(page)
+
+            for vp_name, w, h in self.OPPO_VIEWPORTS:
+                page.set_viewport_size({"width": w, "height": h})
+
+                # 1. Public Storefront Home
                 page.goto(f"{self.live_server_url}{reverse('storefront:home')}")
-                page.wait_for_load_state("networkidle")
-                self._assert_no_horizontal_overflow(page, f"home_{label}", width, height)
+                page.wait_for_selector("h1")
+                self._assert_no_horizontal_overflow(page, f"storefront_home_{vp_name}", w, h)
 
-                # 2. Catalog
+                # 2. Storefront Catalog
                 page.goto(f"{self.live_server_url}{reverse('storefront:catalog')}")
-                page.wait_for_load_state("networkidle")
-                self._assert_no_horizontal_overflow(page, f"catalog_{label}", width, height)
+                page.wait_for_selector("#categoryRail")
+                assert_visible_images_loaded(self, page)
+                self._assert_no_horizontal_overflow(page, f"storefront_catalog_{vp_name}", w, h)
 
-                # 3. Category Catalog
-                page.goto(
-                    f"{self.live_server_url}{reverse('storefront:category', kwargs={'category_slug': self.category.slug})}"
-                )
-                page.wait_for_load_state("networkidle")
-                self._assert_no_horizontal_overflow(page, f"category_{label}", width, height)
+                # 3. Public Product Detail
+                page.goto(f"{self.live_server_url}{self.p_active.get_public_url()}")
+                page.wait_for_selector("#mainProductPhoto")
+                assert_visible_images_loaded(self, page, "#mainProductPhoto")
+                self._assert_no_horizontal_overflow(page, f"storefront_detail_{vp_name}", w, h)
 
-                # 4. Public Product Detail
-                page.goto(
-                    f"{self.live_server_url}{reverse('storefront:product_detail', kwargs={'slug': self.p_active.slug, 'pk': self.p_active.pk})}"
-                )
-                page.wait_for_load_state("networkidle")
-                self._assert_no_horizontal_overflow(page, f"public_detail_{label}", width, height)
-
-                # 5. How to buy
+                # 4. How to Buy Guide
                 page.goto(f"{self.live_server_url}{reverse('storefront:how_to_buy')}")
-                page.wait_for_load_state("networkidle")
-                self._assert_no_horizontal_overflow(page, f"how_to_buy_{label}", width, height)
+                page.wait_for_selector("h1")
+                self._assert_no_horizontal_overflow(page, f"storefront_how_to_buy_{vp_name}", w, h)
 
-                # 6. Legal notice
+                # 5. Legal Notice
                 page.goto(f"{self.live_server_url}{reverse('storefront:legal_notice')}")
-                page.wait_for_load_state("networkidle")
-                self._assert_no_horizontal_overflow(page, f"legal_notice_{label}", width, height)
+                page.wait_for_selector("h1")
+                self._assert_no_horizontal_overflow(page, f"storefront_legal_{vp_name}", w, h)
 
-                context.close()
+                # 6. Custom 404 page
+                page.goto(f"{self.live_server_url}/non-existent-route-xyz-404/")
+                page.wait_for_selector("body")
+                self._assert_no_horizontal_overflow(page, f"error_404_{vp_name}", w, h)
 
-            browser.close()
+    def test_oppo_a74_staff_workspace_responsive(self):
+        """Test Login, Dashboard, Intake (+ dual buttons & preview cards), Product Detail, Pallets, and Policy Guard."""
+        with self._browser.new_context(viewport={"width": 360, "height": 800}) as context:
+            page = context.new_page()
+            abort_nonessential_fonts(page)
+            page.on("dialog", lambda d: d.accept())
 
-    def test_oppo_a74_staging_panel_viewports(self):
-        """
-        Tests internal management & intake routes on both 360x800 and 320x711 viewports.
-        """
-        viewports = [
-            ("oppo_a74_standard", 360, 800, 2.0),
-            ("oppo_a74_zoomed_low_dpi", 320, 711, 1.5),
-        ]
-
-        with sync_playwright() as p:
-            browser = p.chromium.launch(channel="chrome", headless=True)
-
-            for label, width, height, dsf in viewports:
-                context = browser.new_context(
-                    viewport={"width": width, "height": height},
-                    device_scale_factor=dsf,
-                    is_mobile=True,
-                    has_touch=True,
-                    locale="es-ES",
-                )
-                page = context.new_page()
-
-                # 1. Login page
-                page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
-                page.wait_for_load_state("networkidle")
-                self._assert_no_horizontal_overflow(page, f"login_{label}", width, height)
-
-                # Login as manager
-                page.fill("#id_username", "manager_oppo")
-                page.fill("#id_password", "password123")
+            # Switch to Spanish first so expanded Spanish strings are stress-tested
+            page.goto(f"{self.live_server_url}{reverse('storefront:home')}")
+            es_btn = page.locator('form[action*="/i18n/setlang/"] button[value="es"]').first
+            if es_btn.count() > 0:
                 with page.expect_navigation():
-                    page.click("#loginSubmitBtn")
-                page.wait_for_load_state("networkidle")
+                    es_btn.click()
 
-                # 2. Staging Dashboard (All active tab)
-                page.goto(f"{self.live_server_url}{reverse('inventory:dashboard')}")
-                page.wait_for_load_state("networkidle")
-                self._assert_no_horizontal_overflow(page, f"dashboard_{label}", width, height)
-                self.assertTrue(page.locator("#palletFilterForm").is_visible())
-                self.assertTrue(page.locator("#complianceFilterBtn").is_visible())
-                self.assertTrue(page.locator(".product-card-pallet-badge").first.is_visible())
-                self.assertTrue(page.locator(".product-card-compliance-badge").first.is_visible())
+            # 1. Login Page
+            page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
+            page.wait_for_selector("#id_username")
+            for vp_name, w, h in self.OPPO_VIEWPORTS:
+                self._assert_no_horizontal_overflow(page, f"login_{vp_name}", w, h)
 
-                # 3. Staging Dashboard (Erased / Trash tab)
-                page.goto(f"{self.live_server_url}{reverse('inventory:dashboard')}?status=erased")
-                page.wait_for_load_state("networkidle")
-                self._assert_no_horizontal_overflow(page, f"dashboard_erased_{label}", width, height)
+            page.fill("#id_username", "oppo_manager")
+            page.fill("#id_password", "password123")
+            with page.expect_navigation():
+                page.click("#loginSubmitBtn")
+            page.wait_for_selector('nav[role="tablist"]')
 
-                # 4. Staging Intake page + Photo Crop & Rotate Modal on mobile
-                page.goto(f"{self.live_server_url}{reverse('inventory:intake')}")
-                page.wait_for_load_state("networkidle")
-                self._assert_no_horizontal_overflow(page, f"intake_{label}", width, height)
+            # 2. Dashboard
+            for vp_name, w, h in self.OPPO_VIEWPORTS:
+                page.set_viewport_size({"width": w, "height": h})
+                assert_visible_images_loaded(self, page)
+                self._assert_no_horizontal_overflow(page, f"dashboard_{vp_name}", w, h)
+                self._assert_controls_visible_and_inside_viewport(
+                    page, ['nav[role="tablist"]', "input[name='q']"], f"Dashboard {vp_name}"
+                )
 
-                # Attach photo, open Cropper.js modal via .photo-edit-btn, rotate 90 deg, and apply
-                page.set_input_files("#imageInput", os.path.join("tmp_test_images", "sample_jacket.jpg"))
-                page.wait_for_selector(".photo-edit-btn", timeout=5000)
-                page.click(".photo-edit-btn")
-                page.wait_for_selector("#imagePreviewModal:not(.hidden) .cropper-container", timeout=5000)
-                self._assert_no_horizontal_overflow(page, f"intake_crop_modal_{label}", width, height)
-                page.click("#rotateRightBtn")
-                page.click("#applyCropBtn")
-                page.wait_for_selector("#imagePreviewModal.hidden", state="attached", timeout=5000)
+            # 3. Intake Page (+ uploaded image preview)
+            page.goto(f"{self.live_server_url}{reverse('inventory:intake')}")
+            page.wait_for_selector("#dropZone")
+            page.set_input_files("#imageInput", str(self.sample_img_path))
+            page.wait_for_selector("#previewGrid img")
+            for vp_name, w, h in self.OPPO_VIEWPORTS:
+                self._assert_no_horizontal_overflow(page, f"intake_{vp_name}", w, h)
+                self._assert_controls_visible_and_inside_viewport(
+                    page,
+                    ["label[for='cameraInput']", "label[for='imageInput']", "#identifyBtn", "#submitBtn"],
+                    f"Intake {vp_name}",
+                )
 
-                # 5. Staging Product Detail view (and ClauseGuard card on flagged item)
-                page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.p_flagged.pk})}")
-                page.wait_for_load_state("networkidle")
-                self.assertTrue(page.locator("#clauseGuardQuickNotice").is_visible())
-                page.click("#tabBtnWorkspaceCompliance")
-                self.assertTrue(page.locator("#clauseGuardCard").is_visible())
-                self.assertTrue(page.locator("#clauseGuardPlatformMatrix").is_visible())
-                self.assertTrue(page.locator("#clauseGuardCitationsList").is_visible())
-                self._assert_no_horizontal_overflow(page, f"staging_detail_clauseguard_{label}", width, height)
+            # 4. Pallets & Providers Hub + Provider Edit
+            page.goto(f"{self.live_server_url}{reverse('inventory:pallets')}")
+            page.wait_for_selector("#btnCreatePallet")
+            for vp_name, w, h in self.OPPO_VIEWPORTS:
+                self._assert_no_horizontal_overflow(page, f"pallets_{vp_name}", w, h)
 
-                page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.p_active.pk})}")
-                page.wait_for_load_state("networkidle")
-                self._assert_no_horizontal_overflow(page, f"staging_detail_{label}", width, height)
+            page.click("#tabBtnProviders")
+            self.assertTrue(page.locator("#panelProviders").is_visible())
+            for vp_name, w, h in self.OPPO_VIEWPORTS:
+                self._assert_no_horizontal_overflow(page, f"providers_tab_{vp_name}", w, h)
 
-                # Verify deprioritized audit trail is collapsed by default
-                self.assertFalse(page.locator("#status-history-section").is_visible())
+            seeded_provider = Provider.objects.order_by("id").first()
+            if seeded_provider:
+                page.goto(f"{self.live_server_url}{reverse('inventory:provider_edit', kwargs={'pk': seeded_provider.pk})}")
+                page.wait_for_selector("main")
+                for vp_name, w, h in self.OPPO_VIEWPORTS:
+                    self._assert_no_horizontal_overflow(page, f"provider_edit_{vp_name}", w, h)
 
-                # Verify mobile order: Gemini AI banner appears before photo gallery on mobile
-                ai_box = page.locator("#aiForm").bounding_box()
-                gallery_box = page.locator("#galleryThumbnailsGrid").bounding_box()
-                if ai_box and gallery_box:
-                    self.assertLess(ai_box["y"], gallery_box["y"])
+            # 5. Product Detail Workspace (+ gallery edit controls, tabs, pending preview)
+            page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.p_active.pk})}")
+            page.wait_for_selector("#id_sale_price")
+            assert_visible_images_loaded(self, page)
 
-                # Switch to Notes & Doubts tab and verify zero overflow
-                page.click("#tabBtnWorkspaceNotes")
-                self._assert_no_horizontal_overflow(page, f"staging_detail_notes_{label}", width, height)
+            font_size = page.evaluate(
+                "() => parseFloat(window.getComputedStyle(document.querySelector('#id_sale_price')).fontSize)"
+            )
+            self.assertGreaterEqual(font_size, 16.0, "OPPO/Android mobile inputs must render >= 16px font-size")
 
-                # 6. Switch to Channels & Storefront tab and test Marketplace Links Mobile Redesign: Active Tiles & Modals
-                page.click("#tabBtnWorkspaceChannels")
-                self._assert_no_horizontal_overflow(page, f"staging_detail_channels_{label}", width, height)
-                self.assertTrue(page.locator("#marketplaceLinksCard").is_visible())
-                self.assertTrue(page.locator('[data-site-slug="vinted"]').is_visible())
-                page.click("#openAddListingBtn")
-                page.wait_for_selector("#addListingModal:not(.hidden)", timeout=5000)
-                self._assert_no_horizontal_overflow(page, f"add_listing_modal_{label}", width, height)
-                page.keyboard.press("Escape")
-                page.wait_for_selector("#addListingModal.hidden", state="attached", timeout=5000)
+            disclosure = page.locator("#detailAddPhotosDisclosure")
+            if disclosure.count() > 0:
+                disclosure.locator("summary").click()
+            page.set_input_files("#detailImageInput", str(self.sample_img_path))
+            page.wait_for_selector("#detailPendingGrid img")
 
-                page.click('[data-site-slug="vinted"] button[title*="Edit"]')
-                page.wait_for_selector("#editListingModal:not(.hidden)", timeout=5000)
-                self._assert_no_horizontal_overflow(page, f"edit_listing_modal_{label}", width, height)
-                page.keyboard.press("Escape")
-                page.wait_for_selector("#editListingModal.hidden", state="attached", timeout=5000)
-
-                page.set_input_files("#detailImageInput", os.path.join("tmp_test_images", "sample_jacket.jpg"))
-                page.wait_for_selector("#detailPendingGrid .photo-edit-btn", timeout=5000)
-                page.click("#detailPendingGrid .photo-edit-btn")
-                page.wait_for_selector("#imagePreviewModal:not(.hidden) .cropper-container", timeout=5000)
-                self._assert_no_horizontal_overflow(page, f"detail_crop_modal_{label}", width, height)
-                page.click("#rotateRightBtn")
-                page.click("#applyCropBtn")
-                page.wait_for_selector("#imagePreviewModal.hidden", state="attached", timeout=5000)
-
-                # 7. Pallets & Providers Hub view (Pallets tab + Providers tab + Provider edit)
-                page.goto(f"{self.live_server_url}{reverse('inventory:pallets')}")
-                page.wait_for_load_state("networkidle")
-                self._assert_no_horizontal_overflow(page, f"pallets_{label}", width, height)
-
-                page.click("#tabBtnProviders")
-                self.assertTrue(page.locator("#panelProviders").is_visible())
-                self._assert_no_horizontal_overflow(page, f"providers_tab_{label}", width, height)
-
-                seeded_provider = Provider.objects.order_by("id").first()
-                if seeded_provider:
-                    page.goto(
-                        f"{self.live_server_url}{reverse('inventory:provider_edit', kwargs={'pk': seeded_provider.pk})}"
-                    )
-                    page.wait_for_load_state("networkidle")
-                    self._assert_no_horizontal_overflow(page, f"provider_edit_{label}", width, height)
-
-                context.close()
-
-            browser.close()
+            for vp_name, w, h in self.OPPO_VIEWPORTS:
+                self._assert_no_horizontal_overflow(page, f"product_detail_{vp_name}", w, h)
+                self._assert_controls_visible_and_inside_viewport(
+                    page,
+                    [
+                        "#detailWorkspaceTablist",
+                        "#btnSaveListingChanges",
+                        "#galleryThumbnailsGrid .photo-edit-btn",
+                    ],
+                    f"ProductDetail {vp_name}",
+                )

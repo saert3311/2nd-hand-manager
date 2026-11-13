@@ -1,7 +1,6 @@
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -18,13 +17,13 @@ from inventory.models import (
     ProviderType,
     SaleChannelType,
 )
-from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
 from inventory.services.search_service import (
     build_search_query,
     fold_search_text,
     sqlite_unaccent_like,
     tokenize_search_query,
 )
+from tests.helpers import create_role_users
 
 User = get_user_model()
 
@@ -68,17 +67,13 @@ class SearchServiceUnitTests(TestCase):
 
 
 class ProductSearchIntegrationTests(TestCase):
-    def setUp(self):
-        self.client = Client()
-        self.manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
-        self.asst_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
+    @classmethod
+    def setUpTestData(cls):
+        cls.manager, cls.assistant = create_role_users(prefix="search")
+        cls.manager.is_staff = True
+        cls.manager.save(update_fields=["is_staff"])
 
-        self.manager = User.objects.create_user(
-            username="search_manager", password="password123", is_staff=True
-        )
-        self.manager.groups.add(self.manager_group)
-
-        self.cat_tech, _ = Category.objects.get_or_create(
+        cls.cat_tech, _ = Category.objects.get_or_create(
             slug="tecnologia-y-electronica",
             defaults={
                 "name": "Tecnología y electrónica",
@@ -86,7 +81,7 @@ class ProductSearchIntegrationTests(TestCase):
                 "is_active": True,
             },
         )
-        self.cat_kids, _ = Category.objects.get_or_create(
+        cls.cat_kids, _ = Category.objects.get_or_create(
             slug="ninos-y-bebes",
             defaults={
                 "name": "Niños y bebés",
@@ -95,77 +90,77 @@ class ProductSearchIntegrationTests(TestCase):
             },
         )
 
-        self.provider = Provider.objects.create(
+        cls.provider = Provider.objects.create(
             name="LiquiStock Camiones Valencia",
             provider_type=ProviderType.WHOLESALER,
         )
-        self.pallet = Pallet.objects.create(
+        cls.pallet = Pallet.objects.create(
             number=77,
-            provider=self.provider,
+            provider=cls.provider,
             notes="Lote especial herramientas eléctricas bricolaje",
         )
-        self.wallapop, _ = MarketplaceSite.objects.get_or_create(
+        cls.wallapop, _ = MarketplaceSite.objects.get_or_create(
             slug="wallapop",
             defaults={"name": "Wallapop", "base_url": "https://es.wallapop.com", "is_active": True},
         )
 
-        self.p_camera = Product.objects.create(
+        cls.p_camera = Product.objects.create(
             ai_title="CÁMARA Réflex Canon EOS 2000D",
             ai_description="Cámara fotográfica con batería original y cargador.",
             raw_note="Número de serie SN-998877 impecable",
             sale_price=Decimal("240.00"),
-            category=self.cat_tech,
+            category=cls.cat_tech,
             is_public=True,
         )
-        self.p_drill = Product.objects.create(
+        cls.p_drill = Product.objects.create(
             ai_title="Taladro percutor profesional Bosch 18V",
             ai_description="Incluye maletín y dos baterías de litio.",
             raw_note="Revisado en taller",
             sale_price=Decimal("45.00"),
-            pallet=self.pallet,
-            category=self.cat_tech,
+            pallet=cls.pallet,
+            category=cls.cat_tech,
             is_public=True,
         )
-        self.p_kids = Product.objects.create(
+        cls.p_kids = Product.objects.create(
             ai_title="Carrito de paseo plegable para niño",
             ai_description="Silla ligera en muy buen estado.",
             raw_note="Capota azul marino",
             sale_price=Decimal("18.00"),
-            category=self.cat_kids,
+            category=cls.cat_kids,
             is_public=True,
         )
 
-        # Attach multiple clarifications to p_drill to test 1-to-N Exists subquery and AND logic
         ProductClarification.objects.create(
-            product=self.p_drill,
+            product=cls.p_drill,
             category=ClarificationCategory.MEASUREMENTS,
             question="¿Qué voltaje y amperaje tiene?",
             answer="Batería de 4.0Ah comprobada",
-            asked_by=self.manager,
-            answered_by=self.manager,
+            asked_by=cls.manager,
+            answered_by=cls.manager,
             status=ClarificationStatus.RESOLVED,
         )
         ProductClarification.objects.create(
-            product=self.p_drill,
+            product=cls.p_drill,
             category=ClarificationCategory.TAG_COMPOSITION,
             question="¿Referencia exacta del modelo?",
             answer="Modelo GSB-18V-21",
-            asked_by=self.manager,
-            answered_by=self.manager,
+            asked_by=cls.manager,
+            answered_by=cls.manager,
             status=ClarificationStatus.RESOLVED,
         )
 
-        # Attach marketplace link to p_camera
         ProductListingLink.objects.create(
-            product=self.p_camera,
-            site=self.wallapop,
+            product=cls.p_camera,
+            site=cls.wallapop,
             url="https://es.wallapop.com/item/camara-canon-eos-991122",
             is_active=True,
         )
 
-        self.dashboard_url = reverse("inventory:dashboard")
-        self.storefront_url = reverse("storefront:catalog")
-        self.client.login(username="search_manager", password="password123")
+        cls.dashboard_url = reverse("inventory:dashboard")
+        cls.storefront_url = reverse("storefront:catalog")
+
+    def setUp(self):
+        self.client.force_login(self.manager)
 
     def test_spanish_accents_and_uppercase_lowercase_variants(self):
         for query in ["camara", "cámara", "CÁMARA", "CAMARA", "reflex", "RÉFLEX", "bateria", "BATERÍA"]:
@@ -309,12 +304,10 @@ class ProductSearchIntegrationTests(TestCase):
         self.assertEqual(list(Product.objects.filter(build_search_query("887766"))), [])
 
     def test_assistant_cross_tab_recovery_excludes_erased_tab(self):
-        assistant = User.objects.create_user(username="search_asst", password="password123")
-        assistant.groups.add(self.asst_group)
         self.p_drill.soft_delete(user=self.manager)
 
         asst_client = Client()
-        asst_client.login(username="search_asst", password="password123")
+        asst_client.force_login(self.assistant)
         resp = asst_client.get(self.dashboard_url, {"status": "all", "q": "taladro"})
         self.assertEqual(resp.status_code, 200)
         other_statuses = [t["status"] for t in resp.context["search_other_tabs"]]

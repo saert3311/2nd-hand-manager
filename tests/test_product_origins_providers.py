@@ -14,7 +14,6 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import translation
 from PIL import Image
-from playwright.sync_api import sync_playwright
 
 from inventory.forms import ProductIntakeForm
 from inventory.models import (
@@ -30,6 +29,7 @@ from inventory.services.origin_service import (
     get_providers_with_roi_stats,
     parse_origin_token,
 )
+from tests.helpers import abort_nonessential_fonts, create_user_with_group, start_shared_browser
 
 User = get_user_model()
 
@@ -648,11 +648,13 @@ class ProvidersHubAndDashboardFilterTests(TestCase):
 class OriginInteractiveBrowserTests(StaticLiveServerTestCase):
     """Browser TDD tests for Origin Provider locking on /products/<pk>/ and shared delete modal on /pallets/."""
 
-    def setUp(self):
-        managers_group, _created = Group.objects.get_or_create(name="managers")
-        self.manager = User.objects.create_user(username="mgr_browser_origin", password="pw")
-        self.manager.groups.add(managers_group)
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._browser = start_shared_browser(cls)
 
+    def setUp(self):
+        self.manager = create_user_with_group("mgr_browser_origin", password="pw", group_name="managers")
         self.supplier = Provider.objects.create(name="BrowserSup", provider_type=ProviderType.WHOLESALER)
         self.pallet = Pallet.objects.create(
             number=77,
@@ -667,18 +669,24 @@ class OriginInteractiveBrowserTests(StaticLiveServerTestCase):
             pallet=self.pallet,
         )
 
-    def test_product_detail_locks_provider_while_pallet_selected_and_unlocks_on_clear(self):
-        with sync_playwright() as p:
-            browser = p.chromium.launch(channel="chrome", headless=True)
-            page = browser.new_page()
-            page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
-            page.fill("#id_username", "mgr_browser_origin")
-            page.fill("#id_password", "pw")
-            with page.expect_navigation():
-                page.click("#loginSubmitBtn")
+    def _new_logged_in_page(self):
+        context = self._browser.new_context()
+        page = context.new_page()
+        abort_nonessential_fonts(page)
+        page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
+        page.fill("#id_username", "mgr_browser_origin")
+        page.fill("#id_password", "pw")
+        with page.expect_navigation():
+            page.click("#loginSubmitBtn")
+        return context, page
 
-            page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.pallet_product.pk})}")
-            page.wait_for_load_state("networkidle")
+    def test_product_detail_locks_provider_while_pallet_selected_and_unlocks_on_clear(self):
+        context, page = self._new_logged_in_page()
+        try:
+            page.goto(
+                f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.pallet_product.pk})}"
+            )
+            page.wait_for_selector("#id_provider")
 
             provider_select = page.locator("#id_provider")
             pallet_select = page.locator("#id_pallet")
@@ -692,21 +700,14 @@ class OriginInteractiveBrowserTests(StaticLiveServerTestCase):
             pallet_select.select_option(str(self.pallet.pk))
             self.assertTrue(provider_select.is_disabled())
             self.assertEqual(provider_select.input_value(), str(self.supplier.pk))
-
-            browser.close()
+        finally:
+            context.close()
 
     def test_pallets_hub_shared_delete_modal_works_for_pallet_and_provider(self):
-        with sync_playwright() as p:
-            browser = p.chromium.launch(channel="chrome", headless=True)
-            page = browser.new_page()
-            page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
-            page.fill("#id_username", "mgr_browser_origin")
-            page.fill("#id_password", "pw")
-            with page.expect_navigation():
-                page.click("#loginSubmitBtn")
-
+        context, page = self._new_logged_in_page()
+        try:
             page.goto(f"{self.live_server_url}{reverse('inventory:pallets')}")
-            page.wait_for_load_state("networkidle")
+            page.wait_for_selector(f"#pallet-card-{self.pallet.pk}")
 
             page.click(f"#pallet-card-{self.pallet.pk} button")
             modal = page.locator("#deleteOriginModal")
@@ -721,5 +722,5 @@ class OriginInteractiveBrowserTests(StaticLiveServerTestCase):
             self.assertIn("BrowserSup", page.locator("#deleteOriginModalWarning").inner_text())
             page.click("#deleteOriginModal button:has-text('Cancel')")
             self.assertFalse(modal.is_visible())
-
-            browser.close()
+        finally:
+            context.close()
