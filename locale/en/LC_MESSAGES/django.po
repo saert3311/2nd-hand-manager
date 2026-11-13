@@ -3505,3 +3505,215 @@ msgstr "Evaluated locally via Stage 1 rules."
 
 msgid "Verify Compliance (AI)"
 msgstr "Verify Compliance (AI)"
+
+# Phase 51: Product Origins & Providers
+msgid "Acq. Cost (€)"
+msgstr "Acq. Cost (€)"
+
+msgid "Acquisition Cost (€)"
+msgstr "Acquisition Cost (€)"
+
+msgid "Active Stock Value"
+msgstr "Active Stock Value"
+
+msgid "Active in intake & staging selectors"
+msgstr "Active in intake & staging selectors"
+
+msgid "All Providers"
+msgstr "All Providers"
+
+msgid "Are you sure you want to delete provider"
+msgstr "Are you sure you want to delete provider"
+
+msgid "Automatically inherited from the selected pallet."
+msgstr "Automatically inherited from the selected pallet."
+
+msgid "Back to Providers"
+msgstr "Back to Providers"
+
+msgid "Changing the pallet provider automatically updates all products assigned to this pallet."
+msgstr "Changing the pallet provider automatically updates all products assigned to this pallet."
+
+msgid "Classification of acquisition channel"
+msgstr "Classification of acquisition channel"
+
+msgid "Commercial origin provider (auto-synced from pallet when assigned)"
+msgstr "Commercial origin provider (auto-synced from pallet when assigned)"
+
+msgid "Commercial supplier or origin that delivered this pallet"
+msgstr "Commercial supplier or origin that delivered this pallet"
+
+msgid "Commercial terms, minimum order, or supplier notes (optional)"
+msgstr "Commercial terms, minimum order, or supplier notes (optional)"
+
+msgid "Contact Info"
+msgstr "Contact Info"
+
+msgid "Create Provider"
+msgstr "Create Provider"
+
+msgid "Create and track pallets, acquisition costs, estimated values, suppliers, and ROI."
+msgstr "Create and track pallets, acquisition costs, estimated values, suppliers, and ROI."
+
+msgid "Create your first supplier or acquisition origin above to link pallets and direct purchases."
+msgstr "Create your first supplier or acquisition origin above to link pallets and direct purchases."
+
+msgid "Created By"
+msgstr "Created By"
+
+msgid "Delete Provider"
+msgstr "Delete Provider"
+
+msgid "Edit"
+msgstr "Edit"
+
+msgid "Edit Provider"
+msgstr "Edit Provider"
+
+msgid "Filter by provider"
+msgstr "Filter by provider"
+
+msgid "In-Store Walk-In / Individual"
+msgstr "In-Store Walk-In / Individual"
+
+msgid "Individual purchase cost for non-pallet items (Manager only)"
+msgstr "Individual purchase cost for non-pallet items (Manager only)"
+
+msgid "Invalid origin provider selection."
+msgstr "Invalid origin provider selection."
+
+msgid "Invalid pallet selection."
+msgstr "Invalid pallet selection."
+
+msgid "Invalid product origin selection."
+msgstr "Invalid product origin selection."
+
+msgid "Items"
+msgstr "Items"
+
+msgid "Manager only"
+msgstr "Manager only"
+
+msgid "Net Margin / ROI"
+msgstr "Net Margin / ROI"
+
+msgid "No providers recorded yet"
+msgstr "No providers recorded yet"
+
+msgid "Note: Pallet items track cost at the Pallet level; individual cost is only counted for non-pallet items."
+msgstr "Note: Pallet items track cost at the Pallet level; individual cost is only counted for non-pallet items."
+
+msgid "Optional commercial terms, invoice, or supplier notes"
+msgstr "Optional commercial terms, invoice, or supplier notes"
+
+msgid "Optional phone, email, or warehouse location (Manager only)"
+msgstr "Optional phone, email, or warehouse location (Manager only)"
+
+msgid "Origin Provider"
+msgstr "Origin Provider"
+
+msgid "Origin Type"
+msgstr "Origin Type"
+
+msgid "Origins Workspace"
+msgstr "Origins Workspace"
+
+msgid "Other Origin"
+msgstr "Other Origin"
+
+msgid "Pallets & Providers - 2ndHand Staging"
+msgstr "Pallets & Providers - 2ndHand Staging"
+
+msgid "Phone, email, or warehouse location (optional)"
+msgstr "Phone, email, or warehouse location (optional)"
+
+msgid "Pre-selected from your last item. Choose an active pallet or a direct origin (walk-in / supplier)."
+msgstr "Pre-selected from your last item. Choose an active pallet or a direct origin (walk-in / supplier)."
+
+msgid "Product Origin"
+msgstr "Product Origin"
+
+msgid "Provider"
+msgstr "Provider"
+
+msgid "Provider '%(name)s' created successfully."
+msgstr "Provider '%(name)s' created successfully."
+
+msgid "Provider '%(name)s' deleted."
+msgstr "Provider '%(name)s' deleted."
+
+msgid "Provider '%(name)s' updated successfully."
+msgstr "Provider '%(name)s' updated successfully."
+
+msgid "Provider Name"
+msgstr "Provider Name"
+
+msgid "Providers"
+msgstr "Providers"
+
+msgid "Providers & ROI Performance"
+msgstr "Providers & ROI Performance"
+
+msgid "Register New Provider"
+msgstr "Register New Provider"
+
+msgid "Save Changes"
+msgstr "Save Changes"
+
+msgid "Selected origin provider is unavailable."
+msgstr "Selected origin provider is unavailable."
+
+msgid "Selected pallet no longer exists."
+msgstr "Selected pallet no longer exists."
+
+msgid "Sold Revenue"
+msgstr "Sold Revenue"
+
+msgid "Supplier, liquidator, or acquisition origin name"
+msgstr "Supplier, liquidator, or acquisition origin name"
+
+msgid "Total Cost"
+msgstr "Total Cost"
+
+msgid "Track wholesale liquidators, direct lots, and in-store walk-in buyout channels with unified ROI."
+msgstr "Track wholesale liquidators, direct lots, and in-store walk-in buyout channels with unified ROI."
+
+msgid "URL-safe unique identifier (auto-generated if left blank)"
+msgstr "URL-safe unique identifier (auto-generated if left blank)"
+
+msgid "Used for Provider ROI on walk-in buyouts and standalone items."
+msgstr "Used for Provider ROI on walk-in buyouts and standalone items."
+
+msgid "View Products"
+msgstr "View Products"
+
+msgid "Whether this origin appears in mobile intake and staging selectors"
+msgstr "Whether this origin appears in mobile intake & staging selectors"
+
+msgid "Wholesale / Liquidation Supplier"
+msgstr "Wholesale / Liquidation Supplier"
+
+msgid "e.g. LiquiStock Valencia, Amazon Returns ES"
+msgstr "e.g. LiquiStock Valencia, Amazon Returns ES"
+
+msgid "items"
+msgstr "items"
+
+msgid "pallets"
+msgstr "pallets"
+
+msgid "products will remain intact with no provider assigned."
+msgstr "products will remain intact with no provider assigned."
+
+msgid "— No Origin / Unspecified —"
+msgstr "— No Origin / Unspecified —"
+
+msgid "— No Provider —"
+msgstr "— No Provider —"
+
+msgid "🏷️ Direct Origins (No Pallet)"
+msgstr "🏷️ Direct Origins (No Pallet)"
+
+msgid "📦 Active Pallets"
+msgstr "📦 Active Pallets"
+

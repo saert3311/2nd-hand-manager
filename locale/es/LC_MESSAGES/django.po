@@ -3940,3 +3940,215 @@ msgstr "Sincronizado con las fotos y notas adjuntas."
 msgid "New assistant replies"
 msgstr "Nuevas respuestas del asistente"
 
+# Phase 51: Product Origins & Providers
+msgid "Acq. Cost (€)"
+msgstr "Coste Adq. (€)"
+
+msgid "Acquisition Cost (€)"
+msgstr "Coste de Adquisición (€)"
+
+msgid "Active Stock Value"
+msgstr "Valor Stock Activo"
+
+msgid "Active in intake & staging selectors"
+msgstr "Activo en los selectores de captura y catalogación"
+
+msgid "All Providers"
+msgstr "Todos los proveedores"
+
+msgid "Are you sure you want to delete provider"
+msgstr "¿Estás seguro de que deseas eliminar el proveedor"
+
+msgid "Automatically inherited from the selected pallet."
+msgstr "Heredado automáticamente del palet seleccionado."
+
+msgid "Back to Providers"
+msgstr "Volver a Proveedores"
+
+msgid "Changing the pallet provider automatically updates all products assigned to this pallet."
+msgstr "Cambiar el proveedor del palet actualiza automáticamente todos los productos asignados a este palet."
+
+msgid "Classification of acquisition channel"
+msgstr "Clasificación del canal de adquisición"
+
+msgid "Commercial origin provider (auto-synced from pallet when assigned)"
+msgstr "Proveedor de origen comercial (sincronizado automáticamente desde el palet cuando está asignado)"
+
+msgid "Commercial supplier or origin that delivered this pallet"
+msgstr "Proveedor comercial u origen que entregó este palet"
+
+msgid "Commercial terms, minimum order, or supplier notes (optional)"
+msgstr "Condiciones comerciales, pedido mínimo o notas del proveedor (opcional)"
+
+msgid "Contact Info"
+msgstr "Datos de contacto"
+
+msgid "Create Provider"
+msgstr "Crear Proveedor"
+
+msgid "Create and track pallets, acquisition costs, estimated values, suppliers, and ROI."
+msgstr "Crea y haz seguimiento de palets, costes de adquisición, valores estimados, proveedores y ROI."
+
+msgid "Create your first supplier or acquisition origin above to link pallets and direct purchases."
+msgstr "Crea tu primer proveedor u origen de adquisición arriba para vincular palets y compras directas."
+
+msgid "Created By"
+msgstr "Creado por"
+
+msgid "Delete Provider"
+msgstr "Eliminar Proveedor"
+
+msgid "Edit"
+msgstr "Editar"
+
+msgid "Edit Provider"
+msgstr "Editar Proveedor"
+
+msgid "Filter by provider"
+msgstr "Filtrar por proveedor"
+
+msgid "In-Store Walk-In / Individual"
+msgstr "Compra en Tienda / Particular"
+
+msgid "Individual purchase cost for non-pallet items (Manager only)"
+msgstr "Coste de compra individual para artículos sin palet (solo gerente)"
+
+msgid "Invalid origin provider selection."
+msgstr "Selección de proveedor de origen no válida."
+
+msgid "Invalid pallet selection."
+msgstr "Selección de palet no válida."
+
+msgid "Invalid product origin selection."
+msgstr "Selección de origen de producto no válida."
+
+msgid "Items"
+msgstr "Artículos"
+
+msgid "Manager only"
+msgstr "Solo gerente"
+
+msgid "Net Margin / ROI"
+msgstr "Margen Neto / ROI"
+
+msgid "No providers recorded yet"
+msgstr "Aún no hay proveedores registrados"
+
+msgid "Note: Pallet items track cost at the Pallet level; individual cost is only counted for non-pallet items."
+msgstr "Nota: Los artículos de palet registran el coste a nivel de Palet; el coste individual solo se suma en artículos sin palet."
+
+msgid "Optional commercial terms, invoice, or supplier notes"
+msgstr "Condiciones comerciales, factura o notas del proveedor opcionales"
+
+msgid "Optional phone, email, or warehouse location (Manager only)"
+msgstr "Teléfono, correo o ubicación de almacén opcional (solo gerente)"
+
+msgid "Origin Provider"
+msgstr "Proveedor de origen"
+
+msgid "Origin Type"
+msgstr "Tipo de origen"
+
+msgid "Origins Workspace"
+msgstr "Espacio de Orígenes"
+
+msgid "Other Origin"
+msgstr "Otro origen"
+
+msgid "Pallets & Providers - 2ndHand Staging"
+msgstr "Palets y Proveedores - Catalogación 2ndHand"
+
+msgid "Phone, email, or warehouse location (optional)"
+msgstr "Teléfono, correo o ubicación de almacén (opcional)"
+
+msgid "Pre-selected from your last item. Choose an active pallet or a direct origin (walk-in / supplier)."
+msgstr "Preseleccionado de tu último artículo. Elige un palet activo o un origen directo (compra en tienda / proveedor)."
+
+msgid "Product Origin"
+msgstr "Origen del producto"
+
+msgid "Provider"
+msgstr "Proveedor"
+
+msgid "Provider '%(name)s' created successfully."
+msgstr "Proveedor '%(name)s' creado correctamente."
+
+msgid "Provider '%(name)s' deleted."
+msgstr "Proveedor '%(name)s' eliminado."
+
+msgid "Provider '%(name)s' updated successfully."
+msgstr "Proveedor '%(name)s' actualizado correctamente."
+
+msgid "Provider Name"
+msgstr "Nombre del proveedor"
+
+msgid "Providers"
+msgstr "Proveedores"
+
+msgid "Providers & ROI Performance"
+msgstr "Proveedores y Rendimiento ROI"
+
+msgid "Register New Provider"
+msgstr "Registrar Nuevo Proveedor"
+
+msgid "Save Changes"
+msgstr "Guardar Cambios"
+
+msgid "Selected origin provider is unavailable."
+msgstr "El proveedor de origen seleccionado no está disponible."
+
+msgid "Selected pallet no longer exists."
+msgstr "El palet seleccionado ya no existe."
+
+msgid "Sold Revenue"
+msgstr "Ingresos Vendidos"
+
+msgid "Supplier, liquidator, or acquisition origin name"
+msgstr "Nombre del proveedor, liquidador u origen de adquisición"
+
+msgid "Total Cost"
+msgstr "Coste Total"
+
+msgid "Track wholesale liquidators, direct lots, and in-store walk-in buyout channels with unified ROI."
+msgstr "Controla liquidadores mayoristas, lotes directos y compras en tienda a particulares con ROI unificado."
+
+msgid "URL-safe unique identifier (auto-generated if left blank)"
+msgstr "Identificador único para URL (se genera automáticamente si se deja vacío)"
+
+msgid "Used for Provider ROI on walk-in buyouts and standalone items."
+msgstr "Usado para el ROI por proveedor en compras en tienda y artículos sueltos."
+
+msgid "View Products"
+msgstr "Ver Productos"
+
+msgid "Whether this origin appears in mobile intake and staging selectors"
+msgstr "Si este origen aparece en los selectores de captura móvil y catalogación"
+
+msgid "Wholesale / Liquidation Supplier"
+msgstr "Proveedor Mayorista / Liquidación"
+
+msgid "e.g. LiquiStock Valencia, Amazon Returns ES"
+msgstr "ej. LiquiStock Valencia, Amazon Devoluciones ES"
+
+msgid "items"
+msgstr "artículos"
+
+msgid "pallets"
+msgstr "palets"
+
+msgid "products will remain intact with no provider assigned."
+msgstr "productos permanecerán intactos sin proveedor asignado."
+
+msgid "— No Origin / Unspecified —"
+msgstr "— Sin Origen / Sin especificar —"
+
+msgid "— No Provider —"
+msgstr "— Sin Proveedor —"
+
+msgid "🏷️ Direct Origins (No Pallet)"
+msgstr "🏷️ Orígenes Directos (Sin Palet)"
+
+msgid "📦 Active Pallets"
+msgstr "📦 Palets Activos"
+
+

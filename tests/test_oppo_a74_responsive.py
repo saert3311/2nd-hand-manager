@@ -19,6 +19,7 @@ from inventory.models import (
     ProductImage,
     ProductListingLink,
     ProductStatus,
+    Provider,
     StorefrontConfiguration,
 )
 from inventory.services.compliance_service import ensure_default_policy_clauses
@@ -400,10 +401,22 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 page.click("#applyCropBtn")
                 page.wait_for_selector("#imagePreviewModal.hidden", state="attached", timeout=5000)
 
-                # 7. Pallets Management view
+                # 7. Pallets & Providers Hub view (Pallets tab + Providers tab + Provider edit)
                 page.goto(f"{self.live_server_url}{reverse('inventory:pallets')}")
                 page.wait_for_load_state("networkidle")
                 self._assert_no_horizontal_overflow(page, f"pallets_{label}", width, height)
+
+                page.click("#tabBtnProviders")
+                self.assertTrue(page.locator("#panelProviders").is_visible())
+                self._assert_no_horizontal_overflow(page, f"providers_tab_{label}", width, height)
+
+                seeded_provider = Provider.objects.order_by("id").first()
+                if seeded_provider:
+                    page.goto(
+                        f"{self.live_server_url}{reverse('inventory:provider_edit', kwargs={'pk': seeded_provider.pk})}"
+                    )
+                    page.wait_for_load_state("networkidle")
+                    self._assert_no_horizontal_overflow(page, f"provider_edit_{label}", width, height)
 
                 context.close()
 

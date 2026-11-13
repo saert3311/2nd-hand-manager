@@ -299,11 +299,11 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             page.goto(f"{self.live_server_url}{reverse('inventory:intake')}")
             page.wait_for_selector("#dropZone")
 
-            # Verify Pallet #1 is pre-selected in sticky selector
-            pallet_select = page.locator("#id_pallet")
+            # Verify Pallet #1 is pre-selected in sticky unified origin selector
+            pallet_select = page.locator("#id_origin")
             self.assertTrue(pallet_select.is_visible())
             selected_pallet_val = pallet_select.input_value()
-            self.assertTrue(len(selected_pallet_val) > 0)
+            self.assertTrue(selected_pallet_val.startswith("pallet:"))
             print(f"Verified Pallet #1 automatically preselected on intake: id={selected_pallet_val}")
 
             # Upload product photo
