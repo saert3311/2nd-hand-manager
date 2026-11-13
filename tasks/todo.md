@@ -4005,4 +4005,49 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 - [x] Single sticky Origin dropdown active on `/intake/` with OPPO A74 (`360×800` & `320×711`) zero-overflow verification.
 - [x] All automated tests, `manage.py check`, `compile_locales`, and `ruff check .` pass cleanly.
 
+---
+
+## Phase 52: Unified Forgiving & Multi-Field Product Search
+
+### Task 189: Scoped SQLite Unicode Case/Accent Folding & Multi-Token Scoped Search Engine (`inventory/apps.py`, `inventory/services/search_service.py`)
+**Description:** Implement `fold_search_text(text)` (with ASCII fast path), `sqlite_unaccent_like(pattern, value, escape=None)`, and the custom `UnaccentIContains` (`__unaccent_icontains`) lookup registered on `CharField` and `TextField` in `inventory/services/search_service.py`, registering 2-arg and 3-arg `unaccent_like` functions on SQLite connections in `inventory/apps.py` without altering global `__iexact` / `__icontains` semantics. Upgrade `build_search_query(query_str, scope="internal")` to support multi-word `AND` tokenization (preserving quoted phrases verbatim while normalizing unquoted compact and spaced shorthands `#42` / `# 42` / `Ref: 42` / `Ref. #0042`, `pale:5` / `Pallet 5` / `Palé 5`, `<20 €`, `> 50`, `15..50 €`, `15 - 50 €`), comprehensive internal field matching (`ai_title`, `raw_note`, `ai_description`, `category__name`, `category__name_en`, `provider__name`, `pallet__number`/`name`/`notes`, `sold_channel_notes`, `sold_marketplace__name`, `Exists(ProductClarification)`, `Exists(ProductListingLink(is_active=True))`, `pk`, and dates), and strict `scope="public"` field isolation (`ai_title`, `ai_description`, `category__name`, `category__name_en`, `pk`).
+**Acceptance criteria:**
+- [x] `__unaccent_icontains` matches accented and unaccented text (`camara` ↔ `cámara`) and Unicode case (`CÁMARA` ↔ `cámara`, `NIÑO` ↔ `niño`), while standard ORM `__iexact` / `__icontains` lookups stay strict outside search.
+- [x] Multi-word queries (`"taladro bosch"`) match across fields in any word order via `AND` across tokens, while quoted phrases (`"taladro percutor"`) require contiguous substrings.
+- [x] `scope="internal"` searches all staging, origin, clarification, active marketplace link, sale note, ID, and date fields without duplicating rows (`Exists` subqueries for 1-to-N relations).
+- [x] `scope="public"` searches only public fields and never leaks internal notes, providers, pallets, or clarifications.
+- [x] Smart shorthands (both compact and spaced, with optional `€`) filter accurately.
+**Verification:**
+- [x] `.venv\Scripts\python.exe manage.py test tests.test_pagination_search`
+
+---
+
+### Task 190: Search-Scoped Dashboard Tab Counters, Cross-Tab Recovery UI & Storefront Integration (`inventory/views.py`, `storefront/views.py`, `inventory/templates/inventory/dashboard.html`)
+**Description:** Update `dashboard_view` in `inventory/views.py` to apply `build_search_query(search_query, scope="internal")` to both `products` (`.distinct()`) and `counts_qs` so all dashboard status tab counters dynamically reflect the active search query. Compute `search_other_tabs` when the active status tab has 0 matches for `search_query` while other tabs contain matches, and render clickable cross-tab recovery pills in the `dashboard.html` empty state. Update `catalog_view` in `storefront/views.py` to use `build_search_query(search_query, scope="public")`.
+**Acceptance criteria:**
+- [x] Searching on `/dashboard/?q=...` dynamically updates `total_count`, `ready_count`, `published_count`, `price_pending_count`, `awaiting_info_count`, `sold_count`, `blocked_count`, `erased_count`, and `flagged_compliance_count`.
+- [x] When a search inside a specific tab (e.g., `?status=ready&q=...`) yields 0 results on that tab but matches exist in other tabs (e.g., `Sold` or `Trash`), `dashboard.html` renders clickable cross-tab recovery links.
+- [x] `/tienda/?q=...` uses `build_search_query(search_query, scope="public")` for multi-word, case/accent-insensitive search.
+**Verification:**
+- [x] `.venv\Scripts\python.exe manage.py test tests.test_dashboard tests.test_storefront`
+
+---
+
+### Task 191: Bilingual Localization, Comprehensive Search Test Suite & Changelog (`locale/`, `tests/test_product_search.py`, `CHANGELOG.md`)
+**Description:** Add Spanish and English translations for the cross-tab search recovery UI in `locale/es/LC_MESSAGES/django.po` and `locale/en/LC_MESSAGES/django.po` and compile via `python manage.py compile_locales`. Create `tests/test_product_search.py` covering Spanish accents and uppercase/lowercase Unicode folding, multi-word out-of-order search, internal field coverage (ID/Ref, Category, Pallet, Provider, Clarifications, Listing Links, Sale Notes, 4-digit ID vs. year), smart shorthands (`#ID`, `pale:N`, price ranges), search-scoped dashboard tab counts, cross-tab recovery links, and strict public storefront firewall non-leakage. Update `CHANGELOG.md`.
+**Acceptance criteria:**
+- [x] `python manage.py compile_locales` compiles cleanly with 0 untranslated strings.
+- [x] `tests/test_product_search.py` and the full test suite (`python manage.py test`) pass 100%.
+- [x] `ruff check .` and `python manage.py check` pass with 0 errors or warnings.
+
+---
+
+### Checkpoint 52: Unified Forgiving & Multi-Field Product Search Complete
+- [x] Case-insensitive and Spanish accent-insensitive multi-token search active on `/dashboard/` and `/tienda/`.
+- [x] Full attribute coverage (`#ID`/`Ref`, Category, Pallet, Provider, Clarifications, Sale Notes, Marketplace Links) and smart shorthands (`#ID`, `pale:N`, price ranges) active on `/dashboard/`.
+- [x] Dashboard status tab counters scoped to active search query with cross-tab zero-results recovery links.
+- [x] Public Storefront search strictly isolated from internal-only fields.
+- [x] 100% of automated tests, `manage.py check`, `compile_locales`, and `ruff check .` pass cleanly.
+
+
 

@@ -24,10 +24,10 @@ class SearchServiceTests(TestCase):
 
     def test_text_query_structure(self):
         q = build_search_query("vintage denim")
-        # Should contain ai_title, raw_note, ai_description lookups
-        self.assertTrue(any("ai_title__icontains" in str(child) for child in q.children))
-        self.assertTrue(any("raw_note__icontains" in str(child) for child in q.children))
-        self.assertTrue(any("ai_description__icontains" in str(child) for child in q.children))
+        # Should contain ai_title, raw_note, ai_description unaccent_icontains lookups
+        self.assertTrue(any("ai_title__unaccent_icontains" in str(child) for child in q.children))
+        self.assertTrue(any("raw_note__unaccent_icontains" in str(child) for child in q.children))
+        self.assertTrue(any("ai_description__unaccent_icontains" in str(child) for child in q.children))
 
     def test_iso_date_query_structure(self):
         q = build_search_query("2026-10-10")

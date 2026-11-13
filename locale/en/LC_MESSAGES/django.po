@@ -3717,3 +3717,7 @@ msgstr "🏷️ Direct Origins (No Pallet)"
 msgid "📦 Active Pallets"
 msgstr "📦 Active Pallets"
 
+msgid "Matches found in other status tabs:"
+msgstr "Matches found in other status tabs:"
+
+

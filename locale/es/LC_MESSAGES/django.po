@@ -4151,4 +4151,8 @@ msgstr "🏷️ Orígenes Directos (Sin Palet)"
 msgid "📦 Active Pallets"
 msgstr "📦 Palets Activos"
 
+msgid "Matches found in other status tabs:"
+msgstr "Coincidencias encontradas en otras pestañas de estado:"
+
+
 

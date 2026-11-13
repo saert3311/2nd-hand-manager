@@ -355,21 +355,24 @@ def dashboard_view(request):
         elif status_filter == "draft":
             products = products.filter(status=ProductStatus.DRAFT)
 
+    search_q = build_search_query(search_query, scope="internal") if search_query else Q()
     if search_query:
-        products = products.filter(build_search_query(search_query))
+        products = products.filter(search_q).distinct()
 
     if compliance_filter == "flagged":
         products = products.filter(
             compliance_status__in=[ComplianceVerdict.MANUAL_REVIEW, ComplianceVerdict.REJECTED]
         )
 
-    # Calculate status counts (scoped to selected platform, pallet, and provider filters)
+    # Calculate status counts (scoped to selected platform, pallet, provider, and search filters)
     counts_qs = _apply_dashboard_scope_filters(
         Product.objects.all(),
         platform_filter,
         pallet_filter,
         provider_filter,
     )
+    if search_query:
+        counts_qs = counts_qs.filter(search_q)
 
     counts = counts_qs.aggregate(
         total_count=Count("id", filter=Q(is_deleted=False), distinct=True),
@@ -433,6 +436,30 @@ def dashboard_view(request):
     query_string = extra_params.urlencode()
 
     trash_metrics = get_trash_metrics() if status_filter == "erased" else None
+    can_manage = is_manager(request.user)
+
+    search_other_tabs = []
+    if search_query and paginator.count == 0:
+        tab_candidates = [
+            ("all", _("All"), "📋", counts["total_count"] or 0, True),
+            ("ready", _("Ready to Publish"), "✨", counts["ready_count"] or 0, True),
+            ("published", _("Published"), "🚀", counts["published_count"] or 0, True),
+            ("price_pending", _("Price Pending"), "🏷️", counts["price_pending_count"] or 0, True),
+            ("awaiting_info", _("Doubts"), "❓", counts["awaiting_info_count"] or 0, True),
+            ("sold", _("Sold"), "💰", counts["sold_count"] or 0, True),
+            ("blocked", _("Blocked"), "⛔", counts["blocked_count"] or 0, True),
+            ("erased", _("Trash"), "🗑️", counts["erased_count"] or 0, can_manage),
+        ]
+        for tab_slug, tab_label, tab_icon, tab_count, is_allowed in tab_candidates:
+            if is_allowed and tab_slug != status_filter and tab_count > 0:
+                search_other_tabs.append(
+                    {
+                        "status": tab_slug,
+                        "label": tab_label,
+                        "icon": tab_icon,
+                        "count": tab_count,
+                    }
+                )
 
     context = {
         "page_obj": page_obj,
@@ -442,6 +469,7 @@ def dashboard_view(request):
         "query_string": query_string,
         "status_filter": status_filter,
         "search_query": search_query,
+        "search_other_tabs": search_other_tabs,
         "platform_filter": platform_filter,
         "available_platforms": available_platforms,
         "pallet_filter": pallet_filter,
@@ -465,10 +493,10 @@ def dashboard_view(request):
         "published_count": counts["published_count"] or 0,
         "out_of_sync_count": counts["out_of_sync_count"] or 0,
         "blocked_count": counts["blocked_count"] or 0,
-        "erased_count": counts["erased_count"] or 0,
+        "erased_count": (counts["erased_count"] or 0) if can_manage else 0,
         "flagged_compliance_count": counts["flagged_compliance_count"] or 0,
         "trash_metrics": trash_metrics,
-        "can_manage": is_manager(request.user),
+        "can_manage": can_manage,
     }
     return render(request, "inventory/dashboard.html", context)
 
