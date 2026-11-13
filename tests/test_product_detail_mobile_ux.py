@@ -167,26 +167,18 @@ class ProductDetailMobileUXTests(TestCase):
         self.assertIn('id="rotateLeftBtn"', html)
         self.assertIn('id="rotateRightBtn"', html)
 
-        # 2. 2-column thumbnails for existing and pending grids
-        self.assertIn('id="galleryThumbnailsGrid" class="grid grid-cols-2', html)
-        self.assertIn('id="detailPendingGrid" class="grid grid-cols-2', html)
+        # 2. Thumbnail containers & edit affordance
+        self.assertIn('id="galleryThumbnailsGrid"', html)
+        self.assertIn('id="detailPendingGrid"', html)
+        self.assertIn("photo-edit-btn", html)
 
-        # 3. Edit button on existing photo thumbnail
-        self.assertIn('class="photo-edit-btn absolute bottom-1 right-1', html)
-
-        # 4. Tabbed workspace and deprioritized audit disclosure (Phase 50)
+        # 3. Tabbed workspace and deprioritized audit disclosure (Phase 50)
         self.assertIn('id="detailWorkspaceTablist"', html)
         self.assertIn('id="intakeNotesCard"', html)
         self.assertIn('id="status-history-disclosure"', html)
         self.assertIn('id="status-history-section"', html)
         self.assertIn('id="storefrontTaxonomySection"', html)
 
-        # 5. Flex ordering: Gemini & listing copy on top on mobile
-        self.assertIn('flex flex-col lg:grid lg:grid-cols-12 gap-6', html)
-        self.assertIn('order-1 lg:order-2 lg:col-span-7', html)
-        self.assertIn('order-2 lg:order-1 lg:col-span-5', html)
-
-        # 6. Responsive top action button bar
-        self.assertIn('flex items-center gap-1.5 w-full sm:w-auto', html)
-        self.assertIn('class="sm:hidden"', html)
-        self.assertIn('class="hidden sm:inline"', html)
+        # 4. Primary staging listing panel and save control exist
+        self.assertIn('id="workspacePanelListing"', html)
+        self.assertIn('id="btnSaveListingChanges"', html)

@@ -1,36 +1,32 @@
-import io
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client, TestCase
+from django.test import TestCase
 from django.urls import reverse
-from PIL import Image
 
 from inventory.models import Product
+from tests.helpers import make_test_image_file
 
 User = get_user_model()
 
 
 class ProductIntakeViewTests(TestCase):
-    def setUp(self):
-        self.client = Client()
-        self.user = User.objects.create_user(username="assistant1", password="password123")
-        self.url = reverse("inventory:intake")
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(username="assistant1", password="password123")
+        cls.url = reverse("inventory:intake")
 
     def create_dummy_image(self, name="photo.jpg", format="JPEG"):
-        buf = io.BytesIO()
-        img = Image.new("RGB", (80, 80), color="red")
-        img.save(buf, format=format)
-        buf.seek(0)
-        return SimpleUploadedFile(name, buf.getvalue(), content_type=f"image/{format.lower()}")
+        return make_test_image_file(
+            name=name, size=(80, 80), color="red", image_format=format, content_type=f"image/{format.lower()}"
+        )
 
     def test_intake_requires_login(self):
         resp = self.client.get(self.url)
         self.assertRedirects(resp, f"{reverse('inventory:login')}?next={self.url}")
 
     def test_intake_get_authenticated(self):
-        self.client.login(username="assistant1", password="password123")
+        self.client.force_login(self.user)
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "New Product Intake")
@@ -45,14 +41,14 @@ class ProductIntakeViewTests(TestCase):
         self.assertContains(resp, 'id="id_sale_price"')
 
     def test_intake_post_without_images_fails(self):
-        self.client.login(username="assistant1", password="password123")
+        self.client.force_login(self.user)
         resp = self.client.post(self.url, {"raw_note": "A cool vintage watch"})
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Please attach at least one photo")
         self.assertEqual(Product.objects.count(), 0)
 
     def test_intake_post_with_valid_images_success(self):
-        self.client.login(username="assistant1", password="password123")
+        self.client.force_login(self.user)
         img1 = self.create_dummy_image("front.jpg")
         img2 = self.create_dummy_image("back.png", format="PNG")
 
@@ -75,7 +71,7 @@ class ProductIntakeViewTests(TestCase):
             self.assertTrue(prod_img.image.name.endswith(".webp"))
 
     def test_intake_post_exceeding_max_images_fails(self):
-        self.client.login(username="assistant1", password="password123")
+        self.client.force_login(self.user)
         images = [self.create_dummy_image(f"img_{i}.jpg") for i in range(11)]
 
         resp = self.client.post(
@@ -90,7 +86,7 @@ class ProductIntakeViewTests(TestCase):
         self.assertEqual(Product.objects.count(), 0)
 
     def test_intake_post_with_optional_sale_price_persists(self):
-        self.client.login(username="assistant1", password="password123")
+        self.client.force_login(self.user)
         img = self.create_dummy_image("item.jpg")
 
         resp = self.client.post(
@@ -108,7 +104,7 @@ class ProductIntakeViewTests(TestCase):
         self.assertEqual(product.raw_note, "Vintage Nike windbreaker")
 
     def test_intake_sale_price_displays_in_dashboard_and_product_detail(self):
-        self.client.login(username="assistant1", password="password123")
+        self.client.force_login(self.user)
         img = self.create_dummy_image("item.jpg")
 
         self.client.post(
@@ -145,7 +141,7 @@ class ProductIntakeViewTests(TestCase):
 
 
     def test_intake_post_with_blank_sale_price_sets_none(self):
-        self.client.login(username="assistant1", password="password123")
+        self.client.force_login(self.user)
         img = self.create_dummy_image("item.jpg")
 
         resp = self.client.post(
@@ -162,7 +158,7 @@ class ProductIntakeViewTests(TestCase):
         self.assertIsNone(product.sale_price)
 
     def test_intake_post_with_negative_sale_price_fails(self):
-        self.client.login(username="assistant1", password="password123")
+        self.client.force_login(self.user)
         img = self.create_dummy_image("item.jpg")
 
         resp = self.client.post(
@@ -178,7 +174,7 @@ class ProductIntakeViewTests(TestCase):
         self.assertContains(resp, "greater than or equal to 0.00")
 
     def test_intake_get_renders_sale_price_field(self):
-        self.client.login(username="assistant1", password="password123")
+        self.client.force_login(self.user)
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'name="sale_price"')
@@ -186,7 +182,7 @@ class ProductIntakeViewTests(TestCase):
         self.assertContains(resp, "€")
 
     def test_intake_get_renders_validation_and_async_elements(self):
-        self.client.login(username="assistant1", password="password123")
+        self.client.force_login(self.user)
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'id="intakeClientAlert"')
@@ -201,7 +197,7 @@ class ProductIntakeViewTests(TestCase):
         self.assertContains(resp, "Please attach at least one photo of the product before saving.")
 
     def test_intake_get_renders_photo_management_elements(self):
-        self.client.login(username="assistant1", password="password123")
+        self.client.force_login(self.user)
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'id="previewContainer"')
@@ -215,7 +211,7 @@ class ProductIntakeViewTests(TestCase):
         self.assertContains(resp, "Please select a maximum of 10 photos.")
 
     def test_intake_get_renders_spanish_translations(self):
-        self.client.login(username="assistant1", password="password123")
+        self.client.force_login(self.user)
         resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="es")
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Guardando producto...")
@@ -225,13 +221,13 @@ class ProductIntakeViewTests(TestCase):
         self.assertContains(resp, "Por favor, selecciona un máximo de 10 fotos.")
 
     def test_intake_get_renders_hidden_ai_title_field(self):
-        self.client.login(username="assistant1", password="password123")
+        self.client.force_login(self.user)
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'type="hidden" name="ai_title" id="id_ai_title"')
 
     def test_intake_post_with_ai_title_persists_and_sets_display_title(self):
-        self.client.login(username="assistant1", password="password123")
+        self.client.force_login(self.user)
         img = self.create_dummy_image("item.jpg")
 
         resp = self.client.post(
@@ -252,7 +248,7 @@ class ProductIntakeViewTests(TestCase):
         self.assertEqual(product.status, "draft")
 
     def test_intake_post_without_ai_title_falls_back_to_raw_note_or_id(self):
-        self.client.login(username="assistant1", password="password123")
+        self.client.force_login(self.user)
         img = self.create_dummy_image("item.jpg")
 
         resp = self.client.post(

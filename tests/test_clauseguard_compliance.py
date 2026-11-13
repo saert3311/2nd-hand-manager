@@ -3,12 +3,10 @@ from io import StringIO
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from PIL import Image
 
 from inventory.models import (
     Category,
@@ -20,7 +18,6 @@ from inventory.models import (
     Product,
     ProductStatus,
 )
-from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
 from inventory.services.ai_service import (
     IntakePreflightSchema,
     ProductListingSchema,
@@ -42,35 +39,22 @@ from inventory.services.policy_sync_service import (
     fetch_policy_text_from_url,
     sync_site_policy,
 )
+from tests.helpers import create_role_users, make_test_image_bytes
 
 User = get_user_model()
 
 
 def _create_dummy_image_bytes() -> bytes:
-    buf = __import__("io").BytesIO()
-    img = Image.new("RGB", (120, 120), color="navy")
-    img.save(buf, format="JPEG")
-    return buf.getvalue()
+    return make_test_image_bytes(size=(120, 120), color="navy")
 
 
 class ClauseGuardComplianceTests(TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         ensure_default_policy_clauses()
-        self.mgr_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
-        self.asst_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
-
-        self.manager = User.objects.create_user(
-            username="cg_manager",
-            password="password123",
-            is_staff=True,
-        )
-        self.manager.groups.add(self.mgr_group)
-
-        self.assistant = User.objects.create_user(
-            username="cg_assistant",
-            password="password123",
-        )
-        self.assistant.groups.add(self.asst_group)
+        cls.manager, cls.assistant = create_role_users(prefix="cg")
+        cls.manager.is_staff = True
+        cls.manager.save(update_fields=["is_staff"])
 
     def test_default_policy_clauses_seeded_with_vectors(self):
         self.assertGreaterEqual(PolicyClause.objects.count(), 12)

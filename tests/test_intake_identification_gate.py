@@ -1,36 +1,32 @@
-import io
 from decimal import Decimal
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client, TestCase
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import translation
-from PIL import Image
 
 from inventory.models import Product
+from tests.helpers import make_test_image_file
 
 User = get_user_model()
 
 
 class IntakeIdentificationGateTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(username="assistant_gate", password="password123")
+        cls.url = reverse("inventory:intake")
+        cls.identify_url = reverse("inventory:intake_identify")
+
     def setUp(self):
-        self.client = Client()
-        self.user = User.objects.create_user(username="assistant_gate", password="password123")
-        self.url = reverse("inventory:intake")
-        self.identify_url = reverse("inventory:intake_identify")
+        self.client.force_login(self.user)
 
     def create_dummy_image(self, name="photo.jpg", format="JPEG"):
-        buf = io.BytesIO()
-        img = Image.new("RGB", (60, 60), color="blue")
-        img.save(buf, format=format)
-        buf.seek(0)
-        return SimpleUploadedFile(name, buf.getvalue(), content_type=f"image/{format.lower()}")
+        return make_test_image_file(name=name, size=(60, 60), color="blue", image_format=format, content_type=f"image/{format.lower()}")
 
     def test_submit_button_initially_disabled_in_html(self):
         """Verify the Save button renders with disabled attribute and accessibility attributes on initial page load."""
-        self.client.login(username="assistant_gate", password="password123")
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
 
@@ -47,7 +43,6 @@ class IntakeIdentificationGateTests(TestCase):
 
     def test_submit_button_spanish_localization(self):
         """Verify localized Spanish text for the mandatory identification helper text."""
-        self.client.login(username="assistant_gate", password="password123")
         with translation.override("es"):
             resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="es")
             self.assertEqual(resp.status_code, 200)
@@ -56,26 +51,16 @@ class IntakeIdentificationGateTests(TestCase):
             self.assertIn("Producto identificado — listo para guardar", html)
             self.assertIn("Por favor, identifica el producto con IA antes de guardar.", html)
 
-    def test_template_contains_state_machine_and_guards(self):
-        """Verify presence of JS state machine variables, functions, and client submit guard."""
-        self.client.login(username="assistant_gate", password="password123")
+    def test_template_contains_identification_gate_controls(self):
+        """Verify presence of intake form, AI identify trigger, guarded submit button, and live help text."""
         resp = self.client.get(self.url)
         html = resp.content.decode("utf-8")
 
-        # Check state variable
-        self.assertIn("let hasIdentified = false;", html)
-
-        # Check update function
-        self.assertIn("function updateSubmitButtonState()", html)
-
-        # Check identifyBtn click finally sets hasIdentified to true
-        self.assertIn("hasIdentified = true;", html)
-
-        # Check zero-files resets hasIdentified to false
-        self.assertIn("hasIdentified = false;", html)
-
-        # Check submit listener guard
-        self.assertIn("if (!hasIdentified)", html)
+        self.assertIn('id="intakeForm"', html)
+        self.assertIn('id="identifyBtn"', html)
+        self.assertIn('id="submitBtn"', html)
+        self.assertIn('id="submitHelpText"', html)
+        self.assertIn('aria-disabled="true"', html)
 
     @patch("inventory.views.identify_intake_product")
     def test_identify_preflight_endpoint_success_enables_gate(self, mock_identify):

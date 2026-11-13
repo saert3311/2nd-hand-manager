@@ -29,6 +29,7 @@ from inventory.services.push_service import (
     send_push_to_subscription,
     send_push_to_user,
 )
+from tests.helpers import abort_nonessential_fonts, launch_test_browser
 
 User = get_user_model()
 
@@ -430,12 +431,10 @@ class BrowserPWAServiceWorkerAndPushTests(StaticLiveServerTestCase):
         from playwright.sync_api import sync_playwright
 
         with sync_playwright() as p:
-            try:
-                browser = p.chromium.launch(channel="chrome", headless=True)
-            except Exception:
-                browser = p.chromium.launch(headless=True)
+            browser = launch_test_browser(p)
             context = browser.new_context(viewport={"width": 1280, "height": 800})
             page = context.new_page()
+            abort_nonessential_fonts(page)
 
             page.goto(f"{self.live_server_url}/login/")
             page.locator("#id_username").fill("browser_pwa_mgr")

@@ -829,5 +829,15 @@ Upgrade product search across both the internal Staging Dashboard (`/dashboard/`
    - Localize new search hint/recovery strings in `locale/es/LC_MESSAGES/django.po` and `locale/en/LC_MESSAGES/django.po` and compile via `compile_locales`.
    - Author unit, integration, security firewall, and localization tests in `tests/test_product_search.py`.
 
+---
+
+## Test Suite Audit, Speed & Reliability Plan (`fix/test-suite-speed-and-quality`)
+
+### Goals
+1. **Sub-2m Full Suite Execution**: Use `MD5PasswordHasher` when `IS_TESTING` is True and migrate invariant fixtures in `TestCase` suites to `setUpTestData()` + `force_login()`.
+2. **Zero `/media/` 404s & Clean Working Tree**: Serve `default_storage` under `MEDIA_URL` when `IS_TESTING` is True so Playwright browser tests verify real rendered images (`naturalWidth > 0`), and isolate test screenshots/temp files into `TemporaryDirectory()` unless `SAVE_TEST_SCREENSHOTS=1`.
+3. **Deterministic, Portable Browser Suites**: Centralize Chrome -> Chromium fallback launch and non-essential font blocking in `tests/helpers.py`, share browser instances per `StaticLiveServerTestCase` class, replace `wait_for_timeout`/`networkidle` stalls with deterministic waits, and eliminate redundant browser suites & noisy `print()` logs.
+4. **Semantic Regression Assertions**: Replace brittle JS source-code and multi-utility Tailwind class substring assertions with semantic DOM, ARIA, regex, and computed-style checks.
+
 
 
