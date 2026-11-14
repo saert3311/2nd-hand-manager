@@ -279,6 +279,7 @@ class ClauseGuardComplianceTests(TestCase):
             reverse("inventory:product_verify_compliance", kwargs={"pk": product.pk})
         )
         self.assertEqual(resp_post.status_code, 302)
+        self.assertEqual(mock_client_cls.call_args.kwargs["http_options"].api_version, "v1beta")
 
         call_kwargs = mock_client.models.generate_content.call_args.kwargs
         self.assertEqual(call_kwargs["model"], "gemini-flash-latest")
@@ -357,6 +358,7 @@ class ClauseGuardComplianceTests(TestCase):
         mock_client.models.generate_content.return_value = mock_extract_resp
 
         res1 = sync_site_policy(vinted)
+        self.assertEqual(mock_client_cls.call_args.kwargs["http_options"].api_version, "v1beta")
         self.assertEqual(res1["status"], "synced")
         self.assertEqual(res1["source"], "raw_text")
         self.assertEqual(res1["clauses_updated"], 10)

@@ -17,6 +17,7 @@ from inventory.services.compliance_service import (
     evaluate_stage1_local,
     evaluate_stage1_local_for_product,
     format_top_clauses_prompt_block,
+    get_gemini_http_options,
     merge_stage2_compliance_result,
     parse_gemini_response_dict,
 )
@@ -340,7 +341,7 @@ def generate_product_listing(
 
     # 3. Call Gemini
     try:
-        client = genai.Client(api_key=api_key.strip())
+        client = genai.Client(api_key=api_key.strip(), http_options=get_gemini_http_options())
         config = types.GenerateContentConfig(
             response_mime_type="application/json",
             response_schema=ProductListingSchema,
@@ -465,7 +466,7 @@ def identify_intake_product(
         contents.append(types.Part.from_bytes(data=img_data, mime_type=mime))
 
     try:
-        client = genai.Client(api_key=api_key.strip())
+        client = genai.Client(api_key=api_key.strip(), http_options=get_gemini_http_options())
         config = types.GenerateContentConfig(
             response_mime_type="application/json",
             response_schema=IntakePreflightSchema,

@@ -188,8 +188,9 @@ LOGOUT_REDIRECT_URL = 'inventory:login'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Gemini AI API Key
+# Gemini AI API Key & API Version (v1beta required for -latest aliases and JSON mode)
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+GEMINI_API_VERSION = os.getenv('GEMINI_API_VERSION', 'v1beta').strip() or 'v1beta'
 
 # Security & Hardening Settings
 X_FRAME_OPTIONS = 'DENY'

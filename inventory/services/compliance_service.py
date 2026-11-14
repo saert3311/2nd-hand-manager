@@ -40,6 +40,7 @@ from .policy_clauses_seed import DEFAULT_POLICY_CLAUSES_SEED, DEFAULT_POLICY_URL
 logger = logging.getLogger(__name__)
 
 COMPLIANCE_CHECK_MODEL = getattr(settings, "GEMINI_COMPLIANCE_CHECK_MODEL_NAME", "gemini-flash-latest")
+GEMINI_API_VERSION = getattr(settings, "GEMINI_API_VERSION", "v1beta")
 LOCAL_EMBEDDING_DIMS = 96
 
 __all__ = [
@@ -48,6 +49,7 @@ __all__ = [
     "COMPLIANCE_CHECK_MODEL",
     "DEFAULT_POLICY_CLAUSES_SEED",
     "DEFAULT_POLICY_URL_MAP",
+    "GEMINI_API_VERSION",
     "LOCAL_EMBEDDING_DIMS",
     "TargetedComplianceCheckSchema",
     "_masked_positions_for_exceptions",
@@ -60,6 +62,7 @@ __all__ = [
     "evaluate_stage1_local",
     "evaluate_stage1_local_for_product",
     "format_top_clauses_prompt_block",
+    "get_gemini_http_options",
     "invalidate_clause_matcher_cache",
     "merge_stage2_compliance_result",
     "normalize_text",
@@ -68,6 +71,18 @@ __all__ = [
     "stem_token",
     "verify_product_compliance_ai",
 ]
+
+
+def get_gemini_http_options() -> types.HttpOptions:
+    """
+    Returns explicit HttpOptions pinning the Gemini Developer API version (`v1beta`).
+
+    `google-genai >= 3.0.0` defaults to `v1`, which rejects `-latest` model aliases
+    (e.g. `gemini-flash-latest`) with 404 NOT_FOUND and disables JSON mode
+    (`response_mime_type="application/json"`).
+    """
+    api_version = (getattr(settings, "GEMINI_API_VERSION", GEMINI_API_VERSION) or "v1beta").strip()
+    return types.HttpOptions(api_version=api_version)
 
 _PRIMITIVE_FIELD_TYPES = (str, int, float, bool, list, dict, BaseModel, type(None))
 
@@ -725,7 +740,7 @@ def verify_product_compliance_ai(product: Any, language: Optional[str] = None) -
     )
 
     try:
-        client = genai.Client(api_key=api_key.strip())
+        client = genai.Client(api_key=api_key.strip(), http_options=get_gemini_http_options())
         config = types.GenerateContentConfig(
             response_mime_type="application/json",
             response_schema=TargetedComplianceCheckSchema,

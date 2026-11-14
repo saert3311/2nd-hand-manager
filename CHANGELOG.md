@@ -5,6 +5,11 @@ All notable changes to the **2ndHand Staging Hub** will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **Pin Gemini Developer API Version to `v1beta` (`config/settings.py`, `inventory/services/`)**: Added `GEMINI_API_VERSION` (default `"v1beta"`) and shared `get_gemini_http_options()` helper passed to all `genai.Client(...)` instantiations in `ai_service.py`, `compliance_service.py`, and `policy_sync_service.py`. Prevents production `google-genai >= 3.0.0` installs (which switched the SDK default from `v1beta` to `v1`) from failing with `404 NOT_FOUND` on `gemini-flash-latest` and `400 INVALID_ARGUMENT` on JSON mode (`response_mime_type="application/json"`).
+
 ## [2.9.0] - 2026-11-13
 
 ### Changed & Improved

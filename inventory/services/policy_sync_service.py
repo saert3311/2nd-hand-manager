@@ -20,6 +20,7 @@ from inventory.models import MarketplaceSite, PolicyClause
 
 from .compliance_service import (
     ensure_default_policy_clauses,
+    get_gemini_http_options,
     normalize_text,
     parse_gemini_response_dict,
 )
@@ -210,7 +211,7 @@ def fetch_policy_text_from_url(url: str, timeout: float = 8.0) -> tuple[str, Opt
 
 def _extract_clauses_with_gemini(site: MarketplaceSite, fetched_text: str) -> tuple[list[ExtractedClauseSchema], Optional[str]]:
     api_key = getattr(settings, "GEMINI_API_KEY", "") or ""
-    client = genai.Client(api_key=api_key.strip())
+    client = genai.Client(api_key=api_key.strip(), http_options=get_gemini_http_options())
     snippet = fetched_text[:60000]
     prompt = (
         f"Extract ALL distinct, granular prohibited, restricted, and conditional item rules from {site.name}'s Terms & Conditions.\n"

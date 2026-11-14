@@ -359,5 +359,24 @@ class IntakePreflightServiceTests(TestCase):
         mock_client.models.generate_content.return_value = mock_response
 
         identify_intake_product([b"\xff\xd8\xffsample"])
+        client_kwargs = mock_client_cls.call_args.kwargs
+        self.assertEqual(client_kwargs["http_options"].api_version, "v1beta")
         call_args = mock_client.models.generate_content.call_args
         self.assertEqual(call_args.kwargs.get("model"), "gemini-flash-latest")
+
+    @override_settings(GEMINI_API_KEY="test-key")
+    @patch("inventory.services.ai_service.genai.Client")
+    def test_generate_listing_pins_v1beta_api_version(self, mock_client_cls):
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.parsed = ProductListingSchema(
+            title="Pink Floyd 1994 Tee",
+            description="Vintage tee",
+        )
+        mock_client.models.generate_content.return_value = mock_response
+
+        product = Product.objects.create(raw_note="Vintage tee")
+        generate_product_listing(product)
+        client_kwargs = mock_client_cls.call_args.kwargs
+        self.assertEqual(client_kwargs["http_options"].api_version, "v1beta")
