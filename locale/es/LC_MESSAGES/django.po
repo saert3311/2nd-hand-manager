@@ -4297,3 +4297,58 @@ msgstr "Todos heredan el principal"
 
 msgid "Task Overrides"
 msgstr "Modelos por Tarea"
+
+msgid "Uploading & preparing photos..."
+msgstr "Subiendo y preparando fotos..."
+
+msgid "Identifying brand, model & condition..."
+msgstr "Identificando marca, modelo y estado..."
+
+msgid "Estimating resale prices & policy rules..."
+msgstr "Estimando precios de reventa y normas..."
+
+msgid ""
+"Network error while analyzing photos. You can retry or continue saving "
+"manually."
+msgstr ""
+"Error de red al analizar las fotos. Puedes reintentar o continuar guardando "
+"manualmente."
+
+msgid "Restoring..."
+msgstr "Restaurando..."
+
+msgid "Updating sync..."
+msgstr "Actualizando sincronización..."
+
+msgid "Analyzing product photos & field notes..."
+msgstr "Analizando fotos del producto y notas..."
+
+msgid "Drafting SEO title & description..."
+msgstr "Redactando título y descripción SEO..."
+
+msgid "Formatting tags & final listing copy..."
+msgstr "Dando formato a etiquetas y texto final..."
+
+msgid "Saving changes..."
+msgstr "Guardando cambios..."
+
+msgid "Sending..."
+msgstr "Enviando..."
+
+msgid "Checking compliance..."
+msgstr "Verificando cumplimiento..."
+
+msgid "Moving to trash..."
+msgstr "Moviendo a la papelera..."
+
+msgid "Processing..."
+msgstr "Procesando..."
+
+msgid "Updating..."
+msgstr "Actualizando..."
+
+msgid "Creating..."
+msgstr "Creando..."
+
+msgid "Deleting..."
+msgstr "Eliminando..."
