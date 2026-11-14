@@ -279,9 +279,11 @@ class ClauseGuardComplianceTests(TestCase):
             reverse("inventory:product_verify_compliance", kwargs={"pk": product.pk})
         )
         self.assertEqual(resp_post.status_code, 302)
+        self.assertEqual(mock_client_cls.call_args.kwargs["http_options"].api_version, "v1beta")
 
         call_kwargs = mock_client.models.generate_content.call_args.kwargs
-        self.assertEqual(call_kwargs["model"], "gemini-flash-latest")
+        self.assertEqual(call_kwargs["model"], "gemini-4-hydrogen")
+        self.assertEqual(call_kwargs["config"].thinking_config.thinking_level, "LOW")
         verify_prompt = call_kwargs["contents"][0]
         self.assertIn("Do NOT output explanations or reasons", verify_prompt)
 
@@ -357,6 +359,7 @@ class ClauseGuardComplianceTests(TestCase):
         mock_client.models.generate_content.return_value = mock_extract_resp
 
         res1 = sync_site_policy(vinted)
+        self.assertEqual(mock_client_cls.call_args.kwargs["http_options"].api_version, "v1beta")
         self.assertEqual(res1["status"], "synced")
         self.assertEqual(res1["source"], "raw_text")
         self.assertEqual(res1["clauses_updated"], 10)
@@ -364,7 +367,8 @@ class ClauseGuardComplianceTests(TestCase):
         self.assertTrue(PolicyClause.objects.filter(code="VINT-950", site=vinted).exists())
 
         sync_call_kwargs = mock_client.models.generate_content.call_args.kwargs
-        self.assertEqual(sync_call_kwargs["model"], "gemini-flash-latest")
+        self.assertEqual(sync_call_kwargs["model"], "gemini-4-hydrogen")
+        self.assertEqual(sync_call_kwargs["config"].thinking_config.thinking_level, "LOW")
         sync_prompt = sync_call_kwargs["contents"][0]
         self.assertIn("ALL distinct, granular", sync_prompt)
         self.assertNotIn("up to 8", sync_prompt)

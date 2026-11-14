@@ -5,6 +5,18 @@ All notable changes to the **2ndHand Staging Hub** will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0] - 2026-11-14
+
+### Added
+- **Resilient Gemini Model Discovery, Effort Control & Self-Healing Routing (Phase 53)**:
+  - **Unified Model Routing & Default Upgrade (`gemini-4-hydrogen`)**: Upgraded `AIPromptConfiguration.model_name` default from `gemini-2.5-flash` to `gemini-4-hydrogen` (migration `0030`) and added optional per-task overrides (`intake_model_name`, `compliance_model_name`, `policy_sync_model_name` — blank inherits primary `model_name`).
+  - **Thinking Effort Control & Model-Aware Clamping (`thinking_level`, `resolve_thinking_config`)**: Added `ThinkingLevel` (`minimal`, `low` [default], `medium`, `high`) to `AIPromptConfiguration`. Automatically clamps `minimal` to `LOW` on models that do not support `MINIMAL` (`gemini-4-hydrogen`, `gemini-4-argon`, `gemini-4-carbon`, `gemini-3.8-flash`), cutting `gemini-4-hydrogen` thought token spend by >60% and latency from `~6.7s` to `~3.8s` without risking `400 INVALID_ARGUMENT`.
+  - **Live Capability-Filtered Model Catalog in Django Admin (`fetch_available_gemini_models`, `AIPromptConfigurationAdmin`)**: Queries `client.models.list()` on `v1beta`, filters for multimodal JSON-capable models (excluding TTS, image-gen, audio, live, robotics, computer-use, deep-research, antigravity, gemma), caches choices for 1 hour with a static fallback, and renders dynamic `<select>` dropdowns plus a "Refresh available Gemini models from Google AI API" Admin action and endpoint.
+  - **Self-Healing Runtime Fallback Chain (`generate_content_with_fallback`)**: Automatically retries `404 NOT_FOUND` and `400 INVALID_ARGUMENT` model/config errors across `("gemini-4-hydrogen", "gemini-3.8-flash", "gemini-flash-latest")` across all 4 AI workflows without multiplying `429` quota or `401`/`403` auth errors.
+
+### Fixed
+- **Pin Gemini Developer API Version to `v1beta` (`config/settings.py`, `inventory/services/`)**: Added `GEMINI_API_VERSION` (default `"v1beta"`) and shared `get_gemini_http_options()` helper passed to all `genai.Client(...)` instantiations in `ai_service.py`, `compliance_service.py`, and `policy_sync_service.py`. Prevents production `google-genai >= 3.0.0` installs (which switched the SDK default from `v1beta` to `v1`) from failing with `404 NOT_FOUND` on `gemini-flash-latest` and `400 INVALID_ARGUMENT` on JSON mode (`response_mime_type="application/json"`).
+
 ## [2.9.0] - 2026-11-13
 
 ### Changed & Improved

@@ -181,9 +181,10 @@ class AIServiceTests(TestCase):
 
         generate_product_listing(self.product, language="es")
         call_args = mock_client.models.generate_content.call_args
-        self.assertEqual(call_args.kwargs.get("model"), "gemini-2.5-flash")
+        self.assertEqual(call_args.kwargs.get("model"), "gemini-4-hydrogen")
         config_arg = call_args.kwargs.get("config")
         self.assertEqual(config_arg.temperature, 0.3)
+        self.assertEqual(config_arg.thinking_config.thinking_level, "LOW")
         contents = call_args.kwargs.get("contents")
         prompt_text = contents[0]
         self.assertIn("Eres un experto en reventa", prompt_text)
@@ -202,9 +203,10 @@ class AIServiceTests(TestCase):
             self.assertEqual(result["title"], "Resilient Title")
 
         call_args = mock_client.models.generate_content.call_args
-        self.assertEqual(call_args.kwargs.get("model"), "gemini-2.5-flash")
+        self.assertEqual(call_args.kwargs.get("model"), "gemini-4-hydrogen")
         config_arg = call_args.kwargs.get("config")
         self.assertEqual(config_arg.temperature, 0.3)
+        self.assertEqual(config_arg.thinking_config.thinking_level, "LOW")
 
 
 class IntakePreflightServiceTests(TestCase):
@@ -359,5 +361,127 @@ class IntakePreflightServiceTests(TestCase):
         mock_client.models.generate_content.return_value = mock_response
 
         identify_intake_product([b"\xff\xd8\xffsample"])
+        client_kwargs = mock_client_cls.call_args.kwargs
+        self.assertEqual(client_kwargs["http_options"].api_version, "v1beta")
         call_args = mock_client.models.generate_content.call_args
-        self.assertEqual(call_args.kwargs.get("model"), "gemini-flash-latest")
+        self.assertEqual(call_args.kwargs.get("model"), "gemini-4-hydrogen")
+        self.assertEqual(call_args.kwargs.get("config").thinking_config.thinking_level, "LOW")
+
+    @override_settings(GEMINI_API_KEY="test-key")
+    @patch("inventory.services.ai_service.genai.Client")
+    def test_generate_listing_pins_v1beta_api_version(self, mock_client_cls):
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.parsed = ProductListingSchema(
+            title="Pink Floyd 1994 Tee",
+            description="Vintage tee",
+        )
+        mock_client.models.generate_content.return_value = mock_response
+
+        product = Product.objects.create(raw_note="Vintage tee")
+        generate_product_listing(product)
+        client_kwargs = mock_client_cls.call_args.kwargs
+        self.assertEqual(client_kwargs["http_options"].api_version, "v1beta")
+
+    @override_settings(GEMINI_API_KEY="test-key")
+    @patch("inventory.services.ai_service.genai.Client")
+    def test_self_healing_fallback_on_404_not_found(self, mock_client_cls):
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        mock_ok = MagicMock()
+        mock_ok.parsed = IntakePreflightSchema(
+            identified_title="Recovered Levi's Jacket",
+            category="Ropa",
+            detected_attributes=[],
+            missing_or_recommended_info=[],
+            suggested_note="",
+        )
+        # First model fails with 404 NOT_FOUND; second model in chain (gemini-3.8-flash) succeeds
+        mock_client.models.generate_content.side_effect = [
+            RuntimeError("404 NOT_FOUND. {'error': {'code': 404, 'message': 'Model is not found', 'status': 'NOT_FOUND'}}"),
+            mock_ok,
+        ]
+
+        res = identify_intake_product([b"\xff\xd8\xffsample"])
+        self.assertTrue(res["success"])
+        self.assertEqual(res["identified_title"], "Recovered Levi's Jacket")
+        self.assertEqual(mock_client.models.generate_content.call_count, 2)
+        first_call = mock_client.models.generate_content.call_args_list[0].kwargs["model"]
+        second_call = mock_client.models.generate_content.call_args_list[1].kwargs["model"]
+        self.assertEqual(first_call, "gemini-4-hydrogen")
+        self.assertEqual(second_call, "gemini-3.8-flash")
+
+    def test_resolve_thinking_config_clamps_minimal_on_unsupported_models(self):
+        from inventory.services.compliance_service import resolve_thinking_config
+
+        # Gemini 4 Hydrogen & 3.8 Flash do not support MINIMAL -> clamped to LOW
+        self.assertEqual(resolve_thinking_config("gemini-4-hydrogen", "minimal").thinking_level, "LOW")
+        self.assertEqual(resolve_thinking_config("gemini-3.8-flash", "minimal").thinking_level, "LOW")
+        # Gemini 3.5 Flash-Lite & 3.6 Flash support MINIMAL -> kept as MINIMAL
+        self.assertEqual(resolve_thinking_config("gemini-3.5-flash-lite", "minimal").thinking_level, "MINIMAL")
+        self.assertEqual(resolve_thinking_config("gemini-3.6-flash", "minimal").thinking_level, "MINIMAL")
+        # Explicit medium/high preserved
+        self.assertEqual(resolve_thinking_config("gemini-4-hydrogen", "medium").thinking_level, "MEDIUM")
+        self.assertEqual(resolve_thinking_config("gemini-4-hydrogen", "high").thinking_level, "HIGH")
+
+    @override_settings(GEMINI_API_KEY="test-key")
+    def test_fetch_available_gemini_models_filters_incompatible_models(self):
+        from django.core.cache import cache
+
+        from inventory.services.compliance_service import (
+            GEMINI_MODELS_CACHE_KEY,
+            fetch_available_gemini_models,
+        )
+
+        cache.delete(GEMINI_MODELS_CACHE_KEY)
+
+        def _make_model(name, display, actions=None):
+            m = MagicMock()
+            m.name = name
+            m.display_name = display
+            m.supported_actions = actions if actions is not None else ["generateContent"]
+            return m
+
+        fake_client_cls = MagicMock()
+        fake_client = MagicMock()
+        fake_client_cls.return_value = fake_client
+        fake_client.models.list.return_value = [
+            _make_model("models/gemini-4-hydrogen", "Gemini 4 Hydrogen"),
+            _make_model("models/gemini-3.8-flash", "Gemini 3.8 Flash"),
+            _make_model("models/gemini-3.8-flash-tts", "Gemini 3.8 Flash TTS"),
+            _make_model("models/gemini-3.1-flash-image", "Nano Banana 2"),
+            _make_model("models/lyria-3.5", "Lyria 3.5"),
+            _make_model("models/gemma-4-31b-it", "Gemma 4 31B IT"),
+            _make_model("models/gemini-embedding-001", "Gemini Embedding", actions=["embedContent"]),
+        ]
+
+        choices = fetch_available_gemini_models(force_refresh=True, client_cls=fake_client_cls)
+        model_ids = [m_id for m_id, _ in choices]
+        self.assertIn("gemini-4-hydrogen", model_ids)
+        self.assertIn("gemini-3.8-flash", model_ids)
+        self.assertNotIn("gemini-3.8-flash-tts", model_ids)
+        self.assertNotIn("gemini-3.1-flash-image", model_ids)
+        self.assertNotIn("lyria-3.5", model_ids)
+        self.assertNotIn("gemma-4-31b-it", model_ids)
+        self.assertNotIn("gemini-embedding-001", model_ids)
+
+    def test_admin_form_populates_dynamic_model_choices_and_preserves_custom(self):
+        from inventory.admin import AIPromptConfigurationAdminForm
+
+        custom_cfg = AIPromptConfiguration.objects.create(
+            language="es",
+            model_name="gemini-custom-preview",
+            intake_model_name="gemini-3.5-flash-lite",
+            thinking_level="low",
+            temperature=0.2,
+            system_instruction="Test",
+            is_active=False,
+        )
+        form = AIPromptConfigurationAdminForm(instance=custom_cfg)
+        primary_values = [val for val, _ in form.fields["model_name"].widget.choices]
+        intake_values = [val for val, _ in form.fields["intake_model_name"].widget.choices]
+        self.assertIn("gemini-4-hydrogen", primary_values)
+        self.assertIn("gemini-custom-preview", primary_values)
+        self.assertIn("", intake_values)
+        self.assertIn("gemini-3.5-flash-lite", intake_values)

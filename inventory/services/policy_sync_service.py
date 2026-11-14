@@ -13,21 +13,24 @@ from typing import Any, Literal, Optional
 from django.conf import settings
 from django.utils import timezone
 from google import genai
-from google.genai import types
 from pydantic import BaseModel, Field
 
 from inventory.models import MarketplaceSite, PolicyClause
 
 from .compliance_service import (
+    DEFAULT_GEMINI_MODEL,
     ensure_default_policy_clauses,
+    generate_content_with_fallback,
+    get_gemini_http_options,
     normalize_text,
     parse_gemini_response_dict,
+    resolve_task_model_and_thinking,
 )
 from .policy_clauses_seed import DEFAULT_POLICY_CLAUSES_SEED
 
 logger = logging.getLogger(__name__)
 
-POLICY_SYNC_EXTRACTION_MODEL = getattr(settings, "GEMINI_POLICY_SYNC_MODEL_NAME", "gemini-flash-latest")
+POLICY_SYNC_EXTRACTION_MODEL = getattr(settings, "GEMINI_POLICY_SYNC_MODEL_NAME", DEFAULT_GEMINI_MODEL)
 
 _GENERIC_CATALOG_STOPWORDS = frozenset({
     "ropa", "usado", "usada", "usados", "usadas", "nuevo", "nueva", "nuevos", "nuevas",
@@ -210,7 +213,8 @@ def fetch_policy_text_from_url(url: str, timeout: float = 8.0) -> tuple[str, Opt
 
 def _extract_clauses_with_gemini(site: MarketplaceSite, fetched_text: str) -> tuple[list[ExtractedClauseSchema], Optional[str]]:
     api_key = getattr(settings, "GEMINI_API_KEY", "") or ""
-    client = genai.Client(api_key=api_key.strip())
+    active_model, thinking_level = resolve_task_model_and_thinking("policy_sync", language="es")
+    client = genai.Client(api_key=api_key.strip(), http_options=get_gemini_http_options())
     snippet = fetched_text[:60000]
     prompt = (
         f"Extract ALL distinct, granular prohibited, restricted, and conditional item rules from {site.name}'s Terms & Conditions.\n"
@@ -222,15 +226,13 @@ def _extract_clauses_with_gemini(site: MarketplaceSite, fetched_text: str) -> tu
         "`exception_phrases` in Spanish and English.\n\n"
         f"POLICY TEXT:\n{snippet}"
     )
-    config = types.GenerateContentConfig(
-        response_mime_type="application/json",
+    response = generate_content_with_fallback(
+        client,
+        model=active_model,
+        contents=[prompt],
         response_schema=ExtractedPolicyClausesSchema,
         temperature=0.1,
-    )
-    response = client.models.generate_content(
-        model=POLICY_SYNC_EXTRACTION_MODEL,
-        contents=[prompt],
-        config=config,
+        thinking_level=thinking_level,
     )
     data = parse_gemini_response_dict(response, ExtractedPolicyClausesSchema)
     raw_clauses = data.get("clauses")

@@ -6,6 +6,7 @@ import re
 from typing import Any, Optional
 
 from django.conf import settings
+from django.core.cache import cache
 from django.db import OperationalError, ProgrammingError
 from django.utils.translation import get_language
 from google import genai
@@ -39,16 +40,85 @@ from .policy_clauses_seed import DEFAULT_POLICY_CLAUSES_SEED, DEFAULT_POLICY_URL
 
 logger = logging.getLogger(__name__)
 
-COMPLIANCE_CHECK_MODEL = getattr(settings, "GEMINI_COMPLIANCE_CHECK_MODEL_NAME", "gemini-flash-latest")
+DEFAULT_GEMINI_MODEL = "gemini-4-hydrogen"
+DEFAULT_THINKING_LEVEL = "low"
+FALLBACK_MODEL_CHAIN: tuple[str, ...] = (
+    "gemini-4-hydrogen",
+    "gemini-3.8-flash",
+    "gemini-flash-latest",
+)
+COMPLIANCE_CHECK_MODEL = getattr(settings, "GEMINI_COMPLIANCE_CHECK_MODEL_NAME", DEFAULT_GEMINI_MODEL)
+GEMINI_API_VERSION = getattr(settings, "GEMINI_API_VERSION", "v1beta")
+GEMINI_MODELS_CACHE_KEY = "gemini_available_models_v1"
+GEMINI_MODELS_CACHE_TTL = 3600
 LOCAL_EMBEDDING_DIMS = 96
+
+STATIC_FALLBACK_MODELS: tuple[tuple[str, str], ...] = (
+    ("gemini-4-hydrogen", "Gemini 4 Hydrogen (gemini-4-hydrogen)"),
+    ("gemini-4-argon", "Gemini 4 Argon (gemini-4-argon)"),
+    ("gemini-4-carbon", "Gemini 4 Carbon (gemini-4-carbon)"),
+    ("gemini-3.8-flash", "Gemini 3.8 Flash (gemini-3.8-flash)"),
+    ("gemini-3.6-flash", "Gemini 3.6 Flash (gemini-3.6-flash)"),
+    ("gemini-3.5-flash-lite", "Gemini 3.5 Flash-Lite (gemini-3.5-flash-lite)"),
+    ("gemini-3.1-flash-lite", "Gemini 3.1 Flash-Lite (gemini-3.1-flash-lite)"),
+    ("gemini-flash-latest", "Gemini Flash Latest (gemini-flash-latest)"),
+    ("gemini-flash-lite-latest", "Gemini Flash-Lite Latest (gemini-flash-lite-latest)"),
+    ("gemini-2.5-flash", "Gemini 2.5 Flash (gemini-2.5-flash)"),
+    ("gemini-2.5-pro", "Gemini 2.5 Pro (gemini-2.5-pro)"),
+)
+
+_MINIMAL_THINKING_SUPPORTED_PREFIXES = (
+    "gemini-3.6-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-3-flash-preview",
+)
+
+_INCOMPATIBLE_MODEL_TOKENS = (
+    "-tts",
+    "-image",
+    "transcribe",
+    "-live",
+    "robotics",
+    "computer-use",
+    "embedding",
+    "customtools",
+    "omni",
+    "nano-banana",
+    "lyria",
+    "veo",
+    "imagen",
+    "aqa",
+    "learnlm",
+)
+
+_PREFERRED_MODEL_ORDER = (
+    "gemini-4-hydrogen",
+    "gemini-3.8-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-4-argon",
+    "gemini-4-carbon",
+    "gemini-flash-latest",
+    "gemini-flash-lite-latest",
+    "gemini-3.1-flash-lite",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+)
 
 __all__ = [
     "CATEGORY_BOOST_MAP",
     "CATEGORY_FLAG_MAP",
     "COMPLIANCE_CHECK_MODEL",
+    "DEFAULT_GEMINI_MODEL",
     "DEFAULT_POLICY_CLAUSES_SEED",
     "DEFAULT_POLICY_URL_MAP",
+    "DEFAULT_THINKING_LEVEL",
+    "FALLBACK_MODEL_CHAIN",
+    "GEMINI_API_VERSION",
+    "GEMINI_MODELS_CACHE_KEY",
     "LOCAL_EMBEDDING_DIMS",
+    "STATIC_FALLBACK_MODELS",
     "TargetedComplianceCheckSchema",
     "_masked_positions_for_exceptions",
     "_matches_at_position",
@@ -59,15 +129,252 @@ __all__ = [
     "ensure_default_policy_clauses",
     "evaluate_stage1_local",
     "evaluate_stage1_local_for_product",
+    "fetch_available_gemini_models",
     "format_top_clauses_prompt_block",
+    "generate_content_with_fallback",
+    "get_gemini_http_options",
     "invalidate_clause_matcher_cache",
+    "is_compatible_gemini_model",
     "merge_stage2_compliance_result",
     "normalize_text",
     "parse_gemini_response_dict",
+    "resolve_task_model_and_thinking",
+    "resolve_thinking_config",
     "stem_phrase",
     "stem_token",
     "verify_product_compliance_ai",
 ]
+
+
+def get_gemini_http_options() -> types.HttpOptions:
+    """
+    Returns explicit HttpOptions pinning the Gemini Developer API version (`v1beta`).
+
+    `google-genai >= 3.0.0` defaults to `v1`, which rejects `-latest` model aliases
+    (e.g. `gemini-flash-latest`) with 404 NOT_FOUND and disables JSON mode
+    (`response_mime_type="application/json"`).
+    """
+    api_version = (getattr(settings, "GEMINI_API_VERSION", GEMINI_API_VERSION) or "v1beta").strip()
+    return types.HttpOptions(api_version=api_version)
+
+
+def is_compatible_gemini_model(
+    model_name: str,
+    supported_actions: Optional[list[str]] = None,
+) -> bool:
+    """
+    Returns True when `model_name` is a multimodal text/JSON-capable Gemini model
+    suitable for structured output (`generateContent`), excluding TTS, image-gen,
+    audio/video-only, live voice, robotics, and non-Gemini models.
+    """
+    clean_id = (model_name or "").strip().lower().removeprefix("models/")
+    if not clean_id.startswith("gemini-"):
+        return False
+    if supported_actions is not None and "generateContent" not in supported_actions:
+        return False
+    return not any(tok in clean_id for tok in _INCOMPATIBLE_MODEL_TOKENS)
+
+
+def fetch_available_gemini_models(
+    *,
+    force_refresh: bool = False,
+    client_cls: Any = None,
+) -> list[tuple[str, str]]:
+    """
+    Fetches and caches compatible `generateContent` Gemini models from `client.models.list()`.
+    Always returns a non-empty list of `(model_id, display_label)` tuples, falling back to
+    `STATIC_FALLBACK_MODELS` when offline or when `GEMINI_API_KEY` is unconfigured.
+    """
+    if not force_refresh:
+        cached = cache.get(GEMINI_MODELS_CACHE_KEY)
+        if isinstance(cached, list) and cached:
+            return list(cached)
+
+    api_key = (getattr(settings, "GEMINI_API_KEY", "") or "").strip()
+    if not api_key:
+        return list(STATIC_FALLBACK_MODELS)
+
+    try:
+        cls = client_cls or genai.Client
+        client = cls(api_key=api_key, http_options=get_gemini_http_options())
+        discovered: dict[str, str] = {}
+        for m in client.models.list():
+            raw_name = str(getattr(m, "name", "") or "").strip()
+            actions = list(getattr(m, "supported_actions", None) or [])
+            if not is_compatible_gemini_model(raw_name, actions if actions else None):
+                continue
+            model_id = raw_name.removeprefix("models/")
+            display_name = str(getattr(m, "display_name", "") or "").strip()
+            label = f"{display_name} ({model_id})" if display_name and model_id not in display_name else model_id
+            discovered[model_id] = label
+
+        if not discovered:
+            return list(STATIC_FALLBACK_MODELS)
+
+        for fb_id, fb_label in STATIC_FALLBACK_MODELS:
+            discovered.setdefault(fb_id, fb_label)
+
+        order_index = {m_id: idx for idx, m_id in enumerate(_PREFERRED_MODEL_ORDER)}
+        sorted_choices = sorted(
+            discovered.items(),
+            key=lambda item: (order_index.get(item[0], 999), item[0]),
+        )
+        cache.set(GEMINI_MODELS_CACHE_KEY, sorted_choices, GEMINI_MODELS_CACHE_TTL)
+        return sorted_choices
+    except Exception as exc:
+        logger.warning("Could not fetch live Gemini models list from API: %s. Using static fallback.", exc)
+        return list(STATIC_FALLBACK_MODELS)
+
+
+def resolve_thinking_config(
+    model_name: str,
+    thinking_level: Optional[str] = DEFAULT_THINKING_LEVEL,
+) -> types.ThinkingConfig:
+    """
+    Resolves a model-compatible `types.ThinkingConfig` to prevent overthinking and
+    excess output token spend while avoiding `400 INVALID_ARGUMENT` on models
+    that do not support `MINIMAL` (such as `gemini-4-hydrogen` and `gemini-3.8-flash`).
+    """
+    clean_model = (model_name or DEFAULT_GEMINI_MODEL).strip().lower().removeprefix("models/")
+    raw_level = (thinking_level or DEFAULT_THINKING_LEVEL).strip().lower()
+
+    if raw_level == "minimal":
+        if clean_model.startswith(_MINIMAL_THINKING_SUPPORTED_PREFIXES):
+            effective_level = "MINIMAL"
+        else:
+            effective_level = "LOW"
+    elif raw_level in ("low", "medium", "high"):
+        effective_level = raw_level.upper()
+    else:
+        effective_level = "LOW"
+
+    return types.ThinkingConfig(thinking_level=effective_level)
+
+
+def resolve_task_model_and_thinking(
+    task: str = "copywriting",
+    language: str = "es",
+    explicit_model: Optional[str] = None,
+) -> tuple[str, str]:
+    """
+    Resolves `(model_name, thinking_level)` for a given AI task ('copywriting', 'intake',
+    'compliance', 'policy_sync') from the active `AIPromptConfiguration`, falling back
+    to `DEFAULT_GEMINI_MODEL` ('gemini-4-hydrogen') and `DEFAULT_THINKING_LEVEL` ('low').
+    """
+    lang_code = "es" if str(language or "es").lower().startswith("es") else "en"
+    config = None
+    try:
+        from inventory.models import AIPromptConfiguration
+
+        config = AIPromptConfiguration.objects.filter(language=lang_code, is_active=True).first()
+        if config is None:
+            config = AIPromptConfiguration.objects.filter(is_active=True).first()
+    except Exception as exc:
+        logger.warning("Could not retrieve AIPromptConfiguration for task '%s': %s", task, exc)
+
+    if explicit_model and explicit_model.strip():
+        resolved_model = explicit_model.strip()
+    elif config is not None:
+        resolved_model = config.get_model_for_task(task)
+    else:
+        resolved_model = DEFAULT_GEMINI_MODEL
+
+    if task == "compliance":
+        resolved_thinking = "minimal"
+    elif config is not None and getattr(config, "thinking_level", None):
+        resolved_thinking = str(config.thinking_level).strip().lower()
+    else:
+        resolved_thinking = DEFAULT_THINKING_LEVEL
+
+    return resolved_model, resolved_thinking
+
+
+def _is_recoverable_model_error(exc: Exception) -> bool:
+    """
+    Returns True strictly when `exc` indicates a missing/deprecated model (404 NOT_FOUND)
+    or an unsupported model/parameter error (400 INVALID_ARGUMENT), never for quota (429),
+    authentication (401/403), or network timeout errors.
+    """
+    msg = str(exc or "").lower()
+    if any(
+        tok in msg
+        for tok in (
+            "429",
+            "resource_exhausted",
+            "quota",
+            "401",
+            "403",
+            "unauthenticated",
+            "permission_denied",
+            "timeout",
+            "timed out",
+        )
+    ):
+        return False
+    return any(
+        tok in msg
+        for tok in (
+            "404",
+            "not_found",
+            "not found",
+            "400",
+            "invalid_argument",
+            "is not supported",
+        )
+    )
+
+
+def generate_content_with_fallback(
+    client: Any,
+    *,
+    model: str,
+    contents: list[Any],
+    response_schema: type[BaseModel],
+    temperature: float = 0.2,
+    thinking_level: Optional[str] = DEFAULT_THINKING_LEVEL,
+    fallback_models: tuple[str, ...] = FALLBACK_MODEL_CHAIN,
+) -> Any:
+    """
+    Executes `client.models.generate_content(...)` with model-clamped `ThinkingConfig`
+    and self-heals on `404 NOT_FOUND` or `400 INVALID_ARGUMENT` by retrying down
+    `fallback_models` (`gemini-4-hydrogen` -> `gemini-3.8-flash` -> `gemini-flash-latest`).
+    """
+    primary = (model or DEFAULT_GEMINI_MODEL).strip()
+    candidates: list[str] = [primary]
+    for fb in fallback_models:
+        fb_clean = (fb or "").strip()
+        if fb_clean and fb_clean not in candidates:
+            candidates.append(fb_clean)
+
+    last_exc: Optional[Exception] = None
+    for idx, candidate_model in enumerate(candidates):
+        thinking_cfg = resolve_thinking_config(candidate_model, thinking_level)
+        config = types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=response_schema,
+            temperature=temperature,
+            thinking_config=thinking_cfg,
+        )
+        try:
+            return client.models.generate_content(
+                model=candidate_model,
+                contents=contents,
+                config=config,
+            )
+        except Exception as exc:
+            last_exc = exc
+            if idx < len(candidates) - 1 and _is_recoverable_model_error(exc):
+                logger.warning(
+                    "Gemini model '%s' failed with recoverable error (%s); falling back to '%s'.",
+                    candidate_model,
+                    exc,
+                    candidates[idx + 1],
+                )
+                continue
+            raise
+    if last_exc is not None:
+        raise last_exc
+    raise RuntimeError("No candidate Gemini models configured.")
 
 _PRIMITIVE_FIELD_TYPES = (str, int, float, bool, list, dict, BaseModel, type(None))
 
@@ -725,16 +1032,15 @@ def verify_product_compliance_ai(product: Any, language: Optional[str] = None) -
     )
 
     try:
-        client = genai.Client(api_key=api_key.strip())
-        config = types.GenerateContentConfig(
-            response_mime_type="application/json",
+        active_model, thinking_level = resolve_task_model_and_thinking("compliance", language=lang)
+        client = genai.Client(api_key=api_key.strip(), http_options=get_gemini_http_options())
+        response = generate_content_with_fallback(
+            client,
+            model=active_model,
+            contents=[prompt],
             response_schema=TargetedComplianceCheckSchema,
             temperature=0.0,
-        )
-        response = client.models.generate_content(
-            model=COMPLIANCE_CHECK_MODEL,
-            contents=[prompt],
-            config=config,
+            thinking_level=thinking_level,
         )
         usage = getattr(response, "usage_metadata", None)
         raw_total = getattr(usage, "total_token_count", None) if usage is not None else None
