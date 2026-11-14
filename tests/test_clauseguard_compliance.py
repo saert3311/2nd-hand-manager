@@ -282,7 +282,8 @@ class ClauseGuardComplianceTests(TestCase):
         self.assertEqual(mock_client_cls.call_args.kwargs["http_options"].api_version, "v1beta")
 
         call_kwargs = mock_client.models.generate_content.call_args.kwargs
-        self.assertEqual(call_kwargs["model"], "gemini-flash-latest")
+        self.assertEqual(call_kwargs["model"], "gemini-4-hydrogen")
+        self.assertEqual(call_kwargs["config"].thinking_config.thinking_level, "LOW")
         verify_prompt = call_kwargs["contents"][0]
         self.assertIn("Do NOT output explanations or reasons", verify_prompt)
 
@@ -366,7 +367,8 @@ class ClauseGuardComplianceTests(TestCase):
         self.assertTrue(PolicyClause.objects.filter(code="VINT-950", site=vinted).exists())
 
         sync_call_kwargs = mock_client.models.generate_content.call_args.kwargs
-        self.assertEqual(sync_call_kwargs["model"], "gemini-flash-latest")
+        self.assertEqual(sync_call_kwargs["model"], "gemini-4-hydrogen")
+        self.assertEqual(sync_call_kwargs["config"].thinking_config.thinking_level, "LOW")
         sync_prompt = sync_call_kwargs["contents"][0]
         self.assertIn("ALL distinct, granular", sync_prompt)
         self.assertNotIn("up to 8", sync_prompt)

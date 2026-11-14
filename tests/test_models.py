@@ -73,12 +73,32 @@ class AIPromptConfigurationModelTests(TestCase):
 
         self.assertIsNotNone(es_config)
         self.assertIsNotNone(en_config)
-        self.assertEqual(es_config.model_name, "gemini-2.5-flash")
-        self.assertEqual(en_config.model_name, "gemini-2.5-flash")
+        self.assertEqual(es_config.model_name, "gemini-4-hydrogen")
+        self.assertEqual(en_config.model_name, "gemini-4-hydrogen")
+        self.assertEqual(es_config.thinking_level, "low")
+        self.assertEqual(en_config.thinking_level, "low")
+        self.assertEqual(es_config.get_model_for_task("intake"), "gemini-4-hydrogen")
+        self.assertEqual(es_config.get_model_for_task("compliance"), "gemini-4-hydrogen")
+        self.assertEqual(es_config.get_model_for_task("policy_sync"), "gemini-4-hydrogen")
         self.assertEqual(es_config.temperature, 0.3)
         self.assertEqual(en_config.temperature, 0.3)
         self.assertIn("ESPAÑOL", es_config.system_instruction)
         self.assertIn("ENGLISH", en_config.system_instruction)
+
+    def test_get_model_for_task_respects_overrides(self):
+        config = AIPromptConfiguration(
+            language="es",
+            model_name="gemini-4-hydrogen",
+            intake_model_name="gemini-3.8-flash",
+            compliance_model_name="gemini-3.5-flash-lite",
+            policy_sync_model_name="",
+            temperature=0.3,
+            system_instruction="Test",
+        )
+        self.assertEqual(config.get_model_for_task("copywriting"), "gemini-4-hydrogen")
+        self.assertEqual(config.get_model_for_task("intake"), "gemini-3.8-flash")
+        self.assertEqual(config.get_model_for_task("compliance"), "gemini-3.5-flash-lite")
+        self.assertEqual(config.get_model_for_task("policy_sync"), "gemini-4-hydrogen")
 
     def test_str_representation(self):
         config = AIPromptConfiguration(
