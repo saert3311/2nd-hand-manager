@@ -52,6 +52,39 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+    /* GPU-composited non-blocking skeleton shimmer */
+    .app-shimmer-bar {
+      position: relative;
+      overflow: hidden;
+    }
+    .app-shimmer-bar::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      transform: translateX(-100%);
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.72) 50%,
+        transparent 100%
+      );
+      animation: appShimmer 1.45s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      pointer-events: none;
+    }
+    @keyframes appShimmer {
+      0% {
+        transform: translateX(-100%);
+      }
+      100% {
+        transform: translateX(100%);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .app-shimmer-bar::after {
+        animation: none;
+        display: none;
+      }
+    }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
@@ -710,6 +743,189 @@
     })();
   </script>
   {% endif %}
+
+  <!-- Global Declarative Loading Feedback & Staged Progress Engine -->
+  <script>
+    (function() {
+      const SPINNER_SVG = '<svg class="animate-spin h-4 w-4 shrink-0 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>';
+      const activeControllers = new Set();
+
+      function setButtonLoading(btn, loadingText) {
+        if (!btn || btn.dataset.loadingActive === 'true') return;
+        btn.dataset.originalHtml = btn.innerHTML;
+        btn.dataset.originalDisabled = btn.disabled ? 'true' : 'false';
+        btn.dataset.loadingActive = 'true';
+        btn.setAttribute('aria-busy', 'true');
+        btn.classList.add('opacity-85', 'cursor-wait');
+
+        const label = (loadingText !== undefined && loadingText !== null)
+          ? String(loadingText).trim()
+          : (btn.getAttribute('data-loading-text') || '').trim();
+
+        btn.innerHTML = SPINNER_SVG;
+        if (label) {
+          const span = document.createElement('span');
+          span.className = 'min-w-0 break-words';
+          span.textContent = label;
+          btn.appendChild(span);
+        }
+
+        // Queue disabled state after synchronous FormData serialization so button name/value pairs still submit
+        setTimeout(function() {
+          if (btn.dataset.loadingActive === 'true') {
+            btn.disabled = true;
+          }
+        }, 0);
+      }
+
+      function resetButtonLoading(btn) {
+        if (!btn || btn.dataset.loadingActive !== 'true') return;
+        if (btn.dataset.originalHtml !== undefined) {
+          btn.innerHTML = btn.dataset.originalHtml;
+        }
+        btn.disabled = (btn.dataset.originalDisabled === 'true');
+        delete btn.dataset.loadingActive;
+        delete btn.dataset.originalHtml;
+        delete btn.dataset.originalDisabled;
+        btn.removeAttribute('aria-busy');
+        btn.classList.remove('opacity-85', 'cursor-wait');
+      }
+
+      function createStagedProgressController(options) {
+        const containerEl = options && options.containerEl ? options.containerEl : null;
+        const labelEl = options && options.labelEl ? options.labelEl : null;
+        const timerEl = options && options.timerEl ? options.timerEl : null;
+        const stages = Array.isArray(options && options.stages) ? options.stages : [];
+        const hideOnStop = !options || options.hideOnStop !== false;
+
+        let stageTimeouts = [];
+        let timerInterval = null;
+        let isRunning = false;
+
+        function clearTimers() {
+          stageTimeouts.forEach(function(id) { clearTimeout(id); });
+          stageTimeouts = [];
+          if (timerInterval !== null) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+          }
+        }
+
+        function start() {
+          stop(true);
+          isRunning = true;
+          activeControllers.add(controller);
+          const startedAt = Date.now();
+
+          if (timerEl) {
+            timerEl.textContent = '0s';
+          }
+          if (labelEl && stages.length > 0 && stages[0].text) {
+            labelEl.textContent = stages[0].text;
+          }
+          if (containerEl) {
+            containerEl.classList.remove('hidden');
+            containerEl.setAttribute('aria-busy', 'true');
+          }
+
+          stages.forEach(function(stage) {
+            const delay = Math.max(0, Number(stage && stage.delayMs) || 0);
+            if (delay === 0) return;
+            const timeoutId = setTimeout(function() {
+              if (!isRunning) return;
+              if (labelEl && stage.text) {
+                labelEl.textContent = stage.text;
+              }
+            }, delay);
+            stageTimeouts.push(timeoutId);
+          });
+
+          if (timerEl) {
+            timerInterval = setInterval(function() {
+              if (!isRunning) return;
+              const elapsedSec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+              timerEl.textContent = elapsedSec + 's';
+            }, 1000);
+          }
+        }
+
+        function stop(keepVisible) {
+          isRunning = false;
+          clearTimers();
+          activeControllers.delete(controller);
+          if (containerEl) {
+            containerEl.setAttribute('aria-busy', 'false');
+            if (hideOnStop && !keepVisible) {
+              containerEl.classList.add('hidden');
+            }
+          }
+        }
+
+        const controller = { start: start, stop: stop };
+        return controller;
+      }
+
+      function resetAll() {
+        Array.from(activeControllers).forEach(function(ctrl) {
+          ctrl.stop();
+        });
+        document.querySelectorAll('button[data-loading-active="true"]').forEach(function(btn) {
+          resetButtonLoading(btn);
+        });
+        document.querySelectorAll('form[data-app-submitting="true"]').forEach(function(form) {
+          delete form.dataset.appSubmitting;
+        });
+      }
+
+      document.addEventListener('submit', function(e) {
+        const form = e.target;
+        if (!form || form.tagName !== 'FORM') return;
+        if (e.defaultPrevented) return;
+        if (form.hasAttribute('data-no-loading')) return;
+        if (form.hasAttribute('data-confirm-message') && form.dataset.confirmed !== 'true') return;
+
+        if (form.dataset.appSubmitting === 'true') {
+          e.preventDefault();
+          return;
+        }
+
+        const rawSubmitter = e.submitter || document.activeElement;
+        let targetBtn = null;
+        if (
+          rawSubmitter &&
+          rawSubmitter.tagName === 'BUTTON' &&
+          (rawSubmitter.form === form || form.contains(rawSubmitter))
+        ) {
+          targetBtn = rawSubmitter;
+        } else {
+          targetBtn = form.querySelector('button[type="submit"][data-loading-text]');
+        }
+
+        const isNonGet = (form.getAttribute('method') || 'get').toLowerCase() !== 'get';
+        const hasLoadingTrigger = Boolean(targetBtn && targetBtn.hasAttribute('data-loading-text'));
+        if (!isNonGet && !hasLoadingTrigger && !form.hasAttribute('data-loading-form')) {
+          return;
+        }
+
+        form.dataset.appSubmitting = 'true';
+        if (targetBtn && targetBtn.hasAttribute('data-loading-text')) {
+          setButtonLoading(targetBtn, targetBtn.getAttribute('data-loading-text'));
+        }
+      });
+
+      window.addEventListener('pageshow', function() {
+        resetAll();
+      });
+
+      window.AppFeedback = {
+        SPINNER_SVG: SPINNER_SVG,
+        setButtonLoading: setButtonLoading,
+        resetButtonLoading: resetButtonLoading,
+        resetAll: resetAll,
+        createStagedProgressController: createStagedProgressController
+      };
+    })();
+  </script>
 
   {% block extra_scripts %}{% endblock %}
 </body>
