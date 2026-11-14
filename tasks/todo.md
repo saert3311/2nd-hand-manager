@@ -4100,7 +4100,7 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 - [x] Implement `window.AppFeedback` (`setButtonLoading`, `resetButtonLoading`, `resetAll`, `createStagedProgressController`) + delegated `submit` handler (`data-loading-text`, `e.defaultPrevented` & `data-confirm-message` awareness, deferred disable) + `pageshow` bfcache reset.
 
 ### Task 200: Intake Staged AI Skeleton & Progress Timer (`inventory/templates/inventory/intake.html`)
-- [x] Render visible `#identifyHelpText` (`aria-live="polite"`) below `#identifyBtn` and add `#aiIdentificationSkeleton` (`role="status"`, `aria-live="polite"`, `aria-busy="true"`) matching `#aiAdvisoryBanner` height/grid structure with staged copy + `tabular-nums` elapsed counter.
+- [x] Add `#aiIdentificationSkeleton` (`role="status"`, `aria-live="polite"`, `aria-busy="true"`) matching `#aiAdvisoryBanner` height/grid structure with staged copy + `tabular-nums` elapsed counter (preserving streamlined low-DPI button row without `#identifyHelpText`).
 - [x] Wire `createStagedProgressController` into `setFormState('identifying')` / `identifyBtn` handler and ensure `finally` cleanup on success, error, or network failure; add `data-loading-text` on `#submitBtn`.
 
 ### Task 201: Product Detail AI Skeleton & Uniform Action Buttons (`product_detail.html`, `dashboard.html`, `pallets.html`, `pallet_edit.html`, `provider_edit.html`)

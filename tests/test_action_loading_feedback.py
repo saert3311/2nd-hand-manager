@@ -60,7 +60,6 @@ class ActionLoadingFeedbackMarkupTests(TestCase):
         self.assertIn("window.AppFeedback", html)
         self.assertIn("@keyframes appShimmer", html)
         self.assertIn("prefers-reduced-motion: reduce", html)
-        self.assertIn('id="identifyHelpText"', html)
         self.assertIn('id="aiIdentificationSkeleton"', html)
         self.assertIn('id="aiIdentifyStageText"', html)
         self.assertIn('id="aiIdentifyElapsed"', html)
@@ -227,12 +226,11 @@ class ActionLoadingFeedbackBrowserTests(StaticLiveServerTestCase):
                         ),
                     )
 
-                    # Once completed, skeleton hides, advisory banner renders, and help text persists
+                    # Once completed, skeleton hides and advisory banner renders
                     page.wait_for_selector("#aiAdvisoryBanner:not(.hidden)", timeout=5000)
                     self.assertIn("hidden", page.get_attribute("#aiIdentificationSkeleton", "class"))
                     self.assertEqual(page.get_attribute("#aiIdentificationSkeleton", "aria-busy"), "false")
                     self.assertIn("Mahlkonig Vario Grinder", page.inner_text("#advisoryTitle"))
-                    self.assertTrue(len(page.inner_text("#identifyHelpText").strip()) > 0)
                     self._assert_no_horizontal_overflow(page, f"{label} after identification completed")
                 finally:
                     context.close()

@@ -877,8 +877,7 @@ Provide uniform, non-blocking, accessible loading progress across long-running A
    - Attach delegated `document` `submit` listener ignoring `e.defaultPrevented`, awaiting `data-confirm-message` modal approvals, and preventing duplicate POST submits via `form.dataset.appSubmitting`.
    - Attach `window.addEventListener('pageshow', ...)` calling `AppFeedback.resetAll()` so Back/Forward navigation never leaves disabled buttons.
 2. **Intake AI Pre-Flight Staged Skeleton (`inventory/templates/inventory/intake.html`)**:
-   - Render visible `#identifyHelpText` (`<p aria-live="polite">`) below `#identifyBtn`.
-   - Add `#aiIdentificationSkeleton` (`role="status"`, `aria-live="polite"`, `aria-busy="true"`) with SVG spinner, `#aiIdentifyStageText`, `#aiIdentifyElapsed` (`0s`), and title/attributes/MSRP/Resale shimmer placeholders directly above `#aiAdvisoryBanner`.
+   - Add `#aiIdentificationSkeleton` (`role="status"`, `aria-live="polite"`, `aria-busy="true"`) with SVG spinner, `#aiIdentifyStageText`, `#aiIdentifyElapsed` (`0s`), and title/attributes/MSRP/Resale shimmer placeholders directly above `#aiAdvisoryBanner` (preserving low-DPI streamlined header without `#identifyHelpText`), plus non-blocking error banner in `#aiAdvisoryBanner` on fetch catch.
    - Hook `createStagedProgressController` into `setFormState('identifying')` and `finally` cleanup (`identifyBtn` handler); wire `data-loading-text` on `#submitBtn`.
 3. **Product Detail AI Skeleton & Uniform Action Buttons (`inventory/templates/inventory/product_detail.html`, `dashboard.html`, `pallets.html`, `pallet_edit.html`, `provider_edit.html`)**:
    - Add `#aiGeneratingSkeleton` inside `#workspacePanelListing` triggered alongside `AppFeedback.setButtonLoading` in `#aiForm` submit handler (`#aiBtn` SVG spinner + staged progress + live timer).

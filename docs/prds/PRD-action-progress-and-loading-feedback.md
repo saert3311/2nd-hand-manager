@@ -30,7 +30,7 @@ Phase 54 delivers a uniform, accessible, zero-dependency **Action Progress & Non
 
 ### 2.2 Non-Blocking AI Progress & Skeleton Cards
 1. **Intake AI Pre-Flight Identification (`inventory/templates/inventory/intake.html`)**:
-   - Render `#identifyHelpText` (`<p id="identifyHelpText" class="text-xs sm:text-sm text-slate-500 mt-1.5" aria-live="polite">`) right below `#identifyBtn` so existing and new JS references reliably update real visible UI.
+   - Keep `#identifyBtn` uncluttered in low-DPI viewports (preserving the streamlined layout invariant without `#identifyHelpText`) while animating `#identifyBtn` inline spinner + `"Analyzing photos with AI..."`.
    - Add `#aiIdentificationSkeleton` (`role="status"`, `aria-live="polite"`, `aria-busy="true"`, `hidden` by default) directly above `#aiAdvisoryBanner`:
      - Clean Slate surface (`bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4 space-y-3`) matching `#aiAdvisoryBanner`'s layout size (header title shimmer + pill shimmer, attribute lines, 2-column MSRP/Resale placeholder tiles).
      - Live status header displaying an inline SVG spinner, `#aiIdentifyStageText` cycling through localized stages (`Uploading & preparing photos...` → `Identifying brand, model & condition...` → `Estimating resale prices & policy rules...`), and a live `font-mono tabular-nums` counter (`#aiIdentifyElapsed`, e.g., `0s`, `1s`).
@@ -60,7 +60,7 @@ Phase 54 delivers a uniform, accessible, zero-dependency **Action Progress & Non
 ---
 
 ## 4. Verification & Acceptance Criteria
-1. Declarative `data-loading-text` attributes, `window.AppFeedback`, `#aiIdentificationSkeleton`, `#aiGeneratingSkeleton`, and `#identifyHelpText` are present and cleanly translated (`es`/`en`, compiled via `manage.py compile_locales`).
+1. Declarative `data-loading-text` attributes, `window.AppFeedback`, `#aiIdentificationSkeleton`, and `#aiGeneratingSkeleton` are present and cleanly translated (`es`/`en`, compiled via `manage.py compile_locales`).
 2. Browser verification (Playwright) proves:
    - Intercepted/delayed `/intake/identify/` shows `#aiIdentificationSkeleton` with non-zero bounding box, incrementing elapsed seconds (`0s` → `1s+`), `aria-busy="true"`, and non-hidden screen photos/notes, then hides skeleton and reveals `#aiAdvisoryBanner` upon completion.
    - Product detail `#aiForm` shows `#aiGeneratingSkeleton` and spinner on `#aiBtn`, while unconfirmed `data-confirm-message` modals do NOT stick buttons in loading state when cancelled.

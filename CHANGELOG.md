@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Action Progress & Non-Blocking Loading Feedback System (Phase 54)**:
   - **Global Declarative Feedback Engine (`base.html`)**: Added `window.AppFeedback` (`setButtonLoading`, `resetButtonLoading`, `resetAll`, `createStagedProgressController`) and GPU-composited `.app-shimmer-bar` CSS animations (respecting `prefers-reduced-motion: reduce`), plus a delegated `submit` handler for `data-loading-text` buttons and `pageshow` (`bfcache`) restoration.
-  - **Non-Blocking Staged AI Skeletons (`intake.html`, `product_detail.html`)**: Added `#identifyHelpText` and `#aiIdentificationSkeleton` (`role="status"`, `aria-live="polite"`, `aria-busy`, staged labels, live `tabular-nums` timer, and layout-matched shimmer tiles) for `/intake/identify/`, plus `#aiGeneratingSkeleton` and inline SVG button feedback for `#aiForm` copywriting generation.
+  - **Non-Blocking Staged AI Skeletons (`intake.html`, `product_detail.html`)**: Added `#aiIdentificationSkeleton` (`role="status"`, `aria-live="polite"`, `aria-busy`, staged labels, live `tabular-nums` timer, and layout-matched shimmer tiles) plus network-error banner fallback for `/intake/identify/`, and `#aiGeneratingSkeleton` + inline SVG button feedback for `#aiForm` copywriting generation.
   - **Uniform Form Button Coverage**: Added localized `data-loading-text` attributes across product staging save, ClauseGuard compliance checks, photo uploads, clarifications, trash/restore actions, marketplace link forms, pallet/provider CRUD forms, and programmatic `data-confirm-message` modal confirmations (`#btnProceedActionConfirm`).
 
 ## [2.10.0] - 2026-11-14
