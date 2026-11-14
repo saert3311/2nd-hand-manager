@@ -839,5 +839,27 @@ Upgrade product search across both the internal Staging Dashboard (`/dashboard/`
 3. **Deterministic, Portable Browser Suites**: Centralize Chrome -> Chromium fallback launch and non-essential font blocking in `tests/helpers.py`, share browser instances per `StaticLiveServerTestCase` class, replace `wait_for_timeout`/`networkidle` stalls with deterministic waits, and eliminate redundant browser suites & noisy `print()` logs.
 4. **Semantic Regression Assertions**: Replace brittle JS source-code and multi-utility Tailwind class substring assertions with semantic DOM, ARIA, regex, and computed-style checks.
 
+---
+
+## Phase 53: Resilient Gemini Model Discovery, Effort Control & Self-Healing Routing (`fix/gemini-api-version-v1beta`)
+
+### Overview
+Prevent Gemini SDK/API version shifts, deprecated model names, and excessive thinking-token overhead across all 4 AI workflows (`identify_intake_product`, `generate_product_listing`, `verify_product_compliance_ai`, and `sync_site_policy`) while giving Store Managers live model discovery and effort control in Django Admin.
+
+### Technical Design
+1. **Domain Model & Migration (`inventory/models.py`, `inventory/migrations/0030_aipromptconfiguration_model_routing_and_thinking.py`)**:
+   - Add `ThinkingLevel` (`MINIMAL = "minimal"`, `LOW = "low"`, `MEDIUM = "medium"`, `HIGH = "high"`).
+   - Upgrade `AIPromptConfiguration.model_name` default to `"gemini-4-hydrogen"`.
+   - Add `thinking_level` (`default=ThinkingLevel.LOW`), `intake_model_name`, `compliance_model_name`, and `policy_sync_model_name` (`blank=True, default=""`) to `AIPromptConfiguration`.
+   - Data migration updates existing unmodified `"gemini-2.5-flash"` active configurations to `"gemini-4-hydrogen"`.
+2. **Model Discovery, Effort Clamping & Self-Healing Fallback (`inventory/services/compliance_service.py`, `inventory/services/ai_service.py`, `inventory/services/policy_sync_service.py`)**:
+   - `get_gemini_http_options()` pins `api_version="v1beta"`.
+   - `resolve_thinking_config(model_name, thinking_level)` clamps `"minimal"` to `"LOW"` on models that do not support `MINIMAL` (`gemini-4-*`, `gemini-3.8-flash`, `gemini-2.5-*`, `gemini-flash-latest`), preventing `400 INVALID_ARGUMENT` errors while cutting `gemini-4-hydrogen` thinking tokens by >60%.
+   - `fetch_available_gemini_models(force_refresh=False)` queries `client.models.list()`, filters for multimodal JSON-compatible models (excluding TTS, image-gen, audio, live, robotics, computer-use, deep-research, antigravity, gemma), caches in Django cache (`1h`), and falls back to `STATIC_FALLBACK_MODELS`.
+   - `generate_content_with_fallback(...)` retries `404 NOT_FOUND` / `400 INVALID_ARGUMENT` errors across `[configured_model, "gemini-4-hydrogen", "gemini-3.8-flash", "gemini-flash-latest"]` without retrying `429`/`401`/`403` or network timeouts.
+3. **Django Admin Live Selector & Refresh Action (`inventory/admin.py`)**:
+   - `AIPromptConfigurationAdminForm` renders dynamic `<select>` widgets for `model_name`, `intake_model_name`, `compliance_model_name`, and `policy_sync_model_name` populated from `fetch_available_gemini_models()`, preserving any custom model value already saved.
+   - Add `refresh_gemini_models_action` and `/admin/inventory/aipromptconfiguration/refresh-models/` endpoint + button to force-refresh the live model catalog from Google AI.
+
 
 

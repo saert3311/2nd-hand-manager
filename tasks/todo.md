@@ -4068,5 +4068,28 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 - [x] Convert high-volume invariant fixtures in `TestCase` suites to `setUpTestData()` and `force_login()`.
 - [x] Run full `manage.py test`, `manage.py check`, `manage.py compile_locales`, and `ruff check .` with 0 failures/warnings.
 
+---
+
+## Phase 53: Resilient Gemini Model Discovery, Effort Control & Self-Healing Routing
+
+### Task 195: Domain Model, Thinking Level Enum & Migration (`inventory/models.py`, `inventory/migrations/0030_aipromptconfiguration_model_routing_and_thinking.py`)
+- [ ] Add `ThinkingLevel` (`minimal`, `low`, `medium`, `high`) to `inventory/models.py`.
+- [ ] Update `AIPromptConfiguration.model_name` default to `"gemini-4-hydrogen"` and add `thinking_level` (`default="low"`), `intake_model_name`, `compliance_model_name`, and `policy_sync_model_name`.
+- [ ] Create and apply migration `0030_aipromptconfiguration_model_routing_and_thinking.py` (including data migration upgrading unmodified `"gemini-2.5-flash"` rows to `"gemini-4-hydrogen"`).
+
+### Task 196: Capability-Filtered Model Discovery, Thinking Clamping & Self-Healing Fallback (`inventory/services/compliance_service.py`, `inventory/services/ai_service.py`, `inventory/services/policy_sync_service.py`)
+- [ ] Implement `resolve_thinking_config(model_name, thinking_level)` clamping `"minimal"` to `"LOW"` on models that do not support `MINIMAL`.
+- [ ] Implement `fetch_available_gemini_models(force_refresh=False)` with 1-hour Django cache, capability filtering (`generateContent` minus TTS/image/audio/live/robotics/gemma), and `STATIC_FALLBACK_MODELS`.
+- [ ] Implement `resolve_task_model_and_thinking(task, language)` and `generate_content_with_fallback(client, model, contents, config_kwargs, thinking_level)` across all 4 AI call sites (`generate_product_listing`, `identify_intake_product`, `verify_product_compliance_ai`, and `_extract_clauses_with_gemini`).
+
+### Task 197: Manager Admin Live Model Selector & Catalog Refresh (`inventory/admin.py`, `inventory/templates/admin/`)
+- [ ] Add `AIPromptConfigurationAdminForm` with dynamic `<select>` widgets for `model_name`, `intake_model_name`, `compliance_model_name`, and `policy_sync_model_name` populated from `fetch_available_gemini_models()`.
+- [ ] Add `thinking_level` to `AIPromptConfigurationAdmin` `list_display` and `fieldsets`, plus a "Refresh Gemini Models from API" admin action and custom admin URL endpoint.
+
+### Task 198: Bilingual Localization, Automated Tests & Changelog (`locale/`, `tests/`, `CHANGELOG.md`)
+- [ ] Add Spanish and English translations in `locale/` and compile via `manage.py compile_locales`.
+- [ ] Add unit & integration tests in `tests/test_ai_service.py`, `tests/test_models.py`, and `tests/test_clauseguard_compliance.py` covering `ThinkingLevel`, `resolve_thinking_config` clamping, `fetch_available_gemini_models` filtering, per-task model inheritance, Admin form choices/refresh, and `404`/`400` runtime fallback recovery.
+- [ ] Update `CHANGELOG.md` and pass `ruff check .`, `manage.py check`, `manage.py compile_locales`, and `manage.py test`.
+
 
 
