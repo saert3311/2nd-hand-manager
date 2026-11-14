@@ -1585,6 +1585,13 @@ class ProductImage(models.Model):
         return f"{_('Image')} #{self.pk or _('New')} - {_('Product')} #{self.product_id}"
 
 
+class ThinkingLevel(models.TextChoices):
+    MINIMAL = "minimal", _("Minimal (Near-Off — Auto-clamps to Low on Gemini 4 & 3.8)")
+    LOW = "low", _("Low Effort — Fast & Cost-Efficient (Recommended)")
+    MEDIUM = "medium", _("Medium Effort — Balanced Reasoning")
+    HIGH = "high", _("High Effort — Deep Reasoning (Higher Token Cost)")
+
+
 class AIPromptConfiguration(models.Model):
     LANGUAGE_CHOICES = [
         ("es", _("Spanish")),
@@ -1601,9 +1608,48 @@ class AIPromptConfiguration(models.Model):
     )
     model_name = models.CharField(
         max_length=64,
-        default="gemini-2.5-flash",
+        default="gemini-4-hydrogen",
         verbose_name=_("Model Name"),
-        help_text=_("Gemini model identifier (e.g. gemini-2.5-flash, gemini-2.5-pro)")
+        help_text=_(
+            "Primary Gemini model identifier (used for listing copywriting and as default for all other AI tasks)."
+        ),
+    )
+    thinking_level = models.CharField(
+        max_length=16,
+        choices=ThinkingLevel.choices,
+        default=ThinkingLevel.LOW,
+        verbose_name=_("Thinking Effort Level"),
+        help_text=_(
+            "Controls internal reasoning token spend and latency. 'Low' is recommended to avoid "
+            "overthinking and excess output token charges on Gemini 4 and 3.8 models."
+        ),
+    )
+    intake_model_name = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        verbose_name=_("Intake Vision Model Override"),
+        help_text=_(
+            "Optional model override for intake pre-flight identification. Leave blank to inherit Model Name."
+        ),
+    )
+    compliance_model_name = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        verbose_name=_("Compliance Check Model Override"),
+        help_text=_(
+            "Optional model override for ClauseGuard Stage 2 verification. Leave blank to inherit Model Name."
+        ),
+    )
+    policy_sync_model_name = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        verbose_name=_("Policy Sync Model Override"),
+        help_text=_(
+            "Optional model override for marketplace Terms & Conditions extraction. Leave blank to inherit Model Name."
+        ),
     )
     temperature = models.FloatField(
         default=0.3,
@@ -1632,6 +1678,16 @@ class AIPromptConfiguration(models.Model):
     def __str__(self):
         status = _("Active") if self.is_active else _("Inactive")
         return f"{self.get_language_display()} - {self.model_name} ({status})"
+
+    def get_model_for_task(self, task: str = "copywriting") -> str:
+        """Returns the effective model identifier for a task ('copywriting', 'intake', 'compliance', 'policy_sync')."""
+        override_map = {
+            "intake": self.intake_model_name,
+            "compliance": self.compliance_model_name,
+            "policy_sync": self.policy_sync_model_name,
+        }
+        candidate = (override_map.get(task) or "").strip()
+        return candidate or (self.model_name or "gemini-4-hydrogen").strip()
 
     def clean(self):
         super().clean()

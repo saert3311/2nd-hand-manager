@@ -14,12 +14,16 @@ from inventory.models import (
     ProductCondition,
 )
 from inventory.services.compliance_service import (
+    DEFAULT_GEMINI_MODEL,
+    DEFAULT_THINKING_LEVEL,
     evaluate_stage1_local,
     evaluate_stage1_local_for_product,
     format_top_clauses_prompt_block,
+    generate_content_with_fallback,
     get_gemini_http_options,
     merge_stage2_compliance_result,
     parse_gemini_response_dict,
+    resolve_task_model_and_thinking,
 )
 
 logger = logging.getLogger(__name__)
@@ -49,8 +53,8 @@ OfficialConditionCode = Literal[
     "vintage",
 ]
 
-DEFAULT_MODEL_NAME = "gemini-2.5-flash"
-INTAKE_IDENTIFICATION_MODEL_NAME = getattr(settings, "GEMINI_INTAKE_MODEL_NAME", "gemini-flash-latest")
+DEFAULT_MODEL_NAME = DEFAULT_GEMINI_MODEL
+INTAKE_IDENTIFICATION_MODEL_NAME = getattr(settings, "GEMINI_INTAKE_MODEL_NAME", DEFAULT_MODEL_NAME)
 DEFAULT_TEMPERATURE = 0.3
 
 DEFAULT_ES_INSTRUCTION = (
@@ -212,35 +216,52 @@ PREFLIGHT_EN_INSTRUCTION = (
 )
 
 
+def _resolve_copywriting_configuration(language: str = "en") -> Tuple[str, float, str, str]:
+    """
+    Retrieves the active AIPromptConfiguration for the specified language in a single DB query.
+    Returns: (model_name, temperature, system_instruction, thinking_level)
+    """
+    lang_code = "es" if str(language).lower().startswith("es") else "en"
+    try:
+        from inventory.models import AIPromptConfiguration
+
+        config = AIPromptConfiguration.objects.filter(
+            language=lang_code,
+            is_active=True,
+        ).first()
+        if config and config.system_instruction and config.system_instruction.strip():
+            model = (config.model_name or "").strip() or DEFAULT_MODEL_NAME
+            temp = config.temperature if config.temperature is not None else DEFAULT_TEMPERATURE
+            thinking = (getattr(config, "thinking_level", None) or DEFAULT_THINKING_LEVEL).strip().lower()
+            return model, temp, config.system_instruction.strip(), thinking
+    except Exception as exc:
+        logger.warning("Could not retrieve AIPromptConfiguration from database: %s. Using default fallback.", exc)
+
+    default_instruction = DEFAULT_ES_INSTRUCTION if lang_code == "es" else DEFAULT_EN_INSTRUCTION
+    return DEFAULT_MODEL_NAME, DEFAULT_TEMPERATURE, default_instruction, DEFAULT_THINKING_LEVEL
+
+
 def resolve_ai_configuration(language: str = "en") -> Tuple[str, float, str]:
     """
     Retrieves the active AIPromptConfiguration for the specified language.
     Falls back gracefully to hardcoded constants if no record is found or on database errors.
     Returns: (model_name, temperature, system_instruction)
     """
-    lang_code = "es" if str(language).lower().startswith("es") else "en"
-    try:
-        from inventory.models import AIPromptConfiguration
-        config = AIPromptConfiguration.objects.filter(
-            language=lang_code,
-            is_active=True
-        ).first()
-        if config and config.system_instruction and config.system_instruction.strip():
-            model = (config.model_name or "").strip() or DEFAULT_MODEL_NAME
-            temp = config.temperature if config.temperature is not None else DEFAULT_TEMPERATURE
-            return model, temp, config.system_instruction.strip()
-    except Exception as exc:
-        logger.warning("Could not retrieve AIPromptConfiguration from database: %s. Using default fallback.", exc)
-
-    default_instruction = DEFAULT_ES_INSTRUCTION if lang_code == "es" else DEFAULT_EN_INSTRUCTION
-    return DEFAULT_MODEL_NAME, DEFAULT_TEMPERATURE, default_instruction
+    model, temp, instruction, _ = _resolve_copywriting_configuration(language)
+    return model, temp, instruction
 
 
 def _extract_token_count(response: object, prompt_text: str) -> int:
     usage = getattr(response, "usage_metadata", None)
-    raw_total = getattr(usage, "total_token_count", None) if usage is not None else None
-    if isinstance(raw_total, int) and raw_total > 0:
-        return raw_total
+    if usage is not None:
+        raw_total = getattr(usage, "total_token_count", None)
+        if isinstance(raw_total, int) and raw_total > 0:
+            return raw_total
+        prompt_tokens = getattr(usage, "prompt_token_count", 0) or 0
+        out_tokens = getattr(usage, "candidates_token_count", 0) or 0
+        thought_tokens = getattr(usage, "thoughts_token_count", 0) or 0
+        if isinstance(prompt_tokens, int) and isinstance(out_tokens, int) and (prompt_tokens + out_tokens) > 0:
+            return prompt_tokens + out_tokens + (thought_tokens if isinstance(thought_tokens, int) else 0)
     return max(140, len(prompt_text) // 4 + 80)
 
 
@@ -264,7 +285,7 @@ def generate_product_listing(
         raise AIServiceError("Cannot generate listing: Product has no photos and no field notes.")
 
     # 1. Resolve configuration & copywriting instructions
-    resolved_model, resolved_temp, system_instruction = resolve_ai_configuration(language)
+    resolved_model, resolved_temp, system_instruction, resolved_thinking = _resolve_copywriting_configuration(language)
     active_model = model_name.strip() if (model_name and model_name.strip()) else resolved_model
 
     is_es = str(language).lower().startswith("es")
@@ -342,15 +363,13 @@ def generate_product_listing(
     # 3. Call Gemini
     try:
         client = genai.Client(api_key=api_key.strip(), http_options=get_gemini_http_options())
-        config = types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=ProductListingSchema,
-            temperature=resolved_temp,
-        )
-        response = client.models.generate_content(
+        response = generate_content_with_fallback(
+            client,
             model=active_model,
             contents=contents,
-            config=config,
+            response_schema=ProductListingSchema,
+            temperature=resolved_temp,
+            thinking_level=resolved_thinking,
         )
         tokens_used = _extract_token_count(response, prompt_text)
 
@@ -466,16 +485,15 @@ def identify_intake_product(
         contents.append(types.Part.from_bytes(data=img_data, mime_type=mime))
 
     try:
+        active_model, thinking_level = resolve_task_model_and_thinking("intake", language=language)
         client = genai.Client(api_key=api_key.strip(), http_options=get_gemini_http_options())
-        config = types.GenerateContentConfig(
-            response_mime_type="application/json",
+        response = generate_content_with_fallback(
+            client,
+            model=active_model,
+            contents=contents,
             response_schema=IntakePreflightSchema,
             temperature=0.2,
-        )
-        response = client.models.generate_content(
-            model=INTAKE_IDENTIFICATION_MODEL_NAME,
-            contents=contents,
-            config=config,
+            thinking_level=thinking_level,
         )
         tokens_used = _extract_token_count(response, prompt_text)
 

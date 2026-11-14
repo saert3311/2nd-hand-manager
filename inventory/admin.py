@@ -1,5 +1,6 @@
 from functools import update_wrapper
 
+from django import forms
 from django.conf import settings
 from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
@@ -39,6 +40,7 @@ from .models import (
 )
 from .permissions import ROLE_ASSISTANT, ROLE_MANAGER, is_assistant, is_manager
 from .services.backup_service import backup_database
+from .services.compliance_service import fetch_available_gemini_models
 
 User = get_user_model()
 
@@ -577,26 +579,80 @@ class ProductImageAdmin(admin.ModelAdmin):
         return bool(request.user and request.user.is_active and is_manager(request.user))
 
 
+class AIPromptConfigurationAdminForm(forms.ModelForm):
+    class Meta:
+        model = AIPromptConfiguration
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        available = fetch_available_gemini_models(force_refresh=False)
+        known_ids = {m_id for m_id, _ in available}
+
+        def _choices_with_current(field_name: str, include_inherit: bool = False) -> list[tuple[str, str]]:
+            choices: list[tuple[str, str]] = []
+            if include_inherit:
+                choices.append(("", _("— Inherit Primary Model Name —")))
+            choices.extend(available)
+            current_vals = [
+                getattr(self.instance, field_name, "") if self.instance else "",
+                self.initial.get(field_name, "") if self.initial else "",
+                self.data.get(self.add_prefix(field_name), "") if self.data else "",
+            ]
+            seen = set(known_ids) | {""}
+            for val in current_vals:
+                clean_val = str(val or "").strip()
+                if clean_val and clean_val not in seen:
+                    choices.append((clean_val, f"{clean_val} ({_('Custom')})"))
+                    seen.add(clean_val)
+            return choices
+
+        if "model_name" in self.fields:
+            self.fields["model_name"].widget = forms.Select(
+                choices=_choices_with_current("model_name", include_inherit=False)
+            )
+        for override_field in ("intake_model_name", "compliance_model_name", "policy_sync_model_name"):
+            if override_field in self.fields:
+                self.fields[override_field].widget = forms.Select(
+                    choices=_choices_with_current(override_field, include_inherit=True)
+                )
+
+
 @admin.register(AIPromptConfiguration, site=admin_site)
 class AIPromptConfigurationAdmin(admin.ModelAdmin):
+    form = AIPromptConfigurationAdminForm
     list_display = (
         "language",
         "model_name",
+        "thinking_level",
+        "task_overrides_summary",
         "temperature",
         "is_active_badge",
         "updated_at",
     )
-    list_filter = ("is_active", "language")
-    search_fields = ("model_name", "system_instruction")
+    list_filter = ("is_active", "language", "thinking_level")
+    search_fields = ("model_name", "intake_model_name", "compliance_model_name", "policy_sync_model_name", "system_instruction")
     readonly_fields = ("created_at", "updated_at")
+    actions = ["refresh_gemini_models_action"]
     fieldsets = (
         (
-            _("Model Parameters"),
+            _("Model Parameters & Effort Control"),
             {
-                "fields": ("language", "model_name", "temperature"),
+                "fields": ("language", "model_name", "thinking_level", "temperature"),
                 "description": _(
-                    "Specify the Gemini model identifier (e.g. gemini-2.5-flash, gemini-2.5-pro) "
-                    "and sampling temperature (0.0 = deterministic, 1.0 = creative)."
+                    "Select the primary Gemini model and thinking effort level. 'Low' effort is recommended "
+                    "on Gemini 4 and 3.8 models to prevent overthinking and reduce output token spend by >60%."
+                ),
+            },
+        ),
+        (
+            _("Task-Specific Model Overrides (Optional)"),
+            {
+                "fields": ("intake_model_name", "compliance_model_name", "policy_sync_model_name"),
+                "description": _(
+                    "Leave blank to inherit the primary Model Name across all workflows, or assign a lighter "
+                    "model (e.g. gemini-3.5-flash-lite) to specific tasks. All tasks automatically self-heal "
+                    "via fallback (gemini-4-hydrogen -> gemini-3.8-flash -> gemini-flash-latest) on 404/400 errors."
                 ),
             },
         ),
@@ -618,6 +674,52 @@ class AIPromptConfigurationAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "refresh-models/",
+                self.admin_site.admin_view(self.refresh_models_view),
+                name="inventory_aipromptconfiguration_refresh_models",
+            ),
+        ]
+        return custom_urls + urls
+
+    def refresh_models_view(self, request):
+        if not self.has_module_permission(request):
+            raise PermissionDenied(_("Manager privileges required to refresh Gemini models."))
+        if request.method == "POST":
+            models = fetch_available_gemini_models(force_refresh=True)
+            self.message_user(
+                request,
+                _("Refreshed Gemini model catalog from API (%(count)d compatible models available).")
+                % {"count": len(models)},
+                level=messages.SUCCESS,
+            )
+        return redirect("admin:inventory_aipromptconfiguration_changelist")
+
+    @admin.action(description=_("Refresh available Gemini models from Google AI API"))
+    def refresh_gemini_models_action(self, request, queryset):
+        models = fetch_available_gemini_models(force_refresh=True)
+        self.message_user(
+            request,
+            _("Refreshed Gemini model catalog from API (%(count)d compatible models available).")
+            % {"count": len(models)},
+            level=messages.SUCCESS,
+        )
+
+    def task_overrides_summary(self, obj):
+        parts = []
+        if obj.intake_model_name:
+            parts.append(f"Intake: {obj.intake_model_name}")
+        if obj.compliance_model_name:
+            parts.append(f"Compliance: {obj.compliance_model_name}")
+        if obj.policy_sync_model_name:
+            parts.append(f"Sync: {obj.policy_sync_model_name}")
+        return ", ".join(parts) if parts else _("All inherit primary")
+
+    task_overrides_summary.short_description = _("Task Overrides")
 
     def is_active_badge(self, obj):
         if obj.is_active:
