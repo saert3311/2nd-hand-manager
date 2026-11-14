@@ -121,6 +121,7 @@
           <form method="post" action="{% url 'inventory:product_restore' product.pk %}" class="flex-1 min-w-0 sm:flex-initial inline-flex">
             {% csrf_token %}
             <button type="submit" id="btnRestoreProductTop"
+                    data-loading-text="{% trans 'Restoring...' %}"
                     class="w-full inline-flex items-center justify-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition cursor-pointer text-center min-h-[38px]">
               <span aria-hidden="true">♻️</span>
               <span class="sm:hidden">{% trans "Restore" %}</span>
@@ -190,6 +191,7 @@
     <form method="post" action="{% url 'inventory:product_mark_platform_synced' product.pk %}" class="shrink-0">
       {% csrf_token %}
       <button type="submit" id="btnMarkPlatformSynced"
+              data-loading-text="{% trans 'Updating sync...' %}"
               class="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition active:scale-[0.98] cursor-pointer">
         <span aria-hidden="true">✅</span> {% trans "Mark Platforms as Updated" %}
       </button>
@@ -216,6 +218,7 @@
       <form method="post" action="{% url 'inventory:product_restore' product.pk %}" class="shrink-0">
         {% csrf_token %}
         <button type="submit" id="btnRestoreProductBanner"
+                data-loading-text="{% trans 'Restoring...' %}"
                 class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-bold rounded-lg shadow-xs transition cursor-pointer min-h-[38px]">
           <span aria-hidden="true">♻️</span> {% trans "Restore Product" %}
         </button>
@@ -412,6 +415,7 @@
               {% csrf_token %}
               <input type="file" name="images" id="detailFormImages" multiple class="hidden">
               <button type="submit" id="btnUploadDetailPhotos" disabled
+                      data-loading-text="{% trans 'Uploading photos...' %}"
                       class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-2 active:scale-95 cursor-pointer">
                 <span>⬆️</span>
                 <span id="btnUploadDetailPhotosText">{% trans "Upload Selected Photos" %}</span>
@@ -566,12 +570,13 @@
           </div>
 
           {% if can_manage %}
-          <form method="post" action="{% url 'inventory:generate_ai' product.pk %}" id="aiForm" class="shrink-0">
+          <form method="post" action="{% url 'inventory:generate_ai' product.pk %}" id="aiForm" data-no-loading="true" class="shrink-0">
             {% csrf_token %}
             <button type="submit" id="aiBtn"
-                    class="w-full sm:w-auto whitespace-nowrap px-4 py-2 bg-emerald-700 hover:bg-emerald-800 active:scale-[0.98] text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px]">
+                    data-loading-text="{% trans 'Analyzing Photos with AI...' %}"
+                    class="w-full sm:w-auto whitespace-nowrap px-4 py-2 bg-emerald-700 hover:bg-emerald-800 active:scale-[0.98] text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px] max-w-full">
               <span id="aiIcon" aria-hidden="true">⚡</span>
-              <span id="aiText">
+              <span id="aiText" class="min-w-0 break-words">
                 {% if product.ai_title or product.ai_description %}
                   {% trans "Regenerate with AI" %}
                 {% else %}
@@ -621,6 +626,29 @@
                 <span aria-hidden="true">📦</span>
                 <span>{% trans "Copy Ad" %}</span>
               </button>
+            </div>
+
+            <!-- Non-Blocking AI Listing Generation Progress & Skeleton -->
+            <div id="aiGeneratingSkeleton" role="status" aria-live="polite" aria-busy="false"
+                 class="hidden rounded-xl border border-slate-200 bg-slate-50 p-3.5 sm:p-4 space-y-3 min-w-0">
+              <div class="flex items-start justify-between gap-2 min-w-0">
+                <div class="flex items-center gap-2 min-w-0 flex-1">
+                  <svg class="animate-spin h-4 w-4 text-emerald-700 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  </svg>
+                  <span id="aiGenerateStageText" class="text-xs sm:text-sm font-bold text-slate-800 min-w-0 break-words">
+                    {% trans "Analyzing product photos & field notes..." %}
+                  </span>
+                </div>
+                <span id="aiGenerateElapsed" class="font-mono tabular-nums text-xs font-bold px-2 py-0.5 rounded-md bg-slate-200/80 text-slate-800 shrink-0">0s</span>
+              </div>
+              <div class="space-y-2" aria-hidden="true">
+                <div class="h-4 w-3/4 rounded bg-slate-200 app-shimmer-bar"></div>
+                <div class="h-3 w-full rounded bg-slate-200 app-shimmer-bar"></div>
+                <div class="h-3 w-11/12 rounded bg-slate-200 app-shimmer-bar"></div>
+                <div class="h-3 w-2/3 rounded bg-slate-200 app-shimmer-bar"></div>
+              </div>
             </div>
 
             {% if form.non_field_errors %}
@@ -1107,7 +1135,8 @@
             <span class="hidden sm:inline font-mono text-slate-500">{% trans "Shortcut: Ctrl+S" %}</span>
           </div>
           <button type="submit" id="btnSaveListingChanges"
-                  class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-bold text-sm rounded-xl shadow-xs transition cursor-pointer">
+                  data-loading-text="{% trans 'Saving changes...' %}"
+                  class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-bold text-sm rounded-xl shadow-xs transition cursor-pointer inline-flex items-center justify-center gap-2">
             {% trans "Save Listing Changes" %}
           </button>
         </div>
@@ -1200,7 +1229,8 @@
                            placeholder="{% trans 'Enter answer (e.g. 52 cm chest, composition tag...)' %}"
                            class="flex-1 px-3.5 py-2 text-base sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
                     <button type="submit"
-                            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-lg transition whitespace-nowrap shadow-xs cursor-pointer">
+                            data-loading-text="{% trans 'Sending...' %}"
+                            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-lg transition whitespace-nowrap shadow-xs cursor-pointer inline-flex items-center justify-center gap-1.5">
                       {% trans "Answer" %}
                     </button>
                   </div>
@@ -1308,7 +1338,8 @@
                   </div>
                   <div class="flex justify-end">
                     <button type="submit"
-                            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-xs cursor-pointer">
+                            data-loading-text="{% trans 'Saving...' %}"
+                            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-xs cursor-pointer inline-flex items-center justify-center gap-1.5">
                       ➕ {% trans "Save Clarification Note" %}
                     </button>
                   </div>
@@ -1342,7 +1373,8 @@
                   </div>
                   <div class="flex justify-end">
                     <button type="submit"
-                            class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-xs cursor-pointer">
+                            data-loading-text="{% trans 'Sending...' %}"
+                            class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-xs cursor-pointer inline-flex items-center justify-center gap-1.5">
                       ❓ {% trans "Send Doubt to Assistant" %}
                     </button>
                   </div>
@@ -1380,7 +1412,8 @@
                   </div>
                   <div class="flex justify-end">
                     <button type="submit"
-                            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-xs cursor-pointer">
+                            data-loading-text="{% trans 'Saving...' %}"
+                            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow-xs cursor-pointer inline-flex items-center justify-center gap-1.5">
                       ➕ {% trans "Save Clarification Note" %}
                     </button>
                   </div>
@@ -1548,6 +1581,7 @@
             <form method="post" action="{% url 'inventory:product_verify_compliance' product.pk %}" class="shrink-0">
               {% csrf_token %}
               <button type="submit" id="verifyComplianceBtn"
+                      data-loading-text="{% trans 'Checking compliance...' %}"
                       class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white text-xs sm:text-sm font-bold rounded-xl shadow-2xs transition cursor-pointer min-h-[38px]">
                 <span aria-hidden="true">🛡️</span>
                 <span>{% trans "Verify Compliance (AI)" %}</span>
@@ -2287,16 +2321,48 @@
   }
 
   const aiForm = document.getElementById('aiForm');
+  const aiGeneratingSkeleton = document.getElementById('aiGeneratingSkeleton');
+  const aiGenerateStageText = document.getElementById('aiGenerateStageText');
+  const aiGenerateElapsed = document.getElementById('aiGenerateElapsed');
+  const aiGenerateController = (window.AppFeedback && aiGeneratingSkeleton)
+    ? window.AppFeedback.createStagedProgressController({
+        containerEl: aiGeneratingSkeleton,
+        labelEl: aiGenerateStageText,
+        timerEl: aiGenerateElapsed,
+        stages: [
+          { delayMs: 0, text: "{% trans 'Analyzing product photos & field notes...' %}" },
+          { delayMs: 2200, text: "{% trans 'Drafting SEO title & description...' %}" },
+          { delayMs: 5200, text: "{% trans 'Formatting tags & final listing copy...' %}" }
+        ]
+      })
+    : null;
   if (aiForm) {
-    aiForm.addEventListener('submit', () => {
+    aiForm.addEventListener('submit', function(e) {
+      if (aiForm.dataset.appSubmitting === 'true') {
+        e.preventDefault();
+        return;
+      }
+      aiForm.dataset.appSubmitting = 'true';
+      if (typeof switchWorkspaceTab === 'function') {
+        switchWorkspaceTab('listing', false);
+      }
       const btn = document.getElementById('aiBtn');
-      const text = document.getElementById('aiText');
-      const icon = document.getElementById('aiIcon');
-      btn.disabled = true;
-      icon.textContent = '⏳';
-      text.textContent = '{% trans "Analyzing Photos with AI..." %}';
+      if (btn && window.AppFeedback) {
+        window.AppFeedback.setButtonLoading(btn, btn.getAttribute('data-loading-text') || "{% trans 'Analyzing Photos with AI...' %}");
+      } else if (btn) {
+        btn.disabled = true;
+      }
+      if (aiGenerateController) {
+        aiGenerateController.start();
+      }
     });
   }
+  window.addEventListener('pageshow', function() {
+    if (aiGenerateController) aiGenerateController.stop();
+    const btn = document.getElementById('aiBtn');
+    if (btn && window.AppFeedback) window.AppFeedback.resetButtonLoading(btn);
+    if (aiForm) delete aiForm.dataset.appSubmitting;
+  });
 
   const toggleLogsBtn = document.getElementById('toggleStatusLogsBtn');
   if (toggleLogsBtn) {
@@ -2864,12 +2930,7 @@
 
   if (detailUploadForm) {
     detailUploadForm.addEventListener('submit', function() {
-      if (btnUploadDetailPhotos) {
-        btnUploadDetailPhotos.disabled = true;
-        if (btnUploadDetailPhotosText) {
-          btnUploadDetailPhotosText.textContent = "{% trans 'Uploading photos...' %}";
-        }
-      }
+      // Visual button loading & double-submit guard handled cleanly by window.AppFeedback
     });
   }
 
@@ -3375,7 +3436,8 @@
       <form method="post" action="{% url 'inventory:product_soft_delete' product.pk %}">
         {% csrf_token %}
         <button type="submit" id="btnConfirmDeleteProduct"
-                class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-2xs cursor-pointer">
+                data-loading-text="{% trans 'Moving to trash...' %}"
+                class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-2xs cursor-pointer inline-flex items-center justify-center gap-1.5">
           {% trans "Yes, Move to Trash" %}
         </button>
       </form>
@@ -3402,8 +3464,9 @@
         {% trans "Cancel" %}
       </button>
       <button type="button" id="btnProceedActionConfirm"
-              onclick="if (pendingConfirmForm) { pendingConfirmForm.dataset.confirmed = 'true'; pendingConfirmForm.submit(); }"
-              class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-2xs cursor-pointer">
+              data-loading-text="{% trans 'Processing...' %}"
+              onclick="if (pendingConfirmForm) { if (window.AppFeedback) { window.AppFeedback.setButtonLoading(this); } pendingConfirmForm.dataset.confirmed = 'true'; pendingConfirmForm.submit(); }"
+              class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-2xs cursor-pointer inline-flex items-center justify-center gap-1.5">
         {% trans "Confirm" %}
       </button>
     </div>
@@ -3467,7 +3530,8 @@
           {% trans "Cancel" %}
         </button>
         <button type="submit"
-                class="px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition shadow-2xs cursor-pointer min-h-[40px]">
+                data-loading-text="{% trans 'Saving...' %}"
+                class="px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition shadow-2xs cursor-pointer min-h-[40px] inline-flex items-center justify-center gap-1.5">
           {% trans "Save Listing Link" %}
         </button>
       </div>
@@ -3509,7 +3573,8 @@
 
       <div class="flex justify-end gap-2 pt-1">
         <button type="submit"
-                class="w-full sm:w-auto px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition shadow-2xs cursor-pointer min-h-[40px]">
+                data-loading-text="{% trans 'Updating...' %}"
+                class="w-full sm:w-auto px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition shadow-2xs cursor-pointer min-h-[40px] inline-flex items-center justify-center gap-1.5">
           {% trans "Update URL" %}
         </button>
       </div>

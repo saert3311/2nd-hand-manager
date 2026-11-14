@@ -188,6 +188,7 @@
         <!-- Submit Button -->
         <div class="pt-2 flex justify-end">
           <button type="submit" id="btnCreatePallet"
+                  data-loading-text="{% trans 'Creating...' %}"
                   class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-base sm:text-sm cursor-pointer">
             <span>➕</span>
             <span>{% trans "Create Pallet" %}</span>
@@ -390,6 +391,7 @@
           </label>
 
           <button type="submit" id="btnCreateProvider"
+                  data-loading-text="{% trans 'Creating...' %}"
                   class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-base sm:text-sm cursor-pointer">
             <span>➕</span>
             <span>{% trans "Create Provider" %}</span>
@@ -541,7 +543,8 @@
         <form id="deleteOriginForm" method="post" action="">
           {% csrf_token %}
           <button type="submit" id="btnConfirmDeleteOrigin"
-                  class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer min-h-[40px]">
+                  data-loading-text="{% trans 'Deleting...' %}"
+                  class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition cursor-pointer min-h-[40px] inline-flex items-center justify-center gap-1.5">
             {% trans "Confirm Delete" %}
           </button>
         </form>
