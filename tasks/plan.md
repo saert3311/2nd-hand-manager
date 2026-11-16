@@ -905,6 +905,23 @@ Retire the redundant Django corporate landing page (`home.html`) now handled by 
    - Update `locale/es/LC_MESSAGES/django.po` and run `manage.py compile_locales`.
    - Update `tests/test_storefront.py`, `tests/test_i18n.py`, and `tests/test_browser_daily_workflow.py` and verify full `manage.py test`, `manage.py check`, `ruff check .`, and Playwright desktop/mobile browser rendering.
 
+---
+
+## Phase 56: Storefront Top Bar & Logo Parity with `rapidopackvalencia.es` (`redesign_store_shelf`)
+
+### Overview
+Align `base_public.html`'s `<header>` pixel-for-pixel with `https://rapidopackvalencia.es` (self-hosted official logo `logo-rapido-pack-valencia.png`, `h-28 sm:h-32 lg:h-36`, `INICIO / PAQUETERÍA / OUTLET / CONTACTO`, `xl:` live status indicator, `640 39 74 34` phone pill, and `<details>` mobile drawer) so shoppers perceive zero visual discontinuity between Astro and Django. Relocate `ES | EN` language switching to the footer and keep `"How to buy"` + `"WhatsApp"` inside the Store Shelf (`catalog.html`) and footer.
+
+### Technical Design
+1. **Static Logo & Header Context (`storefront/static/storefront/img/logo-rapido-pack-valencia.png`, `storefront/context_processors.py`)**:
+   - Bundle the official `916×641` PNG logo in `storefront/static/storefront/img/`.
+   - Expose `store_phone_display` (`"640 39 74 34"`), `store_phone_href` (`"tel:640397434"`), `store_is_open`, and localized `store_live_status_label` (computed against `Europe/Madrid` store schedule) from `storefront_config`.
+2. **Astro-Parity Header & Footer Language Switcher (`storefront/templates/storefront/base_public.html`, `catalog.html`)**:
+   - Render the exact `rapidopackvalencia.es` `<header>` and native `<details id="mobileNavDrawer">` drawer (with `Escape` and outside-click dismissal).
+   - Place the `ES | EN` language switcher and `bg-[#25D366] text-slate-950` WhatsApp CTA in the dark `#111820` footer, and add `"How to buy"` + `"WhatsApp"` CTAs cleanly inside the `01 //` shelf header in `catalog.html`.
+3. **Localization, Tests & Live Browser Parity Check**:
+   - Update `locale/` `.po`/`.mo` catalogs, update `tests/test_storefront.py`, `tests/test_i18n.py`, and `tests/test_browser_daily_workflow.py`, run full `manage.py test` + `ruff check .`, and visually inspect desktop (`1440×900`) + mobile (`360×800`, closed & open drawer).
+
 
 
 

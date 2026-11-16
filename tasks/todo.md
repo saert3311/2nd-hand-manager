@@ -4134,6 +4134,23 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 - [x] Update `tests/test_storefront.py`, `tests/test_i18n.py`, and `tests/test_browser_daily_workflow.py`; verify `ruff check .`, `manage.py check`, and 100% of `manage.py test` pass.
 - [x] Verify desktop and mobile rendering in real browser via `browser` subagent and document release notes in `CHANGELOG.md`.
 
+---
+
+## Phase 56: Storefront Top Bar & Logo Parity with `rapidopackvalencia.es`
+
+### Task 207: Official Logo Asset & Header Context (`storefront/static/`, `storefront/context_processors.py`)
+- [x] Save `logo-rapido-pack-valencia.png` (`916×641`) in `storefront/static/storefront/img/`.
+- [x] Extend `storefront/context_processors.py` with `store_phone_display`, `store_phone_href`, `store_is_open`, and localized `store_live_status_label` (`Europe/Madrid` schedule).
+
+### Task 208: Astro-Parity Header, Mobile `<details>` Drawer & Footer Controls (`base_public.html`, `catalog.html`)
+- [x] Replace `<header>` in `base_public.html` with the exact `rapidopackvalencia.es` header (`h-28 sm:h-32 lg:h-36`, `border-t-[3px] border-t-primary`, official `<img>` logo, `xl:` `#header-live-status`, `INICIO / PAQUETERÍA / OUTLET / CONTACTO`, `640 39 74 34` phone pill, and `<details id="mobileNavDrawer">` drawer).
+- [x] Move the `ES | EN` language switcher into the dark `#111820` footer, apply `bg-[#25D366] text-slate-950` to the footer WhatsApp button, and add `"How to buy"` + `"WhatsApp"` pills into the `catalog.html` shelf header.
+
+### Task 209: Localization, Automated Tests & Live Browser Parity Check
+- [x] Update `locale/es/LC_MESSAGES/django.po` & `locale/en/LC_MESSAGES/django.po` and compile via `manage.py compile_locales`.
+- [x] Update `tests/test_storefront.py`, `tests/test_i18n.py`, and `tests/test_browser_daily_workflow.py`; verify `ruff check .`, `manage.py check`, and 100% of `manage.py test` pass.
+- [x] Visually inspect desktop (`1440×900`) and mobile (`360×800` closed & open drawer) in real browser and update `CHANGELOG.md`.
+
 
 
 

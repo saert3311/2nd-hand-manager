@@ -1265,3 +1265,8 @@ ADDITIONAL VERIFIED DETAILS & CLARIFICATIONS:
 
 
 
+
+51. **Storefront Header & Logo Parity with `rapidopackvalencia.es` (Phase 56):**
+    - **Pixel-Parity Top Bar (`base_public.html`, `storefront/context_processors.py`)**: Replaces the custom Django storefront navbar with the exact `rapidopackvalencia.es` header (`sticky top-0`, `h-28 sm:h-32 lg:h-36`, `border-t-[3px] border-t-primary`, `bg-white/95 backdrop-blur-md`), self-hosted official logo (`storefront/static/storefront/img/logo-rapido-pack-valencia.png`, `916×641`), `xl:` live open/hours status indicator (`#header-live-status`), exact 4-item navigation (`INICIO`, `PAQUETERÍA`, `OUTLET` active mint pill, `CONTACTO`), `640 39 74 34` telephone pill (`tel:640397434`), and native `<details>` mobile hamburger drawer (`#mobileNavDrawer`).
+    - **Control Relocation & Continuity (`base_public.html`, `catalog.html`)**: Relocates the `ES | EN` language switcher into the dark `#111820` footer and surfaces `"How to buy"` + `"WhatsApp"` CTAs inside the Store Shelf editorial header (`catalog.html`) and footer, keeping the top bar visually identical to `rapidopackvalencia.es` while preserving all accessibility and bilingual guarantees.
+    - **Decision:** Approved per [docs/prds/PRD-header-astro-parity.md](file:///C:/Users/Jose/.gemini/antigravity/worktrees/epic-tesla/redesign_store_shelf/docs/prds/PRD-header-astro-parity.md).
