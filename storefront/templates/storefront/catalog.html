@@ -18,215 +18,139 @@
 {% block content %}
 <div class="flex flex-col w-full">
 
-  <!-- 1. Compact Editorial Shelf Header (Products visible immediately above the fold) -->
-  <section class="w-full bg-white border-b border-border-subtle">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
-      <div class="flex flex-col gap-3">
-        <!-- Technical Eyebrow & Shelf Stats -->
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <span class="font-mono text-xs font-semibold uppercase tracking-wider text-primary">
-            01 // {% trans "ONLINE SHELF · OUTLET & SECOND-HAND" %}
+  <!-- 1. Clean Masthead & Compact Toolbar (Shelf items start immediately above the fold) -->
+  <section class="w-full bg-surface border-b border-border-subtle">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4 sm:pt-8 sm:pb-5 space-y-4">
+
+      <!-- Masthead Title Row (Zero eyebrow kickers or badge clutter) -->
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-3">
+        <div class="min-w-0 max-w-2xl">
+          <h1 class="font-display text-2xl sm:text-3xl font-extrabold text-[#111820] tracking-tight leading-tight break-words">
+            {% if active_category_obj %}
+              {{ active_category_obj.get_localized_name }}
+            {% else %}
+              {% trans "Outlet & Second-Hand Shelf" %}
+            {% endif %}
+          </h1>
+          <p class="mt-1 text-sm text-on-surface-variant leading-relaxed">
+            {{ storefront.hero_subtitle }}
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 text-sm shrink-0">
+          <span class="text-outline tabular-nums">
+            <strong class="text-[#111820] font-semibold">{{ total_count }}</strong> {% trans "items available" %}
           </span>
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-mint-wash text-primary-hover border border-primary/20 font-mono text-xs font-semibold">
-              <strong>{{ total_count }}</strong>
-              <span>{% trans "items available" %}</span>
-            </span>
-            <span class="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full bg-[#111820] text-primary-fixed font-mono text-xs font-semibold">
-              {% trans "UP TO -70% RRP" %}
-            </span>
-          </div>
-        </div>
-
-        <!-- Concise Store Shelf Title -->
-        <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-3">
-          <div class="min-w-0">
-            <h1 class="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#111820] tracking-tight leading-tight break-words">
-              {% if active_category_obj %}
-                {{ active_category_obj.get_localized_name }}
-              {% else %}
-                {{ storefront.hero_title }}
-              {% endif %}
-            </h1>
-            <p class="mt-1.5 text-sm sm:text-base text-on-surface-variant max-w-3xl leading-relaxed">
-              {{ storefront.hero_subtitle }}
-            </p>
-          </div>
-          {% if active_category_obj %}
-          <a href="{% url 'storefront:catalog' %}"
-             class="inline-flex items-center gap-1 text-xs font-mono font-semibold text-primary hover:underline self-start lg:self-end shrink-0">
-            <span class="material-symbols-outlined text-[15px]" aria-hidden="true">close</span>
-            <span>{% trans "Show all categories" %}</span>
+          <span class="text-outline-variant" aria-hidden="true">·</span>
+          <button type="button"
+                  onclick="openHowToBuyModal()"
+                  class="text-primary-hover hover:underline font-semibold inline-flex items-center gap-1">
+            <span>{% trans "How to buy" %}</span>
+          </button>
+          <a href="{{ storefront_whatsapp_url }}"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-slate-950 text-sm font-bold transition-colors">
+            <span class="material-symbols-outlined text-[16px]" aria-hidden="true">chat</span>
+            <span>{% trans "WhatsApp" %}</span>
           </a>
-          {% endif %}
-        </div>
-
-        <!-- Inline Reassurance Micro-Strip + Quick Actions (Zero Card Bloat) -->
-        <div class="flex flex-wrap items-center justify-between gap-2.5 pt-1 min-w-0">
-          <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-on-surface-variant min-w-0">
-            <span class="inline-flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-[16px] text-primary shrink-0" aria-hidden="true">power</span>
-              <span>{% trans "In-store testing benches with power (Alfafar)" %}</span>
-            </span>
-            <span class="inline-flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-[16px] text-primary shrink-0" aria-hidden="true">chat</span>
-              <span>{% trans "Free 24h WhatsApp hold" %}</span>
-            </span>
-            <span class="inline-flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-[16px] text-primary shrink-0" aria-hidden="true">verified_user</span>
-              <span>{% trans "Protected shipping via Wallapop & Vinted" %}</span>
-            </span>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2 min-w-0">
-            <button type="button"
-                    onclick="openHowToBuyModal()"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-alt hover:bg-mint-wash text-[#111820] hover:text-primary-hover border border-border-subtle text-xs font-semibold transition-colors">
-              <span class="material-symbols-outlined text-[15px] text-primary" aria-hidden="true">help_outline</span>
-              <span>{% trans "How to buy" %}</span>
-            </button>
-            <a href="{{ storefront_whatsapp_url }}"
-               target="_blank"
-               rel="noopener noreferrer"
-               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-slate-950 text-xs font-bold shadow-sm transition-colors">
-              <span class="material-symbols-outlined text-[15px]" aria-hidden="true">chat</span>
-              <span>{% trans "WhatsApp" %}</span>
-            </a>
-          </div>
         </div>
       </div>
-    </div>
-  </section>
 
-  <!-- 2. Unified Search + Category Rail + Compact Filter Toolbar -->
-  <section class="w-full bg-surface-alt/90 border-b border-border-subtle">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 space-y-2.5">
+      <!-- Unified Single-Row Search & Select Filter Bar -->
+      <form id="shelfFilterForm" method="get" action="{{ base_filter_url }}" class="flex flex-col lg:flex-row lg:items-center gap-2.5">
+        <div class="flex-1 flex items-center bg-surface-alt rounded-xl pl-3.5 pr-1.5 py-1 min-h-[42px] border border-border-subtle focus-within:bg-white focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors min-w-0">
+          <span class="material-symbols-outlined text-outline mr-2 text-[19px] shrink-0" aria-hidden="true">search</span>
+          <input type="search"
+                 name="q"
+                 value="{{ search_query|default:'' }}"
+                 placeholder="{% trans 'Search shelf items, brands, Ref #...' %}"
+                 aria-label="{% trans 'Search catalog' %}"
+                 class="w-full bg-transparent text-base sm:text-sm text-[#111820] placeholder:text-outline focus:outline-none min-w-0">
+          <button type="submit"
+                  class="bg-[#111820] hover:bg-primary text-white rounded-lg px-3.5 py-1.5 text-sm font-semibold transition-colors shrink-0">
+            {% trans "Search" %}
+          </button>
+        </div>
 
-      <!-- Row A: Search Bar + Sort Dropdown -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-        <form action="{% url 'storefront:catalog' %}" method="get" class="flex-1 flex items-center gap-2 min-w-0">
-          {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
-          {% if active_price %}<input type="hidden" name="price" value="{{ active_price }}">{% endif %}
-          {% if active_condition %}<input type="hidden" name="condition" value="{{ active_condition }}">{% endif %}
-          {% if active_sort and active_sort != 'newest' %}<input type="hidden" name="sort" value="{{ active_sort }}">{% endif %}
-          <div class="flex-1 flex items-center bg-white rounded-xl pl-3 pr-1.5 py-1 min-h-[42px] border border-border-subtle focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 min-w-0">
-            <span class="material-symbols-outlined text-outline mr-2 text-[19px] shrink-0" aria-hidden="true">search</span>
-            <input type="search"
-                   name="q"
-                   value="{{ search_query|default:'' }}"
-                   placeholder="{% trans 'Search shelf items, brands, Ref #...' %}"
-                   aria-label="{% trans 'Search catalog' %}"
-                   class="w-full bg-transparent text-sm text-[#111820] placeholder:text-outline focus:outline-none min-w-0">
-            <button type="submit"
-                    class="bg-[#111820] hover:bg-primary text-white rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors shrink-0">
-              {% trans "Search" %}
-            </button>
-          </div>
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar sm:overflow-visible sm:flex-wrap lg:flex-nowrap min-w-0">
+          <!-- Price Select -->
+          <select id="priceDropdown"
+                  name="price"
+                  aria-label="{% trans 'Price' %}"
+                  onchange="this.form.submit()"
+                  class="shrink-0 bg-surface-alt hover:bg-surface-container/60 text-[#111820] text-base sm:text-sm font-medium rounded-xl px-3 py-2 min-h-[42px] border border-border-subtle focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer">
+            <option value="" {% if not active_price %}selected{% endif %}>{% trans "All prices" %}</option>
+            <option value="under_20" {% if active_price == 'under_20' %}selected{% endif %}>{% trans "Under 20 €" %}</option>
+            <option value="20_50" {% if active_price == '20_50' %}selected{% endif %}>20 € – 50 €</option>
+            <option value="over_50" {% if active_price == 'over_50' %}selected{% endif %}>{% trans "Over 50 €" %}</option>
+          </select>
+
+          <!-- Condition Select -->
+          <select id="conditionDropdown"
+                  name="condition"
+                  aria-label="{% trans 'Condition' %}"
+                  onchange="this.form.submit()"
+                  class="shrink-0 bg-surface-alt hover:bg-surface-container/60 text-[#111820] text-base sm:text-sm font-medium rounded-xl px-3 py-2 min-h-[42px] border border-border-subtle focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer">
+            <option value="" {% if not active_condition %}selected{% endif %}>{% trans "All conditions" %}</option>
+            {% for cond_val, cond_label in condition_choices %}
+            <option value="{{ cond_val }}" {% if active_condition == cond_val %}selected{% endif %}>{{ cond_label }}</option>
+            {% endfor %}
+          </select>
+
+          <!-- Sort Select -->
+          <select id="sortDropdown"
+                  name="sort"
+                  aria-label="{% trans 'Sort' %}"
+                  onchange="this.form.submit()"
+                  class="shrink-0 bg-surface-alt hover:bg-surface-container/60 text-[#111820] text-base sm:text-sm font-medium rounded-xl px-3 py-2 min-h-[42px] border border-border-subtle focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer">
+            <option value="newest" {% if active_sort == 'newest' %}selected{% endif %}>{% trans "Newest first" %}</option>
+            <option value="featured" {% if active_sort == 'featured' %}selected{% endif %}>{% trans "Featured ★" %}</option>
+            <option value="price_asc" {% if active_sort == 'price_asc' %}selected{% endif %}>{% trans "Price: low to high" %}</option>
+            <option value="price_desc" {% if active_sort == 'price_desc' %}selected{% endif %}>{% trans "Price: high to low" %}</option>
+          </select>
+
           {% if has_active_filters %}
           <a href="{% url 'storefront:catalog' %}"
              title="{% trans 'Clear filters' %}"
              aria-label="{% trans 'Clear filters' %}"
-             class="inline-flex items-center justify-center px-3 py-2 min-h-[42px] rounded-xl bg-white border border-border-subtle text-xs font-semibold text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors shrink-0">
-            <span class="material-symbols-outlined text-[17px]" aria-hidden="true">filter_alt_off</span>
-            <span class="hidden md:inline ml-1">{% trans "Clear" %}</span>
+             class="inline-flex items-center justify-center px-3 py-2 min-h-[42px] rounded-xl text-sm font-medium text-outline hover:text-primary-hover transition-colors shrink-0">
+            {% trans "Clear" %}
           </a>
           {% endif %}
-        </form>
+        </div>
+      </form>
 
-        <form method="get" action="{% url 'storefront:catalog' %}" class="flex items-center justify-between sm:justify-end gap-2 shrink-0 min-w-0">
-          {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
-          {% if active_price %}<input type="hidden" name="price" value="{{ active_price }}">{% endif %}
-          {% if active_condition %}<input type="hidden" name="condition" value="{{ active_condition }}">{% endif %}
-          {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
-          <label class="font-mono text-xs text-outline uppercase tracking-wide shrink-0" for="sortDropdown">{% trans "Sort:" %}</label>
-          <div class="relative inline-block min-w-0">
-            <select id="sortDropdown"
-                    name="sort"
-                    onchange="this.form.submit()"
-                    class="appearance-none bg-white text-[#111820] text-xs font-semibold rounded-xl pl-3 pr-8 py-2 min-h-[42px] border border-border-subtle focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer max-w-[200px] truncate">
-              <option value="newest" {% if active_sort == 'newest' %}selected{% endif %}>{% trans "Newest first" %}</option>
-              <option value="featured" {% if active_sort == 'featured' %}selected{% endif %}>{% trans "Featured ★" %}</option>
-              <option value="price_asc" {% if active_sort == 'price_asc' %}selected{% endif %}>{% trans "Price: low to high" %}</option>
-              <option value="price_desc" {% if active_sort == 'price_desc' %}selected{% endif %}>{% trans "Price: high to low" %}</option>
-            </select>
-            <svg class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-outline" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-            </svg>
-          </div>
-        </form>
-      </div>
-
-      <!-- Row B: Horizontal Scrollable Category Shelf Rail (12 Official Categories + All) -->
-      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 flex-nowrap" id="categoryRail">
+      <!-- Light Gallery Category Rail -->
+      <div class="flex items-center gap-1 overflow-x-auto no-scrollbar pt-1 flex-nowrap" id="categoryRail">
         <a href="{% url 'storefront:catalog' %}{% if search_query %}?q={{ search_query|urlencode }}{% endif %}"
-           class="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-full text-xs font-semibold whitespace-nowrap transition-all {% if not active_category %}bg-[#111820] text-white shadow-sm{% else %}bg-white text-on-surface-variant border border-border-subtle hover:border-primary/40 hover:text-primary{% endif %}">
-          <span class="material-symbols-outlined text-[15px]" aria-hidden="true">grid_view</span>
+           class="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg text-sm whitespace-nowrap transition-colors {% if not active_category %}bg-mint-wash text-primary-hover font-semibold{% else %}text-on-surface-variant hover:text-[#111820] hover:bg-surface-alt{% endif %}">
           <span>{% trans "All Categories" %}</span>
         </a>
         {% for cat in categories %}
         <a href="{% url 'storefront:category' cat.slug %}{% if active_price or active_condition or search_query or active_sort != 'newest' %}?{% if active_price %}price={{ active_price }}&{% endif %}{% if active_condition %}condition={{ active_condition }}&{% endif %}{% if search_query %}q={{ search_query|urlencode }}&{% endif %}{% if active_sort %}sort={{ active_sort }}{% endif %}{% endif %}"
-           class="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-full text-xs font-semibold whitespace-nowrap transition-all {% if active_category == cat.slug %}bg-[#111820] text-white shadow-sm{% else %}bg-white text-on-surface-variant border border-border-subtle hover:border-primary/40 hover:text-primary{% endif %}">
-          <span class="material-symbols-outlined text-[15px]" aria-hidden="true">{{ cat.icon }}</span>
+           class="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg text-sm whitespace-nowrap transition-colors {% if active_category == cat.slug %}bg-mint-wash text-primary-hover font-semibold{% else %}text-on-surface-variant hover:text-[#111820] hover:bg-surface-alt{% endif %}">
           <span>{{ cat.get_localized_name }}</span>
         </a>
         {% endfor %}
       </div>
-
-      <!-- Row C: Compact Price & Condition Filter Strip -->
-      <div class="flex flex-wrap items-center gap-x-4 gap-y-2 pt-0.5">
-        <!-- Price Range Filter -->
-        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-full">
-          <span class="font-mono text-xs text-outline uppercase tracking-wider shrink-0">{% trans "Price:" %}</span>
-          <a href="{% url 'storefront:catalog' %}?{% if active_category %}category={{ active_category }}&{% endif %}{% if active_condition %}condition={{ active_condition }}&{% endif %}{% if search_query %}q={{ search_query|urlencode }}&{% endif %}sort={{ active_sort }}"
-             class="px-2.5 py-1 min-h-[32px] inline-flex items-center rounded-lg text-xs font-medium whitespace-nowrap transition-colors {% if not active_price %}bg-mint-wash text-primary-hover border border-primary/30 font-bold{% else %}bg-white border border-border-subtle text-on-surface-variant hover:text-primary{% endif %}">
-            {% trans "All" %}
-          </a>
-          <a href="{% url 'storefront:catalog' %}?{% if active_category %}category={{ active_category }}&{% endif %}price=under_20{% if active_condition %}&condition={{ active_condition }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}&sort={{ active_sort }}"
-             class="px-2.5 py-1 min-h-[32px] inline-flex items-center rounded-lg text-xs font-medium whitespace-nowrap transition-colors {% if active_price == 'under_20' %}bg-mint-wash text-primary-hover border border-primary/30 font-bold{% else %}bg-white border border-border-subtle text-on-surface-variant hover:text-primary{% endif %}">
-            {% trans "Under 20 €" %}
-          </a>
-          <a href="{% url 'storefront:catalog' %}?{% if active_category %}category={{ active_category }}&{% endif %}price=20_50{% if active_condition %}&condition={{ active_condition }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}&sort={{ active_sort }}"
-             class="px-2.5 py-1 min-h-[32px] inline-flex items-center rounded-lg text-xs font-medium whitespace-nowrap transition-colors {% if active_price == '20_50' %}bg-mint-wash text-primary-hover border border-primary/30 font-bold{% else %}bg-white border border-border-subtle text-on-surface-variant hover:text-primary{% endif %}">
-            20 € – 50 €
-          </a>
-          <a href="{% url 'storefront:catalog' %}?{% if active_category %}category={{ active_category }}&{% endif %}price=over_50{% if active_condition %}&condition={{ active_condition }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}&sort={{ active_sort }}"
-             class="px-2.5 py-1 min-h-[32px] inline-flex items-center rounded-lg text-xs font-medium whitespace-nowrap transition-colors {% if active_price == 'over_50' %}bg-mint-wash text-primary-hover border border-primary/30 font-bold{% else %}bg-white border border-border-subtle text-on-surface-variant hover:text-primary{% endif %}">
-            {% trans "Over 50 €" %}
-          </a>
-        </div>
-
-        <!-- Condition Filter Pills (4 Official States) -->
-        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-full">
-          <span class="font-mono text-xs text-outline uppercase tracking-wider shrink-0">{% trans "Condition:" %}</span>
-          <a href="{% url 'storefront:catalog' %}?{% if active_category %}category={{ active_category }}&{% endif %}{% if active_price %}price={{ active_price }}&{% endif %}{% if search_query %}q={{ search_query|urlencode }}&{% endif %}sort={{ active_sort }}"
-             class="px-2.5 py-1 min-h-[32px] inline-flex items-center rounded-lg text-xs font-medium whitespace-nowrap transition-colors {% if not active_condition %}bg-mint-wash text-primary-hover border border-primary/30 font-bold{% else %}bg-white border border-border-subtle text-on-surface-variant hover:text-primary{% endif %}">
-            {% trans "All" %}
-          </a>
-          {% for cond_val, cond_label in condition_choices %}
-          <a href="{% url 'storefront:catalog' %}?{% if active_category %}category={{ active_category }}&{% endif %}{% if active_price %}price={{ active_price }}&{% endif %}condition={{ cond_val }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}&sort={{ active_sort }}"
-             class="px-2.5 py-1 min-h-[32px] inline-flex items-center rounded-lg text-xs font-medium whitespace-nowrap transition-colors {% if active_condition == cond_val %}bg-mint-wash text-primary-hover border border-primary/30 font-bold{% else %}bg-white border border-border-subtle text-on-surface-variant hover:text-primary{% endif %}">
-            {{ cond_label }}
-          </a>
-          {% endfor %}
-        </div>
-      </div>
     </div>
   </section>
 
-  <!-- 3. Minimalist Gallery Shelf Grid (Button-Free Cards) -->
-  <section class="w-full bg-surface py-6 sm:py-8">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+  <!-- 2. Minimalist Gallery Shelf Grid -->
+  <section class="w-full bg-surface py-7 sm:py-9">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {% if products %}
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-8">
         {% for product in products %}
           {% include "storefront/partials/_product_card.html" with product=product is_lcp=forloop.first %}
         {% endfor %}
       </div>
       {% else %}
       <!-- Empty Shelf State -->
-      <div class="bg-surface-alt rounded-3xl p-8 sm:p-12 text-center border border-border-subtle space-y-3">
-        <div class="w-14 h-14 mx-auto rounded-2xl bg-white border border-border-subtle flex items-center justify-center text-primary shadow-sm">
-          <span class="material-symbols-outlined text-3xl" aria-hidden="true">inventory_2</span>
+      <div class="bg-surface-alt rounded-2xl p-8 sm:p-12 text-center space-y-3">
+        <div class="w-12 h-12 mx-auto rounded-xl bg-white flex items-center justify-center text-primary">
+          <span class="material-symbols-outlined text-2xl" aria-hidden="true">inventory_2</span>
         </div>
         <h2 class="font-display text-xl font-bold text-[#111820]">
           {% trans "No items match your current filters" %}
@@ -236,13 +160,13 @@
         </p>
         <div class="pt-2 flex flex-wrap items-center justify-center gap-3">
           <a href="{% url 'storefront:catalog' %}"
-             class="px-4 py-2.5 rounded-xl bg-[#111820] hover:bg-primary text-white text-xs sm:text-sm font-semibold transition-colors">
+             class="px-4 py-2.5 rounded-xl bg-[#111820] hover:bg-primary text-white text-sm font-semibold transition-colors">
             {% trans "View all items" %}
           </a>
           <a href="{{ storefront_whatsapp_url }}"
              target="_blank"
              rel="noopener noreferrer"
-             class="px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-slate-950 text-xs sm:text-sm font-bold transition-colors inline-flex items-center gap-1.5">
+             class="px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-slate-950 text-sm font-bold transition-colors inline-flex items-center gap-1.5">
             <span class="material-symbols-outlined text-[17px]" aria-hidden="true">chat</span>
             <span>{% trans "Ask on WhatsApp" %}</span>
           </a>
@@ -252,36 +176,36 @@
     </div>
   </section>
 
-  <!-- 4. Clean Pagination Controls -->
+  <!-- 3. Clean Pagination Controls -->
   {% if page_obj.paginator.num_pages > 1 %}
-  <section class="w-full bg-surface pb-6">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-      <div class="bg-surface-alt rounded-2xl p-3 sm:p-4 border border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3">
+  <section class="w-full bg-surface pb-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="border-t border-border-subtle pt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
         {% if page_obj.has_previous %}
         <a href="?page={{ page_obj.previous_page_number }}{% if active_category %}&category={{ active_category }}{% endif %}{% if active_price %}&price={{ active_price }}{% endif %}{% if active_condition %}&condition={{ active_condition }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}&sort={{ active_sort }}"
-           class="px-4 py-2 rounded-xl bg-white border border-border-subtle text-[#111820] hover:border-primary/40 hover:text-primary text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 transition-colors">
+           class="px-4 py-2 rounded-xl bg-surface-alt hover:bg-mint-wash text-[#111820] hover:text-primary-hover text-sm font-semibold inline-flex items-center gap-1.5 transition-colors">
           <span class="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_back</span>
           <span>{% trans "Previous" %}</span>
         </a>
         {% else %}
-        <span class="px-4 py-2 rounded-xl bg-white/60 border border-border-subtle text-outline text-xs sm:text-sm font-medium cursor-not-allowed inline-flex items-center gap-1.5">
+        <span class="px-4 py-2 rounded-xl text-outline text-sm font-medium cursor-not-allowed inline-flex items-center gap-1.5">
           <span class="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_back</span>
           <span>{% trans "Previous" %}</span>
         </span>
         {% endif %}
 
-        <div class="font-mono text-xs text-on-surface-variant font-medium">
+        <div class="text-sm text-on-surface-variant tabular-nums font-medium">
           {% blocktrans with current=page_obj.number total=page_obj.paginator.num_pages %}Page {{ current }} of {{ total }}{% endblocktrans %}
         </div>
 
         {% if page_obj.has_next %}
         <a href="?page={{ page_obj.next_page_number }}{% if active_category %}&category={{ active_category }}{% endif %}{% if active_price %}&price={{ active_price }}{% endif %}{% if active_condition %}&condition={{ active_condition }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}&sort={{ active_sort }}"
-           class="px-4 py-2 rounded-xl bg-white border border-border-subtle text-[#111820] hover:border-primary/40 hover:text-primary text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 transition-colors">
+           class="px-4 py-2 rounded-xl bg-surface-alt hover:bg-mint-wash text-[#111820] hover:text-primary-hover text-sm font-semibold inline-flex items-center gap-1.5 transition-colors">
           <span>{% trans "Next" %}</span>
           <span class="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>
         </a>
         {% else %}
-        <span class="px-4 py-2 rounded-xl bg-white/60 border border-border-subtle text-outline text-xs sm:text-sm font-medium cursor-not-allowed inline-flex items-center gap-1.5">
+        <span class="px-4 py-2 rounded-xl text-outline text-sm font-medium cursor-not-allowed inline-flex items-center gap-1.5">
           <span>{% trans "Next" %}</span>
           <span class="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>
         </span>
@@ -291,91 +215,64 @@
   </section>
   {% endif %}
 
-  <!-- 5. Bottom Direct Contact & Other Stores Bar (02 // CONTACTO Y OTRAS TIENDAS) -->
-  <section class="w-full bg-surface pt-2 pb-4">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-      <div class="bg-[#111820] text-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-white/10 shadow-sm">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+  <!-- 4. Calm Direct Contact & External Stores Band -->
+  <section class="w-full bg-surface pt-2 pb-2">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="bg-[#111820] text-white rounded-2xl p-6 sm:p-8 lg:p-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-          <!-- Left: Primary WhatsApp & In-Store Visit -->
-          <div class="lg:col-span-7 space-y-3 min-w-0">
-            <span class="inline-block font-mono text-xs text-primary-fixed uppercase tracking-wider font-semibold">
-              02 // {% trans "DIRECT CONTACT & IN-STORE TESTING" %}
-            </span>
+          <!-- Left: Single Primary WhatsApp CTA + Store Visit Info -->
+          <div class="lg:col-span-7 space-y-4 min-w-0">
             <h2 class="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
               {% trans "Interested in an item or looking for something specific?" %}
             </h2>
-            <p class="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl">
+            <p class="text-sm sm:text-base text-slate-300 leading-relaxed max-w-xl">
               {% trans "Message us directly on WhatsApp to reserve any shelf item for 24 hours without commitment, or come inspect and plug it in at our Alfafar store." %}
             </p>
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono text-slate-300 pt-0.5">
-              <span class="inline-flex items-center gap-1">
-                <span class="material-symbols-outlined text-[15px] text-primary-fixed" aria-hidden="true">location_on</span>
-                <span>{{ storefront.address }}</span>
-              </span>
-              <span class="inline-flex items-center gap-1">
-                <span class="material-symbols-outlined text-[15px] text-primary-fixed" aria-hidden="true">schedule</span>
-                <span>{{ storefront.opening_hours }}</span>
-              </span>
-            </div>
-            <div class="flex flex-wrap items-center gap-2.5 pt-2">
+            <p class="text-sm text-slate-300 tabular-nums">
+              {{ storefront.address }} · {{ storefront.opening_hours }}
+            </p>
+            <div class="flex flex-wrap items-center gap-4 pt-1">
               <a href="{{ storefront_whatsapp_url }}"
                  target="_blank"
                  rel="noopener noreferrer"
-                 class="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-slate-950 font-bold text-xs sm:text-sm px-5 py-3 rounded-xl shadow-sm transition-all active:scale-[0.98]">
+                 class="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-slate-950 font-bold text-sm px-5 py-3 rounded-xl transition-colors active:scale-[0.98]">
                 <span class="material-symbols-outlined text-[18px]" aria-hidden="true">chat</span>
                 <span>{% trans "Ask on WhatsApp" %}</span>
               </a>
               <a href="{{ storefront.map_url }}"
                  target="_blank"
                  rel="noopener noreferrer"
-                 class="inline-flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs sm:text-sm px-4 py-3 rounded-xl transition-colors">
-                <span class="material-symbols-outlined text-[17px] text-primary-fixed" aria-hidden="true">directions</span>
+                 class="text-sm font-semibold text-primary-fixed hover:underline inline-flex items-center gap-1">
                 <span>{% trans "Get directions" %}</span>
+                <span class="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>
               </a>
-              <button type="button"
-                      onclick="openHowToBuyModal()"
-                      class="inline-flex items-center justify-center gap-1.5 border border-white/20 hover:bg-white/10 text-slate-200 font-semibold text-xs sm:text-sm px-4 py-3 rounded-xl transition-colors">
-                <span class="material-symbols-outlined text-[17px] text-primary-fixed" aria-hidden="true">help_outline</span>
-                <span>{% trans "How to buy" %}</span>
-              </button>
             </div>
           </div>
 
-          <!-- Right: External Marketplaces ("Other Stores") -->
-          <div class="lg:col-span-5 bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-5 space-y-3 min-w-0">
-            <div>
-              <span class="font-mono text-xs text-primary-fixed uppercase tracking-wider font-semibold block">
-                {% trans "Other stores & protected shipping" %}
-              </span>
-              <p class="text-xs sm:text-sm text-slate-300 mt-1">
-                {% trans "Every item page shows its direct marketplace links. You can also explore our official profiles across Spain:" %}
-              </p>
-            </div>
+          <!-- Right: External Marketplaces ("Other Stores") without nested card cages -->
+          <div class="lg:col-span-5 lg:border-l lg:border-white/10 lg:pl-8 space-y-3 min-w-0">
+            <h3 class="text-sm font-semibold text-primary-fixed">
+              {% trans "Other stores & protected shipping" %}
+            </h3>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              {% trans "Every item page shows its direct marketplace links. You can also explore our official profiles across Spain:" %}
+            </p>
 
             {% if active_marketplace_sites %}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-2">
+            <ul class="divide-y divide-white/10 border-t border-white/10">
               {% for site in active_marketplace_sites %}
-              <a href="{{ site.base_url }}"
-                 target="_blank"
-                 rel="noopener noreferrer"
-                 class="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white transition-colors group">
-                <span class="flex items-center gap-2 min-w-0">
-                  {% if site.slug == 'wallapop' %}
-                    <span class="w-6 h-6 rounded-full bg-[#13C1AC] text-white flex items-center justify-center text-xs font-bold font-display shrink-0">W</span>
-                  {% elif site.slug == 'vinted' %}
-                    <span class="w-6 h-6 rounded-full bg-[#007782] text-white flex items-center justify-center text-xs font-bold font-display shrink-0">V</span>
-                  {% elif site.slug == 'milanuncios' %}
-                    <span class="w-6 h-6 rounded-full bg-[#16a34a] text-white flex items-center justify-center text-xs font-bold font-display shrink-0">M</span>
-                  {% else %}
-                    <span class="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold font-display shrink-0">{{ site.name|slice:":1"|upper }}</span>
-                  {% endif %}
-                  <span class="text-xs sm:text-sm font-semibold truncate">{{ site.name }}</span>
-                </span>
-                <span class="material-symbols-outlined text-[16px] text-slate-300 group-hover:text-primary-fixed shrink-0" aria-hidden="true">open_in_new</span>
-              </a>
+              <li>
+                <a href="{{ site.base_url }}"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="flex items-center justify-between py-2.5 text-sm text-white hover:text-primary-fixed transition-colors group">
+                  <span class="font-medium truncate">{{ site.name }}</span>
+                  <span class="material-symbols-outlined text-[16px] text-slate-400 group-hover:text-primary-fixed shrink-0" aria-hidden="true">open_in_new</span>
+                </a>
+              </li>
               {% endfor %}
-            </div>
+            </ul>
             {% endif %}
           </div>
 

@@ -16,10 +16,10 @@
   <meta property="og:type" content="website">
   {% endblock %}
 
-  <!-- Google Fonts aligned with rapidopackvalencia.es: Outfit + Plus Jakarta Sans + JetBrains Mono + Material Symbols -->
+  <!-- 2-Font Pairing aligned with rapidopackvalencia.es: Outfit (Display & Prices) + Plus Jakarta Sans (Body & UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
 
   <!-- Tailwind CSS with Rápido Pack Valencia Design Tokens -->
@@ -68,34 +68,11 @@
           fontFamily: {
             "sans": ["Plus Jakarta Sans", "system-ui", "-apple-system", "sans-serif"],
             "display": ["Outfit", "system-ui", "-apple-system", "sans-serif"],
-            "mono": ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "monospace"],
-            "label-button": ["Plus Jakarta Sans", "system-ui", "-apple-system", "sans-serif"],
-            "headline-xl": ["Outfit", "system-ui", "sans-serif"],
-            "headline-lg": ["Outfit", "system-ui", "sans-serif"],
-            "headline-md": ["Outfit", "system-ui", "sans-serif"],
-            "headline-sm": ["Outfit", "system-ui", "sans-serif"],
-            "price-display": ["Outfit", "system-ui", "sans-serif"],
-            "price-display-lg": ["Outfit", "system-ui", "sans-serif"],
-            "body-lg": ["Plus Jakarta Sans", "system-ui", "sans-serif"],
-            "body-md": ["Plus Jakarta Sans", "system-ui", "sans-serif"],
-            "body-sm": ["Plus Jakarta Sans", "system-ui", "sans-serif"],
-            "label-md": ["Plus Jakarta Sans", "system-ui", "sans-serif"],
-            "label-sm": ["Plus Jakarta Sans", "system-ui", "sans-serif"]
+            "mono": ["Plus Jakarta Sans", "system-ui", "-apple-system", "sans-serif"],
+            "label-button": ["Plus Jakarta Sans", "system-ui", "-apple-system", "sans-serif"]
           },
           boxShadow: {
             "2xs": "0 1px 2px 0 rgba(17, 24, 32, 0.05)"
-          },
-          spacing: {
-            "margin-desktop": "2rem",
-            "margin-tablet": "1.5rem",
-            "margin": "1rem",
-            "gutter": "1rem",
-            "gutter-desktop": "1.5rem",
-            "space-xl": "2.5rem",
-            "space-lg": "1.5rem",
-            "space-md": "1rem",
-            "space-sm": "0.5rem",
-            "space-xs": "0.25rem"
           }
         }
       }
@@ -111,6 +88,12 @@
       select,
       textarea {
         font-size: 1rem !important;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
       }
     }
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -176,7 +159,7 @@
                fetchpriority="high"
                class="h-[96px] sm:h-[108px] lg:h-[120px] w-auto object-contain transition-transform duration-200 group-hover:scale-[1.02]">
         </a>
-        <div id="header-live-status" class="hidden xl:inline-flex items-center gap-2 pl-5 border-l border-border-subtle text-xs font-mono font-medium text-text-muted whitespace-nowrap">
+        <div id="header-live-status" class="hidden xl:inline-flex items-center gap-2 pl-5 border-l border-border-subtle text-xs font-medium text-text-muted tabular-nums whitespace-nowrap">
           <span data-status-dot class="w-2 h-2 rounded-full {% if store_is_open %}bg-primary ring-4 ring-primary/15{% else %}bg-outline/50{% endif %} shrink-0" aria-hidden="true"></span>
           <span data-status-text>{{ store_live_status_label }}</span>
         </div>
@@ -185,20 +168,20 @@
       <!-- Center: Desktop Navigation Links (Identical to rapidopackvalencia.es) -->
       <nav aria-label="{% trans 'Main navigation' %}" class="hidden md:flex items-center gap-1.5 lg:gap-2.5 whitespace-nowrap">
         <a href="{{ astro_landing_url }}/"
-           class="px-3 lg:px-4 py-2.5 rounded-xl font-label-button text-base lg:text-lg font-bold uppercase tracking-wide whitespace-nowrap transition-all active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary text-surface-dark/85 hover:text-primary-hover hover:bg-surface-alt">
+           class="px-3 lg:px-4 py-2.5 rounded-xl font-label-button text-base lg:text-lg font-bold uppercase tracking-wide whitespace-nowrap transition-colors duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary text-surface-dark/85 hover:text-primary-hover hover:bg-surface-alt">
           {% trans "Home" %}
         </a>
         <a href="{{ astro_landing_url }}/paqueteria"
-           class="px-3 lg:px-4 py-2.5 rounded-xl font-label-button text-base lg:text-lg font-bold uppercase tracking-wide whitespace-nowrap transition-all active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary text-surface-dark/85 hover:text-primary-hover hover:bg-surface-alt">
+           class="px-3 lg:px-4 py-2.5 rounded-xl font-label-button text-base lg:text-lg font-bold uppercase tracking-wide whitespace-nowrap transition-colors duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary text-surface-dark/85 hover:text-primary-hover hover:bg-surface-alt">
           {% trans "Parcel Hub" %}
         </a>
         <a href="{% url 'storefront:home' %}"
            aria-current="page"
-           class="px-3 lg:px-4 py-2.5 rounded-xl font-label-button text-base lg:text-lg font-bold uppercase tracking-wide whitespace-nowrap transition-all active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary bg-mint-wash text-primary-hover border border-primary/25 shadow-2xs">
+           class="px-3 lg:px-4 py-2.5 rounded-xl font-label-button text-base lg:text-lg font-bold uppercase tracking-wide whitespace-nowrap transition-colors duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary bg-mint-wash text-primary-hover border border-primary/25 shadow-2xs">
           Outlet
         </a>
         <a href="{{ astro_landing_url }}/contacto"
-           class="px-3 lg:px-4 py-2.5 rounded-xl font-label-button text-base lg:text-lg font-bold uppercase tracking-wide whitespace-nowrap transition-all active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary text-surface-dark/85 hover:text-primary-hover hover:bg-surface-alt">
+           class="px-3 lg:px-4 py-2.5 rounded-xl font-label-button text-base lg:text-lg font-bold uppercase tracking-wide whitespace-nowrap transition-colors duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary text-surface-dark/85 hover:text-primary-hover hover:bg-surface-alt">
           {% trans "Contact" %}
         </a>
       </nav>
@@ -206,22 +189,22 @@
       <!-- Right: Telephone Pill (Desktop/Tablet) + Mobile <details> Hamburger Drawer -->
       <div class="flex items-center gap-2.5 lg:gap-3 shrink-0 whitespace-nowrap">
         <a href="{{ store_phone_href }}"
-           class="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border-subtle bg-surface-alt hover:bg-mint-wash hover:border-primary/30 text-surface-dark font-mono text-sm font-bold whitespace-nowrap transition-all active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+           class="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border-subtle bg-surface-alt hover:bg-mint-wash hover:border-primary/30 text-surface-dark text-sm font-bold tabular-nums whitespace-nowrap transition-colors duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
           <span class="material-symbols-outlined text-[18px] text-primary-hover leading-none" aria-hidden="true">call</span>
-          <span class="tabular-nums">{{ store_phone_display }}</span>
+          <span>{{ store_phone_display }}</span>
         </a>
 
         <details id="mobileNavDrawer" class="md:hidden relative group">
           <summary aria-label="{% trans 'Open navigation menu' %}"
-                   class="list-none flex items-center justify-center w-12 h-12 rounded-xl border border-border-subtle bg-surface-alt text-surface-dark hover:bg-mint-wash hover:border-primary/30 cursor-pointer transition-all active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                   class="list-none flex items-center justify-center w-12 h-12 rounded-xl border border-border-subtle bg-surface-alt text-surface-dark hover:bg-mint-wash hover:border-primary/30 cursor-pointer transition-colors duration-150 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
             <span class="material-symbols-outlined text-[26px] group-open:!hidden" aria-hidden="true">menu</span>
             <span class="material-symbols-outlined text-[26px] !hidden group-open:!inline-block" aria-hidden="true">close</span>
           </summary>
 
           <nav aria-label="{% trans 'Mobile navigation' %}"
-               class="absolute right-0 mt-3 w-[calc(100vw-2rem)] sm:w-80 max-w-xs bg-surface-container-lowest rounded-2xl border border-border-subtle shadow-2xl p-3 flex flex-col gap-1.5 z-50">
+               class="absolute right-0 mt-3 w-[calc(100vw-2rem)] sm:w-80 max-w-xs bg-white rounded-2xl border border-border-subtle shadow-2xl p-3 flex flex-col gap-1.5 z-50">
             <div id="header-mobile-live-status"
-                 class="px-4 py-3 rounded-xl bg-surface-alt/70 border border-border-subtle flex items-center gap-2 text-xs font-mono font-medium text-text-muted mb-1"
+                 class="px-4 py-3 rounded-xl bg-surface-alt/70 border border-border-subtle flex items-center gap-2 text-xs font-medium text-text-muted tabular-nums mb-1"
                  aria-live="polite">
               <span data-status-dot class="w-2 h-2 rounded-full {% if store_is_open %}bg-primary ring-4 ring-primary/15{% else %}bg-outline/50{% endif %} shrink-0" aria-hidden="true"></span>
               <span data-status-text>{{ store_live_status_label }}</span>
@@ -248,14 +231,14 @@
 
             <div class="pt-2.5 mt-1 border-t border-border-subtle flex flex-col gap-2">
               <a href="{{ store_phone_href }}"
-                 class="w-full inline-flex items-center justify-center gap-2 px-4 py-3.5 min-h-[48px] bg-surface-alt hover:bg-mint-wash/60 text-surface-dark font-mono text-sm font-bold rounded-xl active:scale-[0.99] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                 class="w-full inline-flex items-center justify-center gap-2 px-4 py-3.5 min-h-[48px] bg-surface-alt hover:bg-mint-wash/60 text-surface-dark text-sm font-bold tabular-nums rounded-xl active:scale-[0.99] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                 <span class="material-symbols-outlined text-[18px] text-primary-hover" aria-hidden="true">call</span>
                 <span>{{ store_phone_display }}</span>
               </a>
               <a href="{{ storefront.map_url }}"
                  target="_blank"
                  rel="noopener noreferrer"
-                 class="w-full inline-flex items-center justify-center gap-2 px-4 py-3.5 min-h-[48px] bg-primary hover:bg-primary-hover text-on-primary font-label-button text-base font-bold rounded-xl active:scale-[0.99] transition-all shadow-sm">
+                 class="w-full inline-flex items-center justify-center gap-2 px-4 py-3.5 min-h-[48px] bg-primary hover:bg-primary-hover text-on-primary font-label-button text-base font-bold rounded-xl active:scale-[0.99] transition-colors shadow-sm">
                 <span class="material-symbols-outlined text-[18px]" aria-hidden="true">location_on</span>
                 <span>{% trans "How to get to the store" %}</span>
               </a>
@@ -273,7 +256,7 @@
   </main>
 
   <!-- Dark Slate Footer Aligned with rapidopackvalencia.es (#111820) -->
-  <footer class="w-full bg-[#111820] text-white border-t border-white/10 pt-12 pb-8 mt-12">
+  <footer class="w-full bg-[#111820] text-white border-t border-white/10 pt-12 pb-8 mt-14">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 pb-10">
 
@@ -287,9 +270,6 @@
                  loading="lazy"
                  class="h-12 w-auto object-contain">
           </a>
-          <span class="inline-flex self-start font-mono text-xs text-primary-fixed bg-white/5 border border-white/10 px-2.5 py-1 rounded-full tracking-wider uppercase">
-            Alfafar · Valencia
-          </span>
           <p class="text-sm text-slate-300 leading-relaxed max-w-sm">
             {% trans "Multi-carrier parcel hub and curated second-hand & outlet shelf. Inspect items in person on our testing benches or hold them 24h via WhatsApp." %}
           </p>
@@ -299,14 +279,14 @@
             {% csrf_token %}
             <input name="next" type="hidden" value="{{ request.get_full_path }}">
             {% get_current_language as CURRENT_LANG %}
-            <div class="flex items-center bg-white/5 p-1 rounded-xl text-xs text-slate-300 gap-1 border border-white/10">
+            <div class="inline-flex items-center bg-white/5 p-1 rounded-xl text-xs text-slate-300 gap-1 border border-white/10">
               <button type="submit" name="language" value="es"
-                      class="px-2.5 py-1 min-h-[34px] min-w-[34px] inline-flex items-center justify-center rounded-lg font-mono transition {% if CURRENT_LANG == 'es' %}font-bold bg-primary text-white{% else %}text-slate-300 hover:text-white{% endif %}"
+                      class="px-2.5 py-1 min-h-[34px] min-w-[34px] inline-flex items-center justify-center rounded-lg font-semibold transition-colors {% if CURRENT_LANG == 'es' %}bg-primary text-white{% else %}text-slate-300 hover:text-white{% endif %}"
                       title="Español">
                 ES
               </button>
               <button type="submit" name="language" value="en"
-                      class="px-2.5 py-1 min-h-[34px] min-w-[34px] inline-flex items-center justify-center rounded-lg font-mono transition {% if CURRENT_LANG == 'en' %}font-bold bg-primary text-white{% else %}text-slate-300 hover:text-white{% endif %}"
+                      class="px-2.5 py-1 min-h-[34px] min-w-[34px] inline-flex items-center justify-center rounded-lg font-semibold transition-colors {% if CURRENT_LANG == 'en' %}bg-primary text-white{% else %}text-slate-300 hover:text-white{% endif %}"
                       title="English">
                 EN
               </button>
@@ -316,7 +296,7 @@
 
         <!-- Column 2: Navigation -->
         <div class="lg:col-span-3 flex flex-col gap-3">
-          <span class="font-mono text-xs text-primary-fixed uppercase tracking-wider font-semibold">{% trans "Navigation" %}</span>
+          <span class="text-sm font-semibold text-primary-fixed">{% trans "Navigation" %}</span>
           <ul class="flex flex-col gap-2 text-sm text-slate-300">
             <li><a href="{{ astro_landing_url }}/" class="hover:text-white transition-colors">{% trans "Home" %} (rapidopackvalencia.es)</a></li>
             <li><a href="{{ astro_landing_url }}/paqueteria" class="hover:text-white transition-colors">{% trans "Parcel Hub" %}</a></li>
@@ -328,7 +308,7 @@
 
         <!-- Column 3: Physical Store & Hours -->
         <div class="lg:col-span-3 flex flex-col gap-3">
-          <span class="font-mono text-xs text-primary-fixed uppercase tracking-wider font-semibold">{% trans "Alfafar Physical Store" %}</span>
+          <span class="text-sm font-semibold text-primary-fixed">{% trans "Alfafar Physical Store" %}</span>
           <div class="flex flex-col gap-2.5 text-sm text-slate-300">
             <a href="{{ storefront.map_url }}"
                target="_blank"
@@ -339,7 +319,7 @@
             </a>
             <div class="flex items-start gap-2">
               <span class="material-symbols-outlined text-primary-fixed text-[18px] mt-0.5 shrink-0" aria-hidden="true">schedule</span>
-              <span class="font-mono text-xs leading-relaxed">{{ storefront.opening_hours }}</span>
+              <span class="text-sm tabular-nums leading-relaxed">{{ storefront.opening_hours }}</span>
             </div>
             <div class="pt-1 flex flex-wrap items-center gap-2">
               <a href="{% url 'storefront:go_whatsapp' %}"
@@ -350,7 +330,7 @@
                 <span>{% trans "WhatsApp Direct" %}</span>
               </a>
               <a href="{{ store_phone_href }}"
-                 class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 font-mono text-xs font-medium transition-colors">
+                 class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 text-xs font-medium tabular-nums transition-colors">
                 <span class="material-symbols-outlined text-[15px]" aria-hidden="true">call</span>
                 <span>{{ store_phone_display }}</span>
               </a>
@@ -360,7 +340,7 @@
 
         <!-- Column 4: Legal & Staff -->
         <div class="lg:col-span-2 flex flex-col gap-3">
-          <span class="font-mono text-xs text-primary-fixed uppercase tracking-wider font-semibold">{% trans "Legal" %}</span>
+          <span class="text-sm font-semibold text-primary-fixed">{% trans "Legal" %}</span>
           <ul class="flex flex-col gap-2 text-sm text-slate-300">
             <li><a href="{% url 'storefront:legal_notice' %}" class="hover:text-white transition-colors">{% trans "Legal Notice" %}</a></li>
             <li><a href="{% url 'storefront:privacy' %}" class="hover:text-white transition-colors">{% trans "Privacy Policy" %}</a></li>
@@ -375,9 +355,8 @@
       <!-- Bottom Legal & Brand Bar -->
       <div class="border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-slate-400">
         <span>© {% now "Y" %} {{ storefront.store_name }} Valencia · {{ storefront.address }}. {% trans "All rights reserved." %}</span>
-        <span class="inline-flex items-center gap-1.5 font-mono text-xs text-primary-fixed">
-          <span class="material-symbols-outlined text-[15px]" aria-hidden="true">verified</span>
-          <span>{% trans "Physical Store & Online Shelf · Alfafar, Valencia" %}</span>
+        <span class="text-xs text-primary-fixed font-medium">
+          {% trans "Physical Store & Online Shelf · Alfafar, Valencia" %}
         </span>
       </div>
     </div>
@@ -395,7 +374,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Close mobile <details> drawer on Escape or outside click
       const mobileDrawer = document.getElementById('mobileNavDrawer');
       if (mobileDrawer) {
         document.addEventListener('click', (event) => {
@@ -410,7 +388,6 @@
         });
       }
 
-      // Modern Web Guidance: light-dismiss-a-dialog fallback for browsers without native closedBy support
       document.querySelectorAll('dialog[closedby="any"]').forEach((dialog) => {
         if (!('closedBy' in HTMLDialogElement.prototype)) {
           dialog.addEventListener('click', (event) => {

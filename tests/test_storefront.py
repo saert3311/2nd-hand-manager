@@ -256,10 +256,12 @@ class StorefrontMarketplaceTests(TestCase):
         self.assertIn('id="mobileNavDrawer"', html)
         self.assertIn(">Outlet<", html)
 
-        # Verify Store Shelf structure, category rail, LocalBusiness JSON-LD & external store links
+        # Verify Store Shelf structure, dropdown filters, category rail, LocalBusiness JSON-LD & external store links
+        self.assertIn('id="priceDropdown"', html)
+        self.assertIn('id="conditionDropdown"', html)
         self.assertIn('id="categoryRail"', html)
         self.assertIn('"@type": "LocalBusiness"', html)
-        self.assertIn("-50% PVP", html)
+        self.assertIn("-50%", html)
         self.assertIn("https://es.wallapop.com", html)
         self.assertIn("https://www.vinted.es", html)
 

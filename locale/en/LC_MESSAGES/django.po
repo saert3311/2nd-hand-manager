@@ -4093,3 +4093,22 @@ msgstr "Open now · Until 20:00"
 
 msgid "Rápido Pack Valencia — Go to Home"
 msgstr "Rápido Pack Valencia — Go to Home"
+
+msgid "All conditions"
+msgstr "All conditions"
+
+msgid "All prices"
+msgstr "All prices"
+
+msgid "Free pickup"
+msgstr "Free pickup"
+
+msgid "Outlet & Second-Hand Shelf"
+msgstr "Outlet & Second-Hand Shelf"
+
+msgid "Reserved (24h hold)"
+msgstr "Reserved (24h hold)"
+
+msgid "Sort"
+msgstr "Sort"
+

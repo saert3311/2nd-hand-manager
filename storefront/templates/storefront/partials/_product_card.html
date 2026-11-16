@@ -1,138 +1,81 @@
 {% load i18n %}
 {% with first_image=product.images.all.0 %}
-<article class="group relative flex flex-col bg-white rounded-2xl border border-border-subtle hover:border-primary/50 hover:shadow-md focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 transition-all duration-200 overflow-hidden min-w-0">
+<article class="group relative flex flex-col min-w-0">
 
-  <!-- Shelf Image Pedestal (1:1 Ratio, Zero Overlaid Action Buttons) -->
-  <div class="relative aspect-square w-full bg-surface-alt overflow-hidden">
+  <!-- Clean 1:1 Image Pedestal (Zero badge clutter) -->
+  <div class="relative aspect-square w-full rounded-2xl bg-surface-alt overflow-hidden">
     {% if first_image %}
       <img src="{{ first_image.image.url }}"
            alt="{{ product.ai_title }}"
            {% if is_lcp %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
-           class="w-full h-full object-cover {% if product.status == 'sold' %}grayscale opacity-70{% else %}group-hover:scale-[1.03] transition-transform duration-300{% endif %}">
+           class="w-full h-full object-cover {% if product.status == 'sold' %}grayscale opacity-65{% else %}group-hover:scale-[1.03] transition-transform duration-300{% endif %}">
     {% else %}
       <div class="w-full h-full flex items-center justify-center text-outline">
         <span class="material-symbols-outlined text-4xl" aria-hidden="true">photo_camera</span>
       </div>
     {% endif %}
 
-    <!-- Top-Left Status / Discount Badge -->
-    <div class="absolute top-2.5 left-2.5 flex flex-col items-start gap-1 pointer-events-none">
-      {% if product.status == 'sold' %}
-        <span class="inline-flex items-center gap-1 bg-[#475569] text-white font-mono text-xs px-2.5 py-0.5 rounded-full shadow-sm font-semibold">
-          <span class="material-symbols-outlined text-[13px]" aria-hidden="true">done</span>
-          <span>{% trans "SOLD" %}</span>
-        </span>
-      {% elif product.is_reserved %}
-        <span class="inline-flex items-center gap-1 bg-[#EA580C] text-white font-mono text-xs px-2.5 py-0.5 rounded-full shadow-sm font-semibold">
-          <span class="material-symbols-outlined text-[13px]" aria-hidden="true">schedule</span>
-          <span>{% trans "RESERVED" %}</span>
-        </span>
-      {% else %}
-        {% if product.savings_pct %}
-          <span class="inline-flex items-center bg-[#111820] text-primary-fixed font-mono text-xs px-2.5 py-0.5 rounded-full shadow-sm font-semibold">
-            -{{ product.savings_pct }}% PVP
-          </span>
-        {% endif %}
-        {% if product.is_featured %}
-          <span class="inline-flex items-center gap-1 bg-amber-400 text-slate-950 text-xs px-2.5 py-0.5 rounded-full shadow-sm font-bold">
-            <span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">star</span>
-            <span>{% trans "FEATURED" %}</span>
-          </span>
-        {% endif %}
-      {% endif %}
-    </div>
-
-    <!-- Top-Right Condition Pill -->
-    {% if product.condition %}
-    <div class="absolute top-2.5 right-2.5 pointer-events-none">
-      <span class="bg-white/95 backdrop-blur-sm {% if product.status == 'sold' %}text-outline{% else %}text-[#111820]{% endif %} border border-border-subtle text-xs px-2.5 py-0.5 rounded-full shadow-sm font-medium">
-        {{ product.get_condition_display }}
-      </span>
-    </div>
-    {% endif %}
-
-    <!-- Bottom-Right Subtle External Store Availability Indicators (Non-Cluttered) -->
-    {% if product.active_listing_links and product.status != 'sold' %}
-    <div class="absolute bottom-2.5 right-2.5 flex items-center gap-1 bg-white/95 backdrop-blur-sm border border-border-subtle px-1.5 py-1 rounded-full shadow-sm pointer-events-none"
-         aria-label="{% trans 'Also listed on external marketplaces' %}">
-      {% for link in product.active_listing_links|slice:":3" %}
-        {% if link.platform == 'wallapop' %}
-          <span class="w-5 h-5 rounded-full bg-[#13C1AC] text-white flex items-center justify-center text-xs font-bold font-display" title="{{ link.get_platform_display }}">W</span>
-        {% elif link.platform == 'vinted' %}
-          <span class="w-5 h-5 rounded-full bg-[#007782] text-white flex items-center justify-center text-xs font-bold font-display" title="{{ link.get_platform_display }}">V</span>
-        {% elif link.platform == 'milanuncios' %}
-          <span class="w-5 h-5 rounded-full bg-[#16a34a] text-white flex items-center justify-center text-xs font-bold font-display" title="{{ link.get_platform_display }}">M</span>
-        {% else %}
-          <span class="w-5 h-5 rounded-full bg-[#111820] text-white flex items-center justify-center text-xs font-bold font-display" title="{{ link.get_platform_display }}">{{ link.get_platform_display|slice:":1"|upper }}</span>
-        {% endif %}
-      {% endfor %}
-    </div>
-    {% endif %}
-
     {% if product.status == 'sold' %}
-    <!-- Center Sold Stamp Overlay -->
-    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-      <span class="px-3 py-1 bg-[#111820]/85 text-white font-mono text-xs uppercase tracking-widest font-bold rounded-lg rotate-[-10deg] shadow">
-        {% trans "Delivered in Alfafar" %}
-      </span>
-    </div>
+      <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <span class="px-3 py-1 bg-[#111820]/85 text-white text-xs font-bold uppercase tracking-wider rounded-lg">
+          {% trans "SOLD" %}
+        </span>
+      </div>
+    {% elif product.is_reserved %}
+      <div class="absolute top-3 left-3 pointer-events-none">
+        <span class="inline-flex items-center bg-[#EA580C] text-white text-xs px-2.5 py-0.5 rounded-full font-semibold">
+          {% trans "RESERVED" %}
+        </span>
+      </div>
+    {% elif product.is_featured %}
+      <div class="absolute top-3 left-3 pointer-events-none">
+        <span class="inline-flex items-center bg-amber-400 text-slate-950 text-xs px-2.5 py-0.5 rounded-full font-bold">
+          {% trans "FEATURED" %}
+        </span>
+      </div>
     {% endif %}
   </div>
 
-  <!-- Clean Shelf Label Block (Single Full-Card Accessible Link, Zero Button Clutter) -->
-  <div class="p-3.5 sm:p-4 flex-1 flex flex-col justify-between min-w-0 {% if product.status == 'sold' %}opacity-80{% endif %}">
-    <div class="min-w-0">
-      <div class="flex items-center justify-between gap-2 font-mono text-xs text-outline mb-1.5">
-        <span class="truncate min-w-0">
-          {% if product.category %}
-            {{ product.category.get_localized_name }}
-          {% else %}
-            {% trans "Opportunity" %}
-          {% endif %}
-        </span>
-        <span class="shrink-0">{{ product.public_reference }}</span>
+  <!-- Plain Typographic Hierarchy Below Image (Single Full-Card Link) -->
+  <div class="pt-3 flex-1 flex flex-col justify-between gap-1.5 min-w-0 {% if product.status == 'sold' %}opacity-75{% endif %}">
+    <div class="min-w-0 space-y-1">
+      <div class="text-[13px] text-outline truncate">
+        {% if product.category %}{{ product.category.get_localized_name }}{% else %}{% trans "Opportunity" %}{% endif %}{% if product.condition %} · {{ product.get_condition_display }}{% endif %}
       </div>
-      <h3 class="font-sans text-sm sm:text-base font-semibold text-[#111820] leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-        <a href="{{ product.get_public_url }}" class="after:absolute after:inset-0 focus:outline-none">
+      <h3 class="text-[15px] font-semibold text-[#111820] leading-snug line-clamp-2 group-hover:text-primary-hover transition-colors">
+        <a href="{{ product.get_public_url }}" class="after:absolute after:inset-0 focus:outline-none focus-visible:underline">
           {{ product.ai_title }}
         </a>
       </h3>
     </div>
 
-    <!-- Price & Compact Shelf Status Row -->
-    <div class="mt-3 pt-2.5 border-t border-surface-alt flex items-end justify-between gap-2">
-      <div class="flex items-baseline flex-wrap gap-x-1.5 min-w-0">
+    <div class="pt-0.5 flex items-baseline justify-between gap-2">
+      <div class="flex items-baseline flex-wrap gap-x-2 min-w-0">
         {% if product.price %}
-          <span class="font-display text-lg sm:text-xl font-extrabold {% if product.status == 'sold' %}text-outline{% else %}text-[#111820]{% endif %} leading-none">
+          <span class="font-display text-lg font-bold {% if product.status == 'sold' %}text-outline{% else %}text-[#111820]{% endif %} tabular-nums leading-none">
             {{ product.price|floatformat:2 }} €
           </span>
           {% if product.estimated_retail_price and product.estimated_retail_price > product.price and product.status != 'sold' %}
-            <span class="font-mono text-xs text-outline line-through">
+            <span class="text-[13px] text-outline line-through tabular-nums">
               {{ product.estimated_retail_price|floatformat:0 }} €
             </span>
           {% endif %}
+          {% if product.savings_pct and product.status != 'sold' %}
+            <span class="text-[13px] font-semibold text-primary-hover tabular-nums">
+              -{{ product.savings_pct }}%
+            </span>
+          {% endif %}
         {% else %}
-          <span class="font-display text-base font-bold text-primary leading-none">
+          <span class="font-display text-base font-bold text-primary-hover leading-none">
             {% trans "Ask for price" %}
           </span>
         {% endif %}
       </div>
 
       {% if product.status == 'sold' %}
-        <span class="font-mono text-xs text-outline shrink-0">
-          {% trans "Sold" %}
-        </span>
+        <span class="text-[13px] text-outline shrink-0">{% trans "Sold" %}</span>
       {% elif product.is_reserved %}
-        <span class="inline-flex items-center gap-1 font-mono text-xs text-[#c2410c] font-semibold shrink-0">
-          <span class="w-1.5 h-1.5 rounded-full bg-[#EA580C]" aria-hidden="true"></span>
-          <span>{% trans "24h Hold" %}</span>
-        </span>
-      {% else %}
-        <span class="inline-flex items-center gap-1 font-mono text-xs text-primary font-semibold shrink-0">
-          <span class="w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true"></span>
-          <span>{% trans "In Store" %}</span>
-          <span class="material-symbols-outlined text-[14px] group-hover:translate-x-0.5 transition-transform" aria-hidden="true">arrow_forward</span>
-        </span>
+        <span class="text-[13px] text-[#c2410c] font-semibold shrink-0">{% trans "24h Hold" %}</span>
       {% endif %}
     </div>
   </div>

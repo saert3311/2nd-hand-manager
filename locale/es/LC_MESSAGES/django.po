@@ -4547,3 +4547,22 @@ msgstr "Abierto ahora · Hasta 20:00"
 
 msgid "Rápido Pack Valencia — Go to Home"
 msgstr "Rápido Pack Valencia — Ir a Inicio"
+
+msgid "All conditions"
+msgstr "Todos los estados"
+
+msgid "All prices"
+msgstr "Todos los precios"
+
+msgid "Free pickup"
+msgstr "Recogida gratuita"
+
+msgid "Outlet & Second-Hand Shelf"
+msgstr "Estantería Outlet y Segunda Mano"
+
+msgid "Reserved (24h hold)"
+msgstr "Reservado (24h)"
+
+msgid "Sort"
+msgstr "Ordenar"
+

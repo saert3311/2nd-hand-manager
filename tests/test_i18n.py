@@ -189,9 +189,8 @@ class InternationalizationTests(TestCase):
         response = self.client.get(reverse("storefront:home"))
         self.assertEqual(response.status_code, 200)
         content_es = response.content.decode("utf-8")
-        self.assertIn("ESTANTERÍA ONLINE · OUTLET Y SEGUNDA MANO", content_es)
+        self.assertIn("Estantería Outlet y Segunda Mano", content_es)
         self.assertIn("artículos disponibles", content_es)
-        self.assertIn("CONTACTO DIRECTO Y PRUEBA EN TIENDA", content_es)
         self.assertIn("Otras tiendas y envío protegido", content_es)
         self.assertIn("Paquetería", content_es)
         self.assertIn("Tienda", content_es)
@@ -201,14 +200,13 @@ class InternationalizationTests(TestCase):
         response = self.client.get(reverse("storefront:home"))
         self.assertEqual(response.status_code, 200)
         content_en = response.content.decode("utf-8")
-        self.assertIn("ONLINE SHELF · OUTLET & SECOND-HAND", content_en)
+        self.assertIn("Outlet & Second-Hand Shelf", content_en)
         self.assertIn("items available", content_en)
-        self.assertIn("DIRECT CONTACT & IN-STORE TESTING", content_en)
         self.assertIn("Other stores & protected shipping", content_en)
         self.assertIn("Parcel Hub", content_en)
         self.assertIn("Store Shelf", content_en)
         # Ensure Spanish raw source is not displayed in English mode
-        self.assertNotIn("ESTANTERÍA ONLINE · OUTLET Y SEGUNDA MANO", content_en)
+        self.assertNotIn("Estantería Outlet y Segunda Mano", content_en)
 
     def test_storefront_how_to_buy_renders_bilingual_correctly(self):
         # 1. Spanish mode

@@ -30,77 +30,40 @@
 {% block content %}
 <div class="flex flex-col w-full">
 
-  <!-- Micro Breadcrumb & Shelf Return Bar -->
-  <section class="w-full bg-surface-alt border-b border-border-subtle">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-2 text-on-surface-variant text-xs font-medium">
+  <!-- Clean Breadcrumb Bar -->
+  <section class="w-full bg-surface border-b border-border-subtle">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-2 text-on-surface-variant text-[13px] font-medium">
       <nav aria-label="Breadcrumb" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap min-w-0">
-        <a class="hover:text-primary transition-colors inline-flex items-center gap-1 shrink-0" href="{% url 'storefront:home' %}">
-          <span class="material-symbols-outlined text-[15px]" aria-hidden="true">storefront</span>
-          <span>{% trans "Store Shelf" %}</span>
+        <a class="hover:text-primary-hover transition-colors shrink-0" href="{% url 'storefront:home' %}">
+          {% trans "Store Shelf" %}
         </a>
         {% if product.category %}
         <span class="text-outline-variant" aria-hidden="true">/</span>
-        <a class="hover:text-primary transition-colors shrink-0" href="{% url 'storefront:category' product.category.slug %}">
+        <a class="hover:text-primary-hover transition-colors shrink-0" href="{% url 'storefront:category' product.category.slug %}">
           {{ product.category.get_localized_name }}
         </a>
         {% endif %}
         <span class="text-outline-variant" aria-hidden="true">/</span>
-        <span class="font-mono text-primary font-semibold shrink-0">{{ product.public_reference }}</span>
+        <span class="text-[#111820] font-semibold tabular-nums shrink-0">{{ product.public_reference }}</span>
       </nav>
-      <div class="hidden sm:flex items-center gap-2 shrink-0">
-        <span class="inline-flex items-center gap-1 font-mono text-xs text-primary font-semibold">
-          <span class="material-symbols-outlined text-[15px]" aria-hidden="true">verified</span>
-          <span>{% trans "Verified in Alfafar" %}</span>
-        </span>
-      </div>
+      <span class="hidden sm:inline-flex items-center gap-1 text-[13px] text-primary-hover font-medium shrink-0">
+        <span class="material-symbols-outlined text-[15px]" aria-hidden="true">verified</span>
+        <span>{% trans "Verified in Alfafar" %}</span>
+      </span>
     </div>
   </section>
 
-  <!-- Main Product Detail Grid (Desktop 60% / 40%) -->
-  <section class="w-full py-5 lg:py-8">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
+  <!-- Main Product Detail Grid (60% / 40%) -->
+  <section class="w-full py-6 lg:py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 xl:gap-10 items-start">
 
-        <!-- LEFT COLUMN: Image Gallery, Description & Verification Certificate (7 cols) -->
-        <div class="lg:col-span-7 flex flex-col gap-5 min-w-0">
+        <!-- LEFT COLUMN: Clean Gallery, Description & Verification Guarantee (7 cols) -->
+        <div class="lg:col-span-7 flex flex-col gap-6 min-w-0">
           {% with first_image=images.0 %}
-          <!-- Main Image Showcase -->
-          <div class="relative bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-border-subtle group">
-            <!-- Badges Overlay -->
-            <div class="absolute top-5 left-5 z-10 flex flex-wrap items-center gap-1.5 pointer-events-none">
-              {% if product.is_featured %}
-              <span class="inline-flex items-center gap-1 bg-amber-400 text-slate-950 text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm">
-                <span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">star</span>
-                <span>{% trans "FEATURED" %}</span>
-              </span>
-              {% endif %}
-              {% if product.condition %}
-              <span class="inline-flex items-center gap-1 bg-white/95 backdrop-blur-sm text-[#111820] border border-border-subtle text-xs px-2.5 py-0.5 rounded-full font-semibold shadow-sm">
-                <span class="material-symbols-outlined text-[14px] text-primary" aria-hidden="true">military_tech</span>
-                <span>{{ product.get_condition_display|upper }}</span>
-              </span>
-              {% endif %}
-              {% if product.status == 'published' and not product.is_reserved %}
-              <span class="inline-flex items-center gap-1.5 bg-[#111820]/90 text-white font-mono text-xs px-2.5 py-0.5 rounded-full shadow-sm">
-                <span class="w-1.5 h-1.5 rounded-full bg-primary-fixed animate-pulse" aria-hidden="true"></span>
-                <span>{% trans "SINGLE PIECE AVAILABLE" %}</span>
-              </span>
-              {% endif %}
-            </div>
-
-            {% if first_image %}
-            <!-- Zoom Button Action -->
-            <button type="button"
-                    onclick="openImageLightbox()"
-                    class="absolute top-5 right-5 z-10 w-10 h-10 rounded-full bg-white/95 backdrop-blur-md text-[#111820] border border-border-subtle flex items-center justify-center shadow-sm hover:bg-primary hover:text-white transition-colors"
-                    title="{% trans 'Zoom photo' %}"
-                    aria-label="{% trans 'Zoom photo' %}">
-              <span class="material-symbols-outlined text-[20px]" aria-hidden="true">zoom_in</span>
-            </button>
-            {% endif %}
-
-            <!-- Product Main Frame (LCP Image with fetchpriority="high") -->
-            <div class="aspect-square w-full rounded-xl bg-surface-alt flex items-center justify-center overflow-hidden">
+          <!-- Clean Image Showcase -->
+          <div class="group">
+            <div class="relative aspect-square w-full rounded-2xl bg-surface-alt flex items-center justify-center overflow-hidden">
               {% if first_image %}
               <img id="mainProductPhoto"
                    src="{{ first_image.image.url }}"
@@ -108,6 +71,14 @@
                    fetchpriority="high"
                    onclick="openImageLightbox()"
                    class="w-full h-full object-cover cursor-zoom-in transition-transform duration-300 {% if product.status == 'sold' %}grayscale opacity-75{% else %}group-hover:scale-[1.02]{% endif %}">
+              <!-- Zoom Button -->
+              <button type="button"
+                      onclick="openImageLightbox()"
+                      class="absolute top-3.5 right-3.5 z-10 w-10 h-10 rounded-full bg-white/95 backdrop-blur-md text-[#111820] border border-border-subtle flex items-center justify-center shadow-sm hover:bg-primary hover:text-white transition-colors"
+                      title="{% trans 'Zoom photo' %}"
+                      aria-label="{% trans 'Zoom photo' %}">
+                <span class="material-symbols-outlined text-[20px]" aria-hidden="true">zoom_in</span>
+              </button>
               {% else %}
               <div class="w-full h-full flex items-center justify-center text-outline">
                 <span class="material-symbols-outlined text-5xl" aria-hidden="true">photo_camera</span>
@@ -115,13 +86,10 @@
               {% endif %}
             </div>
 
-            <!-- In-Photo Audit Watermark -->
-            <div class="mt-2.5 px-3 py-2 flex items-center justify-between gap-2 text-outline font-mono text-xs bg-surface-alt rounded-xl">
-              <span class="flex items-center gap-1.5 min-w-0 truncate">
-                <span class="material-symbols-outlined text-[15px] text-primary shrink-0" aria-hidden="true">camera</span>
-                <span class="truncate">{% trans "100% real photograph of the item in stock (Alfafar Studio)" %}</span>
-              </span>
-              <span class="text-[#111820] font-semibold shrink-0">{{ product.public_reference }}</span>
+            <!-- Quiet Studio Caption -->
+            <div class="pt-2.5 flex items-center justify-between gap-2 text-[13px] text-outline">
+              <span class="truncate">{% trans "100% real photograph of the item in stock (Alfafar Studio)" %}</span>
+              <span class="tabular-nums shrink-0">{{ product.public_reference }}</span>
             </div>
           </div>
 
@@ -133,7 +101,7 @@
                     data-photo-url="{{ img.image.url }}"
                     onclick="updateMainPhoto(this)"
                     aria-label="{% trans 'View photo' %} {{ forloop.counter }}"
-                    class="thumbnail-btn w-20 h-20 rounded-xl overflow-hidden shadow-sm shrink-0 p-1 transition-all border {% if forloop.first %}bg-mint-wash border-primary ring-2 ring-primary{% else %}bg-white border-border-subtle hover:border-primary/40{% endif %}">
+                    class="thumbnail-btn w-20 h-20 rounded-xl overflow-hidden shrink-0 p-0.5 transition-colors border {% if forloop.first %}border-primary ring-2 ring-primary{% else %}border-border-subtle hover:border-primary/40{% endif %}">
               <img src="{{ img.image.url }}"
                    alt="{{ product.ai_title }} - {{ forloop.counter }}"
                    loading="lazy"
@@ -144,62 +112,45 @@
           {% endif %}
           {% endwith %}
 
-          <!-- Structured Product Description -->
-          <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-border-subtle space-y-3">
-            <h2 class="font-display text-lg font-bold text-[#111820] flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary text-[20px]" aria-hidden="true">description</span>
-              <span>{% trans "Product Description & Details" %}</span>
+          <!-- Structured Product Description (Clean whitespace + 1px hairline) -->
+          <div class="pt-6 border-t border-border-subtle space-y-3">
+            <h2 class="font-display text-lg font-bold text-[#111820]">
+              {% trans "Product Description & Details" %}
             </h2>
-            <div class="text-sm sm:text-base text-on-surface-variant leading-relaxed whitespace-pre-line break-words">{{ product.ai_description }}</div>
-            <div class="pt-2 border-t border-border-subtle">
-              <button type="button"
-                      onclick="openHowToBuyModal()"
-                      class="w-full py-2 min-h-[38px] text-center text-primary font-semibold text-xs sm:text-sm hover:underline flex items-center justify-center gap-1">
-                <span>{% trans "View store pickup, 24h hold & shipping guide" %}</span>
-                <span class="material-symbols-outlined text-[15px]" aria-hidden="true">arrow_forward</span>
-              </button>
-            </div>
+            <div class="text-sm sm:text-base text-on-surface-variant leading-relaxed whitespace-pre-line break-words max-w-[65ch]">{{ product.ai_description }}</div>
           </div>
 
-          <!-- Technical Verification Certificate Box -->
-          <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-border-subtle">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-4 gap-2 border-b border-border-subtle">
-              <div class="flex items-center gap-3 min-w-0">
-                <div class="w-10 h-10 rounded-xl bg-mint-wash text-primary flex items-center justify-center shrink-0 border border-primary/20">
-                  <span class="material-symbols-outlined text-[22px]" aria-hidden="true">verified_user</span>
-                </div>
-                <div class="min-w-0">
-                  <h2 class="font-display text-base sm:text-lg font-bold text-[#111820]">{% trans "Rápido Pack Verification Guarantee" %}</h2>
-                  <p class="text-xs text-on-surface-variant">{% trans "Visual and functional inspection completed at our Alfafar (Valencia) store" %}</p>
-                </div>
+          <!-- Technical Verification Guarantee (Clean 1px divider, zero nested boxes) -->
+          <div class="pt-6 border-t border-border-subtle space-y-4">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <h2 class="font-display text-lg font-bold text-[#111820]">{% trans "Rápido Pack Verification Guarantee" %}</h2>
+                <p class="text-sm text-on-surface-variant">{% trans "Visual and functional inspection completed at our Alfafar (Valencia) store" %}</p>
               </div>
-              <span class="inline-flex items-center gap-1 text-primary-hover font-mono text-xs bg-mint-wash border border-primary/20 px-2.5 py-1 rounded-full self-start sm:self-auto shrink-0 font-semibold">
-                <span class="material-symbols-outlined text-[14px]" aria-hidden="true">task_alt</span>
-                <span>{% trans "Inspected in Store" %}</span>
-              </span>
+              <span class="material-symbols-outlined text-primary text-[24px] shrink-0" aria-hidden="true">verified_user</span>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div class="flex items-start gap-2.5 bg-surface-alt p-3.5 rounded-xl border border-border-subtle">
-                <span class="material-symbols-outlined text-primary text-[20px] shrink-0" aria-hidden="true">check_circle</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div class="flex items-start gap-2.5">
+                <span class="material-symbols-outlined text-primary text-[20px] shrink-0 mt-0.5" aria-hidden="true">check_circle</span>
                 <div>
-                  <span class="text-sm font-semibold text-[#111820] block">{% trans "Real Studio Photographs" %}</span>
-                  <p class="text-xs text-on-surface-variant mt-0.5">{% trans "Every photo corresponds to the exact unit available in our Alfafar store." %}</p>
+                  <span class="font-semibold text-[#111820] block">{% trans "Real Studio Photographs" %}</span>
+                  <p class="text-[13px] text-on-surface-variant mt-0.5">{% trans "Every photo corresponds to the exact unit available in our Alfafar store." %}</p>
                 </div>
               </div>
-              <div class="flex items-start gap-2.5 bg-surface-alt p-3.5 rounded-xl border border-border-subtle">
-                <span class="material-symbols-outlined text-primary text-[20px] shrink-0" aria-hidden="true">check_circle</span>
+              <div class="flex items-start gap-2.5">
+                <span class="material-symbols-outlined text-primary text-[20px] shrink-0 mt-0.5" aria-hidden="true">check_circle</span>
                 <div>
-                  <span class="text-sm font-semibold text-[#111820] block">{% trans "24h Free In-Store Hold" %}</span>
-                  <p class="text-xs text-on-surface-variant mt-0.5">{% trans "Reserve via WhatsApp and inspect it in person in Alfafar before paying." %}</p>
+                  <span class="font-semibold text-[#111820] block">{% trans "24h Free In-Store Hold" %}</span>
+                  <p class="text-[13px] text-on-surface-variant mt-0.5">{% trans "Reserve via WhatsApp and inspect it in person in Alfafar before paying." %}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- RIGHT COLUMN: Sticky Purchase Box & Trust Modules (5 cols) -->
-        <aside class="lg:col-span-5 flex flex-col gap-4 lg:sticky lg:top-24 min-w-0">
+        <!-- RIGHT COLUMN: Sticky Purchase Box (5 cols) -->
+        <aside class="lg:col-span-5 flex flex-col gap-4 lg:sticky lg:top-40 min-w-0">
           {% include "storefront/partials/_purchase_box.html" %}
         </aside>
 
@@ -209,20 +160,17 @@
 
   <!-- Related Items Section -->
   {% if related_products %}
-  <section class="w-full bg-surface-alt py-10 border-t border-border-subtle">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-5">
-      <div class="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <span class="font-mono text-xs text-primary uppercase font-semibold tracking-wider">{% trans "Keep exploring" %}</span>
-          <h2 class="font-display text-2xl sm:text-3xl text-[#111820] font-extrabold tracking-tight">{% trans "Related Opportunities" %}</h2>
-        </div>
+  <section class="w-full bg-surface-alt/60 py-10 border-t border-border-subtle">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      <div class="flex flex-wrap items-baseline justify-between gap-3">
+        <h2 class="font-display text-2xl text-[#111820] font-extrabold tracking-tight">{% trans "Related Opportunities" %}</h2>
         <a href="{% url 'storefront:catalog' %}{% if product.category %}?category={{ product.category.slug }}{% endif %}"
-           class="text-xs sm:text-sm font-semibold text-primary hover:underline inline-flex items-center gap-1">
+           class="text-sm font-semibold text-primary-hover hover:underline inline-flex items-center gap-1">
           <span>{% trans "View full catalog" %}</span>
           <span class="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>
         </a>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-8">
         {% for rel_product in related_products %}
           {% include "storefront/partials/_product_card.html" with product=rel_product is_lcp=False %}
         {% endfor %}
@@ -233,7 +181,7 @@
 
 </div>
 
-<!-- Image Zoom Lightbox Modal (Native <dialog closedby="any"> + fetchpriority="low" loading="lazy") -->
+<!-- Image Zoom Lightbox Modal -->
 {% with first_image=images.0 %}
 {% if first_image %}
 <dialog id="image-lightbox-dialog"
@@ -275,11 +223,11 @@
       lightboxPhoto.src = newUrl;
     }
     document.querySelectorAll('#thumbnailStrip .thumbnail-btn').forEach((btn) => {
-      btn.classList.remove('bg-mint-wash', 'border-primary', 'ring-2', 'ring-primary');
-      btn.classList.add('bg-white', 'border-border-subtle');
+      btn.classList.remove('border-primary', 'ring-2', 'ring-primary');
+      btn.classList.add('border-border-subtle');
     });
-    buttonEl.classList.remove('bg-white', 'border-border-subtle');
-    buttonEl.classList.add('bg-mint-wash', 'border-primary', 'ring-2', 'ring-primary');
+    buttonEl.classList.remove('border-border-subtle');
+    buttonEl.classList.add('border-primary', 'ring-2', 'ring-primary');
   }
 
   function openImageLightbox() {
