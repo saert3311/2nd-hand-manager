@@ -134,7 +134,8 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         # PART I: PUBLIC CUSTOMER STOREFRONT EXPERIENCE (Store Shelf at / and /tienda/)
         page.goto(f"{self.live_server_url}{reverse('storefront:home')}")
         page.wait_for_selector("#categoryRail")
-        self.assertIn("RÁPIDO", page.content())
+        self.assertIn("Rápido Pack", page.content())
+        self.assertIn("logo-rapido-pack-valencia.png", page.content())
         self.assertIn("https://rapidopackvalencia.es", page.content())
         self.assertTrue(page.locator('text="Bicicleta de Montaña Orbea MX 29"').first.is_visible())
         self.assertEqual(

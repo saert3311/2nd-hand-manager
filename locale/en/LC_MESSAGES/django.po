@@ -4072,3 +4072,24 @@ msgstr "100%% real photograph of the item in stock (Alfafar Studio)"
 
 msgid "100%% Real Photos"
 msgstr "100%% Real Photos"
+
+msgid "Closed now · Mon–Fri 9:30–20:00"
+msgstr "Closed now · Mon–Fri 9:30–20:00"
+
+msgid "How to get to the store"
+msgstr "How to get to the store"
+
+msgid "Mon–Fri 9:30–20:00 · Sat 10:00–15:00"
+msgstr "Mon–Fri 9:30–20:00 · Sat 10:00–15:00"
+
+msgid "Open navigation menu"
+msgstr "Open navigation menu"
+
+msgid "Open now · Until 15:00"
+msgstr "Open now · Until 15:00"
+
+msgid "Open now · Until 20:00"
+msgstr "Open now · Until 20:00"
+
+msgid "Rápido Pack Valencia — Go to Home"
+msgstr "Rápido Pack Valencia — Go to Home"

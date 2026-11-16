@@ -4526,3 +4526,24 @@ msgstr "Fotografía 100%% real del artículo en stock (Taller Alfafar)"
 
 msgid "100%% Real Photos"
 msgstr "Fotos 100%% Reales"
+
+msgid "Closed now · Mon–Fri 9:30–20:00"
+msgstr "Cerrado ahora · L–V 9:30–20:00"
+
+msgid "How to get to the store"
+msgstr "Cómo llegar al local"
+
+msgid "Mon–Fri 9:30–20:00 · Sat 10:00–15:00"
+msgstr "L–V 9:30–20:00 · Sáb 10:00–15:00"
+
+msgid "Open navigation menu"
+msgstr "Abrir menú de navegación"
+
+msgid "Open now · Until 15:00"
+msgstr "Abierto ahora · Hasta 15:00"
+
+msgid "Open now · Until 20:00"
+msgstr "Abierto ahora · Hasta 20:00"
+
+msgid "Rápido Pack Valencia — Go to Home"
+msgstr "Rápido Pack Valencia — Ir a Inicio"

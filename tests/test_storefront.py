@@ -246,9 +246,15 @@ class StorefrontMarketplaceTests(TestCase):
         html = resp.content.decode("utf-8")
 
         # Verify integration links to external Astro landing page (rapidopackvalencia.es)
+        # and pixel-parity Astro top bar (logo, phone pill, live status, Outlet active pill, mobile drawer)
         self.assertIn("https://rapidopackvalencia.es/", html)
         self.assertIn("https://rapidopackvalencia.es/paqueteria", html)
         self.assertIn("https://rapidopackvalencia.es/contacto", html)
+        self.assertIn("logo-rapido-pack-valencia.png", html)
+        self.assertIn("640 39 74 34", html)
+        self.assertIn('id="header-live-status"', html)
+        self.assertIn('id="mobileNavDrawer"', html)
+        self.assertIn(">Outlet<", html)
 
         # Verify Store Shelf structure, category rail, LocalBusiness JSON-LD & external store links
         self.assertIn('id="categoryRail"', html)
