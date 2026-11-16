@@ -3913,3 +3913,162 @@ msgstr "Creating..."
 
 msgid "Deleting..."
 msgstr "Deleting..."
+
+msgid "24h Hold"
+msgstr "24h Hold"
+
+msgid "Alfafar Physical Store"
+msgstr "Alfafar Physical Store"
+
+msgid "Alfafar Store · L–S"
+msgstr "Alfafar Store · L–S"
+
+msgid "Also listed on external marketplaces"
+msgstr "Also listed on external marketplaces"
+
+msgid "Clear"
+msgstr "Clear"
+
+msgid "DIRECT CONTACT & IN-STORE TESTING"
+msgstr "DIRECT CONTACT & IN-STORE TESTING"
+
+msgid ""
+"Every item page shows its direct marketplace links. You can also explore our"
+" official profiles across Spain:"
+msgstr ""
+"Every item page shows its direct marketplace links. You can also explore our"
+" official profiles across Spain:"
+
+msgid "Free 24h WhatsApp hold"
+msgstr "Free 24h WhatsApp hold"
+
+msgid "Free 24h WhatsApp reservation and in-store testing in Alfafar"
+msgstr "Free 24h WhatsApp reservation and in-store testing in Alfafar"
+
+msgid "Get directions"
+msgstr "Get directions"
+
+msgid ""
+"Hello %(store)s, I am contacting you from your website to inquire about "
+"parcel services or items in your Alfafar store."
+msgstr ""
+"Hello %(store)s, I am contacting you from your website to inquire about "
+"parcel services or items in your Alfafar store."
+
+msgid "In Store"
+msgstr "In Store"
+
+msgid "In-store testing benches with power"
+msgstr "In-store testing benches with power"
+
+msgid "In-store testing benches with power (Alfafar)"
+msgstr "In-store testing benches with power (Alfafar)"
+
+msgid "Interested in an item or looking for something specific?"
+msgstr "Interested in an item or looking for something specific?"
+
+msgid ""
+"Message us directly on WhatsApp to reserve any shelf item for 24 hours "
+"without commitment, or come inspect and plug it in at our Alfafar store."
+msgstr ""
+"Message us directly on WhatsApp to reserve any shelf item for 24 hours "
+"without commitment, or come inspect and plug it in at our Alfafar store."
+
+msgid ""
+"Multi-carrier parcel hub and curated second-hand & outlet shelf. Inspect "
+"items in person on our testing benches or hold them 24h via WhatsApp."
+msgstr ""
+"Multi-carrier parcel hub and curated second-hand & outlet shelf. Inspect "
+"items in person on our testing benches or hold them 24h via WhatsApp."
+
+msgid "Navigation"
+msgstr "Navigation"
+
+msgid ""
+"Need nationwide shipping? Ask us on WhatsApp or visit our official "
+"marketplace profiles:"
+msgstr ""
+"Need nationwide shipping? Ask us on WhatsApp or visit our official "
+"marketplace profiles:"
+
+msgid "ONLINE SHELF · OUTLET & SECOND-HAND"
+msgstr "ONLINE SHELF · OUTLET & SECOND-HAND"
+
+msgid "Other stores & protected shipping"
+msgstr "Other stores & protected shipping"
+
+msgid "Other stores & protected shipping:"
+msgstr "Other stores & protected shipping:"
+
+msgid "Outlet & Second-Hand Store Shelf in Alfafar"
+msgstr "Outlet & Second-Hand Store Shelf in Alfafar"
+
+msgid ""
+"Outlet and second-hand opportunity store with verified items and in-store "
+"testing benches in Alfafar, Valencia."
+msgstr ""
+"Outlet and second-hand opportunity store with verified items and in-store "
+"testing benches in Alfafar, Valencia."
+
+msgid "Parcel Hub"
+msgstr "Parcel Hub"
+
+msgid "Physical Store & Online Shelf · Alfafar, Valencia"
+msgstr "Physical Store & Online Shelf · Alfafar, Valencia"
+
+msgid "Protected shipping across Spain via Wallapop, Vinted, and Milanuncios"
+msgstr "Protected shipping across Spain via Wallapop, Vinted, and Milanuncios"
+
+msgid "Protected shipping via Wallapop & Vinted"
+msgstr "Protected shipping via Wallapop & Vinted"
+
+msgid "Search shelf items, brands, Ref #..."
+msgstr "Search shelf items, brands, Ref #..."
+
+msgid "Second-Hand & Outlet Store Shelf"
+msgstr "Second-Hand & Outlet Store Shelf"
+
+msgid "Show all categories"
+msgstr "Show all categories"
+
+msgid "Store Shelf"
+msgstr "Store Shelf"
+
+msgid ""
+"Test electronics and inspect every item in person before paying, or request "
+"protected delivery across Spain."
+msgstr ""
+"Test electronics and inspect every item in person before paying, or request "
+"protected delivery across Spain."
+
+msgid "UP TO -70% RRP"
+msgstr "UP TO -70% RRP"
+
+msgid ""
+"Visit our store in Alfafar, inspect the item closely, and test it on our "
+"benches before deciding."
+msgstr ""
+"Visit our store in Alfafar, inspect the item closely, and test it on our "
+"benches before deciding."
+
+msgid ""
+"We update our shelf daily with new arrivals at our Alfafar store. Clear the "
+"filters or message us directly on WhatsApp."
+msgstr ""
+"We update our shelf daily with new arrivals at our Alfafar store. Clear the "
+"filters or message us directly on WhatsApp."
+
+msgid "WhatsApp"
+msgstr "WhatsApp"
+
+msgid "WhatsApp Direct"
+msgstr "WhatsApp Direct"
+
+msgid "UP TO -70%% RRP"
+msgstr "UP TO -70%% RRP"
+
+msgid "100%% real photograph of the item in stock (Alfafar Studio)"
+msgstr "100%% real photograph of the item in stock (Alfafar Studio)"
+
+msgid "100%% Real Photos"
+msgstr "100%% Real Photos"

@@ -222,45 +222,52 @@ class StorefrontMarketplaceTests(TestCase):
         for secret in forbidden_secrets:
             self.assertNotIn(secret, sitemap_xml)
 
-    def test_corporate_landing_page_carriers_services_and_featured_products(self):
-        # Create 5 available products, 1 reserved, and 1 sold
-        available_products = [
-            self._create_published_product(title=f"Oportunidad Disponible {i}")
-            for i in range(1, 6)
-        ]
+    def test_root_serves_store_shelf_with_astro_nav_and_button_free_cards(self):
+        # Create available products (with MSRP for -XX% PVP pill), 1 reserved, and 1 sold
+        available_products = []
+        for i in range(1, 6):
+            p = self._create_published_product(
+                title=f"Oportunidad Disponible {i}",
+                price=Decimal("40.00"),
+            )
+            p.estimated_retail_price = Decimal("80.00")
+            p.save(update_fields=["estimated_retail_price"])
+            available_products.append(p)
+
         reserved_prod = self._create_published_product(
-            title="Oportunidad Reservada Oculta en Home",
+            title="Oportunidad Reservada Shelf",
             is_reserved=True,
         )
-        sold_prod = self._create_published_product(title="Oportunidad Vendida Oculta en Home")
+        sold_prod = self._create_published_product(title="Oportunidad Vendida Shelf")
         sold_prod.mark_as_sold(price=Decimal("50.00"))
 
         resp = self.client.get(reverse("storefront:home"))
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
 
-        # Verify carrier strip networks
-        for carrier in ("SEUR", "GLS", "InPost", "Amazon", "Kanguro", "DHL", "Punto Pack"):
-            self.assertIn(carrier, html)
+        # Verify integration links to external Astro landing page (rapidopackvalencia.es)
+        self.assertIn("https://rapidopackvalencia.es/", html)
+        self.assertIn("https://rapidopackvalencia.es/paqueteria", html)
+        self.assertIn("https://rapidopackvalencia.es/contacto", html)
 
-        # Verify key sections & LocalBusiness JSON-LD
-        self.assertIn('id="paqueteria"', html)
-        self.assertIn('id="punto-pack"', html)
-        self.assertIn('id="quienes-somos"', html)
-        self.assertIn('id="contacto"', html)
+        # Verify Store Shelf structure, category rail, LocalBusiness JSON-LD & external store links
+        self.assertIn('id="categoryRail"', html)
         self.assertIn('"@type": "LocalBusiness"', html)
+        self.assertIn("-50% PVP", html)
+        self.assertIn("https://es.wallapop.com", html)
+        self.assertIn("https://www.vinted.es", html)
 
-        # Verify LCP hero image priority and below-the-fold lazy loading
-        self.assertIn('fetchpriority="high"', html)
-        self.assertIn('loading="lazy"', html)
+        # Verify button-free shelf cards: zero per-product WhatsApp buttons on the catalog grid
+        for prod in available_products:
+            self.assertNotIn(f"/go/whatsapp/{prod.pk}/", html)
+            self.assertIn(prod.get_public_url(), html)
 
-        # Verify only 4 newest available (unreserved, unsold) products appear
-        featured = list(resp.context["featured_products"])
-        self.assertEqual(len(featured), 4)
-        featured_pks = [p.pk for p in featured]
-        self.assertNotIn(reserved_prod.pk, featured_pks)
-        self.assertNotIn(sold_prod.pk, featured_pks)
-        self.assertNotIn(available_products[0].pk, featured_pks)
+        # Verify all public-visible products (available + reserved + <7d sold) are surfaced on /
+        shelf_pks = {p.pk for p in resp.context["products"]}
+        for prod in available_products:
+            self.assertIn(prod.pk, shelf_pks)
+        self.assertIn(reserved_prod.pk, shelf_pks)
+        self.assertIn(sold_prod.pk, shelf_pks)
 
     def test_catalog_filtering_searching_and_sorting(self):
         p_bike = self._create_published_product(

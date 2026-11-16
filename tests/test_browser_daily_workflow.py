@@ -131,19 +131,21 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
 
         page.route("**/intake/identify/", handle_identify)
 
-        # PART I: PUBLIC CUSTOMER STOREFRONT EXPERIENCE
+        # PART I: PUBLIC CUSTOMER STOREFRONT EXPERIENCE (Store Shelf at / and /tienda/)
         page.goto(f"{self.live_server_url}{reverse('storefront:home')}")
-        page.wait_for_selector("#paqueteria")
-        self.assertIn("Rápido Pack", page.content())
-        self.assertIn("SEUR", page.content())
-        self.assertIn("GLS", page.content())
-        self.assertIn("InPost", page.content())
+        page.wait_for_selector("#categoryRail")
+        self.assertIn("RÁPIDO", page.content())
+        self.assertIn("https://rapidopackvalencia.es", page.content())
         self.assertTrue(page.locator('text="Bicicleta de Montaña Orbea MX 29"').first.is_visible())
-        page.screenshot(path=str(self.artifacts_dir / "daily_00_corporate_landing_page.png"))
+        self.assertEqual(
+            page.locator(f'a[href*="/go/whatsapp/{self.public_bike.pk}/"]').count(),
+            0,
+            "Shelf cards must stay decluttered without per-card WhatsApp buttons",
+        )
+        page.screenshot(path=str(self.artifacts_dir / "daily_00_store_shelf_home.png"))
 
         page.goto(f"{self.live_server_url}{reverse('storefront:catalog')}")
         page.wait_for_selector("#categoryRail")
-        self.assertIn("Rápido Pack", page.content())
         self.assertIn("Alfafar", page.content())
         assert_visible_images_loaded(self, page)
         page.screenshot(path=str(self.artifacts_dir / "daily_00_public_catalog.png"))
@@ -452,13 +454,13 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         # Switch to Spanish first so baseline ES state is guaranteed regardless of test LANGUAGE_CODE
         with page.expect_navigation():
             page.locator('button[name="language"][value="es"]').first.click()
-        page.wait_for_selector("#paqueteria")
+        page.wait_for_selector("#categoryRail")
 
         page_text_es = page.content()
         self.assertEqual(page.locator("html").get_attribute("lang"), "es")
-        self.assertIn("Tu punto de confianza en Alfafar", page_text_es)
-        self.assertIn("Servicios de paquetería", page_text_es)
-        self.assertIn("Lo último en nuestra tienda", page_text_es)
+        self.assertIn("ESTANTERÍA ONLINE · OUTLET Y SEGUNDA MANO", page_text_es)
+        self.assertIn("CONTACTO DIRECTO Y PRUEBA EN TIENDA", page_text_es)
+        self.assertIn("Otras tiendas y envío protegido", page_text_es)
         page.screenshot(path=str(self.artifacts_dir / "daily_bilingual_01_es.png"))
 
         # Switch to English
@@ -466,14 +468,14 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         self.assertTrue(en_btn.is_visible())
         with page.expect_navigation():
             en_btn.click()
-        page.wait_for_selector("#paqueteria")
+        page.wait_for_selector("#categoryRail")
 
         page_text_en = page.content()
         self.assertEqual(page.locator("html").get_attribute("lang"), "en")
-        self.assertIn("Your trusted local hub in Alfafar", page_text_en)
-        self.assertIn("Parcel Services", page_text_en)
-        self.assertIn("Latest arrivals in our store", page_text_en)
-        self.assertNotIn("Tu punto de confianza en Alfafar", page_text_en)
+        self.assertIn("ONLINE SHELF · OUTLET &amp; SECOND-HAND", page_text_en)
+        self.assertIn("DIRECT CONTACT &amp; IN-STORE TESTING", page_text_en)
+        self.assertIn("Other stores &amp; protected shipping", page_text_en)
+        self.assertNotIn("ESTANTERÍA ONLINE · OUTLET Y SEGUNDA MANO", page_text_en)
         page.screenshot(path=str(self.artifacts_dir / "daily_bilingual_02_en.png"))
 
         # How-to-Buy guide in English
