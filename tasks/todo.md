@@ -4112,5 +4112,28 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 - [x] Add `tests/test_action_loading_feedback.py` verifying global `AppFeedback` markup/attributes, delayed `/intake/identify/` skeleton + elapsed timer, `#aiForm` skeleton, `data-confirm-message` modal cancel vs. confirm, `pageshow` bfcache restoration, and OPPO A74 (`360×800`, `320×711`) zero horizontal overflow.
 - [x] Update `CHANGELOG.md` under `## [Unreleased]` and pass `ruff check .`, `manage.py check`, `manage.py makemigrations --check --dry-run`, `manage.py compile_locales`, and `manage.py test`.
 
+---
+
+## Phase 55: Public Store Shelf Redesign & Astro Frontpage Alignment (`redesign_store_shelf`)
+
+### Task 203: Store Shelf Documentation & Specification (`docs/`, `SPEC.md`, `tasks/`)
+- [x] Author `/idea-refine` one-pager in `docs/ideas/store-shelf-redesign.md` and PRD in `docs/prds/PRD-store-shelf-redesign.md`.
+- [x] Update `SPEC.md`, `tasks/plan.md`, and `tasks/todo.md`.
+
+### Task 204: Storefront Context, Views & Root Shelf Routing (`storefront/`)
+- [x] Update `storefront/context_processors.py` to expose `astro_landing_url` (`https://rapidopackvalencia.es`) and `active_marketplace_sites`.
+- [x] Update `storefront/views.py` (`_sanitize_public_product` with `savings_pct` and `active_listing_links`; `catalog_view` with `canonical_url`, `local_business_json_ld`, `active_marketplace_sites`; `home_view` delegating directly to `catalog_view`) and delete unused `storefront/templates/storefront/home.html`.
+
+### Task 205: Public Shell & Store Shelf UI Redesign (`storefront/templates/storefront/`)
+- [x] Update `base_public.html` with `rapidopackvalencia.es` tokens (`#ffffff`, `#f4f6f8`, `#e2e8f0`, `#111820`, `#059652`, `#047842`, `#ecfdf5`, `#6ee7b7`), fonts (`Outfit`, `Plus Jakarta Sans`, `JetBrains Mono`), Astro header links, WhatsApp CTA, and dark `#111820` footer.
+- [x] Redesign `catalog.html` and `partials/_product_card.html` into the Minimalist Gallery Shelf with compact `01 //` editorial header, unified search + `#categoryRail` + filter strip, button-free shelf cards, and dark `#111820` `02 //` contact & other stores banner.
+- [x] Refresh `product_detail.html`, `partials/_purchase_box.html`, `partials/_how_to_buy_modal.html`, `how_to_buy.html`, and `legal_page.html` while keeping all internal `inventory/` pages untouched.
+
+### Task 206: Localization, Automated Tests & Browser Verification
+- [x] Update `locale/es/LC_MESSAGES/django.po` and run `manage.py compile_locales`.
+- [x] Update `tests/test_storefront.py`, `tests/test_i18n.py`, and `tests/test_browser_daily_workflow.py`; verify `ruff check .`, `manage.py check`, and 100% of `manage.py test` pass.
+- [x] Verify desktop and mobile rendering in real browser via `browser` subagent and document release notes in `CHANGELOG.md`.
+
+
 
 
