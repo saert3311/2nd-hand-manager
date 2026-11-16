@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="text-scale" content="scale">
-  <title>{% block title %}{{ storefront.store_name }} · {% trans "Second-Hand & Opportunity Store in Valencia & Online" %}{% endblock %}</title>
+  <title>{% block title %}{{ storefront.store_name }} Valencia · {% trans "Outlet & Second-Hand Store Shelf in Alfafar" %}{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}{{ storefront.hero_subtitle }}{% endblock %}">
   <link rel="icon" type="image/png" sizes="192x192" href="{% static 'inventory/icons/icon-192.png' %}">
   <link rel="apple-touch-icon" href="{% static 'inventory/icons/apple-touch-icon.png' %}">
@@ -16,13 +16,13 @@
   <meta property="og:type" content="website">
   {% endblock %}
 
-  <!-- Google Fonts: Outfit (Headlines & Prices) + Hanken Grotesk (Body & Labels) + Material Symbols Outlined -->
+  <!-- Google Fonts aligned with rapidopackvalencia.es: Outfit + Plus Jakarta Sans + JetBrains Mono + Material Symbols -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS with Rápido Pack Curation System tokens -->
+  <!-- Tailwind CSS with Rápido Pack Valencia Design Tokens -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script id="tailwind-config">
     tailwind.config = {
@@ -30,101 +30,67 @@
       theme: {
         extend: {
           colors: {
-            "surface-container": "#eaedff",
-            "on-surface-variant": "#3e4947",
-            "primary-container": "#0f766e",
-            "on-background": "#131b2e",
-            "on-primary-fixed": "#00201d",
-            "surface-variant": "#dae2fd",
-            "on-primary-container": "#a3faef",
-            "on-tertiary-container": "#97fceb",
-            "on-primary-fixed-variant": "#00504a",
-            "secondary-fixed": "#ffdcc3",
-            "on-tertiary-fixed-variant": "#005047",
-            "on-secondary": "#ffffff",
-            "tertiary-container": "#00776b",
-            "tertiary-fixed-dim": "#72d8c8",
-            "error-container": "#ffdad6",
-            "on-error": "#ffffff",
-            "inverse-surface": "#283044",
-            "on-tertiary": "#ffffff",
-            "error": "#ba1a1a",
-            "inverse-on-surface": "#eef0ff",
-            "surface-tint": "#006a63",
-            "outline-variant": "#bdc9c6",
-            "surface-bright": "#faf8ff",
-            "secondary-container": "#fe932c",
-            "on-primary": "#ffffff",
-            "on-error-container": "#93000a",
-            "tertiary-fixed": "#8ff4e3",
-            "primary-fixed": "#9cf2e8",
-            "on-secondary-fixed": "#2f1500",
-            "on-surface": "#131b2e",
-            "outline": "#6e7977",
-            "surface": "#faf8ff",
-            "secondary-fixed-dim": "#ffb77d",
-            "background": "#faf8ff",
-            "surface-container-low": "#f2f3ff",
+            "surface": "#ffffff",
+            "surface-bright": "#ffffff",
+            "surface-alt": "#f4f6f8",
+            "background": "#ffffff",
             "surface-container-lowest": "#ffffff",
-            "surface-container-high": "#e2e7ff",
-            "on-secondary-fixed-variant": "#6e3900",
-            "tertiary": "#005c52",
-            "surface-container-highest": "#dae2fd",
-            "on-secondary-container": "#663500",
-            "primary": "#005c55",
-            "on-tertiary-fixed": "#00201c",
-            "inverse-primary": "#80d5cb",
-            "primary-fixed-dim": "#80d5cb",
-            "secondary": "#904d00",
-            "surface-dim": "#d2d9f4"
+            "surface-container-low": "#f4f6f8",
+            "surface-container": "#e8eef3",
+            "surface-container-high": "#e2e8f0",
+            "surface-container-highest": "#cbd5e1",
+            "surface-variant": "#cbd5e1",
+            "surface-dark": "#111820",
+            "on-surface": "#111820",
+            "on-background": "#111820",
+            "on-surface-variant": "#334155",
+            "outline": "#526071",
+            "outline-variant": "#cbd5e1",
+            "border-subtle": "#e2e8f0",
+            "primary": "#059652",
+            "primary-hover": "#047842",
+            "primary-container": "#047842",
+            "primary-fixed": "#6ee7b7",
+            "primary-fixed-dim": "#34d399",
+            "on-primary-fixed": "#022c22",
+            "mint-wash": "#ecfdf5",
+            "on-primary": "#ffffff",
+            "secondary": "#047842",
+            "secondary-container": "#059652",
+            "secondary-fixed": "#ecfdf5",
+            "on-secondary-fixed": "#047842",
+            "on-secondary": "#ffffff",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "on-error": "#ffffff"
           },
-          borderRadius: {
-            "DEFAULT": "0.125rem",
-            "lg": "0.25rem",
-            "xl": "0.5rem",
-            "full": "9999px"
+          fontFamily: {
+            "sans": ["Plus Jakarta Sans", "system-ui", "-apple-system", "sans-serif"],
+            "display": ["Outfit", "system-ui", "-apple-system", "sans-serif"],
+            "mono": ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "monospace"],
+            "headline-xl": ["Outfit", "system-ui", "sans-serif"],
+            "headline-lg": ["Outfit", "system-ui", "sans-serif"],
+            "headline-md": ["Outfit", "system-ui", "sans-serif"],
+            "headline-sm": ["Outfit", "system-ui", "sans-serif"],
+            "price-display": ["Outfit", "system-ui", "sans-serif"],
+            "price-display-lg": ["Outfit", "system-ui", "sans-serif"],
+            "body-lg": ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+            "body-md": ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+            "body-sm": ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+            "label-md": ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+            "label-sm": ["Plus Jakarta Sans", "system-ui", "sans-serif"]
           },
           spacing: {
             "margin-desktop": "2rem",
-            "space-xl": "2.5rem",
-            "space-md": "1rem",
-            "space-lg": "1.5rem",
-            "gutter": "1rem",
-            "margin": "1rem",
-            "space-sm": "0.5rem",
             "margin-tablet": "1.5rem",
-            "space-xs": "0.25rem",
-            "gutter-desktop": "1.5rem"
-          },
-          fontFamily: {
-            "label-sm": ["Hanken Grotesk", "sans-serif"],
-            "price-display-lg": ["Outfit", "sans-serif"],
-            "body-md": ["Hanken Grotesk", "sans-serif"],
-            "headline-md": ["Outfit", "sans-serif"],
-            "headline-xl-mobile": ["Outfit", "sans-serif"],
-            "body-sm": ["Hanken Grotesk", "sans-serif"],
-            "headline-lg-mobile": ["Outfit", "sans-serif"],
-            "headline-xl": ["Outfit", "sans-serif"],
-            "headline-lg": ["Outfit", "sans-serif"],
-            "body-lg": ["Hanken Grotesk", "sans-serif"],
-            "headline-sm": ["Outfit", "sans-serif"],
-            "price-display": ["Outfit", "sans-serif"],
-            "label-md": ["Hanken Grotesk", "sans-serif"]
-          },
-          fontSize: {
-            "label-sm": ["0.75rem", { "lineHeight": "1rem", "letterSpacing": "0.04em", "fontWeight": "600" }],
-            "price-display-lg": ["2.25rem", { "lineHeight": "2.5rem", "letterSpacing": "-0.025em", "fontWeight": "700" }],
-            "body-md": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0em", "fontWeight": "400" }],
-            "headline-md": ["1.25rem", { "lineHeight": "1.625rem", "letterSpacing": "-0.005em", "fontWeight": "600" }],
-            "headline-xl-mobile": ["1.875rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.015em", "fontWeight": "700" }],
-            "body-sm": ["0.75rem", { "lineHeight": "1rem", "letterSpacing": "0.01em", "fontWeight": "400" }],
-            "headline-lg-mobile": ["1.375rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
-            "headline-xl": ["2.5rem", { "lineHeight": "3rem", "letterSpacing": "-0.02em", "fontWeight": "700" }],
-            "headline-lg": ["1.75rem", { "lineHeight": "2.125rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
-            "body-lg": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "400" }],
-            "headline-sm": ["1rem", { "lineHeight": "1.375rem", "letterSpacing": "0em", "fontWeight": "600" }],
-            "price-display": ["1.5rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.02em", "fontWeight": "700" }],
-            "label-md": ["0.8125rem", { "lineHeight": "1rem", "letterSpacing": "0.02em", "fontWeight": "600" }]
+            "margin": "1rem",
+            "gutter": "1rem",
+            "gutter-desktop": "1.5rem",
+            "space-xl": "2.5rem",
+            "space-lg": "1.5rem",
+            "space-md": "1rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem"
           }
         }
       }
@@ -133,6 +99,7 @@
   <style>
     body {
       -webkit-tap-highlight-color: transparent;
+      font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
     }
     @media (max-width: 640px) {
       input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
@@ -144,32 +111,42 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     dialog::backdrop {
-      background: rgba(19, 27, 46, 0.65);
+      background: rgba(17, 24, 32, 0.65);
       backdrop-filter: blur(4px);
     }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-surface font-body-md text-body-md text-on-surface antialiased flex flex-col min-h-full">
+<body class="bg-surface font-sans text-on-surface antialiased selection:bg-mint-wash selection:text-primary flex flex-col min-h-full">
 
   <!-- Skip to Main Content Link (WCAG 2.4.1) -->
   <a href="#main-content"
-     class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-primary focus:text-on-primary focus:font-bold focus:rounded-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+     class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-primary focus:text-on-primary focus:font-bold focus:rounded-xl focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
     {% trans "Skip to main content" %}
   </a>
 
   {% if user.is_authenticated %}
   <!-- Staff Quick Bar (Visible only to logged-in staff/assistants) -->
-  <div class="bg-emerald-950 text-emerald-100 text-xs py-1.5 px-margin lg:px-margin-desktop border-b border-emerald-800">
+  <div class="bg-[#111820] text-emerald-100 text-xs py-1.5 px-3 sm:px-6 border-b border-white/10">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-      <div class="flex items-center gap-2 font-semibold">
-        <span>🛠️ {% trans "Staff Mode" %} ({{ user.username }})</span>
+      <div class="flex items-center gap-1.5 font-semibold min-w-0">
+        <span class="material-symbols-outlined text-[15px] text-primary-fixed shrink-0" aria-hidden="true">build</span>
+        <span class="truncate">{% trans "Staff Mode" %} ({{ user.username }})</span>
       </div>
-      <div class="flex items-center gap-3">
-        <a href="{% url 'inventory:root' %}" class="hover:text-white underline font-medium">🏠 {% trans "Go to Panel" %}</a>
-        <a href="{% url 'inventory:intake' %}" class="hover:text-white underline font-medium">📷 {% trans "New Intake" %}</a>
+      <div class="flex flex-wrap items-center gap-3">
+        <a href="{% url 'inventory:root' %}" class="hover:text-white underline font-medium inline-flex items-center gap-1">
+          <span class="material-symbols-outlined text-[14px]" aria-hidden="true">home</span>
+          <span>{% trans "Go to Panel" %}</span>
+        </a>
+        <a href="{% url 'inventory:intake' %}" class="hover:text-white underline font-medium inline-flex items-center gap-1">
+          <span class="material-symbols-outlined text-[14px]" aria-hidden="true">photo_camera</span>
+          <span>{% trans "New Intake" %}</span>
+        </a>
         {% if user.is_staff %}
-        <a href="{% url 'inventory:dashboard' %}" class="hover:text-white underline font-medium">📊 {% trans "Staging Dashboard" %}</a>
+        <a href="{% url 'inventory:dashboard' %}" class="hover:text-white underline font-medium inline-flex items-center gap-1">
+          <span class="material-symbols-outlined text-[14px]" aria-hidden="true">dashboard</span>
+          <span>{% trans "Staging Dashboard" %}</span>
+        </a>
         {% endif %}
         {% block staff_bar_extra %}{% endblock %}
       </div>
@@ -177,161 +154,124 @@
   </div>
   {% endif %}
 
-  <!-- Sticky Storefront Header -->
-  <header class="sticky top-0 left-0 right-0 z-40 shadow-[0_1px_8px_rgba(0,0,0,0.04)] bg-surface-container-lowest/95 backdrop-blur-xl">
-    <!-- Top Announcement Bar -->
-    <div class="bg-on-surface text-surface-container-lowest py-space-xs px-margin lg:px-margin-desktop">
-      <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between font-label-sm text-label-sm gap-space-xs">
-        <div class="flex items-center gap-space-sm">
-          <span class="flex items-center gap-1">
-            <span class="material-symbols-outlined text-[15px] text-primary-fixed" aria-hidden="true">storefront</span>
-            <span>{{ storefront.store_name }} · {{ storefront.address }} ({{ storefront.opening_hours }})</span>
-          </span>
-        </div>
-        <div class="hidden sm:flex items-center gap-space-md">
-          <span class="flex items-center gap-1">
-            <span class="material-symbols-outlined text-[15px] text-primary-fixed" aria-hidden="true">inventory_2</span>
-            <span>{% trans "Official Punto Pack · Multi-Carrier Parcel Hub · Store in Alfafar" %}</span>
-          </span>
+  <!-- Sticky Storefront Header (Aligned with rapidopackvalencia.es) -->
+  <header class="sticky top-0 left-0 right-0 z-40 border-t-[3px] border-t-primary bg-white/95 backdrop-blur-md border-b border-border-subtle shadow-[0_10px_30px_-14px_rgba(17,24,32,0.08)]">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-[72px] flex items-center justify-between gap-2 sm:gap-4 min-w-0">
+
+      <!-- Left: Brand Identity + Live Alfafar Status Pill -->
+      <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+        <a href="{% url 'storefront:home' %}" class="flex items-center gap-2 sm:gap-2.5 group min-w-0">
+          <div class="relative flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#111820] text-white border border-white/10 shadow-sm group-hover:bg-primary transition-colors shrink-0">
+            <span class="material-symbols-outlined text-[19px] sm:text-[22px] text-primary-fixed" aria-hidden="true">inventory_2</span>
+          </div>
+          <div class="flex flex-col min-w-0">
+            <div class="flex items-center font-display text-sm sm:text-xl tracking-tight font-extrabold leading-none truncate">
+              <span class="text-[#111820]">RÁPIDO</span><span class="text-primary ml-1">PACK</span>
+            </div>
+            <span class="font-mono text-xs text-outline font-medium tracking-wider uppercase mt-0.5 truncate">
+              Valencia · Alfafar
+            </span>
+          </div>
+        </a>
+
+        <div class="hidden xl:inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-alt border border-border-subtle">
+          <span class="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" aria-hidden="true"></span>
+          <span class="font-mono text-xs text-on-surface-variant whitespace-nowrap">{% trans "Alfafar Store · L–S" %}</span>
         </div>
       </div>
-    </div>
 
-    <!-- Main Navbar -->
-    <div class="h-20 border-b border-outline-variant/25">
-      <div class="max-w-7xl mx-auto px-3 sm:px-margin lg:px-margin-desktop h-full flex items-center justify-between gap-1.5 sm:gap-space-md">
-        <!-- Brand Logo (Stitch parcel box + bolt icon) -->
-        <div class="flex items-center gap-space-md shrink-0">
-          <a href="{% url 'storefront:home' %}" class="flex items-center gap-space-xs sm:gap-space-sm group">
-            <div class="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary-container text-on-primary shadow-sm group-hover:bg-primary transition-colors shrink-0">
-              <span class="material-symbols-outlined text-[20px] sm:text-[24px]" aria-hidden="true">inventory_2</span>
-              <span class="material-symbols-outlined absolute -bottom-1 -right-1 text-secondary-container text-[14px] sm:text-[16px] drop-shadow-sm" aria-hidden="true">bolt</span>
-            </div>
-            <div class="flex flex-col">
-              <div class="flex items-center font-headline-md text-headline-md tracking-tight font-bold leading-none">
-                <span class="text-primary-container">Rápido</span><span class="text-secondary ml-1">Pack</span>
-              </div>
-              <span class="hidden sm:inline-block font-label-sm text-label-sm text-on-surface-variant font-medium tracking-wide uppercase mt-0.5">Alfafar · Valencia</span>
-            </div>
-          </a>
-        </div>
+      <!-- Center: Main Navigation Pills (Linked to Astro rapidopackvalencia.es + Active Store Shelf) -->
+      <nav class="hidden lg:flex items-center gap-1.5" aria-label="{% trans 'Main navigation' %}">
+        <a href="{{ astro_landing_url }}/"
+           class="px-3.5 py-2 rounded-xl text-xs font-semibold uppercase tracking-wide text-on-surface-variant hover:text-primary-hover hover:bg-surface-alt transition-colors whitespace-nowrap">
+          {% trans "Home" %}
+        </a>
+        <a href="{{ astro_landing_url }}/paqueteria"
+           class="px-3.5 py-2 rounded-xl text-xs font-semibold uppercase tracking-wide text-on-surface-variant hover:text-primary-hover hover:bg-surface-alt transition-colors whitespace-nowrap">
+          {% trans "Parcel Hub" %}
+        </a>
+        <a href="{% url 'storefront:home' %}"
+           aria-current="page"
+           class="px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wide bg-mint-wash text-primary-hover border border-primary/25 shadow-sm whitespace-nowrap inline-flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">storefront</span>
+          <span>{% trans "Store Shelf" %}</span>
+        </a>
+        <a href="{{ astro_landing_url }}/contacto"
+           class="px-3.5 py-2 rounded-xl text-xs font-semibold uppercase tracking-wide text-on-surface-variant hover:text-primary-hover hover:bg-surface-alt transition-colors whitespace-nowrap">
+          {% trans "Contact" %}
+        </a>
+      </nav>
 
-        {% if is_landing_page %}
-        <!-- Corporate Landing Navigation Links -->
-        <nav class="hidden lg:flex items-center gap-space-xs xl:gap-space-sm" aria-label="{% trans 'Main navigation' %}">
-          <a href="{% url 'storefront:home' %}#paqueteria" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg">{% trans "Parcel Services" %}</a>
-          <a href="{% url 'storefront:home' %}#punto-pack" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg">{% trans "Punto Pack" %}</a>
-          <a href="{% url 'storefront:catalog' %}" class="font-label-md text-label-md text-primary font-bold hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg flex items-center gap-1">
-            <span class="material-symbols-outlined text-[16px]" aria-hidden="true">storefront</span>
-            <span>{% trans "Store" %}</span>
-          </a>
-          <a href="{% url 'storefront:home' %}#quienes-somos" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg">{% trans "About Us" %}</a>
-          <a href="{% url 'storefront:home' %}#contacto" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors px-3 py-1.5 rounded-lg">{% trans "Contact" %}</a>
-        </nav>
-        {% else %}
-        <!-- Desktop Global Search Form + Quick Nav Links -->
-        <div class="hidden md:flex flex-1 items-center gap-space-sm max-w-2xl mx-space-sm">
-          <nav class="hidden xl:flex items-center gap-1 shrink-0" aria-label="{% trans 'Quick navigation' %}">
-            <a href="{% url 'storefront:home' %}#paqueteria" class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary px-2 py-1 rounded-lg transition-colors">{% trans "Parcel Services" %}</a>
-            <a href="{% url 'storefront:catalog' %}" class="font-label-sm text-label-sm text-primary font-bold bg-surface-container-low px-2.5 py-1 rounded-lg transition-colors">{% trans "Store" %}</a>
-          </nav>
-          <form action="{% url 'storefront:catalog' %}" method="get" class="relative flex-1 flex items-center">
-            {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
-            <div class="w-full flex items-center bg-surface-container-lowest rounded-full pl-space-md pr-space-xs py-space-xs shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-outline-variant/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-              <span class="material-symbols-outlined text-outline mr-space-xs text-[20px]" aria-hidden="true">search</span>
-              <input type="search"
-                     name="q"
-                     value="{{ search_query|default:'' }}"
-                     placeholder="{% trans 'Search items, brands, categories, Ref #...' %}"
-                     aria-label="{% trans 'Search catalog' %}"
-                     class="w-full bg-transparent font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none">
-              <button type="submit"
-                      class="bg-primary text-on-primary rounded-full px-space-md py-space-xs font-label-md text-label-md flex items-center gap-1 hover:bg-primary-container transition-colors shrink-0">
-                <span>{% trans "Search" %}</span>
-                <span class="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>
-              </button>
-            </div>
-          </form>
-        </div>
-        {% endif %}
+      <!-- Right: Language Switcher + Guide Modal + Primary WhatsApp CTA -->
+      <div class="flex items-center gap-1 sm:gap-2.5 shrink-0">
+        <!-- Language Switcher (ES | EN) -->
+        <form action="{% url 'set_language' %}" method="post" class="inline-flex items-center">
+          {% csrf_token %}
+          <input name="next" type="hidden" value="{{ request.get_full_path }}">
+          {% get_current_language as CURRENT_LANG %}
+          <div class="flex items-center bg-surface-alt p-0.5 rounded-xl text-xs text-on-surface-variant gap-0.5 border border-border-subtle">
+            <button type="submit" name="language" value="es"
+                    class="px-1.5 sm:px-2 py-1 min-h-[34px] sm:min-h-[36px] min-w-[28px] sm:min-w-[32px] inline-flex items-center justify-center rounded-lg font-mono transition {% if CURRENT_LANG == 'es' %}font-bold bg-[#111820] text-white{% else %}text-on-surface-variant hover:text-on-surface{% endif %}"
+                    title="Español">
+              ES
+            </button>
+            <button type="submit" name="language" value="en"
+                    class="px-1.5 sm:px-2 py-1 min-h-[34px] sm:min-h-[36px] min-w-[28px] sm:min-w-[32px] inline-flex items-center justify-center rounded-lg font-mono transition {% if CURRENT_LANG == 'en' %}font-bold bg-[#111820] text-white{% else %}text-on-surface-variant hover:text-on-surface{% endif %}"
+                    title="English">
+              EN
+            </button>
+          </div>
+        </form>
 
-        <!-- Right Actions: Language Switcher + How to Buy + Direct WhatsApp -->
-        <div class="flex items-center gap-1 sm:gap-space-sm shrink-0">
-          <!-- Language Switcher (ES | EN) -->
-          <form action="{% url 'set_language' %}" method="post" class="inline-flex items-center">
-            {% csrf_token %}
-            <input name="next" type="hidden" value="{{ request.get_full_path }}">
-            {% get_current_language as CURRENT_LANG %}
-            <div class="flex items-center bg-surface-container-low p-0.5 rounded-full font-label-sm text-label-sm text-on-surface-variant gap-0.5 border border-outline-variant/30">
-              <button type="submit" name="language" value="es"
-                      class="px-2 sm:px-2.5 py-1 min-h-[36px] min-w-[32px] sm:min-w-[36px] inline-flex items-center justify-center rounded-full transition {% if CURRENT_LANG == 'es' %}font-bold bg-primary text-on-primary{% else %}text-on-surface-variant hover:text-on-surface{% endif %}"
-                      title="Español">
-                ES
-              </button>
-              <span class="text-outline-variant" aria-hidden="true">|</span>
-              <button type="submit" name="language" value="en"
-                      class="px-2 sm:px-2.5 py-1 min-h-[36px] min-w-[32px] sm:min-w-[36px] inline-flex items-center justify-center rounded-full transition {% if CURRENT_LANG == 'en' %}font-bold bg-primary text-on-primary{% else %}text-on-surface-variant hover:text-on-surface{% endif %}"
-                      title="English">
-                EN
-              </button>
-            </div>
-          </form>
-
-          <!-- How to Buy Modal Trigger -->
-          <button type="button"
-                  onclick="openHowToBuyModal()"
-                  class="hidden lg:flex items-center gap-1 px-space-sm py-1.5 min-h-[38px] rounded-full bg-surface-container-lowest text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors font-label-md text-label-md shadow-[0_1px_3px_rgba(0,0,0,0.03)] border border-outline-variant/30">
-            <span class="material-symbols-outlined text-[17px] text-primary" aria-hidden="true">help_outline</span>
-            <span>{% trans "How to buy" %}</span>
-          </button>
-
-          <!-- Direct Store WhatsApp CTA -->
-          <a href="{% url 'storefront:go_whatsapp' %}"
-             target="_blank"
-             rel="noopener noreferrer"
-             aria-label="{% trans 'Message us on WhatsApp' %}"
-             class="inline-flex items-center justify-center gap-space-xs bg-[#25D366] hover:bg-[#20ba59] text-slate-950 font-label-md text-label-md font-bold px-2 sm:px-space-md py-2 sm:py-2.5 min-h-[38px] sm:min-h-[40px] rounded-xl shadow-sm transition-all shrink-0">
-            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">chat</span>
-            <span class="hidden sm:inline">{% trans "Message us on WhatsApp" %}</span>
-          </a>
-        </div>
-      </div>
-    </div>
-
-    {% if is_landing_page %}
-    <!-- Mobile Quick Links Bar on Landing Page (< 1024px) -->
-    <div class="lg:hidden px-margin py-space-xs bg-surface-container-lowest border-b border-outline-variant/25 overflow-x-auto no-scrollbar">
-      <div class="flex items-center gap-space-xs whitespace-nowrap font-label-sm text-label-sm">
-        <a href="#paqueteria" class="px-3 py-1.5 min-h-[36px] inline-flex items-center rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "Parcel Services" %}</a>
-        <a href="#punto-pack" class="px-3 py-1.5 min-h-[36px] inline-flex items-center rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "Punto Pack" %}</a>
-        <a href="{% url 'storefront:catalog' %}" class="px-3 py-1.5 min-h-[36px] inline-flex items-center rounded-full bg-primary text-on-primary font-bold">{% trans "Store" %}</a>
-        <a href="#quienes-somos" class="px-3 py-1.5 min-h-[36px] inline-flex items-center rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "About Us" %}</a>
-        <a href="#contacto" class="px-3 py-1.5 min-h-[36px] inline-flex items-center rounded-full bg-surface-container-low text-on-surface-variant hover:text-primary">{% trans "Contact" %}</a>
-      </div>
-    </div>
-    {% else %}
-    <!-- Mobile Search Bar (< 768px) -->
-    <div class="md:hidden px-margin py-space-xs bg-surface-container-lowest border-b border-outline-variant/25">
-      <form action="{% url 'storefront:catalog' %}" method="get" class="flex items-center gap-2">
-        {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
-        <div class="flex-1 flex items-center bg-surface-container-low rounded-full px-space-sm py-1.5 min-h-[38px] border border-outline-variant/30 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-          <span class="material-symbols-outlined text-outline mr-1.5 text-[18px]" aria-hidden="true">search</span>
-          <input type="search"
-                 name="q"
-                 value="{{ search_query|default:'' }}"
-                 placeholder="{% trans 'Search items, categories, Ref #...' %}"
-                 aria-label="{% trans 'Search catalog' %}"
-                 class="w-full bg-transparent font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none">
-        </div>
+        <!-- How to Buy Modal Trigger -->
         <button type="button"
                 onclick="openHowToBuyModal()"
-                class="px-3 py-1.5 min-h-[38px] rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm border border-outline-variant/30 shrink-0 flex items-center gap-1">
-          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">help_outline</span>
-          <span>{% trans "Guide" %}</span>
+                class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-xl bg-surface-alt text-on-surface-variant hover:text-primary-hover hover:bg-mint-wash border border-border-subtle transition-colors text-xs font-semibold whitespace-nowrap">
+          <span class="material-symbols-outlined text-[16px] text-primary" aria-hidden="true">help_outline</span>
+          <span>{% trans "How to buy" %}</span>
         </button>
-      </form>
+
+        <!-- Single Clean Store WhatsApp CTA -->
+        <a href="{% url 'storefront:go_whatsapp' %}"
+           target="_blank"
+           rel="noopener noreferrer"
+           aria-label="{% trans 'WhatsApp' %}"
+           class="inline-flex items-center justify-center gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-slate-950 font-bold text-xs sm:text-sm px-2 sm:px-3.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl shadow-sm transition-all active:scale-[0.98] shrink-0 whitespace-nowrap">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">chat</span>
+          <span class="hidden sm:inline">{% trans "WhatsApp" %}</span>
+        </a>
+      </div>
     </div>
-    {% endif %}
+
+    <!-- Mobile Astro Integration & Quick Actions Strip (< 1024px) -->
+    <div class="lg:hidden px-3 sm:px-6 py-1.5 bg-surface-alt border-t border-border-subtle overflow-x-auto no-scrollbar">
+      <div class="flex items-center gap-1.5 whitespace-nowrap flex-nowrap text-xs">
+        <a href="{{ astro_landing_url }}/"
+           class="px-3 py-1.5 min-h-[34px] inline-flex items-center rounded-lg bg-white border border-border-subtle text-on-surface-variant font-medium hover:text-primary">
+          {% trans "Home" %}
+        </a>
+        <a href="{{ astro_landing_url }}/paqueteria"
+           class="px-3 py-1.5 min-h-[34px] inline-flex items-center rounded-lg bg-white border border-border-subtle text-on-surface-variant font-medium hover:text-primary">
+          {% trans "Parcel Hub" %}
+        </a>
+        <a href="{% url 'storefront:home' %}"
+           aria-current="page"
+           class="px-3 py-1.5 min-h-[34px] inline-flex items-center gap-1 rounded-lg bg-mint-wash text-primary-hover border border-primary/30 font-bold">
+          <span class="material-symbols-outlined text-[14px]" aria-hidden="true">storefront</span>
+          <span>{% trans "Store Shelf" %}</span>
+        </a>
+        <button type="button"
+                onclick="openHowToBuyModal()"
+                class="px-3 py-1.5 min-h-[34px] inline-flex items-center gap-1 rounded-lg bg-white border border-border-subtle text-on-surface-variant font-medium hover:text-primary">
+          <span class="material-symbols-outlined text-[14px] text-primary" aria-hidden="true">help_outline</span>
+          <span>{% trans "How to buy" %}</span>
+        </button>
+        <a href="{{ astro_landing_url }}/contacto"
+           class="px-3 py-1.5 min-h-[34px] inline-flex items-center rounded-lg bg-white border border-border-subtle text-on-surface-variant font-medium hover:text-primary">
+          {% trans "Contact" %}
+        </a>
+      </div>
+    </div>
   </header>
 
   <!-- Main Content -->
@@ -339,97 +279,95 @@
     {% block content %}{% endblock %}
   </main>
 
-  <!-- 4-Column Storefront & Corporate Footer (Stitch Design) -->
-  <footer class="w-full bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-t border-outline-variant/30 pt-space-xl pb-space-lg mt-space-xl">
-    <div class="max-w-7xl mx-auto px-margin lg:px-margin-desktop">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-space-xl pb-space-xl">
+  <!-- Dark Slate Footer Aligned with rapidopackvalencia.es (#111820) -->
+  <footer class="w-full bg-[#111820] text-white border-t border-white/10 pt-12 pb-8 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 pb-10">
 
-        <!-- Column 1: Rápido Pack Brand, Tagline, Address & Hours -->
-        <div class="lg:col-span-4 flex flex-col gap-space-sm">
-          <a href="{% url 'storefront:home' %}" class="flex items-center gap-space-sm">
-            <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-container text-on-primary">
-              <span class="material-symbols-outlined text-[20px]" aria-hidden="true">inventory_2</span>
+        <!-- Column 1: Brand Identity -->
+        <div class="lg:col-span-4 flex flex-col gap-3">
+          <a href="{% url 'storefront:home' %}" class="inline-flex items-center gap-2.5 self-start">
+            <div class="flex items-center justify-center w-9 h-9 rounded-xl bg-white text-[#111820] shrink-0">
+              <span class="material-symbols-outlined text-[20px] text-primary" aria-hidden="true">inventory_2</span>
             </div>
-            <div class="font-headline-sm text-headline-sm tracking-tight font-bold">
-              <span class="text-primary-container">Rápido</span><span class="text-secondary ml-1">Pack</span>
+            <div class="font-display text-lg tracking-tight font-extrabold">
+              <span>RÁPIDO</span><span class="text-primary-fixed ml-1">PACK</span>
             </div>
           </a>
-          <p class="font-body-md text-body-md text-on-surface-variant max-w-sm">
-            {% trans "Speed and trust right around the corner." %}
+          <span class="inline-flex self-start font-mono text-xs text-primary-fixed bg-white/5 border border-white/10 px-2.5 py-1 rounded-full tracking-wider uppercase">
+            Alfafar · Valencia
+          </span>
+          <p class="text-sm text-slate-300 leading-relaxed max-w-sm">
+            {% trans "Multi-carrier parcel hub and curated second-hand & outlet shelf. Inspect items in person on our testing benches or hold them 24h via WhatsApp." %}
           </p>
-          <div class="flex flex-col gap-space-xs mt-space-xs text-on-surface-variant font-body-sm text-body-sm">
-            <div class="flex items-start gap-space-xs">
-              <span class="material-symbols-outlined text-primary text-[18px] mt-0.5" aria-hidden="true">location_on</span>
+        </div>
+
+        <!-- Column 2: Navigation -->
+        <div class="lg:col-span-3 flex flex-col gap-3">
+          <span class="font-mono text-xs text-primary-fixed uppercase tracking-wider font-semibold">{% trans "Navigation" %}</span>
+          <ul class="flex flex-col gap-2 text-sm text-slate-300">
+            <li><a href="{{ astro_landing_url }}/" class="hover:text-white transition-colors">{% trans "Home" %} (rapidopackvalencia.es)</a></li>
+            <li><a href="{{ astro_landing_url }}/paqueteria" class="hover:text-white transition-colors">{% trans "Parcel Hub" %}</a></li>
+            <li><a href="{% url 'storefront:catalog' %}" class="text-primary-fixed font-semibold hover:underline">{% trans "Store Shelf" %}</a></li>
+            <li><a href="{% url 'storefront:how_to_buy' %}" class="hover:text-white transition-colors">{% trans "How to Buy & Reserve" %}</a></li>
+            <li><a href="{{ astro_landing_url }}/contacto" class="hover:text-white transition-colors">{% trans "Contact" %}</a></li>
+          </ul>
+        </div>
+
+        <!-- Column 3: Physical Store & Hours -->
+        <div class="lg:col-span-3 flex flex-col gap-3">
+          <span class="font-mono text-xs text-primary-fixed uppercase tracking-wider font-semibold">{% trans "Alfafar Physical Store" %}</span>
+          <div class="flex flex-col gap-2.5 text-sm text-slate-300">
+            <a href="{{ storefront.map_url }}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="flex items-start gap-2 hover:text-white transition-colors">
+              <span class="material-symbols-outlined text-primary-fixed text-[18px] mt-0.5 shrink-0" aria-hidden="true">location_on</span>
               <span>{{ storefront.address }}</span>
+            </a>
+            <div class="flex items-start gap-2">
+              <span class="material-symbols-outlined text-primary-fixed text-[18px] mt-0.5 shrink-0" aria-hidden="true">schedule</span>
+              <span class="font-mono text-xs leading-relaxed">{{ storefront.opening_hours }}</span>
             </div>
-            <div class="flex items-start gap-space-xs">
-              <span class="material-symbols-outlined text-primary text-[18px] mt-0.5" aria-hidden="true">schedule</span>
-              <span>{{ storefront.opening_hours }}</span>
-            </div>
-            <div class="pt-1">
+            <div class="pt-1 flex flex-wrap items-center gap-2">
+              <a href="{% url 'storefront:go_whatsapp' %}"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition-colors">
+                <span class="material-symbols-outlined text-[15px]" aria-hidden="true">chat</span>
+                <span>{% trans "WhatsApp Direct" %}</span>
+              </a>
               <a href="{{ storefront.map_url }}"
                  target="_blank"
                  rel="noopener noreferrer"
-                 class="inline-flex items-center gap-1 text-primary font-label-sm text-label-sm hover:underline">
+                 class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 text-xs font-medium transition-colors">
                 <span class="material-symbols-outlined text-[15px]" aria-hidden="true">directions</span>
-                <span>{% trans "Open in Google Maps" %}</span>
+                <span>Maps</span>
               </a>
             </div>
           </div>
         </div>
 
-        <!-- Column 2: Servicios -->
-        <div class="lg:col-span-3 flex flex-col gap-space-sm">
-          <span class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Services" %}</span>
-          <ul class="flex flex-col gap-space-xs font-body-sm text-body-sm text-on-surface-variant">
-            <li><a href="{% url 'storefront:home' %}#paqueteria" class="hover:text-primary transition-colors">{% trans "Shipping" %}</a></li>
-            <li><a href="{% url 'storefront:home' %}#paqueteria" class="hover:text-primary transition-colors">{% trans "Parcel Pickup" %}</a></li>
-            <li><a href="{% url 'storefront:home' %}#paqueteria" class="hover:text-primary transition-colors">{% trans "Returns" %}</a></li>
-            <li><a href="{% url 'storefront:home' %}#punto-pack" class="hover:text-primary transition-colors">{% trans "Punto Pack" %}</a></li>
-            <li><a href="{% url 'storefront:catalog' %}" class="hover:text-primary transition-colors font-semibold text-primary">{% trans "Second-Hand Store" %}</a></li>
-            <li><a href="{% url 'storefront:how_to_buy' %}" class="hover:text-primary transition-colors">{% trans "How to Buy & Reserve" %}</a></li>
-          </ul>
-        </div>
-
-        <!-- Column 3: Agencias -->
-        <div class="lg:col-span-3 flex flex-col gap-space-sm">
-          <span class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Carriers" %}</span>
-          <ul class="grid grid-cols-2 gap-space-xs font-body-sm text-body-sm text-on-surface-variant">
-            <li class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-600"></span><span>SEUR</span></li>
-            <li class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-700"></span><span>GLS</span></li>
-            <li class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-yellow-500"></span><span>InPost</span></li>
-            <li class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-600"></span><span>Amazon</span></li>
-            <li class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-orange-500"></span><span>Kanguro</span></li>
-            <li class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-yellow-600"></span><span>DHL</span></li>
-          </ul>
-          <div class="mt-space-xs bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
-            <span>{% trans "Questions?" %}</span>
-            <a href="{% url 'storefront:go_whatsapp' %}" target="_blank" rel="noopener noreferrer" class="text-primary font-bold hover:underline">
-              {% trans "WhatsApp →" %}
-            </a>
-          </div>
-        </div>
-
-        <!-- Column 4: Legal -->
-        <div class="lg:col-span-2 flex flex-col gap-space-sm">
-          <span class="font-headline-sm text-headline-sm text-on-surface font-bold">{% trans "Legal" %}</span>
-          <ul class="flex flex-col gap-space-xs font-body-sm text-body-sm text-on-surface-variant">
-            <li><a href="{% url 'storefront:legal_notice' %}" class="hover:text-on-surface transition-colors">{% trans "Legal Notice" %}</a></li>
-            <li><a href="{% url 'storefront:privacy' %}" class="hover:text-on-surface transition-colors">{% trans "Privacy Policy" %}</a></li>
-            <li><a href="{% url 'storefront:cookies' %}" class="hover:text-on-surface transition-colors">{% trans "Cookies Policy" %}</a></li>
+        <!-- Column 4: Legal & Staff -->
+        <div class="lg:col-span-2 flex flex-col gap-3">
+          <span class="font-mono text-xs text-primary-fixed uppercase tracking-wider font-semibold">{% trans "Legal" %}</span>
+          <ul class="flex flex-col gap-2 text-sm text-slate-300">
+            <li><a href="{% url 'storefront:legal_notice' %}" class="hover:text-white transition-colors">{% trans "Legal Notice" %}</a></li>
+            <li><a href="{% url 'storefront:privacy' %}" class="hover:text-white transition-colors">{% trans "Privacy Policy" %}</a></li>
+            <li><a href="{% url 'storefront:cookies' %}" class="hover:text-white transition-colors">{% trans "Cookies Policy" %}</a></li>
             {% if not user.is_authenticated %}
-            <li><a href="{% url 'inventory:login' %}" class="hover:text-on-surface transition-colors">{% trans "Staff Access" %}</a></li>
+            <li><a href="{% url 'inventory:login' %}" class="hover:text-white transition-colors text-slate-400">{% trans "Staff Access" %}</a></li>
             {% endif %}
           </ul>
         </div>
       </div>
 
-      <!-- Copyright Bar -->
-      <div class="bg-surface-container rounded-xl px-space-md py-space-sm flex flex-col md:flex-row items-center justify-between gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
-        <span>© {% now "Y" %} {{ storefront.store_name }} · {{ storefront.domain }} · {{ storefront.address }}. {% trans "All rights reserved." %}</span>
-        <span class="flex items-center gap-1 font-semibold text-primary">
-          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">eco</span>
-          <span>{% trans "Circular economy & transparent local commerce" %}</span>
+      <!-- Bottom Legal & Brand Bar -->
+      <div class="border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+        <span>© {% now "Y" %} {{ storefront.store_name }} Valencia · {{ storefront.address }}. {% trans "All rights reserved." %}</span>
+        <span class="inline-flex items-center gap-1.5 font-mono text-xs text-primary-fixed">
+          <span class="material-symbols-outlined text-[15px]" aria-hidden="true">verified</span>
+          <span>{% trans "Physical Store & Online Shelf · Alfafar, Valencia" %}</span>
         </span>
       </div>
     </div>

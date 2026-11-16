@@ -5,46 +5,46 @@
 {% block meta_description %}{% trans "Shopping guide, 24-hour WhatsApp reservations, free store pickup in Alfafar, and protected delivery across Spain." %}{% endblock %}
 
 {% block content %}
-<section class="w-full py-space-xl">
-  <div class="max-w-4xl mx-auto px-margin lg:px-margin-desktop">
-    <div class="bg-surface-container-lowest rounded-2xl p-space-lg md:p-space-xl shadow-sm border border-outline-variant/25 space-y-space-lg">
-      <div class="border-b border-outline-variant/25 pb-space-md flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
-        <div>
-          <a href="{% url 'storefront:catalog' %}" class="inline-flex items-center gap-1 text-primary font-label-md text-label-md hover:underline mb-space-xs">
+<section class="w-full py-8 sm:py-12">
+  <div class="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8">
+    <div class="bg-white rounded-3xl p-5 sm:p-8 shadow-sm border border-border-subtle space-y-6">
+      <div class="border-b border-border-subtle pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="min-w-0">
+          <a href="{% url 'storefront:catalog' %}" class="inline-flex items-center gap-1 text-primary text-xs sm:text-sm font-semibold hover:underline mb-2">
             <span class="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_back</span>
             <span>{% trans "Back to store" %}</span>
           </a>
-          <h1 class="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl text-on-surface font-bold">
+          <h1 class="font-display text-2xl sm:text-3xl font-extrabold text-[#111820] tracking-tight">
             {% trans "How to buy at Rápido Pack Alfafar?" %}
           </h1>
-          <p class="font-body-md text-body-md text-on-surface-variant mt-1">
+          <p class="text-sm text-on-surface-variant mt-1">
             {% trans "In-store pickup guide, 24h reservation & protected shipping across Spain" %}
           </p>
         </div>
         <a href="{% url 'storefront:go_whatsapp' %}"
            target="_blank"
            rel="noopener noreferrer"
-           class="inline-flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-slate-950 font-label-md text-label-md font-bold px-space-md py-2.5 rounded-xl shadow-sm shrink-0">
+           class="inline-flex items-center justify-center gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-slate-950 text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow-sm shrink-0">
           <span class="material-symbols-outlined text-[18px]" aria-hidden="true">chat</span>
           <span>{% trans "Inquire on WhatsApp" %}</span>
         </a>
       </div>
 
       <!-- Option A: Free In-Store Pickup in Alfafar -->
-      <div class="bg-surface-container-low p-space-md rounded-xl space-y-space-xs">
+      <div class="bg-surface-alt p-5 rounded-2xl border border-border-subtle space-y-2.5">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <span class="inline-flex items-center gap-1.5 font-label-md text-label-md text-primary font-bold">
-            <span class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center text-[12px]">A</span>
+          <span class="inline-flex items-center gap-2 text-sm sm:text-base font-bold text-primary-hover">
+            <span class="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center font-mono text-xs">A</span>
             <span>{% trans "Option A: Free pickup at our physical store (Alfafar)" %}</span>
           </span>
-          <span class="font-label-sm text-label-sm text-[#16a34a] font-semibold bg-[#dcfce7] px-space-sm py-0.5 rounded-full">
+          <span class="font-mono text-xs text-primary-hover font-semibold bg-mint-wash border border-primary/20 px-2.5 py-0.5 rounded-full">
             {% trans "Free shipping / No fees" %}
           </span>
         </div>
-        <p class="font-body-md text-body-md text-on-surface-variant">
+        <p class="text-sm text-on-surface-variant">
           {% trans "Location:" %} <strong>{{ storefront.address }}</strong> ({{ storefront.opening_hours }}).
         </p>
-        <ul class="font-body-sm text-body-sm text-on-surface-variant space-y-1.5 list-disc list-inside">
+        <ul class="text-xs sm:text-sm text-on-surface-variant space-y-1.5 list-disc list-inside">
           <li>
             <strong>{% trans "24h no-commitment hold:" %}</strong>
             {% trans "Contact us via WhatsApp quoting the item reference (e.g. Ref. #1042) and we will hold it for 24 hours without upfront payment." %}
@@ -61,20 +61,20 @@
       </div>
 
       <!-- Option B: Protected Shipping via Wallapop / Vinted -->
-      <div class="bg-surface-container-low p-space-md rounded-xl space-y-space-xs">
+      <div class="bg-surface-alt p-5 rounded-2xl border border-border-subtle space-y-2.5">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <span class="inline-flex items-center gap-1.5 font-label-md text-label-md text-on-surface font-bold">
-            <span class="w-6 h-6 rounded-full bg-on-surface text-surface-container-lowest flex items-center justify-center text-[12px]">B</span>
+          <span class="inline-flex items-center gap-2 text-sm sm:text-base font-bold text-[#111820]">
+            <span class="w-6 h-6 rounded-full bg-[#111820] text-white flex items-center justify-center font-mono text-xs">B</span>
             <span>{% trans "Option B: Protected shipping across Spain" %}</span>
           </span>
-          <span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-space-sm py-0.5 rounded-full">
+          <span class="font-mono text-xs text-on-surface-variant bg-white border border-border-subtle px-2.5 py-0.5 rounded-full">
             {% trans "Buyer protection" %}
           </span>
         </div>
-        <p class="font-body-md text-body-md text-on-surface-variant">
+        <p class="text-sm text-on-surface-variant">
           {% trans "If you live outside Valencia or prefer home delivery:" %}
         </p>
-        <ul class="font-body-sm text-body-sm text-on-surface-variant space-y-1.5 list-disc list-inside">
+        <ul class="text-xs sm:text-sm text-on-surface-variant space-y-1.5 list-disc list-inside">
           <li>
             {% trans "We ship via our official listings on Wallapop Envíos, Vinted, and Milanuncios, or direct shipment curated from our logistics center." %}
           </li>
@@ -88,29 +88,31 @@
       </div>
 
       <!-- Option C: Verified Inspection & Support -->
-      <div class="bg-surface-container-low p-space-md rounded-xl space-y-space-xs">
+      <div class="bg-surface-alt p-5 rounded-2xl border border-border-subtle space-y-2.5">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <span class="inline-flex items-center gap-1.5 font-label-md text-label-md text-secondary font-bold">
-            <span class="w-6 h-6 rounded-full bg-secondary text-on-secondary flex items-center justify-center text-[12px]">C</span>
+          <span class="inline-flex items-center gap-2 text-sm sm:text-base font-bold text-[#111820]">
+            <span class="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center font-mono text-xs">C</span>
             <span>{% trans "Option C: Verified condition & real photos" %}</span>
           </span>
-          <span class="font-label-sm text-label-sm text-secondary bg-secondary-fixed px-space-sm py-0.5 rounded-full">
+          <span class="font-mono text-xs text-primary-hover bg-mint-wash border border-primary/20 px-2.5 py-0.5 rounded-full font-semibold">
             {% trans "100% Real Photos" %}
           </span>
         </div>
-        <p class="font-body-sm text-body-sm text-on-surface-variant">
+        <p class="text-xs sm:text-sm text-on-surface-variant">
           {% trans "Every item is photographed in our Alfafar staging studio and inspected before listing. Need an extra photo or video? Message us on WhatsApp and we will send it from the shop floor." %}
         </p>
       </div>
 
-      <div class="pt-space-sm flex flex-wrap items-center justify-between gap-space-sm border-t border-outline-variant/25">
+      <div class="pt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle">
         <a href="{% url 'storefront:catalog' %}"
-           class="inline-flex items-center gap-1.5 bg-primary text-on-primary font-label-md text-label-md font-bold px-space-md py-2.5 rounded-xl hover:bg-primary-container transition-colors">
+           class="inline-flex items-center gap-1.5 bg-[#111820] hover:bg-primary text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl transition-colors">
           <span class="material-symbols-outlined text-[18px]" aria-hidden="true">storefront</span>
           <span>{% trans "Explore the store catalog" %}</span>
         </a>
-        <a href="{% url 'storefront:home' %}#contacto"
-           class="inline-flex items-center gap-1 text-primary font-label-md text-label-md font-semibold hover:underline">
+        <a href="{{ storefront.map_url }}"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="inline-flex items-center gap-1 text-primary text-xs sm:text-sm font-semibold hover:underline">
           <span class="material-symbols-outlined text-[18px]" aria-hidden="true">location_on</span>
           <span>{% trans "View location and hours in Alfafar" %}</span>
         </a>

@@ -12,6 +12,7 @@ from django.utils.translation import gettext as _
 
 from inventory.models import (
     Category,
+    MarketplaceSite,
     Product,
     ProductCondition,
     ProductImage,
@@ -85,11 +86,29 @@ SORT_PARAM_ALIASES = {
 }
 
 
+def _compute_savings_pct(product: Product) -> int | None:
+    """Computes whole-percentage discount vs. estimated retail price when meaningful (5%–95%)."""
+    if (
+        product.estimated_retail_price
+        and product.sale_price
+        and product.estimated_retail_price > product.sale_price
+    ):
+        try:
+            diff = product.estimated_retail_price - product.sale_price
+            pct = int(round((diff / product.estimated_retail_price) * 100))
+            if 5 <= pct <= 95:
+                return pct
+        except (ArithmeticError, ValueError, TypeError):
+            return None
+    return None
+
+
 def _sanitize_public_product(product: Product) -> Product:
     """
     Defense-in-depth firewall: ensures internal-only fields (raw_note, created_by_id,
     origin provider/pallet, and acquisition_cost) are blanked in memory so no template
-    or serializer can ever leak them.
+    or serializer can ever leak them. Also attaches display-ready savings_pct and
+    prefetched active_listing_links without triggering extra queries.
     """
     product.__dict__["raw_note"] = ""
     product.__dict__["created_by_id"] = None
@@ -98,7 +117,57 @@ def _sanitize_public_product(product: Product) -> Product:
     product.__dict__["acquisition_cost"] = None
     product._state.fields_cache.pop("provider", None)
     product._state.fields_cache.pop("pallet", None)
+    product.savings_pct = _compute_savings_pct(product)
+    prefetched = getattr(product, "_prefetched_objects_cache", {})
+    product.active_listing_links = list(prefetched["listing_links"]) if "listing_links" in prefetched else []
     return product
+
+
+def _build_local_business_schema(store_config: StorefrontConfiguration, home_url: str) -> dict:
+    """Builds Schema.org LocalBusiness JSON-LD metadata for the public store shelf."""
+    return {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": store_config.store_name,
+        "description": _(
+            "Outlet and second-hand opportunity store with verified items and in-store testing benches in Alfafar, Valencia."
+        ),
+        "url": home_url,
+        "telephone": f"+{store_config.clean_whatsapp_number}",
+        "email": store_config.contact_email,
+        "priceRange": "€",
+        "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Carrer del Comte Ronrée, 8",
+            "addressLocality": "Alfafar",
+            "addressRegion": "Valencia",
+            "postalCode": "46910",
+            "addressCountry": "ES",
+        },
+        "openingHoursSpecification": [
+            {
+                "@type": "OpeningHoursSpecification",
+                "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                "opens": "09:30",
+                "closes": "20:00",
+            },
+            {
+                "@type": "OpeningHoursSpecification",
+                "dayOfWeek": ["Saturday"],
+                "opens": "10:00",
+                "closes": "15:00",
+            },
+        ],
+        "hasOfferCatalog": {
+            "@type": "OfferCatalog",
+            "name": _("Second-Hand & Outlet Store Shelf"),
+            "itemListElement": [
+                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": _("Secondhand and opportunity store with verified items")}},
+                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": _("Free 24h WhatsApp reservation and in-store testing in Alfafar")}},
+                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": _("Protected shipping across Spain via Wallapop, Vinted, and Milanuncios")}},
+            ],
+        },
+    }
 
 
 def _get_public_queryset():
@@ -138,75 +207,11 @@ def _parse_decimal(val: str):
 
 def home_view(request):
     """
-    Corporate Business Landing Page (/) for Rápido Pack (rapidopack.es).
-    Showcases parcel point services (SEUR, GLS, InPost, Amazon Hub, Kanguro, DHL),
-    Punto Pack, brand identity ("Quiénes somos"), the 4 newest available products
-    ("Recién llegados"), trust stats, Alfafar location & contact, and LocalBusiness JSON-LD.
+    Public Storefront Root (/).
+    Serves the digital Store Shelf directly now that the corporate/parcel landing page
+    is managed externally by Astro at rapidopackvalencia.es.
     """
-    latest_products = list(
-        _get_public_queryset()
-        .filter(is_sold=False, is_reserved=False)
-        .order_by("-created_at")[:4]
-    )
-    for prod in latest_products:
-        _sanitize_public_product(prod)
-
-    store_config = StorefrontConfiguration.get_solo()
-    home_url = request.build_absolute_uri(reverse("storefront:home"))
-
-    local_business_schema = {
-        "@context": "https://schema.org",
-        "@type": "LocalBusiness",
-        "name": store_config.store_name,
-        "description": _(
-            "Punto de paquetería multimarca (SEUR, GLS, InPost, Amazon, Kanguro, DHL), "
-            "Punto Pack oficial y tienda de segunda mano y oportunidad con artículos revisados en Alfafar, Valencia."
-        ),
-        "url": home_url,
-        "telephone": f"+{store_config.clean_whatsapp_number}",
-        "email": store_config.contact_email,
-        "priceRange": "€",
-        "address": {
-            "@type": "PostalAddress",
-            "streetAddress": "Carrer del Comte Ronrée, 8",
-            "addressLocality": "Alfafar",
-            "addressRegion": "Valencia",
-            "postalCode": "46910",
-            "addressCountry": "ES",
-        },
-        "openingHoursSpecification": [
-            {
-                "@type": "OpeningHoursSpecification",
-                "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-                "opens": "09:30",
-                "closes": "20:00",
-            },
-            {
-                "@type": "OpeningHoursSpecification",
-                "dayOfWeek": ["Saturday"],
-                "opens": "10:00",
-                "closes": "15:00",
-            },
-        ],
-        "hasOfferCatalog": {
-            "@type": "OfferCatalog",
-            "name": _("Parcel Services, Punto Pack and Second-Hand Store"),
-            "itemListElement": [
-                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": _("Official Punto Pack & Multi-Carrier Parcel Hub (SEUR, GLS, InPost, Amazon, Kanguro, DHL)")}},
-                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": _("Parcel shipping, pickups, and returns in Alfafar")}},
-                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": _("Secondhand and opportunity store with verified items")}},
-            ],
-        },
-    }
-
-    context = {
-        "latest_products": latest_products,
-        "featured_products": latest_products,
-        "canonical_url": home_url,
-        "local_business_json_ld": json.dumps(local_business_schema, ensure_ascii=False),
-        "is_landing_page": True,
-    }
-    return render(request, "storefront/home.html", context)
+    return catalog_view(request)
 
 
 def category_catalog_view(request, category_slug: str):
@@ -320,6 +325,19 @@ def catalog_view(request, category_slug: str | None = None, resolved_category: C
         if active_category and category_slug
         else reverse("storefront:catalog")
     )
+    canonical_path = (
+        reverse("storefront:category", kwargs={"category_slug": active_category.slug})
+        if active_category and category_slug
+        else reverse("storefront:home")
+    )
+    canonical_url = request.build_absolute_uri(canonical_path)
+    store_config = StorefrontConfiguration.get_solo()
+    local_business_schema = _build_local_business_schema(store_config, canonical_url)
+    active_marketplace_sites = list(
+        MarketplaceSite.objects.filter(is_active=True)
+        .exclude(base_url="")
+        .order_by("order", "name")
+    )
 
     context = {
         "page_obj": page_obj,
@@ -334,6 +352,9 @@ def catalog_view(request, category_slug: str | None = None, resolved_category: C
         "active_category_obj": active_category,
         "category_filter": category_slug_clean,
         "base_filter_url": base_filter_url,
+        "canonical_url": canonical_url,
+        "local_business_json_ld": json.dumps(local_business_schema, ensure_ascii=False),
+        "active_marketplace_sites": active_marketplace_sites,
         "active_condition": condition_filter,
         "active_estado": CONDITION_TO_SPANISH_SLUG.get(condition_filter, ""),
         "condition_filter": condition_filter,
@@ -489,21 +510,6 @@ def public_product_detail_view(request, slug: str, pk: int):
         if line.strip()
     ]
 
-    # Discount percentage if estimated_retail_price > sale_price
-    savings_pct = None
-    if (
-        product.estimated_retail_price
-        and product.sale_price
-        and product.estimated_retail_price > product.sale_price
-    ):
-        try:
-            diff = product.estimated_retail_price - product.sale_price
-            pct = int(round((diff / product.estimated_retail_price) * 100))
-            if 5 <= pct <= 95:
-                savings_pct = pct
-        except (ArithmeticError, ValueError, TypeError):
-            savings_pct = None
-
     context = {
         "product": product,
         "images": images,
@@ -516,7 +522,7 @@ def public_product_detail_view(request, slug: str, pk: int):
         "whatsapp_direct_url": _build_whatsapp_inquiry_url(request, product, store_config),
         "schema_json_ld": json.dumps(schema_data, ensure_ascii=False),
         "description_lines": description_lines,
-        "savings_pct": savings_pct,
+        "savings_pct": product.savings_pct,
     }
     return render(request, "storefront/product_detail.html", context)
 
