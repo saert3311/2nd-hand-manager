@@ -698,8 +698,9 @@
         {% trans "Cancel" %}
       </button>
       <button type="button" id="btnProceedActionConfirm"
-              onclick="if (pendingConfirmForm) { pendingConfirmForm.dataset.confirmed = 'true'; pendingConfirmForm.submit(); }"
-              class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-xs cursor-pointer">
+              data-loading-text="{% trans 'Processing...' %}"
+              onclick="if (pendingConfirmForm) { if (window.AppFeedback) { window.AppFeedback.setButtonLoading(this); } pendingConfirmForm.dataset.confirmed = 'true'; pendingConfirmForm.submit(); }"
+              class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-xs cursor-pointer inline-flex items-center justify-center gap-1.5">
         {% trans "Confirm" %}
       </button>
     </div>

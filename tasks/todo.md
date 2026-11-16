@@ -4091,5 +4091,26 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 - [x] Add unit & integration tests in `tests/test_ai_service.py`, `tests/test_models.py`, and `tests/test_clauseguard_compliance.py` covering `ThinkingLevel`, `resolve_thinking_config` clamping, `fetch_available_gemini_models` filtering, per-task model inheritance, Admin form choices/refresh, and `404`/`400` runtime fallback recovery.
 - [x] Update `CHANGELOG.md` and pass `ruff check .`, `manage.py check`, `manage.py compile_locales`, and `manage.py test`.
 
+---
+
+## Phase 54: Action Progress & Non-Blocking Loading Feedback System
+
+### Task 199: Global Declarative Feedback Engine & Shimmer Utilities (`inventory/templates/inventory/base.html`)
+- [x] Add GPU-composited `.app-shimmer-bar` CSS keyframes with `@media (prefers-reduced-motion: reduce)` fallback in `base.html`.
+- [x] Implement `window.AppFeedback` (`setButtonLoading`, `resetButtonLoading`, `resetAll`, `createStagedProgressController`) + delegated `submit` handler (`data-loading-text`, `e.defaultPrevented` & `data-confirm-message` awareness, deferred disable) + `pageshow` bfcache reset.
+
+### Task 200: Intake Staged AI Skeleton & Progress Timer (`inventory/templates/inventory/intake.html`)
+- [x] Add `#aiIdentificationSkeleton` (`role="status"`, `aria-live="polite"`, `aria-busy="true"`) matching `#aiAdvisoryBanner` height/grid structure with staged copy + `tabular-nums` elapsed counter (preserving streamlined low-DPI button row without `#identifyHelpText`).
+- [x] Wire `createStagedProgressController` into `setFormState('identifying')` / `identifyBtn` handler and ensure `finally` cleanup on success, error, or network failure; add `data-loading-text` on `#submitBtn`.
+
+### Task 201: Product Detail AI Skeleton & Uniform Action Buttons (`product_detail.html`, `dashboard.html`, `pallets.html`, `pallet_edit.html`, `provider_edit.html`)
+- [x] Add `#aiGeneratingSkeleton` inside `#workspacePanelListing` and upgrade `#aiForm` submit feedback on `#aiBtn` with inline SVG spinner, staged progress steps, and `tabular-nums` elapsed timer.
+- [x] Add localized `data-loading-text` across `#verifyComplianceBtn`, `#btnSaveListingChanges`, `#btnUploadDetailPhotos`, clarification forms, restore/delete/marketplace modal submits, trash/pallet/provider forms, and `#btnProceedActionConfirm` programmatic submit.
+
+### Task 202: Bilingual Localization, Unit + Playwright Tests & Changelog (`locale/`, `tests/test_action_loading_feedback.py`, `CHANGELOG.md`)
+- [x] Add Spanish and English translations in `locale/` and compile via `manage.py compile_locales`.
+- [x] Add `tests/test_action_loading_feedback.py` verifying global `AppFeedback` markup/attributes, delayed `/intake/identify/` skeleton + elapsed timer, `#aiForm` skeleton, `data-confirm-message` modal cancel vs. confirm, `pageshow` bfcache restoration, and OPPO A74 (`360×800`, `320×711`) zero horizontal overflow.
+- [x] Update `CHANGELOG.md` under `## [Unreleased]` and pass `ruff check .`, `manage.py check`, `manage.py makemigrations --check --dry-run`, `manage.py compile_locales`, and `manage.py test`.
+
 
 

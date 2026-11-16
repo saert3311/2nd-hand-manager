@@ -3855,3 +3855,61 @@ msgstr "All inherit primary"
 
 msgid "Task Overrides"
 msgstr "Task Overrides"
+
+msgid "Uploading & preparing photos..."
+msgstr "Uploading & preparing photos..."
+
+msgid "Identifying brand, model & condition..."
+msgstr "Identifying brand, model & condition..."
+
+msgid "Estimating resale prices & policy rules..."
+msgstr "Estimating resale prices & policy rules..."
+
+msgid ""
+"Network error while analyzing photos. You can retry or continue saving "
+"manually."
+msgstr ""
+"Network error while analyzing photos. You can retry or continue saving "
+"manually."
+
+msgid "Restoring..."
+msgstr "Restoring..."
+
+msgid "Updating sync..."
+msgstr "Updating sync..."
+
+msgid "Analyzing product photos & field notes..."
+msgstr "Analyzing product photos & field notes..."
+
+msgid "Drafting SEO title & description..."
+msgstr "Drafting SEO title & description..."
+
+msgid "Formatting tags & final listing copy..."
+msgstr "Formatting tags & final listing copy..."
+
+msgid "Saving changes..."
+msgstr "Saving changes..."
+
+msgid "Sending..."
+msgstr "Sending..."
+
+msgid "Saving..."
+msgstr "Saving..."
+
+msgid "Checking compliance..."
+msgstr "Checking compliance..."
+
+msgid "Moving to trash..."
+msgstr "Moving to trash..."
+
+msgid "Processing..."
+msgstr "Processing..."
+
+msgid "Updating..."
+msgstr "Updating..."
+
+msgid "Creating..."
+msgstr "Creating..."
+
+msgid "Deleting..."
+msgstr "Deleting..."

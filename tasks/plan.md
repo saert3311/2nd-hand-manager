@@ -861,5 +861,29 @@ Prevent Gemini SDK/API version shifts, deprecated model names, and excessive thi
    - `AIPromptConfigurationAdminForm` renders dynamic `<select>` widgets for `model_name`, `intake_model_name`, `compliance_model_name`, and `policy_sync_model_name` populated from `fetch_available_gemini_models()`, preserving any custom model value already saved.
    - Add `refresh_gemini_models_action` and `/admin/inventory/aipromptconfiguration/refresh-models/` endpoint + button to force-refresh the live model catalog from Google AI.
 
+---
+
+## Phase 54: Action Progress & Non-Blocking Loading Feedback System (`feat/action-progress-loading-feedback`)
+
+### Overview
+Provide uniform, non-blocking, accessible loading progress across long-running AI calls (staged labels, `tabular-nums` elapsed timers, layout-matched shimmer skeletons) and regular form submissions (`data-loading-text` + `pageshow` bfcache restoration) down to `320×711` / `360×800` OPPO A74 viewports without external dependencies.
+
+### Technical Design
+1. **Global Declarative Feedback Engine (`inventory/templates/inventory/base.html`)**:
+   - Add GPU-composited `@keyframes appShimmer` (`transform: translateX(...)`) and `.app-shimmer-bar` rules respecting `@media (prefers-reduced-motion: reduce)`.
+   - Expose `window.AppFeedback`:
+     - `setButtonLoading(btn, loadingText)` / `resetButtonLoading(btn)` / `resetAll()` (captures `dataset.originalHtml`, renders compact inline `animate-spin` SVG + `min-w-0` text, sets `aria-busy="true"`, queues `btn.disabled = true` via `setTimeout(..., 0)` so submitter `name`/`value` pairs serialize properly).
+     - `createStagedProgressController({ containerEl, labelEl, timerEl, stages })` driving `1s` `tabular-nums` elapsed clock and timed message updates with full timer cleanup.
+   - Attach delegated `document` `submit` listener ignoring `e.defaultPrevented`, awaiting `data-confirm-message` modal approvals, and preventing duplicate POST submits via `form.dataset.appSubmitting`.
+   - Attach `window.addEventListener('pageshow', ...)` calling `AppFeedback.resetAll()` so Back/Forward navigation never leaves disabled buttons.
+2. **Intake AI Pre-Flight Staged Skeleton (`inventory/templates/inventory/intake.html`)**:
+   - Add `#aiIdentificationSkeleton` (`role="status"`, `aria-live="polite"`, `aria-busy="true"`) with SVG spinner, `#aiIdentifyStageText`, `#aiIdentifyElapsed` (`0s`), and title/attributes/MSRP/Resale shimmer placeholders directly above `#aiAdvisoryBanner` (preserving low-DPI streamlined header without `#identifyHelpText`), plus non-blocking error banner in `#aiAdvisoryBanner` on fetch catch.
+   - Hook `createStagedProgressController` into `setFormState('identifying')` and `finally` cleanup (`identifyBtn` handler); wire `data-loading-text` on `#submitBtn`.
+3. **Product Detail AI Skeleton & Uniform Action Buttons (`inventory/templates/inventory/product_detail.html`, `dashboard.html`, `pallets.html`, `pallet_edit.html`, `provider_edit.html`)**:
+   - Add `#aiGeneratingSkeleton` inside `#workspacePanelListing` triggered alongside `AppFeedback.setButtonLoading` in `#aiForm` submit handler (`#aiBtn` SVG spinner + staged progress + live timer).
+   - Annotate action submit buttons (`#verifyComplianceBtn`, `#btnSaveListingChanges`, `#btnUploadDetailPhotos`, clarification forms, restore/delete/link modal submits, trash cleanup, pallet/provider forms) with localized `data-loading-text`, and invoke `AppFeedback.setButtonLoading(this)` in `#btnProceedActionConfirm` before `pendingConfirmForm.submit()`.
+4. **Bilingual Localization & Verification (`locale/`, `tests/test_action_loading_feedback.py`, `CHANGELOG.md`)**:
+   - Translate new UI labels (`es`/`en`), compile `.mo` via `manage.py compile_locales`, verify template rendering + Playwright interactions (including delayed `/intake/identify/` skeleton, `#aiForm` skeleton, cancelled vs. confirmed `data-confirm-message`, `pageshow` reset, and `360×800` / `320×711` zero overflow).
+
 
 
