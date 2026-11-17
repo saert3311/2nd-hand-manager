@@ -4115,4 +4115,8 @@ msgstr "Sort"
 msgid "Featured & newest"
 msgstr "Featured & newest"
 
+msgid "Show active only"
+msgstr "Show active only"
+
+
 

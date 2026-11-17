@@ -317,18 +317,21 @@ def catalog_view(request, category_slug: str | None = None, resolved_category: C
         del extra_params["page"]
     query_string = extra_params.urlencode()
 
-    # Category counts for active visible inventory
-    visible_base_ids = Product.objects.public_visible().values_list("id", flat=True)
-    categories_with_counts = (
+    # Category counts for active available (unsold) visible inventory
+    available_base_ids = Product.objects.public_visible().filter(is_sold=False).values_list("id", flat=True)
+    categories_with_counts = list(
         Category.objects.filter(is_active=True)
         .annotate(
             visible_count=Count(
                 "products",
-                filter=Q(products__id__in=visible_base_ids),
+                filter=Q(products__id__in=available_base_ids),
                 distinct=True,
             )
         )
         .order_by("order", "name")
+    )
+    hidden_categories_count = sum(
+        1 for c in categories_with_counts if c.visible_count == 0 and c.slug != category_slug_clean
     )
 
     base_filter_url = (
@@ -359,6 +362,7 @@ def catalog_view(request, category_slug: str | None = None, resolved_category: C
         "elided_page_range": elided_page_range,
         "query_string": query_string,
         "categories": categories_with_counts,
+        "hidden_categories_count": hidden_categories_count,
         "active_category": category_slug_clean,
         "active_category_obj": active_category,
         "category_filter": category_slug_clean,

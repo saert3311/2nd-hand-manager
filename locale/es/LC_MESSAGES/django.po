@@ -4569,4 +4569,8 @@ msgstr "Ordenar"
 msgid "Featured & newest"
 msgstr "Destacados y novedades"
 
+msgid "Show active only"
+msgstr "Ver solo con stock"
+
+
 

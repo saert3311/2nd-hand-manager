@@ -574,3 +574,54 @@ class StorefrontMarketplaceTests(TestCase):
             resp = self.client.get(reverse(route_name))
             self.assertEqual(resp.status_code, 200)
             self.assertEqual([p.pk for p in resp.context["products"]], expected_order)
+
+    def test_category_rail_shows_only_active_stock_by_default_with_show_all_toggle(self):
+        # 1 available product in bicycles; 1 sold-only product in collectibles
+        self._create_published_product(
+            title="Bicicleta Disponible",
+            price=Decimal("250.00"),
+            category=self.bicycles_cat,
+        )
+        sold_collectible = self._create_published_product(
+            title="Reloj Vendido",
+            price=Decimal("80.00"),
+            category=self.collectibles_cat,
+        )
+        sold_collectible.mark_as_sold(price=Decimal("80.00"))
+
+        resp = self.client.get(reverse("storefront:home"))
+        self.assertEqual(resp.status_code, 200)
+        # Only 1 of 12 categories (bicicletas) has unsold available stock; 11 are hidden by default
+        self.assertEqual(resp.context["hidden_categories_count"], 11)
+
+        html = resp.content.decode("utf-8")
+        rail_html = re.search(r'<div[^>]*id="categoryRail"[^>]*>(.*?)</div>', html, re.S).group(1)
+
+        self.assertIn('id="toggleAllCategoriesBtn"', rail_html)
+        self.assertIn("+ Show all categories (11)", rail_html)
+        self.assertIn("Show active only", rail_html)
+
+        # Populated category chip stays visible (not marked data-empty-category)
+        bike_chip = re.search(r'<a[^>]*href="/categoria/bicicletas/[^"]*"[^>]*>.*?</a>', rail_html, re.S).group(0)
+        self.assertNotIn('data-empty-category="true"', bike_chip)
+        self.assertIn("(1)", bike_chip)
+
+        # Sold-only and empty categories stay hidden with data-empty-category="true" until toggled
+        collectibles_chip = re.search(
+            r'<a[^>]*href="/categoria/coleccionismo/[^"]*"[^>]*>.*?</a>', rail_html, re.S
+        ).group(0)
+        self.assertIn('data-empty-category="true"', collectibles_chip)
+        self.assertIn("hidden ", collectibles_chip)
+
+        # Direct visit to an empty category keeps that active category visible in the rail
+        empty_cat_resp = self.client.get(reverse("storefront:category", kwargs={"category_slug": "coleccionismo"}))
+        self.assertEqual(empty_cat_resp.status_code, 200)
+        self.assertEqual(empty_cat_resp.context["hidden_categories_count"], 10)
+        empty_rail = re.search(
+            r'<div[^>]*id="categoryRail"[^>]*>(.*?)</div>', empty_cat_resp.content.decode("utf-8"), re.S
+        ).group(1)
+        active_collectibles = re.search(
+            r'<a[^>]*href="/categoria/coleccionismo/[^"]*"[^>]*>.*?</a>', empty_rail, re.S
+        ).group(0)
+        self.assertNotIn('data-empty-category="true"', active_collectibles)
+        self.assertNotIn("hidden ", active_collectibles)
