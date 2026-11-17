@@ -106,60 +106,38 @@
     </div>
   </div>
 
-  <!-- External Marketplace Links (Other Stores) -->
-  {% if product.status != 'sold' %}
-    {% if active_links %}
-    <div class="pt-4 border-t border-border-subtle">
-      <p class="text-[13px] font-semibold text-[#111820] mb-2">
-        {% trans "Also available with protected shipping on:" %}
-      </p>
-      <ul class="divide-y divide-border-subtle border-t border-border-subtle">
-        {% for link in active_links %}
-        <li>
-          <a href="{% url 'storefront:go_listing' link.pk %}"
-             target="_blank"
-             rel="noopener noreferrer"
-             class="flex items-center justify-between py-2.5 text-sm hover:text-primary-hover transition-colors group">
-            <span class="flex items-center gap-2.5 min-w-0">
-              {% if link.platform == 'wallapop' %}
-                <span class="w-2.5 h-2.5 rounded-full bg-[#13C1AC] shrink-0" aria-hidden="true"></span>
-              {% elif link.platform == 'vinted' %}
-                <span class="w-2.5 h-2.5 rounded-full bg-[#007782] shrink-0" aria-hidden="true"></span>
-              {% elif link.platform == 'milanuncios' %}
-                <span class="w-2.5 h-2.5 rounded-full bg-[#16a34a] shrink-0" aria-hidden="true"></span>
-              {% else %}
-                <span class="w-2.5 h-2.5 rounded-full bg-[#111820] shrink-0" aria-hidden="true"></span>
-              {% endif %}
-              <span class="font-semibold text-[#111820] group-hover:text-primary-hover truncate">{{ link.get_platform_display }}</span>
-              <span class="text-[13px] text-outline">· {% trans "Protected shipping" %}</span>
-            </span>
-            <span class="material-symbols-outlined text-outline group-hover:text-primary-hover text-[17px] shrink-0" aria-hidden="true">open_in_new</span>
-          </a>
-        </li>
-        {% endfor %}
-      </ul>
-    </div>
-    {% elif active_marketplace_sites %}
-    <div class="pt-4 border-t border-border-subtle space-y-2">
-      <p class="text-[13px] font-semibold text-[#111820]">
-        {% trans "Other stores & protected shipping:" %}
-      </p>
-      <p class="text-[13px] text-on-surface-variant">
-        {% trans "Need nationwide shipping? Ask us on WhatsApp or visit our official marketplace profiles:" %}
-      </p>
-      <div class="flex flex-wrap gap-x-4 gap-y-1.5 text-sm">
-        {% for site in active_marketplace_sites %}
-        <a href="{{ site.base_url }}"
+  <!-- External Marketplace Links (Shown only when this item has active marketplace listings) -->
+  {% if product.status != 'sold' and active_links %}
+  <div class="pt-4 border-t border-border-subtle">
+    <p class="text-[13px] font-semibold text-[#111820] mb-2">
+      {% trans "Also available with protected shipping on:" %}
+    </p>
+    <ul class="divide-y divide-border-subtle border-t border-border-subtle">
+      {% for link in active_links %}
+      <li>
+        <a href="{% url 'storefront:go_listing' link.pk %}"
            target="_blank"
            rel="noopener noreferrer"
-           class="font-semibold text-primary-hover hover:underline inline-flex items-center gap-1">
-          <span>{{ site.name }}</span>
-          <span class="material-symbols-outlined text-[14px]" aria-hidden="true">open_in_new</span>
+           class="flex items-center justify-between py-2.5 text-sm hover:text-primary-hover transition-colors group">
+          <span class="flex items-center gap-2.5 min-w-0">
+            {% if link.platform == 'wallapop' %}
+              <span class="w-2.5 h-2.5 rounded-full bg-[#13C1AC] shrink-0" aria-hidden="true"></span>
+            {% elif link.platform == 'vinted' %}
+              <span class="w-2.5 h-2.5 rounded-full bg-[#007782] shrink-0" aria-hidden="true"></span>
+            {% elif link.platform == 'milanuncios' %}
+              <span class="w-2.5 h-2.5 rounded-full bg-[#16a34a] shrink-0" aria-hidden="true"></span>
+            {% else %}
+              <span class="w-2.5 h-2.5 rounded-full bg-[#111820] shrink-0" aria-hidden="true"></span>
+            {% endif %}
+            <span class="font-semibold text-[#111820] group-hover:text-primary-hover truncate">{{ link.get_platform_display }}</span>
+            <span class="text-[13px] text-outline">· {% trans "Protected shipping" %}</span>
+          </span>
+          <span class="material-symbols-outlined text-outline group-hover:text-primary-hover text-[17px] shrink-0" aria-hidden="true">open_in_new</span>
         </a>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
   {% endif %}
 
   <!-- In-Store Testing & Location Summary (1px divider, zero nested box) -->

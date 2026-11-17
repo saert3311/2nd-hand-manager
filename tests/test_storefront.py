@@ -627,3 +627,35 @@ class StorefrontMarketplaceTests(TestCase):
         ).group(0)
         self.assertNotIn('data-empty-category="true"', active_collectibles)
         self.assertNotIn("hidden ", active_collectibles)
+
+    def test_product_detail_hides_other_stores_section_when_no_marketplace_links(self):
+        store_only = Product.objects.create(
+            raw_note="Exclusive item",
+            ai_title="Mesa Exclusiva Alfafar",
+            ai_description="Disponible exclusivamente en tienda.",
+            sale_price=Decimal("120.00"),
+            category=self.tech_cat,
+            is_public=True,
+            status=ProductStatus.PUBLISHED,
+            created_by=self.staff_user,
+        )
+        resp = self.client.get(store_only.get_public_url())
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode("utf-8")
+        self.assertNotIn("Other stores &amp; protected shipping:", html)
+        self.assertNotIn("Other stores & protected shipping:", html)
+        self.assertNotIn("Also available with protected shipping on:", html)
+        self.assertNotIn(self.wallapop_site.base_url, html)
+
+        # Adding an active link reveals the product-specific external links block
+        link = ProductListingLink.objects.create(
+            product=store_only,
+            site=self.wallapop_site,
+            url="https://es.wallapop.com/item/mesa-exclusiva-123",
+            is_active=True,
+        )
+        linked_resp = self.client.get(store_only.get_public_url())
+        self.assertEqual(linked_resp.status_code, 200)
+        linked_html = linked_resp.content.decode("utf-8")
+        self.assertIn("Also available with protected shipping on:", linked_html)
+        self.assertIn(reverse("storefront:go_listing", kwargs={"link_pk": link.pk}), linked_html)
