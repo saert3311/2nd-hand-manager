@@ -319,7 +319,7 @@ def catalog_view(request, category_slug: str | None = None, resolved_category: C
 
     # Category counts for active available (unsold) visible inventory
     available_base_ids = Product.objects.public_visible().filter(is_sold=False).values_list("id", flat=True)
-    categories_with_counts = list(
+    raw_categories = list(
         Category.objects.filter(is_active=True)
         .annotate(
             visible_count=Count(
@@ -329,6 +329,10 @@ def catalog_view(request, category_slug: str | None = None, resolved_category: C
             )
         )
         .order_by("order", "name")
+    )
+    categories_with_counts = sorted(
+        raw_categories,
+        key=lambda c: (0 if (c.visible_count > 0 or c.slug == category_slug_clean) else 1, c.order, c.name),
     )
     hidden_categories_count = sum(
         1 for c in categories_with_counts if c.visible_count == 0 and c.slug != category_slug_clean

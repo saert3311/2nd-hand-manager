@@ -593,8 +593,10 @@ class StorefrontMarketplaceTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         # Only 1 of 12 categories (bicicletas) has unsold available stock; 11 are hidden by default
         self.assertEqual(resp.context["hidden_categories_count"], 11)
+        self.assertEqual(resp.context["categories"][0].slug, "bicicletas")
 
         html = resp.content.decode("utf-8")
+        self.assertIn("rail.classList.toggle('flex-wrap', nextExpanded)", html)
         rail_html = re.search(r'<div[^>]*id="categoryRail"[^>]*>(.*?)</div>', html, re.S).group(1)
 
         self.assertIn('id="toggleAllCategoriesBtn"', rail_html)

@@ -121,17 +121,17 @@
       </form>
 
       <!-- Light Gallery Category Rail (Active-stock categories first + inline toggle for empty categories) -->
-      <div class="flex items-center gap-1 overflow-x-auto no-scrollbar pt-1 flex-nowrap" id="categoryRail">
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 flex-nowrap" id="categoryRail">
         <a href="{% url 'storefront:home' %}{% if search_query %}?q={{ search_query|urlencode }}{% endif %}"
-           class="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg text-sm whitespace-nowrap transition-colors shrink-0 {% if not active_category %}bg-mint-wash text-primary-hover font-semibold{% else %}text-on-surface-variant hover:text-[#111820] hover:bg-surface-alt{% endif %}">
+           class="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg text-sm whitespace-nowrap transition-colors shrink-0 {% if not active_category %}bg-mint-wash text-primary-hover font-semibold{% else %}text-[#111820] font-medium hover:bg-surface-alt{% endif %}">
           <span>{% trans "All Categories" %}</span>
         </a>
         {% for cat in categories %}
         <a href="{% url 'storefront:category' cat.slug %}{% if active_price or active_condition or search_query or active_sort != 'newest' %}?{% if active_price %}price={{ active_price }}&{% endif %}{% if active_condition %}condition={{ active_condition }}&{% endif %}{% if search_query %}q={{ search_query|urlencode }}&{% endif %}{% if active_sort %}sort={{ active_sort }}{% endif %}{% endif %}"
            {% if cat.visible_count == 0 and active_category != cat.slug %}data-empty-category="true"{% endif %}
-           class="{% if cat.visible_count == 0 and active_category != cat.slug %}hidden {% endif %}inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg text-sm whitespace-nowrap transition-colors shrink-0 {% if active_category == cat.slug %}bg-mint-wash text-primary-hover font-semibold{% elif cat.visible_count == 0 %}text-outline opacity-65 hover:opacity-100 hover:text-[#111820] hover:bg-surface-alt{% else %}text-on-surface-variant hover:text-[#111820] hover:bg-surface-alt{% endif %}">
+           class="{% if cat.visible_count == 0 and active_category != cat.slug %}hidden {% endif %}inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg text-sm whitespace-nowrap transition-colors shrink-0 {% if active_category == cat.slug %}bg-mint-wash text-primary-hover font-semibold{% elif cat.visible_count == 0 %}text-outline font-normal hover:text-[#111820] hover:bg-surface-alt{% else %}text-[#111820] font-medium hover:bg-surface-alt{% endif %}">
           <span>{{ cat.get_localized_name }}</span>
-          <span class="text-xs opacity-75 tabular-nums">({{ cat.visible_count }})</span>
+          <span class="text-[13px] {% if active_category == cat.slug %}text-primary-hover{% else %}text-outline{% endif %} font-normal tabular-nums">({{ cat.visible_count }})</span>
         </a>
         {% endfor %}
         {% if hidden_categories_count > 0 %}
@@ -141,7 +141,7 @@
                 data-show-label="+ {% trans 'Show all categories' %} ({{ hidden_categories_count }})"
                 data-hide-label="{% trans 'Show active only' %}"
                 onclick="toggleAllShelfCategories(this)"
-                class="inline-flex items-center gap-1 px-3 py-1.5 min-h-[36px] rounded-lg text-sm font-medium text-primary-hover bg-surface-alt hover:bg-mint-wash border border-border-subtle whitespace-nowrap transition-colors shrink-0">
+                class="inline-flex items-center gap-1 px-3 py-1.5 min-h-[36px] rounded-lg text-sm font-semibold text-primary-hover hover:bg-mint-wash/70 whitespace-nowrap transition-colors shrink-0">
           <span id="toggleAllCategoriesLabel">+ {% trans "Show all categories" %} ({{ hidden_categories_count }})</span>
         </button>
         {% endif %}
@@ -301,6 +301,13 @@
   function toggleAllShelfCategories(btn) {
     const isExpanded = btn.getAttribute('aria-expanded') === 'true';
     const nextExpanded = !isExpanded;
+    const rail = document.getElementById('categoryRail');
+    if (rail) {
+      rail.classList.toggle('flex-nowrap', !nextExpanded);
+      rail.classList.toggle('overflow-x-auto', !nextExpanded);
+      rail.classList.toggle('no-scrollbar', !nextExpanded);
+      rail.classList.toggle('flex-wrap', nextExpanded);
+    }
     document.querySelectorAll('#categoryRail [data-empty-category="true"]').forEach((el) => {
       el.classList.toggle('hidden', !nextExpanded);
     });
