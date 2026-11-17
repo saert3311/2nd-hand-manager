@@ -33,18 +33,19 @@
   <!-- Clean Breadcrumb Bar -->
   <section class="w-full bg-surface border-b border-border-subtle">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-2 text-on-surface-variant text-[13px] font-medium">
-      <nav aria-label="Breadcrumb" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap min-w-0">
-        <a class="hover:text-primary-hover transition-colors shrink-0" href="{% url 'storefront:home' %}">
+      <nav aria-label="Breadcrumb" class="flex items-center gap-1.5 whitespace-nowrap min-w-0">
+        <a class="hover:text-primary-hover hover:underline transition-colors shrink-0" href="{% url 'storefront:home' %}">
           {% trans "Store Shelf" %}
         </a>
         {% if product.category %}
-        <span class="text-outline-variant" aria-hidden="true">/</span>
-        <a class="hover:text-primary-hover transition-colors shrink-0" href="{% url 'storefront:category' product.category.slug %}">
+        <span class="text-outline-variant shrink-0" aria-hidden="true">/</span>
+        <a class="hover:text-primary-hover hover:underline transition-colors shrink-0"
+           href="{% if product.category.is_active %}{% url 'storefront:category' product.category.slug %}{% else %}{% url 'storefront:catalog' %}?category={{ product.category.slug }}{% endif %}">
           {{ product.category.get_localized_name }}
         </a>
         {% endif %}
-        <span class="text-outline-variant" aria-hidden="true">/</span>
-        <span class="text-[#111820] font-semibold tabular-nums shrink-0">{{ product.public_reference }}</span>
+        <span class="text-outline-variant shrink-0" aria-hidden="true">/</span>
+        <span class="text-[#111820] font-semibold truncate min-w-0" aria-current="page">{{ product.ai_title }}</span>
       </nav>
       <span class="hidden sm:inline-flex items-center gap-1 text-[13px] text-primary-hover font-medium shrink-0">
         <span class="material-symbols-outlined text-[15px]" aria-hidden="true">verified</span>

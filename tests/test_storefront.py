@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 from decimal import Decimal
 from io import StringIO
@@ -7,6 +8,7 @@ from django.core.management import call_command
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import escape
 
 from inventory.models import (
     OFFICIAL_CATEGORIES,
@@ -478,3 +480,42 @@ class StorefrontMarketplaceTests(TestCase):
         self.assertIsNotNone(unclassified.category)
         self.assertEqual(unclassified.category.slug, "coleccionismo")
         self.assertEqual(unclassified.condition, ProductCondition.VINTAGE)
+
+    def test_product_detail_breadcrumb_links_category_and_shows_product_name(self):
+        product = self._create_published_product(
+            title="Auriculares Sony WH-1000XM4 Negro",
+            price=Decimal("145.00"),
+            category=self.tech_cat,
+        )
+        detail_resp = self.client.get(product.get_public_url())
+        self.assertEqual(detail_resp.status_code, 200)
+        html = detail_resp.content.decode("utf-8")
+
+        nav_match = re.search(r'<nav aria-label="Breadcrumb"[^>]*>(.*?)</nav>', html, re.S)
+        self.assertIsNotNone(nav_match)
+        breadcrumb_html = nav_match.group(1)
+
+        cat_url = reverse("storefront:category", kwargs={"category_slug": self.tech_cat.slug})
+        self.assertIn(reverse("storefront:home"), breadcrumb_html)
+        self.assertIn(cat_url, breadcrumb_html)
+        self.assertIn(escape(self.tech_cat.get_localized_name()), breadcrumb_html)
+        self.assertIn(product.ai_title, breadcrumb_html)
+        self.assertIn('aria-current="page"', breadcrumb_html)
+        self.assertNotIn(product.public_reference, breadcrumb_html)
+
+        # Inactive category falls back cleanly to filtered catalog URL (never links to 404)
+        self.tech_cat.is_active = False
+        self.tech_cat.save(update_fields=["is_active"])
+        try:
+            fallback_resp = self.client.get(product.get_public_url())
+            self.assertEqual(fallback_resp.status_code, 200)
+            fallback_nav = re.search(
+                r'<nav aria-label="Breadcrumb"[^>]*>(.*?)</nav>',
+                fallback_resp.content.decode("utf-8"),
+                re.S,
+            ).group(1)
+            self.assertIn(f"{reverse('storefront:catalog')}?category={self.tech_cat.slug}", fallback_nav)
+            self.assertNotIn(cat_url, fallback_nav)
+        finally:
+            self.tech_cat.is_active = True
+            self.tech_cat.save(update_fields=["is_active"])

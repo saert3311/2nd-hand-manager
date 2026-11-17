@@ -182,6 +182,7 @@ def _get_public_queryset():
             "category__slug",
             "category__icon",
             "category__order",
+            "category__is_active",
         )
         .prefetch_related(
             Prefetch("images", queryset=ProductImage.objects.order_by("order", "id")),
