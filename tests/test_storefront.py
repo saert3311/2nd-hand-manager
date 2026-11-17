@@ -262,6 +262,8 @@ class StorefrontMarketplaceTests(TestCase):
         self.assertIn('id="priceDropdown"', html)
         self.assertIn('id="conditionDropdown"', html)
         self.assertIn('id="categoryRail"', html)
+        self.assertIn('href="/categoria/bicicletas/', html)
+        self.assertNotIn('href="/tienda/categoria/', html)
         self.assertIn('"@type": "LocalBusiness"', html)
         self.assertIn("-50%", html)
         self.assertIn("https://es.wallapop.com", html)
@@ -302,12 +304,17 @@ class StorefrontMarketplaceTests(TestCase):
             is_featured=False,
         )
 
-        # Filter by SEO category URL (/tienda/categoria/<slug>/)
-        resp_cat_route = self.client.get(
-            reverse("storefront:category", kwargs={"category_slug": "bicicletas"})
-        )
+        # Filter by SEO category URL (/categoria/<slug>/, without /tienda/ prefix)
+        cat_route = reverse("storefront:category", kwargs={"category_slug": "bicicletas"})
+        self.assertEqual(cat_route, "/categoria/bicicletas/")
+        resp_cat_route = self.client.get(cat_route)
         self.assertEqual(resp_cat_route.status_code, 200)
         self.assertEqual([p.pk for p in resp_cat_route.context["products"]], [p_bike.pk])
+
+        # Legacy /tienda/categoria/<slug>/ 301 redirects permanently to /categoria/<slug>/
+        legacy_cat_resp = self.client.get("/tienda/categoria/bicicletas/?orden=precio-asc")
+        self.assertEqual(legacy_cat_resp.status_code, 301)
+        self.assertEqual(legacy_cat_resp["Location"], "/categoria/bicicletas/?orden=precio-asc")
 
         # Filter by category query param
         resp_cat = self.client.get(reverse("storefront:catalog"), {"categoria": "bicicletas"})
@@ -447,6 +454,7 @@ class StorefrontMarketplaceTests(TestCase):
         robots_resp = self.client.get(reverse("storefront:robots"))
         self.assertEqual(robots_resp.status_code, 200)
         robots_txt = robots_resp.content.decode("utf-8")
+        self.assertIn("Allow: /categoria/", robots_txt)
         self.assertIn("Allow: /tienda/", robots_txt)
         self.assertIn("Disallow: /panel/", robots_txt)
         self.assertIn("Disallow: /dashboard/", robots_txt)
@@ -514,7 +522,7 @@ class StorefrontMarketplaceTests(TestCase):
                 fallback_resp.content.decode("utf-8"),
                 re.S,
             ).group(1)
-            self.assertIn(f"{reverse('storefront:catalog')}?category={self.tech_cat.slug}", fallback_nav)
+            self.assertIn(f"{reverse('storefront:home')}?category={self.tech_cat.slug}", fallback_nav)
             self.assertNotIn(cat_url, fallback_nav)
         finally:
             self.tech_cat.is_active = True

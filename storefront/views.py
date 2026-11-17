@@ -217,11 +217,21 @@ def home_view(request):
 
 def category_catalog_view(request, category_slug: str):
     """
-    Category-filtered Marketplace Catalog (/tienda/categoria/<slug:category_slug>/).
+    Category-filtered Marketplace Catalog (/categoria/<slug:category_slug>/).
     Returns 404 if the category slug is not one of the active official categories.
     """
     active_category = get_object_or_404(Category, slug=category_slug, is_active=True)
     return catalog_view(request, category_slug=active_category.slug, resolved_category=active_category)
+
+
+def legacy_category_redirect_view(request, category_slug: str):
+    """
+    Redirects legacy /tienda/categoria/<slug>/ URLs permanently (301) to /categoria/<slug>/.
+    """
+    target = reverse("storefront:category", kwargs={"category_slug": category_slug})
+    if request.META.get("QUERY_STRING"):
+        target = f"{target}?{request.META['QUERY_STRING']}"
+    return redirect(target, permanent=True)
 
 
 def catalog_view(request, category_slug: str | None = None, resolved_category: Category | None = None):
@@ -324,7 +334,7 @@ def catalog_view(request, category_slug: str | None = None, resolved_category: C
     base_filter_url = (
         reverse("storefront:category", kwargs={"category_slug": active_category.slug})
         if active_category and category_slug
-        else reverse("storefront:catalog")
+        else reverse("storefront:home")
     )
     canonical_path = (
         reverse("storefront:category", kwargs={"category_slug": active_category.slug})
@@ -680,6 +690,7 @@ def robots_view(request):
     lines = [
         "User-agent: *",
         "Allow: /",
+        "Allow: /categoria/",
         "Allow: /tienda/",
         "Disallow: /admin/",
         "Disallow: /panel/",

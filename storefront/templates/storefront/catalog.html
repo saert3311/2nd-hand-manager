@@ -111,7 +111,7 @@
           </select>
 
           {% if has_active_filters %}
-          <a href="{% url 'storefront:catalog' %}"
+          <a href="{% url 'storefront:home' %}"
              title="{% trans 'Clear filters' %}"
              aria-label="{% trans 'Clear filters' %}"
              class="inline-flex items-center justify-center px-3 py-2 min-h-[42px] rounded-xl text-sm font-medium text-outline hover:text-primary-hover transition-colors shrink-0">
@@ -123,7 +123,7 @@
 
       <!-- Light Gallery Category Rail -->
       <div class="flex items-center gap-1 overflow-x-auto no-scrollbar pt-1 flex-nowrap" id="categoryRail">
-        <a href="{% url 'storefront:catalog' %}{% if search_query %}?q={{ search_query|urlencode }}{% endif %}"
+        <a href="{% url 'storefront:home' %}{% if search_query %}?q={{ search_query|urlencode }}{% endif %}"
            class="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg text-sm whitespace-nowrap transition-colors {% if not active_category %}bg-mint-wash text-primary-hover font-semibold{% else %}text-on-surface-variant hover:text-[#111820] hover:bg-surface-alt{% endif %}">
           <span>{% trans "All Categories" %}</span>
         </a>
@@ -159,7 +159,7 @@
           {% trans "We update our shelf daily with new arrivals at our Alfafar store. Clear the filters or message us directly on WhatsApp." %}
         </p>
         <div class="pt-2 flex flex-wrap items-center justify-center gap-3">
-          <a href="{% url 'storefront:catalog' %}"
+          <a href="{% url 'storefront:home' %}"
              class="px-4 py-2.5 rounded-xl bg-[#111820] hover:bg-primary text-white text-sm font-semibold transition-colors">
             {% trans "View all items" %}
           </a>

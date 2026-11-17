@@ -40,7 +40,7 @@
         {% if product.category %}
         <span class="text-outline-variant shrink-0" aria-hidden="true">/</span>
         <a class="hover:text-primary-hover hover:underline transition-colors shrink-0"
-           href="{% if product.category.is_active %}{% url 'storefront:category' product.category.slug %}{% else %}{% url 'storefront:catalog' %}?category={{ product.category.slug }}{% endif %}">
+           href="{% if product.category.is_active %}{% url 'storefront:category' product.category.slug %}{% else %}{% url 'storefront:home' %}?category={{ product.category.slug }}{% endif %}">
           {{ product.category.get_localized_name }}
         </a>
         {% endif %}
@@ -165,7 +165,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
       <div class="flex flex-wrap items-baseline justify-between gap-3">
         <h2 class="font-display text-2xl text-[#111820] font-extrabold tracking-tight">{% trans "Related Opportunities" %}</h2>
-        <a href="{% url 'storefront:catalog' %}{% if product.category %}?category={{ product.category.slug }}{% endif %}"
+        <a href="{% if product.category and product.category.is_active %}{% url 'storefront:category' product.category.slug %}{% elif product.category %}{% url 'storefront:home' %}?category={{ product.category.slug }}{% else %}{% url 'storefront:home' %}{% endif %}"
            class="text-sm font-semibold text-primary-hover hover:underline inline-flex items-center gap-1">
           <span>{% trans "View full catalog" %}</span>
           <span class="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>

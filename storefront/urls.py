@@ -9,6 +9,7 @@ from .views import (
     go_whatsapp_view,
     home_view,
     how_to_buy_view,
+    legacy_category_redirect_view,
     legacy_product_detail_redirect_view,
     legal_notice_view,
     privacy_policy_view,
@@ -21,8 +22,9 @@ app_name = "storefront"
 
 urlpatterns = [
     path("", home_view, name="home"),
+    path("categoria/<slug:category_slug>/", category_catalog_view, name="category"),
     path("tienda/", catalog_view, name="catalog"),
-    path("tienda/categoria/<slug:category_slug>/", category_catalog_view, name="category"),
+    path("tienda/categoria/<slug:category_slug>/", legacy_category_redirect_view, name="legacy_category"),
     path("tienda/producto/<slug:slug>-<int:pk>/", public_product_detail_view, name="product_detail"),
     path("p/<slug:slug>-<int:pk>/", legacy_product_detail_redirect_view, name="legacy_product_detail"),
     path("como-comprar/", how_to_buy_view, name="how_to_buy"),

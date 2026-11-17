@@ -69,7 +69,7 @@
         <span class="material-symbols-outlined text-[20px]" aria-hidden="true">check_circle</span>
         <span>{% trans "This item has been sold" %}</span>
       </div>
-      <a href="{% url 'storefront:catalog' %}{% if product.category %}?category={{ product.category.slug }}{% endif %}"
+      <a href="{% if product.category and product.category.is_active %}{% url 'storefront:category' product.category.slug %}{% elif product.category %}{% url 'storefront:home' %}?category={{ product.category.slug }}{% else %}{% url 'storefront:home' %}{% endif %}"
          class="w-full py-3 px-4 rounded-xl bg-[#111820] hover:bg-primary text-white text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors">
         <span>{% trans "See similar items in catalog" %}</span>
       </a>
