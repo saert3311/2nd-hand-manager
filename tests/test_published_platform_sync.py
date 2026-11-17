@@ -484,3 +484,41 @@ class PublishedProductPlatformSyncTests(TestCase):
         self.assertContains(response, "Precio")
         self.assertContains(response, "Modificado:")
 
+    def test_store_exclusive_published_skips_platform_sync_alerts(self):
+        """Store-exclusive PUBLISHED products (0 active external links) never trigger out-of-sync flags."""
+        store_only = Product.objects.create(
+            raw_note="Silla Vintage Alfafar",
+            ai_title="Silla de Madera Maciza Restaurada",
+            ai_description="Solo en tienda Alfafar y escaparate web.",
+            sale_price=Decimal("75.00"),
+            status=ProductStatus.PUBLISHED,
+            is_public=True,
+            created_by=self.manager,
+        )
+        ProductImage.objects.create(
+            product=store_only,
+            image=create_test_image("store_only.png", "green"),
+            order=0,
+        )
+        store_only.refresh_from_db()
+        self.assertEqual(store_only.status, ProductStatus.PUBLISHED)
+        self.assertFalse(store_only.needs_platform_sync)
+
+        # Edit price, title, description, upload extra photo, and save a direct note via views/models
+        store_only.sale_price = Decimal("68.00")
+        store_only.ai_title = "Silla de Madera Maciza Oferta"
+        store_only.ai_description = "Actualizada para escaparate web."
+        store_only.save(changed_by=self.manager)
+
+        upload_url = reverse("inventory:product_upload_images", kwargs={"pk": store_only.pk})
+        extra_img = create_test_image("store_only_2.png", "yellow")
+        resp = self.client_mgr.post(upload_url, {"images": [extra_img]}, follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+        store_only.add_platform_sync_reasons(PlatformSyncReason.PHOTOS, user=self.manager, commit=True)
+        store_only.refresh_from_db()
+
+        self.assertEqual(store_only.status, ProductStatus.PUBLISHED)
+        self.assertFalse(store_only.needs_platform_sync)
+        self.assertEqual(store_only.platform_sync_reasons, [])
+

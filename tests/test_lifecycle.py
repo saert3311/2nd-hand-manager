@@ -10,6 +10,7 @@ from inventory.models import (
     ProductClarification,
     ProductListingLink,
     ProductStatus,
+    ProductStatusLog,
 )
 
 User = get_user_model()
@@ -240,3 +241,60 @@ class ProductLifecycleStateTests(TestCase):
         clarif.resolve(answer="Tag says Size 40", answered_by=self.user)
         product.refresh_from_db()
         self.assertEqual(product.status, ProductStatus.PRICE_PENDING)
+
+    def test_manual_store_exclusive_published_persists_when_complete(self):
+        """A complete READY product manually set to PUBLISHED stays PUBLISHED without external links."""
+        product = Product.objects.create(
+            ai_title="Exclusivo Tienda Alfafar",
+            ai_description="Disponible solo en tienda física y web.",
+            sale_price=Decimal("95.00"),
+        )
+        self.assertEqual(product.status, ProductStatus.READY)
+
+        # Manual promotion to PUBLISHED without external links sticks
+        product.status = ProductStatus.PUBLISHED
+        product.save(changed_by=self.user)
+        product.refresh_from_db()
+        self.assertEqual(product.status, ProductStatus.PUBLISHED)
+        log = ProductStatusLog.objects.filter(
+            product=product,
+            from_status=ProductStatus.READY,
+            to_status=ProductStatus.PUBLISHED,
+        ).first()
+        self.assertIsNotNone(log)
+        self.assertEqual(log.trigger, "published_store_exclusive")
+
+        # Editing fields or calling sync_lifecycle_status preserves PUBLISHED
+        product.sale_price = Decimal("89.00")
+        product.save(changed_by=self.user)
+        self.assertEqual(product.status, ProductStatus.PUBLISHED)
+        product.sync_lifecycle_status(trigger="image_added")
+        self.assertEqual(product.status, ProductStatus.PUBLISHED)
+
+        # Explicitly switching back to READY reverts when no external links exist
+        product.status = ProductStatus.READY
+        product.save(changed_by=self.user)
+        self.assertEqual(product.status, ProductStatus.READY)
+
+    def test_manual_published_requires_title_description_and_positive_price(self):
+        """Incomplete items cannot bypass DRAFT / PRICE_PENDING into manual PUBLISHED."""
+        unpriced = Product.objects.create(
+            ai_title="Artículo Sin Precio",
+            ai_description="Descripción completa.",
+            sale_price=None,
+            status=ProductStatus.PUBLISHED,
+        )
+        self.assertEqual(unpriced.status, ProductStatus.PRICE_PENDING)
+
+        priced_exclusive = Product.objects.create(
+            ai_title="Artículo Completo",
+            ai_description="Descripción completa.",
+            sale_price=Decimal("50.00"),
+            status=ProductStatus.PUBLISHED,
+        )
+        self.assertEqual(priced_exclusive.status, ProductStatus.PUBLISHED)
+
+        # Clearing price drops store-exclusive PUBLISHED to PRICE_PENDING
+        priced_exclusive.sale_price = None
+        priced_exclusive.save()
+        self.assertEqual(priced_exclusive.status, ProductStatus.PRICE_PENDING)

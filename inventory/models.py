@@ -881,16 +881,21 @@ class Product(models.Model):
             return 0
         return sum(link.clicks_count for link in self.listing_links.all())
 
-    def compute_lifecycle_status(self) -> str:
+    @property
+    def has_active_external_links(self) -> bool:
+        return bool(self.pk and self.listing_links.filter(is_active=True).exists())
+
+    def compute_lifecycle_status(self, preserve_manual_published: bool = False) -> str:
         """
         Calculates the lifecycle status according to business precedence:
         1. SOLD if marked sold
         2. BLOCKED if administratively blocked
         3. AWAITING_INFO if pending clarifications exist
         4. PUBLISHED if any active marketplace link is attached
-        5. DRAFT if no description exists
+        5. DRAFT if no title/description exists
         6. PRICE_PENDING if title and description exist but price is None or <= 0
-        7. READY if title, description, and price > 0 exist
+        7. PUBLISHED if preserve_manual_published=True (store-exclusive live item)
+        8. READY if title, description, and price > 0 exist
         """
         if self.is_sold:
             return ProductStatus.SOLD
@@ -898,7 +903,7 @@ class Product(models.Model):
             return ProductStatus.BLOCKED
         if self.pk and self.clarifications.filter(status=ClarificationStatus.PENDING).exists():
             return ProductStatus.AWAITING_INFO
-        if self.pk and self.listing_links.filter(is_active=True).exists():
+        if self.has_active_external_links:
             return ProductStatus.PUBLISHED
 
         has_title = bool((self.ai_title or "").strip())
@@ -914,10 +919,16 @@ class Product(models.Model):
             return ProductStatus.DRAFT
         if not has_price:
             return ProductStatus.PRICE_PENDING
+        if preserve_manual_published:
+            return ProductStatus.PUBLISHED
         return ProductStatus.READY
 
     def sync_lifecycle_status(self, user=None, trigger=None, notes=None, commit=True):
-        computed = self.compute_lifecycle_status()
+        preserve_manual = (
+            self.status == ProductStatus.PUBLISHED
+            and trigger != "marketplace_link_removed"
+        )
+        computed = self.compute_lifecycle_status(preserve_manual_published=preserve_manual)
         if self.status != computed:
             self.status = computed
             self.is_sold = (computed == ProductStatus.SOLD)
@@ -960,11 +971,7 @@ class Product(models.Model):
         if self.is_sold or self.status == ProductStatus.SOLD:
             return
 
-        is_published = (
-            self.status == ProductStatus.PUBLISHED
-            or (self.pk and self.listing_links.filter(is_active=True).exists())
-        )
-        if not is_published:
+        if not self.has_active_external_links:
             return
 
         canonical_order = [
@@ -1141,7 +1148,7 @@ class Product(models.Model):
         if from_status == ProductStatus.AWAITING_INFO:
             return "clarification_resolved"
         if to_status == ProductStatus.PUBLISHED:
-            return "marketplace_link_added"
+            return "marketplace_link_added" if self.has_active_external_links else "published_store_exclusive"
         if from_status == ProductStatus.PUBLISHED and to_status != ProductStatus.SOLD:
             return "marketplace_link_removed"
         if to_status == ProductStatus.PRICE_PENDING:
@@ -1229,19 +1236,16 @@ class Product(models.Model):
             elif self.status == ProductStatus.AWAITING_INFO:
                 self.is_sold = False
             else:
-                self.status = self.compute_lifecycle_status()
+                self.status = self.compute_lifecycle_status(
+                    preserve_manual_published=(self.status == ProductStatus.PUBLISHED)
+                )
                 self.is_sold = (self.status == ProductStatus.SOLD)
         else:
             status_changed = self.status != initial_status
             is_sold_changed = self.is_sold != initial_is_sold
 
-            is_published = (
-                initial_status == ProductStatus.PUBLISHED
-                or self.status == ProductStatus.PUBLISHED
-                or (self.pk and self.listing_links.filter(is_active=True).exists())
-            )
             if (
-                is_published
+                self.has_active_external_links
                 and not self.is_sold
                 and self.status != ProductStatus.SOLD
                 and not getattr(self, "_clearing_platform_sync", False)
@@ -1281,7 +1285,9 @@ class Product(models.Model):
                     self.is_sold = False
                 else:
                     self.is_sold = False
-                    self.status = self.compute_lifecycle_status()
+                    self.status = self.compute_lifecycle_status(
+                        preserve_manual_published=(self.status == ProductStatus.PUBLISHED)
+                    )
             elif is_sold_changed:
                 if self.is_sold:
                     self.status = ProductStatus.SOLD
@@ -1297,7 +1303,9 @@ class Product(models.Model):
                     if self.pk and not self.clarifications.filter(status=ClarificationStatus.PENDING, is_direct_note=False).exists():
                         self.status = self.compute_lifecycle_status()
                 else:
-                    self.status = self.compute_lifecycle_status()
+                    self.status = self.compute_lifecycle_status(
+                        preserve_manual_published=(self.status == ProductStatus.PUBLISHED)
+                    )
                     self.is_sold = (self.status == ProductStatus.SOLD)
 
         if "update_fields" in kwargs and kwargs["update_fields"] is not None:
@@ -2051,22 +2059,19 @@ def sync_product_on_clarification_save(sender, instance, created=False, **kwargs
     product = instance.product
     if product.is_sold or product.status == ProductStatus.SOLD:
         return
-    is_published = (
-        product.status == ProductStatus.PUBLISHED
-        or product.listing_links.filter(is_active=True).exists()
-    )
+    has_external_links = product.has_active_external_links
     if instance.is_direct_note:
-        if is_published:
+        if has_external_links:
             product.add_platform_sync_reasons(PlatformSyncReason.OTHER, user=instance.asked_by, commit=True)
         return
     if instance.status == ClarificationStatus.PENDING:
-        if is_published:
+        if has_external_links:
             product.add_platform_sync_reasons(PlatformSyncReason.OTHER, user=instance.asked_by, commit=False)
         if product.status != ProductStatus.AWAITING_INFO:
             product.status = ProductStatus.AWAITING_INFO
             notes = f"Clarification opened: {instance.question[:60]}" if instance.question else ""
             update_fields = ["status"]
-            if is_published:
+            if has_external_links:
                 update_fields.extend(["needs_platform_sync", "platform_sync_reasons"])
             product.save(
                 update_fields=update_fields,
@@ -2074,7 +2079,7 @@ def sync_product_on_clarification_save(sender, instance, created=False, **kwargs
                 trigger="clarification_opened",
                 notes=notes,
             )
-        elif is_published:
+        elif has_external_links:
             product.save(
                 update_fields=["needs_platform_sync", "platform_sync_reasons"],
                 changed_by=instance.asked_by,
@@ -2094,14 +2099,14 @@ def sync_product_on_clarification_save(sender, instance, created=False, **kwargs
             except Exception:
                 pass
     elif instance.status == ClarificationStatus.RESOLVED:
-        if is_published:
+        if has_external_links:
             product.add_platform_sync_reasons(PlatformSyncReason.OTHER, user=instance.answered_by, commit=False)
         has_pending = product.clarifications.filter(status=ClarificationStatus.PENDING).exists()
         if not has_pending and product.status == ProductStatus.AWAITING_INFO:
             product.status = product.compute_lifecycle_status()
             notes = f"Clarification resolved: {instance.question[:60]}" if instance.question else ""
             update_fields = ["status", "is_sold"]
-            if is_published:
+            if has_external_links:
                 update_fields.extend(["needs_platform_sync", "platform_sync_reasons"])
             product.save(
                 update_fields=update_fields,
@@ -2109,7 +2114,7 @@ def sync_product_on_clarification_save(sender, instance, created=False, **kwargs
                 trigger="clarification_resolved",
                 notes=notes,
             )
-        elif is_published:
+        elif has_external_links:
             product.save(
                 update_fields=["needs_platform_sync", "platform_sync_reasons"],
                 changed_by=instance.answered_by,
