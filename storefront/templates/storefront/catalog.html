@@ -104,8 +104,7 @@
                   aria-label="{% trans 'Sort' %}"
                   onchange="this.form.submit()"
                   class="shrink-0 bg-surface-alt hover:bg-surface-container/60 text-[#111820] text-base sm:text-sm font-medium rounded-xl px-3 py-2 min-h-[42px] border border-border-subtle focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer">
-            <option value="newest" {% if active_sort == 'newest' %}selected{% endif %}>{% trans "Newest first" %}</option>
-            <option value="featured" {% if active_sort == 'featured' %}selected{% endif %}>{% trans "Featured ★" %}</option>
+            <option value="newest" {% if active_sort == 'newest' or active_sort == 'featured' %}selected{% endif %}>{% trans "Featured & newest" %}</option>
             <option value="price_asc" {% if active_sort == 'price_asc' %}selected{% endif %}>{% trans "Price: low to high" %}</option>
             <option value="price_desc" {% if active_sort == 'price_desc' %}selected{% endif %}>{% trans "Price: high to low" %}</option>
           </select>

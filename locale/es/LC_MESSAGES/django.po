@@ -4566,3 +4566,7 @@ msgstr "Reservado (24h)"
 msgid "Sort"
 msgstr "Ordenar"
 
+msgid "Featured & newest"
+msgstr "Destacados y novedades"
+
+

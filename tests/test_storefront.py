@@ -527,3 +527,50 @@ class StorefrontMarketplaceTests(TestCase):
         finally:
             self.tech_cat.is_active = True
             self.tech_cat.save(update_fields=["is_active"])
+
+    def test_catalog_default_orders_featured_first_then_newest_descending(self):
+        now = timezone.now()
+        older_featured = self._create_published_product(
+            title="Destacado Antiguo",
+            price=Decimal("40.00"),
+            is_featured=True,
+        )
+        newer_featured = self._create_published_product(
+            title="Destacado Reciente",
+            price=Decimal("45.00"),
+            is_featured=True,
+        )
+        older_regular = self._create_published_product(
+            title="Normal Antiguo",
+            price=Decimal("30.00"),
+            is_featured=False,
+        )
+        newest_regular = self._create_published_product(
+            title="Normal Muy Reciente",
+            price=Decimal("50.00"),
+            is_featured=False,
+        )
+        sold_featured = self._create_published_product(
+            title="Destacado Vendido",
+            price=Decimal("60.00"),
+            is_featured=True,
+        )
+        sold_featured.mark_as_sold(price=Decimal("60.00"))
+
+        Product.objects.filter(pk=older_featured.pk).update(created_at=now - timedelta(days=5))
+        Product.objects.filter(pk=newer_featured.pk).update(created_at=now - timedelta(days=2))
+        Product.objects.filter(pk=newest_regular.pk).update(created_at=now - timedelta(hours=1))
+        Product.objects.filter(pk=older_regular.pk).update(created_at=now - timedelta(days=3))
+        Product.objects.filter(pk=sold_featured.pk).update(created_at=now - timedelta(minutes=30))
+
+        expected_order = [
+            newer_featured.pk,
+            older_featured.pk,
+            newest_regular.pk,
+            older_regular.pk,
+            sold_featured.pk,
+        ]
+        for route_name in ("storefront:home", "storefront:catalog"):
+            resp = self.client.get(reverse(route_name))
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual([p.pk for p in resp.context["products"]], expected_order)

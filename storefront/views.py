@@ -290,14 +290,14 @@ def catalog_view(request, category_slug: str | None = None, resolved_category: C
         qs = qs.filter(build_search_query(search_query, scope="public"))
 
     if sort_by == "price_asc":
-        qs = qs.order_by("is_sold", "sale_price", "-created_at")
+        qs = qs.order_by("is_sold", "sale_price", "-created_at", "-id")
     elif sort_by == "price_desc":
-        qs = qs.order_by("is_sold", "-sale_price", "-created_at")
+        qs = qs.order_by("is_sold", "-sale_price", "-created_at", "-id")
     elif sort_by == "featured":
-        qs = qs.order_by("is_sold", "-is_featured", "-created_at")
+        qs = qs.order_by("is_sold", "-is_featured", "-created_at", "-id")
     else:
         sort_by = "newest"
-        qs = qs.order_by("is_sold", "-is_featured", "-created_at")
+        qs = qs.order_by("is_sold", "-is_featured", "-created_at", "-id")
 
     paginator = Paginator(qs, PUBLIC_PAGE_SIZE)
     page_number = request.GET.get("page")
@@ -451,7 +451,7 @@ def public_product_detail_view(request, slug: str, pk: int):
     if product.category_id:
         same_cat = list(
             related_qs.filter(category_id=product.category_id).order_by(
-                "is_sold", "-is_featured", "-created_at"
+                "is_sold", "-is_featured", "-created_at", "-id"
             )[:4]
         )
         if len(same_cat) < 4:
@@ -459,14 +459,14 @@ def public_product_detail_view(request, slug: str, pk: int):
             existing_ids = [p.pk for p in same_cat]
             others = list(
                 related_qs.exclude(pk__in=existing_ids).order_by(
-                    "is_sold", "-is_featured", "-created_at"
+                    "is_sold", "-is_featured", "-created_at", "-id"
                 )[:needed]
             )
             related_products = same_cat + others
         else:
             related_products = same_cat
     else:
-        related_products = list(related_qs.order_by("is_sold", "-is_featured", "-created_at")[:4])
+        related_products = list(related_qs.order_by("is_sold", "-is_featured", "-created_at", "-id")[:4])
 
     for rel in related_products:
         _sanitize_public_product(rel)

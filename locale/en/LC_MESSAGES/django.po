@@ -4112,3 +4112,7 @@ msgstr "Reserved (24h hold)"
 msgid "Sort"
 msgstr "Sort"
 
+msgid "Featured & newest"
+msgstr "Featured & newest"
+
+
