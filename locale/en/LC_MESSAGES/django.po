@@ -4118,5 +4118,24 @@ msgstr "Featured & newest"
 msgid "Show active only"
 msgstr "Show active only"
 
+msgid "1. Pickup in Alfafar"
+msgstr "1. Pickup in Alfafar"
+
+msgid "Hold 24h free via WhatsApp, test in store with power, and pay by Cash, Bizum, or Card."
+msgstr "Hold 24h free via WhatsApp, test in store with power, and pay by Cash, Bizum, or Card."
+
+msgid "2. Protected shipping"
+msgstr "2. Protected shipping"
+
+msgid "Available on items listed on Wallapop, Vinted, or Milanuncios with escrow protection and shock-proof packaging."
+msgstr "Available on items listed on Wallapop, Vinted, or Milanuncios with escrow protection and shock-proof packaging."
+
+msgid "3. Inspected & real photos"
+msgstr "3. Inspected & real photos"
+
+msgid "Every unit is checked in Alfafar. Need extra photos or video? Ask us directly on WhatsApp."
+msgstr "Every unit is checked in Alfafar. Need extra photos or video? Ask us directly on WhatsApp."
+
+
 
 

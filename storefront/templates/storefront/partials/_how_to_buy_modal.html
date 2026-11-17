@@ -1,21 +1,16 @@
 {% load i18n %}
-<!-- How to Buy / Shipping / Store Pickup Modal (Native <dialog closedby="any"> + JS light-dismiss fallback) -->
+<!-- How to Buy / Shipping / Store Pickup Quick Modal (Bounded, scroll-free summary) -->
 <dialog id="how-to-buy-dialog"
         closedby="any"
         aria-labelledby="how-to-buy-title"
-        class="m-auto w-[calc(100%-1.5rem)] sm:w-full max-w-2xl max-h-[calc(100dvh-1.5rem)] sm:max-h-[85dvh] bg-white rounded-2xl shadow-2xl p-0 text-[#111820] overflow-hidden border border-border-subtle">
-  <div class="flex flex-col max-h-[calc(100dvh-1.5rem)] sm:max-h-[85dvh] overflow-hidden">
+        class="m-auto w-[calc(100%-1.5rem)] sm:w-full max-w-2xl max-h-[calc(100dvh-1.5rem)] bg-white rounded-2xl shadow-2xl p-0 text-[#111820] overflow-hidden border border-border-subtle">
+  <div class="flex flex-col max-h-[calc(100dvh-1.5rem)] overflow-hidden">
 
     <!-- Modal Header -->
-    <div class="px-4 sm:px-6 py-4 bg-white flex items-start justify-between border-b border-border-subtle gap-3 shrink-0">
-      <div class="min-w-0">
-        <h2 id="how-to-buy-title" class="font-display text-lg sm:text-xl font-bold text-[#111820] leading-snug break-words">
-          {% trans "How to buy at Rápido Pack Alfafar?" %}
-        </h2>
-        <p class="text-[13px] text-on-surface-variant mt-0.5 leading-snug break-words">
-          {% trans "In-store pickup guide, 24h reservation & protected shipping across Spain" %}
-        </p>
-      </div>
+    <div class="px-4 sm:px-6 py-2.5 sm:py-3.5 bg-white flex items-center justify-between border-b border-border-subtle gap-3 shrink-0">
+      <h2 id="how-to-buy-title" class="font-display text-base sm:text-lg font-bold text-[#111820] leading-snug break-words min-w-0">
+        {% trans "How to buy at Rápido Pack Alfafar?" %}
+      </h2>
       <button type="button"
               onclick="document.getElementById('how-to-buy-dialog').close()"
               class="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-surface-alt hover:bg-surface-container text-[#111820] flex items-center justify-center transition-colors shrink-0"
@@ -24,98 +19,73 @@
       </button>
     </div>
 
-    <!-- Modal Body (Flat 1px divided sections, scrollable inside viewport box) -->
-    <div class="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 divide-y divide-border-subtle">
+    <!-- Modal Body (Compact 1px-divided highlights, fits without scrollbars on desktop & mobile) -->
+    <div class="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 divide-y divide-border-subtle">
 
-      <!-- Option A: Free In-Store Pickup in Alfafar -->
-      <div class="py-4 sm:py-5 space-y-2 min-w-0">
-        <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+      <!-- 1. Physical Store Pickup -->
+      <div class="py-2.5 sm:py-3.5 space-y-1 min-w-0">
+        <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
           <h3 class="font-display text-[15px] font-bold text-[#111820]">
-            {% trans "Option A: Free pickup at our physical store (Alfafar)" %}
+            {% trans "1. Pickup in Alfafar" %}
           </h3>
           <span class="text-[13px] font-semibold text-primary-hover shrink-0">
             {% trans "Free pickup" %}
           </span>
         </div>
-        <p class="text-sm text-on-surface-variant leading-relaxed">
-          {% trans "Location:" %} <strong>{{ storefront.address }}</strong> ({{ storefront.opening_hours }}).
+        <p class="text-[13px] sm:text-sm text-on-surface-variant leading-snug sm:leading-relaxed">
+          {% trans "Hold 24h free via WhatsApp, test in store with power, and pay by Cash, Bizum, or Card." %}
         </p>
-        <ul class="text-[13px] sm:text-sm text-on-surface-variant space-y-1.5 list-disc list-outside pl-4 leading-relaxed">
-          <li>
-            <strong>{% trans "24h no-commitment hold:" %}</strong>
-            {% trans "Contact us via WhatsApp quoting the item reference (e.g. Ref. #1042) and we will hold it for 24 hours without upfront payment." %}
-          </li>
-          <li>
-            <strong>{% trans "Inspect in person:" %}</strong>
-            {% trans "Visit our store in Alfafar, inspect the item closely, and test it on our benches before deciding." %}
-          </li>
-          <li>
-            <strong>{% trans "Accepted in-store payment methods:" %}</strong>
-            {% trans "Cash, Bizum, or Debit/Credit Card at the counter." %}
-          </li>
-        </ul>
+        <p class="text-[13px] font-medium text-[#111820] tabular-nums leading-snug">
+          {{ storefront.address }} · {{ storefront.opening_hours }}
+        </p>
       </div>
 
-      <!-- Option B: Protected Shipping via Wallapop / Vinted / Milanuncios -->
-      <div class="py-4 sm:py-5 space-y-2 min-w-0">
-        <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+      <!-- 2. Protected Shipping -->
+      <div class="py-2.5 sm:py-3.5 space-y-1 min-w-0">
+        <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
           <h3 class="font-display text-[15px] font-bold text-[#111820]">
-            {% trans "Option B: Protected shipping across Spain" %}
+            {% trans "2. Protected shipping" %}
           </h3>
           <span class="text-[13px] font-semibold text-outline shrink-0">
             {% trans "Buyer protection" %}
           </span>
         </div>
-        <p class="text-sm text-on-surface-variant leading-relaxed">
-          {% trans "If you live outside Valencia or prefer home delivery:" %}
+        <p class="text-[13px] sm:text-sm text-on-surface-variant leading-snug sm:leading-relaxed">
+          {% trans "Available on items listed on Wallapop, Vinted, or Milanuncios with escrow protection and shock-proof packaging." %}
         </p>
-        <ul class="text-[13px] sm:text-sm text-on-surface-variant space-y-1.5 list-disc list-outside pl-4 leading-relaxed">
-          <li>
-            {% trans "We ship via our official listings on Wallapop Envíos, Vinted, and Milanuncios, or direct shipment curated from our logistics center." %}
-          </li>
-          <li>
-            {% trans "Your payment stays protected in escrow until you receive and verify the package." %}
-          </li>
-          <li>
-            {% trans "Professional shock-resistant packaging prepared directly by Rápido Pack." %}
-          </li>
-        </ul>
       </div>
 
-      <!-- Option C: Verified Inspection & Support -->
-      <div class="py-4 sm:py-5 space-y-1.5 min-w-0">
-        <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+      <!-- 3. Verified & Real Photos -->
+      <div class="py-2.5 sm:py-3.5 space-y-1 min-w-0">
+        <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
           <h3 class="font-display text-[15px] font-bold text-[#111820]">
-            {% trans "Option C: Verified condition & real photos" %}
+            {% trans "3. Inspected & real photos" %}
           </h3>
           <span class="text-[13px] font-semibold text-primary-hover shrink-0">
             {% trans "100% Real Photos" %}
           </span>
         </div>
-        <p class="text-[13px] sm:text-sm text-on-surface-variant leading-relaxed">
-          {% trans "Every item is photographed in our Alfafar staging studio and inspected before listing. Need an extra photo or video? Message us on WhatsApp and we will send it from the shop floor." %}
+        <p class="text-[13px] sm:text-sm text-on-surface-variant leading-snug sm:leading-relaxed">
+          {% trans "Every unit is checked in Alfafar. Need extra photos or video? Ask us directly on WhatsApp." %}
         </p>
       </div>
     </div>
 
     <!-- Modal Footer -->
-    <div class="px-4 sm:px-6 py-3.5 bg-surface-alt border-t border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-      <div class="text-[13px] text-on-surface-variant text-center sm:text-left min-w-0">
-        <span>{% trans "Questions about an item or shipping? We reply fast during store hours." %}</span>
-        <a href="{% url 'storefront:how_to_buy' %}" class="text-primary-hover font-semibold hover:underline ml-1 whitespace-nowrap">
-          {% trans "Open full guide" %}
-        </a>
-      </div>
-      <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto shrink-0">
+    <div class="px-4 sm:px-6 py-2.5 sm:py-3.5 bg-surface-alt border-t border-border-subtle flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-2 sm:gap-3 shrink-0">
+      <a href="{% url 'storefront:how_to_buy' %}" class="text-[13px] text-primary-hover font-semibold hover:underline text-center sm:text-left whitespace-nowrap">
+        {% trans "Open full guide" %} →
+      </a>
+      <div class="flex flex-col-reverse sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto min-w-0">
         <button type="button"
                 onclick="document.getElementById('how-to-buy-dialog').close()"
-                class="px-4 py-2.5 min-h-[42px] rounded-xl bg-white border border-border-subtle text-[#111820] text-sm font-semibold hover:bg-surface-container transition-colors whitespace-nowrap">
+                class="px-4 py-2 min-h-[40px] rounded-xl bg-white border border-border-subtle text-[#111820] text-sm font-semibold hover:bg-surface-container transition-colors whitespace-nowrap">
           {% trans "Got it, back to store" %}
         </button>
         <a href="{{ storefront_whatsapp_url }}"
            target="_blank"
            rel="noopener noreferrer"
-           class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[42px] rounded-xl bg-[#25D366] text-slate-950 text-sm font-bold hover:bg-[#20ba5a] transition-colors whitespace-nowrap">
+           class="inline-flex items-center justify-center gap-1.5 px-4 py-2 min-h-[40px] rounded-xl bg-[#25D366] text-slate-950 text-sm font-bold hover:bg-[#20ba5a] transition-colors whitespace-nowrap">
           <span class="material-symbols-outlined text-[18px]" aria-hidden="true">chat</span>
           <span>{% trans "Ask on WhatsApp" %}</span>
         </a>
