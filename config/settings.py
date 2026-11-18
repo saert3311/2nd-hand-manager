@@ -120,11 +120,11 @@ LOCALE_PATHS = [
     BASE_DIR / 'locale',
 ]
 
-# Static files (CSS, JavaScript, Images)
+# Static files (CSS, JavaScript, Images) — AppDirectoriesFinder collects inventory/static & storefront/static
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATIC_ROOT.mkdir(parents=True, exist_ok=True)
-STATICFILES_DIRS = [BASE_DIR / 'inventory' / 'static']
+STATICFILES_DIRS = []
 
 # Media files (User uploads)
 MEDIA_URL = '/media/'

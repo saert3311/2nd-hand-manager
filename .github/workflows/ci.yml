@@ -197,6 +197,60 @@ jobs:
             exit 1
           fi
 
+          # 1c. Verify Storefront Logo WhiteNoise Asset, Clean Category Routes, Cookie Sync & Legal Redirects
+          STATUS_LOGO=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/static/storefront/img/logo-rapido-pack-valencia.png)
+          if [ "$STATUS_LOGO" -eq 200 ]; then
+            echo "PASS: Official logo static asset served via WhiteNoise (HTTP 200)."
+          else
+            echo "ERROR: Logo static asset returned HTTP $STATUS_LOGO instead of 200."
+            exit 1
+          fi
+
+          STATUS_CATEGORY=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/categoria/bicicletas/)
+          if [ "$STATUS_CATEGORY" -eq 200 ]; then
+            echo "PASS: Clean category route (/categoria/bicicletas/) responded with HTTP 200."
+          else
+            echo "ERROR: Clean category route (/categoria/bicicletas/) responded with HTTP $STATUS_CATEGORY instead of 200."
+            exit 1
+          fi
+
+          STATUS_LEGACY_CAT=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/tienda/categoria/bicicletas/)
+          if [ "$STATUS_LEGACY_CAT" -eq 301 ]; then
+            echo "PASS: Legacy category route (/tienda/categoria/bicicletas/) redirected cleanly (HTTP 301)."
+          else
+            echo "ERROR: Legacy category route returned HTTP $STATUS_LEGACY_CAT instead of 301."
+            exit 1
+          fi
+
+          echo "$RESPONSE_PUBLIC" | grep -q "cookie-banner-container" && \
+          echo "$RESPONSE_PUBLIC" | grep -q "footer-cookie-settings-btn" && \
+          echo "$RESPONSE_PUBLIC" | grep -q "GTM-PGBXBVXJ"
+          if [ $? -eq 0 ]; then
+            echo "PASS: Cookie Control UI and GTM Consent Mode v2 (GTM-PGBXBVXJ) verified in root HTML."
+          else
+            echo "ERROR: Cookie consent UI or GTM-PGBXBVXJ missing from root HTML."
+            exit 1
+          fi
+
+          RESPONSE_CONSENTED=$(curl -s -H "Cookie: rpv_cookie_consent=accepted" http://127.0.0.1:8000/)
+          echo "$RESPONSE_CONSENTED" | grep -q "'analytics_storage': 'granted'"
+          if [ $? -eq 0 ]; then
+            echo "PASS: Shared rpv_cookie_consent=accepted cookie synced SSR Consent Mode to granted."
+          else
+            echo "ERROR: SSR Consent Mode did not reflect rpv_cookie_consent=accepted."
+            exit 1
+          fi
+
+          for legal_path in /aviso-legal/ /privacidad/ /cookies/; do
+            STATUS_LEGAL=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8000${legal_path}")
+            if [ "$STATUS_LEGAL" -eq 302 ]; then
+              echo "PASS: Legal route ${legal_path} redirects cleanly to rapidopackvalencia.es (HTTP 302)."
+            else
+              echo "ERROR: Legal route ${legal_path} returned HTTP $STATUS_LEGAL instead of 302."
+              exit 1
+            fi
+          done
+
           # 2. Verify Internal Staff Portal & Staging Hub
           RESPONSE_STAFF=$(curl -s -L http://127.0.0.1:8000/panel/)
           echo "$RESPONSE_STAFF" | grep -i "2ndHand" > /dev/null

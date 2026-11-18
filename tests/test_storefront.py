@@ -271,8 +271,6 @@ class StorefrontMarketplaceTests(TestCase):
         self.assertNotIn('href="/tienda/categoria/', html)
         self.assertIn('"@type": "LocalBusiness"', html)
         self.assertIn("-50%", html)
-        self.assertIn("https://es.wallapop.com", html)
-        self.assertIn("https://www.vinted.es", html)
 
         # Verify button-free shelf cards: zero per-product WhatsApp buttons on the catalog grid
         for prod in available_products:

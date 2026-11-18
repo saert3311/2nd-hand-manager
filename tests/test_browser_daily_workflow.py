@@ -479,7 +479,8 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         page_text_es = page.content()
         self.assertEqual(page.locator("html").get_attribute("lang"), "es")
         self.assertIn("Estantería Outlet y Segunda Mano", page_text_es)
-        self.assertIn("Otras tiendas y envío protegido", page_text_es)
+        self.assertIn("Control de Cookies", page_text_es)
+        self.assertIn("Cómo comprar", page_text_es)
         page.screenshot(path=str(self.artifacts_dir / "daily_bilingual_01_es.png"))
 
         # Switch to English
@@ -492,7 +493,8 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         page_text_en = page.content()
         self.assertEqual(page.locator("html").get_attribute("lang"), "en")
         self.assertIn("Outlet &amp; Second-Hand Shelf", page_text_en)
-        self.assertIn("Other stores &amp; protected shipping", page_text_en)
+        self.assertIn("Cookie Control", page_text_en)
+        self.assertIn("How to buy", page_text_en)
         self.assertNotIn("Estantería Outlet y Segunda Mano", page_text_en)
         page.screenshot(path=str(self.artifacts_dir / "daily_bilingual_02_en.png"))
 

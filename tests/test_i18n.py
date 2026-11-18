@@ -191,7 +191,7 @@ class InternationalizationTests(TestCase):
         content_es = response.content.decode("utf-8")
         self.assertIn("Estantería Outlet y Segunda Mano", content_es)
         self.assertIn("artículos disponibles", content_es)
-        self.assertIn("Otras tiendas y envío protegido", content_es)
+        self.assertIn("Cómo comprar", content_es)
         self.assertIn("Paquetería", content_es)
         self.assertIn("Tienda", content_es)
 
@@ -202,7 +202,7 @@ class InternationalizationTests(TestCase):
         content_en = response.content.decode("utf-8")
         self.assertIn("Outlet & Second-Hand Shelf", content_en)
         self.assertIn("items available", content_en)
-        self.assertIn("Other stores & protected shipping", content_en)
+        self.assertIn("How to buy", content_en)
         self.assertIn("Parcel Hub", content_en)
         self.assertIn("Store Shelf", content_en)
         # Ensure Spanish raw source is not displayed in English mode
