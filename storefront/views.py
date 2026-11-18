@@ -1,4 +1,5 @@
 import json
+import re
 from decimal import Decimal, InvalidOperation
 from urllib.parse import quote
 from xml.sax.saxutils import escape as xml_escape
@@ -604,6 +605,17 @@ def how_to_buy_view(request):
     )
 
 
+_BOT_USER_AGENT_RE = re.compile(r"(bot|spider|crawler|headless)", re.IGNORECASE)
+
+
+def _should_track_outbound_click(request) -> bool:
+    """Count outbound clicks only for human GET requests, ignoring crawlers and HEAD probes."""
+    if request.method != "GET":
+        return False
+    user_agent = (request.META.get("HTTP_USER_AGENT") or "").strip()
+    return not _BOT_USER_AGENT_RE.search(user_agent)
+
+
 def go_store_whatsapp_view(request):
     """
     General store WhatsApp redirector (/go/whatsapp/) used by landing page and header CTAs.
@@ -624,7 +636,8 @@ def go_whatsapp_view(request, pk: int):
     product = get_object_or_404(_get_public_queryset(), pk=pk)
     _sanitize_public_product(product)
 
-    Product.objects.filter(pk=product.pk).update(whatsapp_clicks=F("whatsapp_clicks") + 1)
+    if _should_track_outbound_click(request):
+        Product.objects.filter(pk=product.pk).update(whatsapp_clicks=F("whatsapp_clicks") + 1)
     store_config = get_request_storefront_config(request)
     target_url = _build_whatsapp_inquiry_url(request, product, store_config)
     return HttpResponseRedirect(target_url)
@@ -643,7 +656,8 @@ def go_marketplace_link_view(request, link_pk: int):
     if not Product.objects.public_visible().filter(pk=link.product_id).exists():
         raise Http404("Product is not publicly visible.")
 
-    ProductListingLink.objects.filter(pk=link.pk).update(clicks_count=F("clicks_count") + 1)
+    if _should_track_outbound_click(request):
+        ProductListingLink.objects.filter(pk=link.pk).update(clicks_count=F("clicks_count") + 1)
     return HttpResponseRedirect(link.url)
 
 

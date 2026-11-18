@@ -3,7 +3,9 @@ Django settings for config project.
 """
 
 import os
+import secrets
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 
 from django.utils.translation import gettext_lazy as _
@@ -15,8 +17,60 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Load environment variables from .env
 load_dotenv(BASE_DIR / '.env')
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-fallback-key-789234123')
+
+def resolve_security_settings(
+    debug: bool,
+    is_testing: bool,
+    env: Mapping[str, str] | None = None,
+) -> dict[str, object]:
+    """
+    Resolve secret key and transport/cookie security defaults.
+    Enforces fail-closed production defaults outside DEBUG and test runs.
+    """
+    source = os.environ if env is None else env
+    raw_secret = (source.get('SECRET_KEY') or '').strip()
+    is_prod_runtime = not debug and not is_testing
+
+    if is_prod_runtime:
+        if not raw_secret or raw_secret.startswith('django-insecure-'):
+            secret_key = secrets.token_urlsafe(50)
+        else:
+            secret_key = raw_secret
+        try:
+            hsts_seconds = int(source.get('SECURE_HSTS_SECONDS', '31536000') or '31536000')
+        except (TypeError, ValueError):
+            hsts_seconds = 31536000
+        return {
+            'SECRET_KEY': secret_key,
+            'SESSION_COOKIE_SECURE': source.get('SESSION_COOKIE_SECURE', 'True').lower() in ('true', '1', 'yes'),
+            'CSRF_COOKIE_SECURE': source.get('CSRF_COOKIE_SECURE', 'True').lower() in ('true', '1', 'yes'),
+            'SECURE_HSTS_SECONDS': hsts_seconds,
+            'SECURE_HSTS_INCLUDE_SUBDOMAINS': (
+                source.get('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'True').lower() in ('true', '1', 'yes')
+            ),
+            'SECURE_HSTS_PRELOAD': source.get('SECURE_HSTS_PRELOAD', 'True').lower() in ('true', '1', 'yes'),
+            'SECURE_SSL_REDIRECT': source.get('SECURE_SSL_REDIRECT', 'False').lower() in ('true', '1', 'yes'),
+            'SECURE_REFERRER_POLICY': 'strict-origin-when-cross-origin',
+            'SECURE_CROSS_ORIGIN_OPENER_POLICY': 'same-origin',
+        }
+
+    return {
+        'SECRET_KEY': raw_secret or 'django-insecure-dev-fallback-key-789234123',
+        'SESSION_COOKIE_SECURE': False,
+        'CSRF_COOKIE_SECURE': False,
+        'SECURE_HSTS_SECONDS': 0,
+        'SECURE_HSTS_INCLUDE_SUBDOMAINS': False,
+        'SECURE_HSTS_PRELOAD': False,
+        'SECURE_SSL_REDIRECT': False,
+        'SECURE_REFERRER_POLICY': 'strict-origin-when-cross-origin',
+        'SECURE_CROSS_ORIGIN_OPENER_POLICY': 'same-origin',
+    }
+
+
+IS_TESTING = 'test' in sys.argv or os.getenv('TESTING') == 'True'
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't', 'yes')
+_SECURITY_DEFAULTS = resolve_security_settings(DEBUG, IS_TESTING, os.environ)
+SECRET_KEY = _SECURITY_DEFAULTS['SECRET_KEY']
 
 allowed_hosts_env = os.getenv('ALLOWED_HOSTS', '*')
 ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',') if h.strip()]
@@ -105,7 +159,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-IS_TESTING = 'test' in sys.argv or os.getenv('TESTING') == 'True'
 LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', 'en' if IS_TESTING else 'es')
 LANGUAGES = [
     ('es', _('Spanish')),
@@ -199,6 +252,20 @@ SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SECURE = _SECURITY_DEFAULTS['SESSION_COOKIE_SECURE']
+CSRF_COOKIE_SECURE = _SECURITY_DEFAULTS['CSRF_COOKIE_SECURE']
+SECURE_HSTS_SECONDS = _SECURITY_DEFAULTS['SECURE_HSTS_SECONDS']
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _SECURITY_DEFAULTS['SECURE_HSTS_INCLUDE_SUBDOMAINS']
+SECURE_HSTS_PRELOAD = _SECURITY_DEFAULTS['SECURE_HSTS_PRELOAD']
+SECURE_SSL_REDIRECT = _SECURITY_DEFAULTS['SECURE_SSL_REDIRECT']
+SECURE_REFERRER_POLICY = _SECURITY_DEFAULTS['SECURE_REFERRER_POLICY']
+SECURE_CROSS_ORIGIN_OPENER_POLICY = _SECURITY_DEFAULTS['SECURE_CROSS_ORIGIN_OPENER_POLICY']
+
+# Cache-backed Rate Limiting Defaults
+LOGIN_RATE_LIMIT_ATTEMPTS = int(os.getenv('LOGIN_RATE_LIMIT_ATTEMPTS', '10'))
+LOGIN_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv('LOGIN_RATE_LIMIT_WINDOW_SECONDS', '300'))
+AI_RATE_LIMIT_REQUESTS = int(os.getenv('AI_RATE_LIMIT_REQUESTS', '20'))
+AI_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv('AI_RATE_LIMIT_WINDOW_SECONDS', '60'))
 
 # Reverse Proxy / Cloudflare Tunnel Support
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

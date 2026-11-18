@@ -2,9 +2,11 @@ import io
 import json
 import zipfile
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.core.validators import URLValidator
@@ -73,6 +75,18 @@ from .services.trash_service import (
 )
 
 PAGE_SIZE = 20
+
+
+def _is_ai_rate_limited(user_id: int) -> bool:
+    """Enforce a per-user sliding rate limit on paid AI API endpoints."""
+    limit = getattr(settings, "AI_RATE_LIMIT_REQUESTS", 20)
+    window = getattr(settings, "AI_RATE_LIMIT_WINDOW_SECONDS", 60)
+    cache_key = f"ai_rate:{user_id}"
+    count = cache.get(cache_key, 0)
+    if count >= limit:
+        return True
+    cache.set(cache_key, count + 1, timeout=window)
+    return False
 
 
 class CustomLoginView(LoginView):
@@ -217,6 +231,12 @@ def intake_identify_view(request):
     if request.method != "POST":
         return JsonResponse({"success": False, "error": _("Method not allowed. Use POST.")}, status=405)
 
+    if _is_ai_rate_limited(request.user.pk):
+        return JsonResponse(
+            {"success": False, "error": _("Too many AI requests. Please wait a moment and try again.")},
+            status=429,
+        )
+
     files = request.FILES.getlist("images")
     if not files:
         return JsonResponse(
@@ -234,7 +254,7 @@ def intake_identify_view(request):
             status=400,
         )
 
-    raw_note = request.POST.get("raw_note", "").strip()
+    raw_note = request.POST.get("raw_note", "").strip()[:5000]
     language = get_language() or "es"
 
     images_bytes = [f.read() for f in files[:3]]
@@ -322,7 +342,11 @@ def dashboard_view(request):
         provider_filter,
     )
 
+    can_manage = is_manager(request.user)
     if status_filter == "erased":
+        if not can_manage:
+            messages.warning(request, _("This product has been moved to trash and is not accessible."))
+            return redirect("inventory:dashboard")
         products = products.filter(is_deleted=True)
     else:
         products = products.filter(is_deleted=False)
@@ -436,7 +460,6 @@ def dashboard_view(request):
     query_string = extra_params.urlencode()
 
     trash_metrics = get_trash_metrics() if status_filter == "erased" else None
-    can_manage = is_manager(request.user)
 
     search_other_tabs = []
     if search_query and paginator.count == 0:
@@ -728,6 +751,9 @@ def product_answer_clarification_view(request, pk, clarification_pk):
         return redirect("inventory:product_detail", pk=pk)
 
     product = get_object_or_404(Product, pk=pk)
+    if product.is_deleted and not is_manager(request.user):
+        messages.warning(request, _("This product has been moved to trash and is not accessible."))
+        return redirect("inventory:dashboard")
     clarification = get_object_or_404(ProductClarification, pk=clarification_pk, product=product)
 
     form = ProductClarificationAnswerForm(request.POST)
@@ -843,6 +869,9 @@ def product_download_zip_view(request, pk):
     Packages all product photos into an in-memory ZIP archive and streams it for download.
     """
     product = get_object_or_404(Product.objects.prefetch_related("images"), pk=pk)
+    if product.is_deleted and not is_manager(request.user):
+        messages.warning(request, _("This product has been moved to trash and is not accessible."))
+        return redirect("inventory:dashboard")
     images = product.images.all()
 
     if not images.exists():
@@ -965,6 +994,10 @@ def generate_ai_view(request, pk):
     Passes the active session language to ensure localized copy.
     """
     if request.method != "POST":
+        return redirect("inventory:product_detail", pk=pk)
+
+    if _is_ai_rate_limited(request.user.pk):
+        messages.error(request, _("Too many AI requests. Please wait a moment and try again."))
         return redirect("inventory:product_detail", pk=pk)
 
     product = get_object_or_404(Product.objects.prefetch_related("images"), pk=pk)

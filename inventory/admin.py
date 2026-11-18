@@ -141,13 +141,38 @@ class CustomUserAdmin(DefaultUserAdmin):
         return bool(request.user and request.user.is_active and is_manager(request.user))
 
     def has_change_permission(self, request, obj=None):
-        return bool(request.user and request.user.is_active and is_manager(request.user))
+        if not (request.user and request.user.is_active and is_manager(request.user)):
+            return False
+        if obj is not None and obj.is_superuser and not request.user.is_superuser:
+            return False
+        return True
 
     def has_add_permission(self, request):
         return bool(request.user and request.user.is_active and is_manager(request.user))
 
     def has_delete_permission(self, request, obj=None):
-        return bool(request.user and request.user.is_active and is_manager(request.user))
+        if not (request.user and request.user.is_active and is_manager(request.user)):
+            return False
+        if obj is not None and obj.is_superuser and not request.user.is_superuser:
+            return False
+        return True
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = list(super().get_readonly_fields(request, obj))
+        if not request.user.is_superuser:
+            for field_name in ("is_superuser", "user_permissions"):
+                if field_name not in readonly:
+                    readonly.append(field_name)
+        return tuple(readonly)
+
+    def save_model(self, request, obj, form, change):
+        if not request.user.is_superuser:
+            if change and obj.pk:
+                existing = User.objects.filter(pk=obj.pk).values("is_superuser").first()
+                obj.is_superuser = bool(existing and existing["is_superuser"])
+            else:
+                obj.is_superuser = False
+        super().save_model(request, obj, form, change)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -206,8 +231,9 @@ class CustomUserAdmin(DefaultUserAdmin):
     def make_assistant(self, request, queryset):
         asst_group, _created = Group.objects.get_or_create(name=ROLE_ASSISTANT)
         mgr_group, _created2 = Group.objects.get_or_create(name=ROLE_MANAGER)
+        target_qs = queryset if request.user.is_superuser else queryset.exclude(is_superuser=True)
         count = 0
-        for user in queryset:
+        for user in target_qs:
             user.groups.remove(mgr_group)
             user.groups.add(asst_group)
             if not user.is_superuser:
@@ -235,7 +261,10 @@ class CustomUserAdmin(DefaultUserAdmin):
 
     @admin.action(description=_("Deactivate selected users (Revoke access, preserve items)"))
     def deactivate_users(self, request, queryset):
-        updated = queryset.exclude(id=request.user.id).update(is_active=False)
+        target_qs = queryset.exclude(id=request.user.id)
+        if not request.user.is_superuser:
+            target_qs = target_qs.exclude(is_superuser=True)
+        updated = target_qs.update(is_active=False)
         self.message_user(
             request,
             _("Successfully deactivated %(count)d user(s). Access revoked while preserving product attributions.")

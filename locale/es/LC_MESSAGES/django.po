@@ -4647,6 +4647,12 @@ msgstr "%(category)s en Rápido Pack Valencia (Alfafar): artículos revisados de
 msgid "Catalog products"
 msgstr "Productos del catálogo"
 
+msgid "Too many failed login attempts. Please wait a few minutes and try again."
+msgstr "Demasiados intentos de inicio de sesión fallidos. Espera unos minutos e inténtalo de nuevo."
+
+msgid "Too many AI requests. Please wait a moment and try again."
+msgstr "Demasiadas solicitudes de IA. Espera un momento e inténtalo de nuevo."
+
 
 
 
