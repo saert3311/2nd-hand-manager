@@ -343,11 +343,11 @@
         <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-6 text-center sm:text-left">
           <span>© {% now "Y" %} Rápido Pack Valencia. {% trans "All rights reserved." %}</span>
           <div class="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
-            <a href="{% url 'storefront:legal_notice' %}" class="underline decoration-white/20 underline-offset-4 hover:text-white transition-colors">{% trans "Legal Notice" %}</a>
+            <a href="{{ astro_landing_url }}/aviso-legal" class="underline decoration-white/20 underline-offset-4 hover:text-white transition-colors">{% trans "Legal Notice" %}</a>
             <span class="text-white/25" aria-hidden="true">·</span>
-            <a href="{% url 'storefront:privacy' %}" class="underline decoration-white/20 underline-offset-4 hover:text-white transition-colors">{% trans "Privacy" %}</a>
+            <a href="{{ astro_landing_url }}/privacidad" class="underline decoration-white/20 underline-offset-4 hover:text-white transition-colors">{% trans "Privacy" %}</a>
             <span class="text-white/25" aria-hidden="true">·</span>
-            <a href="{% url 'storefront:cookies' %}" class="underline decoration-white/20 underline-offset-4 hover:text-white transition-colors">{% trans "Cookies" %}</a>
+            <a href="{{ astro_landing_url }}/cookies" class="underline decoration-white/20 underline-offset-4 hover:text-white transition-colors">{% trans "Cookies" %}</a>
             {% if not user.is_authenticated %}
             <span class="text-white/25" aria-hidden="true">·</span>
             <a href="{% url 'inventory:login' %}" class="underline decoration-white/20 underline-offset-4 hover:text-white transition-colors">{% trans "Staff Access" %}</a>
