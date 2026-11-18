@@ -7,7 +7,7 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils.translation import gettext as _
 
-from inventory.models import Category, MarketplaceSite, StorefrontConfiguration
+from inventory.models import StorefrontConfiguration
 from inventory.permissions import is_assistant, is_manager
 
 ASTRO_LANDING_URL = "https://rapidopackvalencia.es"
@@ -86,30 +86,29 @@ def _compute_live_store_status() -> tuple[bool, str]:
     return False, _("Closed now · Mon–Fri 9:30–20:00")
 
 
-def storefront_config(request):
-    """
-    Injects the StorefrontConfiguration singleton, active navigation categories,
-    active external marketplace storefronts, Astro landing base URL, live store
-    status, and staff role flags into public storefront templates.
-    """
+def get_request_storefront_config(request) -> StorefrontConfiguration:
+    """Return the StorefrontConfiguration singleton, cached once per HTTP request."""
+    cached = getattr(request, "_storefront_config_cache", None) if request is not None else None
+    if cached is not None:
+        return cached
     try:
         config = StorefrontConfiguration.get_solo()
     except Exception:
         config = StorefrontConfiguration()
+    if request is not None:
+        try:
+            request._storefront_config_cache = config
+        except Exception:
+            pass
+    return config
 
-    try:
-        categories = list(Category.objects.filter(is_active=True).order_by("order", "name"))
-    except Exception:
-        categories = []
 
-    try:
-        active_marketplace_sites = list(
-            MarketplaceSite.objects.filter(is_active=True)
-            .exclude(base_url="")
-            .order_by("order", "name")
-        )
-    except Exception:
-        active_marketplace_sites = []
+def storefront_config(request):
+    """
+    Injects the StorefrontConfiguration singleton, Astro landing base URL, canonical URL,
+    GTM & cookie consent flags, live store status, and staff role flags into public templates.
+    """
+    config = get_request_storefront_config(request)
 
     user = getattr(request, "user", None)
     authenticated = bool(user and user.is_authenticated)
@@ -150,10 +149,7 @@ def storefront_config(request):
         "store_phone_href": STORE_PHONE_HREF,
         "store_is_open": store_is_open,
         "store_live_status_label": store_live_status_label,
-        "active_marketplace_sites": active_marketplace_sites,
         "storefront_whatsapp_url": whatsapp_url,
-        "storefront_direct_wa_url": f"https://wa.me/{config.clean_whatsapp_number}",
-        "nav_categories": categories,
         "is_staff_member": staff_member,
         "is_manager_user": manager_flag,
         "is_assistant_user": assistant_flag,

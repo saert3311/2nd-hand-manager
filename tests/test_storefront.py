@@ -87,7 +87,6 @@ class StorefrontMarketplaceTests(TestCase):
             url=f"https://es.wallapop.com/item/test-{product.pk}",
             is_active=True,
         )
-        product.refresh_Lifecycle_status = product.compute_lifecycle_status()
         product.status = ProductStatus.PUBLISHED
         product.save()
         return product
@@ -491,6 +490,16 @@ class StorefrontMarketplaceTests(TestCase):
         self.assertNotIn(
             reverse("storefront:category", kwargs={"category_slug": self.collectibles_cat.slug}), sitemap_xml
         )
+
+        # JSON-LD escaping prevents </script> break-out XSS in titles/descriptions
+        xss_product = self._create_published_product(
+            title="Monitor </script><script>alert(1)</script> & Co",
+            description="Descripción segura con </script> y & más detalles.",
+            category=self.tech_cat,
+        )
+        xss_html = self.client.get(xss_product.get_public_url()).content.decode("utf-8")
+        self.assertNotIn("</script><script>alert(1)</script>", xss_html)
+        self.assertIn(r"\u003c/script\u003e", xss_html)
 
         # Robots.txt
         robots_resp = self.client.get(reverse("storefront:robots"))

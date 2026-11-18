@@ -12,7 +12,6 @@ from django.utils.translation import gettext as _
 
 from inventory.models import (
     Category,
-    MarketplaceSite,
     Product,
     ProductCondition,
     ProductImage,
@@ -21,7 +20,7 @@ from inventory.models import (
 )
 from inventory.services.search_service import build_search_query
 
-from .context_processors import ASTRO_LANDING_URL
+from .context_processors import ASTRO_LANDING_URL, get_request_storefront_config
 
 PUBLIC_PAGE_SIZE = 20
 
@@ -57,12 +56,12 @@ CONDITION_PARAM_ALIASES = {
     "vintage": ProductCondition.VINTAGE,
 }
 
-CONDITION_TO_SPANISH_SLUG = {
-    ProductCondition.NEW_WITH_TAGS: "nuevo-con-etiquetas",
-    ProductCondition.VERY_GOOD: "muy-bueno",
-    ProductCondition.GOOD: "buen-estado",
-    ProductCondition.VINTAGE: "vintage",
-}
+_JSON_LD_ESCAPES = str.maketrans({"<": "\\u003c", ">": "\\u003e", "&": "\\u0026"})
+
+
+def _dumps_json_ld(data: dict) -> str:
+    """Serialize JSON-LD safely for HTML <script> blocks by escaping <, >, and &."""
+    return json.dumps(data, ensure_ascii=False).translate(_JSON_LD_ESCAPES)
 
 PRICE_PARAM_ALIASES = {
     "0-20": "under_20",
@@ -369,13 +368,8 @@ def catalog_view(request, category_slug: str | None = None, resolved_category: C
         if active_category and category_slug
         else reverse("storefront:home")
     )
-    canonical_path = (
-        reverse("storefront:category", kwargs={"category_slug": active_category.slug})
-        if active_category and category_slug
-        else reverse("storefront:home")
-    )
-    canonical_url = request.build_absolute_uri(canonical_path)
-    store_config = StorefrontConfiguration.get_solo()
+    canonical_url = request.build_absolute_uri(base_filter_url)
+    store_config = get_request_storefront_config(request)
     local_business_schema = _build_local_business_schema(store_config, canonical_url)
     has_query_filters = bool(
         condition_filter
@@ -398,22 +392,15 @@ def catalog_view(request, category_slug: str | None = None, resolved_category: C
                 (active_category.get_localized_name(), canonical_url),
             ]
         )
-        breadcrumb_json_ld = json.dumps(breadcrumb_schema, ensure_ascii=False)
+        breadcrumb_json_ld = _dumps_json_ld(breadcrumb_schema)
     else:
         meta_description = store_config.hero_subtitle
         breadcrumb_json_ld = ""
-
-    active_marketplace_sites = list(
-        MarketplaceSite.objects.filter(is_active=True)
-        .exclude(base_url="")
-        .order_by("order", "name")
-    )
 
     context = {
         "page_obj": page_obj,
         "products": page_obj.object_list,
         "paginator": paginator,
-        "total_results": paginator.count,
         "total_count": paginator.count,
         "elided_page_range": elided_page_range,
         "query_string": query_string,
@@ -421,25 +408,17 @@ def catalog_view(request, category_slug: str | None = None, resolved_category: C
         "hidden_categories_count": hidden_categories_count,
         "active_category": category_slug_clean,
         "active_category_obj": active_category,
-        "category_filter": category_slug_clean,
         "base_filter_url": base_filter_url,
         "canonical_url": canonical_url,
         "meta_description": meta_description,
         "should_noindex": should_noindex,
         "breadcrumb_json_ld": breadcrumb_json_ld,
-        "local_business_json_ld": json.dumps(local_business_schema, ensure_ascii=False),
-        "active_marketplace_sites": active_marketplace_sites,
+        "local_business_json_ld": _dumps_json_ld(local_business_schema),
         "active_condition": condition_filter,
-        "active_estado": CONDITION_TO_SPANISH_SLUG.get(condition_filter, ""),
-        "condition_filter": condition_filter,
         "condition_choices": ProductCondition.choices,
         "active_price": price_range,
-        "price_filter": price_range,
-        "min_price": min_price_raw,
-        "max_price": max_price_raw,
         "search_query": search_query,
         "active_sort": sort_by,
-        "sort_by": sort_by,
         "has_active_filters": bool(
             category_slug_clean or condition_filter or price_range or min_price_raw or max_price_raw or search_query
         ),
@@ -500,7 +479,7 @@ def public_product_detail_view(request, slug: str, pk: int):
     Product.objects.filter(pk=product.pk).update(views_count=F("views_count") + 1)
     product.views_count = (product.views_count or 0) + 1
 
-    store_config = StorefrontConfiguration.get_solo()
+    store_config = get_request_storefront_config(request)
     canonical_url = request.build_absolute_uri(product.get_public_url())
 
     images = list(product.images.all())
@@ -599,13 +578,11 @@ def public_product_detail_view(request, slug: str, pk: int):
         "images": images,
         "primary_image": primary_image,
         "primary_image_url": primary_image_abs_url,
-        "primary_image_abs_url": primary_image_abs_url,
         "active_links": active_links,
         "related_products": related_products,
         "canonical_url": canonical_url,
-        "whatsapp_direct_url": _build_whatsapp_inquiry_url(request, product, store_config),
-        "breadcrumb_json_ld": json.dumps(_build_breadcrumb_schema(breadcrumb_items), ensure_ascii=False),
-        "schema_json_ld": json.dumps(schema_data, ensure_ascii=False),
+        "breadcrumb_json_ld": _dumps_json_ld(_build_breadcrumb_schema(breadcrumb_items)),
+        "schema_json_ld": _dumps_json_ld(schema_data),
         "description_lines": description_lines,
         "savings_pct": product.savings_pct,
     }
@@ -631,7 +608,7 @@ def go_store_whatsapp_view(request):
     """
     General store WhatsApp redirector (/go/whatsapp/) used by landing page and header CTAs.
     """
-    store_config = StorefrontConfiguration.get_solo()
+    store_config = get_request_storefront_config(request)
     text = _(
         "Hello %(store)s, I am contacting you from your website to inquire about parcel services or items in your Alfafar store."
     ) % {"store": store_config.store_name}
@@ -648,7 +625,7 @@ def go_whatsapp_view(request, pk: int):
     _sanitize_public_product(product)
 
     Product.objects.filter(pk=product.pk).update(whatsapp_clicks=F("whatsapp_clicks") + 1)
-    store_config = StorefrontConfiguration.get_solo()
+    store_config = get_request_storefront_config(request)
     target_url = _build_whatsapp_inquiry_url(request, product, store_config)
     return HttpResponseRedirect(target_url)
 
