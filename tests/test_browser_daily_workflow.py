@@ -318,12 +318,14 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         pallet_select = page.locator("#palletFilterForm select[name='pallet']")
         self.assertTrue(pallet_select.is_visible())
 
-        with page.expect_navigation():
+        with page.expect_navigation(wait_until="domcontentloaded"):
             pallet_select.select_option("none")
+        page.wait_for_selector("#palletFilterForm select[name='pallet']")
         self.assertFalse(page.locator('text="Chaqueta Barbour Beaufort Encerada"').is_visible())
 
-        with page.expect_navigation():
+        with page.expect_navigation(wait_until="domcontentloaded"):
             page.locator("#palletFilterForm select[name='pallet']").select_option(str(product.pallet.id))
+        page.wait_for_selector('text="Chaqueta Barbour Beaufort Encerada"')
         self.assertTrue(page.locator('text="Chaqueta Barbour Beaufort Encerada"').first.is_visible())
 
         # Product Detail View

@@ -197,12 +197,39 @@ jobs:
             exit 1
           fi
 
-          # 1c. Verify Storefront Logo WhiteNoise Asset, Clean Category Routes, Cookie Sync & Legal Redirects
-          STATUS_LOGO=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/static/storefront/img/logo-rapido-pack-valencia.png)
-          if [ "$STATUS_LOGO" -eq 200 ]; then
-            echo "PASS: Official logo static asset served via WhiteNoise (HTTP 200)."
+          # 1c. Verify Storefront Assets, Favicons, Navbar Parity, Security Headers, Routes & Legal Redirects
+          for static_asset in \
+            /static/storefront/img/logo-rapido-pack-valencia.png \
+            /static/storefront/img/favicon.ico \
+            /static/storefront/img/apple-touch-icon.png \
+            /static/storefront/css/storefront.css; do
+            STATUS_ASSET=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8000${static_asset}")
+            if [ "$STATUS_ASSET" -eq 200 ]; then
+              echo "PASS: WhiteNoise served ${static_asset} (HTTP 200)."
+            else
+              echo "ERROR: ${static_asset} returned HTTP $STATUS_ASSET instead of 200."
+              exit 1
+            fi
+          done
+
+          STATUS_FAVICON=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/favicon.ico)
+          if [ "$STATUS_FAVICON" -eq 301 ]; then
+            echo "PASS: Root /favicon.ico redirects cleanly (HTTP 301)."
           else
-            echo "ERROR: Logo static asset returned HTTP $STATUS_LOGO instead of 200."
+            echo "ERROR: Root /favicon.ico returned HTTP $STATUS_FAVICON instead of 301."
+            exit 1
+          fi
+
+          HEADERS_ROOT=$(curl -sI http://127.0.0.1:8000/)
+          echo "$HEADERS_ROOT" | grep -qi "^X-Frame-Options: DENY" && \
+          echo "$HEADERS_ROOT" | grep -qi "^X-Content-Type-Options: nosniff" && \
+          echo "$HEADERS_ROOT" | grep -qi "^Strict-Transport-Security:" && \
+          echo "$HEADERS_ROOT" | grep -qi "^Referrer-Policy:"
+          if [ $? -eq 0 ]; then
+            echo "PASS: Production security headers verified on Gunicorn root response."
+          else
+            echo "ERROR: Expected security headers missing on root response."
+            echo "$HEADERS_ROOT"
             exit 1
           fi
 
@@ -222,13 +249,25 @@ jobs:
             exit 1
           fi
 
+          for seo_route in /sitemap.xml /robots.txt; do
+            STATUS_SEO=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8000${seo_route}")
+            if [ "$STATUS_SEO" -eq 200 ]; then
+              echo "PASS: SEO route ${seo_route} responded with HTTP 200."
+            else
+              echo "ERROR: SEO route ${seo_route} returned HTTP $STATUS_SEO instead of 200."
+              exit 1
+            fi
+          done
+
+          echo "$RESPONSE_PUBLIC" | grep -q "https://rapidopackvalencia.es/outlet" && \
+          ! echo "$RESPONSE_PUBLIC" | grep -q "header-live-status" && \
           echo "$RESPONSE_PUBLIC" | grep -q "cookie-banner-container" && \
           echo "$RESPONSE_PUBLIC" | grep -q "footer-cookie-settings-btn" && \
           echo "$RESPONSE_PUBLIC" | grep -q "GTM-PGBXBVXJ"
           if [ $? -eq 0 ]; then
-            echo "PASS: Cookie Control UI and GTM Consent Mode v2 (GTM-PGBXBVXJ) verified in root HTML."
+            echo "PASS: Updated navbar (Outlet + Tienda without live-status), Cookie Control UI, and GTM-PGBXBVXJ verified in root HTML."
           else
-            echo "ERROR: Cookie consent UI or GTM-PGBXBVXJ missing from root HTML."
+            echo "ERROR: Expected navbar links, cookie consent UI, or GTM-PGBXBVXJ missing/unexpected in root HTML."
             exit 1
           fi
 
