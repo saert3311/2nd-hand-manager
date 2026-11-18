@@ -247,20 +247,35 @@ class StorefrontMarketplaceTests(TestCase):
         html = resp.content.decode("utf-8")
 
         # Verify integration links to external Astro landing page (rapidopackvalencia.es)
-        # and pixel-parity Astro top bar (logo, phone pill, live status, Outlet active pill, mobile drawer)
+        # and pixel-parity Astro top bar (logo, phone pill, Outlet -> Store/Tienda active pill, no live-status widget, mobile drawer)
         self.assertIn("https://rapidopackvalencia.es/", html)
         self.assertIn("https://rapidopackvalencia.es/paqueteria", html)
+        self.assertIn("https://rapidopackvalencia.es/outlet", html)
         self.assertIn("https://rapidopackvalencia.es/contacto", html)
         self.assertIn("https://rapidopackvalencia.es/aviso-legal", html)
         self.assertIn("https://rapidopackvalencia.es/privacidad", html)
         self.assertIn("https://rapidopackvalencia.es/cookies", html)
         self.assertIn("logo-rapido-pack-valencia.png", html)
         self.assertIn("640 39 74 34", html)
-        self.assertIn('id="header-live-status"', html)
+        self.assertNotIn('id="header-live-status"', html)
+        self.assertNotIn('id="header-mobile-live-status"', html)
         self.assertIn('id="mobileNavDrawer"', html)
-        self.assertIn(">Outlet<", html)
+        self.assertIn("Outlet", html)
+        self.assertIn("Store", html)
+        self.assertLess(html.index('href="https://rapidopackvalencia.es/outlet"'), html.index('aria-current="page"'))
         self.assertIn("Alfafar · Valencia", html)
         self.assertIn('underline decoration-white/20 underline-offset-4', html)
+
+        # Verify Spanish navbar renders "Tienda" to the right of "Outlet"
+        with self.subTest("spanish navbar label Tienda"):
+            html_es = self.client.get(reverse("storefront:home"), HTTP_ACCEPT_LANGUAGE="es").content.decode("utf-8")
+            nav_start = html_es.index('aria-label="Navegación principal"')
+            nav_es = html_es[nav_start:html_es.index("</nav>", nav_start)]
+            self.assertIn("Tienda", nav_es)
+            self.assertLess(
+                nav_es.index('href="https://rapidopackvalencia.es/outlet"'),
+                nav_es.index("Tienda"),
+            )
 
         # Verify Store Shelf structure, dropdown filters, category rail, LocalBusiness JSON-LD & external store links
         self.assertIn('id="priceDropdown"', html)

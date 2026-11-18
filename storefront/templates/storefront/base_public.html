@@ -189,8 +189,8 @@
   <header class="sticky top-0 left-0 right-0 w-full z-40 bg-white/95 backdrop-blur-md border-t-[3px] border-t-primary border-b border-border-subtle shadow-[0_10px_30px_-14px_rgba(17,24,32,0.12)]">
     <div class="h-28 sm:h-32 lg:h-36 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 lg:gap-6">
 
-      <!-- Left: Official Logo + XL Live Store Status Pill -->
-      <div class="flex items-center gap-5 min-w-0">
+      <!-- Left: Official Logo -->
+      <div class="flex items-center min-w-0">
         <a href="{{ astro_landing_url }}/"
            aria-label="{% trans 'Rápido Pack Valencia — Go to Home' %}"
            class="flex items-center gap-3 group focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary rounded-md py-1 shrink-0">
@@ -201,14 +201,10 @@
                fetchpriority="high"
                class="h-[96px] sm:h-[108px] lg:h-[120px] w-auto object-contain transition-transform duration-200 group-hover:scale-[1.02]">
         </a>
-        <div id="header-live-status" class="hidden xl:inline-flex items-center gap-2 pl-5 border-l border-border-subtle text-xs font-medium text-text-muted tabular-nums whitespace-nowrap">
-          <span data-status-dot class="w-2 h-2 rounded-full {% if store_is_open %}bg-primary ring-4 ring-primary/15{% else %}bg-outline/50{% endif %} shrink-0" aria-hidden="true"></span>
-          <span data-status-text>{{ store_live_status_label }}</span>
-        </div>
       </div>
 
-      <!-- Center: Desktop Navigation Links (Identical to rapidopackvalencia.es) -->
-      <nav aria-label="{% trans 'Main navigation' %}" class="hidden md:flex items-center gap-1.5 lg:gap-2.5 whitespace-nowrap">
+      <!-- Center: Desktop Navigation Links (Aligned with rapidopackvalencia.es + Tienda Subdomain) -->
+      <nav aria-label="{% trans 'Main navigation' %}" class="hidden lg:flex items-center gap-1.5 lg:gap-2.5 whitespace-nowrap">
         <a href="{{ astro_landing_url }}/"
            class="px-3 lg:px-4 py-2.5 rounded-xl font-label-button text-base lg:text-lg font-bold uppercase tracking-wide whitespace-nowrap transition-colors duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary text-surface-dark/85 hover:text-primary-hover hover:bg-surface-alt">
           {% trans "Home" %}
@@ -217,10 +213,14 @@
            class="px-3 lg:px-4 py-2.5 rounded-xl font-label-button text-base lg:text-lg font-bold uppercase tracking-wide whitespace-nowrap transition-colors duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary text-surface-dark/85 hover:text-primary-hover hover:bg-surface-alt">
           {% trans "Parcel Hub" %}
         </a>
+        <a href="{{ astro_landing_url }}/outlet"
+           class="px-3 lg:px-4 py-2.5 rounded-xl font-label-button text-base lg:text-lg font-bold uppercase tracking-wide whitespace-nowrap transition-colors duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary text-surface-dark/85 hover:text-primary-hover hover:bg-surface-alt">
+          Outlet
+        </a>
         <a href="{% url 'storefront:home' %}"
            aria-current="page"
            class="px-3 lg:px-4 py-2.5 rounded-xl font-label-button text-base lg:text-lg font-bold uppercase tracking-wide whitespace-nowrap transition-colors duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary bg-mint-wash text-primary-hover border border-primary/25 shadow-2xs">
-          Outlet
+          {% trans "Store" %}
         </a>
         <a href="{{ astro_landing_url }}/contacto"
            class="px-3 lg:px-4 py-2.5 rounded-xl font-label-button text-base lg:text-lg font-bold uppercase tracking-wide whitespace-nowrap transition-colors duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary text-surface-dark/85 hover:text-primary-hover hover:bg-surface-alt">
@@ -236,7 +236,7 @@
           <span>{{ store_phone_display }}</span>
         </a>
 
-        <details id="mobileNavDrawer" class="md:hidden relative group">
+        <details id="mobileNavDrawer" class="lg:hidden relative group">
           <summary aria-label="{% trans 'Open navigation menu' %}"
                    class="list-none flex items-center justify-center w-12 h-12 rounded-xl border border-border-subtle bg-surface-alt text-surface-dark hover:bg-mint-wash hover:border-primary/30 cursor-pointer transition-colors duration-150 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
             <span class="material-symbols-outlined text-[26px] group-open:!hidden" aria-hidden="true">menu</span>
@@ -245,13 +245,6 @@
 
           <nav aria-label="{% trans 'Mobile navigation' %}"
                class="absolute right-0 mt-3 w-[calc(100vw-2rem)] sm:w-80 max-w-xs bg-white rounded-2xl border border-border-subtle shadow-2xl p-3 flex flex-col gap-1.5 z-50">
-            <div id="header-mobile-live-status"
-                 class="px-4 py-3 rounded-xl bg-surface-alt/70 border border-border-subtle flex items-center gap-2 text-xs font-medium text-text-muted tabular-nums mb-1"
-                 aria-live="polite">
-              <span data-status-dot class="w-2 h-2 rounded-full {% if store_is_open %}bg-primary ring-4 ring-primary/15{% else %}bg-outline/50{% endif %} shrink-0" aria-hidden="true"></span>
-              <span data-status-text>{{ store_live_status_label }}</span>
-            </div>
-
             <a href="{{ astro_landing_url }}/"
                class="px-4 py-3.5 min-h-[48px] flex items-center justify-between rounded-xl font-label-button text-base font-bold uppercase tracking-wide transition-colors active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary text-surface-dark hover:bg-surface-alt">
               <span>{% trans "Home" %}</span>
@@ -260,10 +253,14 @@
                class="px-4 py-3.5 min-h-[48px] flex items-center justify-between rounded-xl font-label-button text-base font-bold uppercase tracking-wide transition-colors active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary text-surface-dark hover:bg-surface-alt">
               <span>{% trans "Parcel Hub" %}</span>
             </a>
+            <a href="{{ astro_landing_url }}/outlet"
+               class="px-4 py-3.5 min-h-[48px] flex items-center justify-between rounded-xl font-label-button text-base font-bold uppercase tracking-wide transition-colors active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary text-surface-dark hover:bg-surface-alt">
+              <span>Outlet</span>
+            </a>
             <a href="{% url 'storefront:home' %}"
                aria-current="page"
                class="px-4 py-3.5 min-h-[48px] flex items-center justify-between rounded-xl font-label-button text-base font-bold uppercase tracking-wide transition-colors active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary bg-mint-wash text-primary-hover">
-              <span>Outlet</span>
+              <span>{% trans "Store" %}</span>
               <span class="w-2 h-2 rounded-full bg-primary" aria-hidden="true"></span>
             </a>
             <a href="{{ astro_landing_url }}/contacto"
@@ -351,7 +348,8 @@
           <ul class="space-y-2 text-sm text-slate-300">
             <li><a href="{{ astro_landing_url }}/" class="hover:text-white transition-colors">{% trans "Home" %}</a></li>
             <li><a href="{{ astro_landing_url }}/paqueteria" class="hover:text-white transition-colors">{% trans "Parcel Hub" %}</a></li>
-            <li><a href="{% url 'storefront:home' %}" class="hover:text-white transition-colors">Outlet</a></li>
+            <li><a href="{{ astro_landing_url }}/outlet" class="hover:text-white transition-colors">Outlet</a></li>
+            <li><a href="{% url 'storefront:home' %}" class="hover:text-white transition-colors">{% trans "Store" %}</a></li>
             <li><a href="{{ astro_landing_url }}/contacto" class="hover:text-white transition-colors">{% trans "Contact" %}</a></li>
           </ul>
         </div>
