@@ -220,7 +220,7 @@ jobs:
             exit 1
           fi
 
-          HEADERS_ROOT=$(curl -sI http://127.0.0.1:8000/)
+          HEADERS_ROOT=$(curl -sI -H "X-Forwarded-Proto: https" http://127.0.0.1:8000/)
           echo "$HEADERS_ROOT" | grep -qi "^X-Frame-Options: DENY" && \
           echo "$HEADERS_ROOT" | grep -qi "^X-Content-Type-Options: nosniff" && \
           echo "$HEADERS_ROOT" | grep -qi "^Strict-Transport-Security:" && \

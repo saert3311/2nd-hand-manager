@@ -320,6 +320,19 @@ class AccessControlAndSecurityHeadersTests(TestCase):
         # X-Content-Type-Options MIME sniffing protection
         self.assertEqual(response.headers.get("X-Content-Type-Options"), "nosniff")
 
+    def test_forwarded_https_proxy_request_emits_hsts_and_security_headers(self):
+        resolved = resolve_security_settings(debug=False, is_testing=False, env={})
+        with override_settings(**{k: v for k, v in resolved.items() if k != "SECRET_KEY"}):
+            plain_resp = self.client.get(reverse("storefront:home"))
+            self.assertNotIn("Strict-Transport-Security", plain_resp.headers)
+
+            https_resp = self.client.get(reverse("storefront:home"), HTTP_X_FORWARDED_PROTO="https")
+            self.assertEqual(https_resp.status_code, 200)
+            self.assertEqual(https_resp.headers.get("X-Frame-Options"), "DENY")
+            self.assertEqual(https_resp.headers.get("X-Content-Type-Options"), "nosniff")
+            self.assertEqual(https_resp.headers.get("Referrer-Policy"), "strict-origin-when-cross-origin")
+            self.assertIn("max-age=31536000", https_resp.headers.get("Strict-Transport-Security", ""))
+
 
 class ProductionHardeningSettingsTests(TestCase):
     """Tests for fail-closed production secret key and TLS/cookie settings (H-1)."""
