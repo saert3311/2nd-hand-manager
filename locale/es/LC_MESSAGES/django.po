@@ -4590,6 +4590,13 @@ msgstr "3. Revisado y fotos reales"
 msgid "Every unit is checked in Alfafar. Need extra photos or video? Ask us directly on WhatsApp."
 msgstr "Cada unidad se revisa en Alfafar. ¿Quieres más fotos o vídeo? Pídenoslo por WhatsApp."
 
+msgid "Privacy"
+msgstr "Privacidad"
+
+msgid "Cookies"
+msgstr "Cookies"
+
+
 
 
 

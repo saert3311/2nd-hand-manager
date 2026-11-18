@@ -257,6 +257,8 @@ class StorefrontMarketplaceTests(TestCase):
         self.assertIn('id="header-live-status"', html)
         self.assertIn('id="mobileNavDrawer"', html)
         self.assertIn(">Outlet<", html)
+        self.assertIn("Alfafar · Valencia", html)
+        self.assertIn('underline decoration-white/20 underline-offset-4', html)
 
         # Verify Store Shelf structure, dropdown filters, category rail, LocalBusiness JSON-LD & external store links
         self.assertIn('id="priceDropdown"', html)

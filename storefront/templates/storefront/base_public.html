@@ -256,37 +256,46 @@
   </main>
 
   <!-- Dark Slate Footer Aligned with rapidopackvalencia.es (#111820) -->
-  <footer class="w-full bg-[#111820] text-white border-t border-white/10 pt-12 pb-8 mt-14">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 pb-10">
+  <footer class="w-full bg-surface-dark text-white border-t border-white/10 mt-14">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-16">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-10 items-start">
 
-        <!-- Column 1: Brand Identity + Bilingual Switcher -->
-        <div class="lg:col-span-4 flex flex-col gap-3">
-          <a href="{{ astro_landing_url }}/" class="inline-flex items-center self-start bg-white rounded-xl p-2 shadow-sm">
-            <img src="{% static 'storefront/img/logo-rapido-pack-valencia.png' %}"
-                 alt="Rápido Pack Valencia"
-                 width="120"
-                 height="84"
-                 loading="lazy"
-                 class="h-12 w-auto object-contain">
-          </a>
+        <!-- Column 1: Brand Identity + Language Switcher -->
+        <div class="md:col-span-5 flex flex-col gap-4">
+          <div class="flex items-center gap-3">
+            <a href="{{ astro_landing_url }}/"
+               aria-label="{% trans 'Rápido Pack Valencia — Go to Home' %}"
+               class="inline-flex items-center bg-white px-3.5 py-2 rounded-xl border border-white/20 shadow-sm shrink-0">
+              <img src="{% static 'storefront/img/logo-rapido-pack-valencia.png' %}"
+                   alt="Rápido Pack Valencia"
+                   width="140"
+                   height="98"
+                   loading="lazy"
+                   class="h-14 sm:h-16 w-auto object-contain">
+            </a>
+            <div class="flex flex-col min-w-0">
+              <span class="font-display text-lg text-white font-bold tracking-tight">Rápido Pack Valencia</span>
+              <span class="text-xs font-semibold text-primary-fixed uppercase tracking-wider mt-0.5">Alfafar · Valencia</span>
+            </div>
+          </div>
+
           <p class="text-sm text-slate-300 leading-relaxed max-w-sm">
             {% trans "Multi-carrier parcel hub and curated second-hand & outlet shelf. Inspect items in person on our testing benches or hold them 24h via WhatsApp." %}
           </p>
 
           <!-- Language Switcher (ES | EN) -->
-          <form action="{% url 'set_language' %}" method="post" class="pt-1 inline-flex items-center self-start">
+          <form action="{% url 'set_language' %}" method="post" class="inline-flex items-center self-start">
             {% csrf_token %}
             <input name="next" type="hidden" value="{{ request.get_full_path }}">
             {% get_current_language as CURRENT_LANG %}
             <div class="inline-flex items-center bg-white/5 p-1 rounded-xl text-xs text-slate-300 gap-1 border border-white/10">
               <button type="submit" name="language" value="es"
-                      class="px-2.5 py-1 min-h-[34px] min-w-[34px] inline-flex items-center justify-center rounded-lg font-semibold transition-colors {% if CURRENT_LANG == 'es' %}bg-primary text-white{% else %}text-slate-300 hover:text-white{% endif %}"
+                      class="px-2.5 py-1 min-h-[34px] min-w-[34px] inline-flex items-center justify-center rounded-lg font-bold transition-colors {% if CURRENT_LANG == 'es' %}bg-primary-fixed text-slate-950{% else %}text-slate-300 hover:text-white{% endif %}"
                       title="Español">
                 ES
               </button>
               <button type="submit" name="language" value="en"
-                      class="px-2.5 py-1 min-h-[34px] min-w-[34px] inline-flex items-center justify-center rounded-lg font-semibold transition-colors {% if CURRENT_LANG == 'en' %}bg-primary text-white{% else %}text-slate-300 hover:text-white{% endif %}"
+                      class="px-2.5 py-1 min-h-[34px] min-w-[34px] inline-flex items-center justify-center rounded-lg font-bold transition-colors {% if CURRENT_LANG == 'en' %}bg-primary-fixed text-slate-950{% else %}text-slate-300 hover:text-white{% endif %}"
                       title="English">
                 EN
               </button>
@@ -295,69 +304,59 @@
         </div>
 
         <!-- Column 2: Navigation -->
-        <div class="lg:col-span-3 flex flex-col gap-3">
-          <span class="text-sm font-semibold text-primary-fixed">{% trans "Navigation" %}</span>
-          <ul class="flex flex-col gap-2 text-sm text-slate-300">
-            <li><a href="{{ astro_landing_url }}/" class="hover:text-white transition-colors">{% trans "Home" %} (rapidopackvalencia.es)</a></li>
+        <div class="md:col-span-3 flex flex-col gap-2">
+          <span class="text-xs uppercase tracking-wider text-primary-fixed mb-1 font-semibold">{% trans "Navigation" %}</span>
+          <ul class="space-y-2 text-sm text-slate-300">
+            <li><a href="{{ astro_landing_url }}/" class="hover:text-white transition-colors">{% trans "Home" %}</a></li>
             <li><a href="{{ astro_landing_url }}/paqueteria" class="hover:text-white transition-colors">{% trans "Parcel Hub" %}</a></li>
-            <li><a href="{% url 'storefront:home' %}" class="text-primary-fixed font-semibold hover:underline">Outlet ({% trans "Store Shelf" %})</a></li>
-            <li><a href="{% url 'storefront:how_to_buy' %}" class="hover:text-white transition-colors">{% trans "How to Buy & Reserve" %}</a></li>
+            <li><a href="{% url 'storefront:home' %}" class="hover:text-white transition-colors">Outlet</a></li>
             <li><a href="{{ astro_landing_url }}/contacto" class="hover:text-white transition-colors">{% trans "Contact" %}</a></li>
           </ul>
         </div>
 
-        <!-- Column 3: Physical Store & Hours -->
-        <div class="lg:col-span-3 flex flex-col gap-3">
-          <span class="text-sm font-semibold text-primary-fixed">{% trans "Alfafar Physical Store" %}</span>
-          <div class="flex flex-col gap-2.5 text-sm text-slate-300">
+        <!-- Column 3: Physical Store Contact & Hours -->
+        <div class="md:col-span-4 flex flex-col gap-2">
+          <span class="text-xs uppercase tracking-wider text-primary-fixed mb-1 font-semibold">Rápido Pack Valencia</span>
+          <address class="not-italic flex flex-col gap-2.5 text-sm text-white">
             <a href="{{ storefront.map_url }}"
                target="_blank"
                rel="noopener noreferrer"
-               class="flex items-start gap-2 hover:text-white transition-colors">
+               class="flex items-start gap-2.5 hover:text-primary-fixed transition-colors">
               <span class="material-symbols-outlined text-primary-fixed text-[18px] mt-0.5 shrink-0" aria-hidden="true">location_on</span>
               <span>{{ storefront.address }}</span>
             </a>
-            <div class="flex items-start gap-2">
-              <span class="material-symbols-outlined text-primary-fixed text-[18px] mt-0.5 shrink-0" aria-hidden="true">schedule</span>
-              <span class="text-sm tabular-nums leading-relaxed">{{ storefront.opening_hours }}</span>
+            <a href="{{ store_phone_href }}"
+               class="flex items-center gap-2.5 font-semibold tabular-nums hover:text-primary-fixed transition-colors">
+              <span class="material-symbols-outlined text-primary-fixed text-[18px] shrink-0" aria-hidden="true">call</span>
+              <span>{{ store_phone_display }}</span>
+            </a>
+            <div class="flex items-start gap-2.5 text-slate-300 text-xs tabular-nums">
+              <span class="material-symbols-outlined text-primary-fixed text-[18px] shrink-0" aria-hidden="true">schedule</span>
+              <span class="leading-relaxed">{{ storefront.opening_hours }}</span>
             </div>
-            <div class="pt-1 flex flex-wrap items-center gap-2">
-              <a href="{% url 'storefront:go_whatsapp' %}"
-                 target="_blank"
-                 rel="noopener noreferrer"
-                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-slate-950 text-xs font-bold transition-colors">
-                <span class="material-symbols-outlined text-[15px]" aria-hidden="true">chat</span>
-                <span>{% trans "WhatsApp Direct" %}</span>
-              </a>
-              <a href="{{ store_phone_href }}"
-                 class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 text-xs font-medium tabular-nums transition-colors">
-                <span class="material-symbols-outlined text-[15px]" aria-hidden="true">call</span>
-                <span>{{ store_phone_display }}</span>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Column 4: Legal & Staff -->
-        <div class="lg:col-span-2 flex flex-col gap-3">
-          <span class="text-sm font-semibold text-primary-fixed">{% trans "Legal" %}</span>
-          <ul class="flex flex-col gap-2 text-sm text-slate-300">
-            <li><a href="{% url 'storefront:legal_notice' %}" class="hover:text-white transition-colors">{% trans "Legal Notice" %}</a></li>
-            <li><a href="{% url 'storefront:privacy' %}" class="hover:text-white transition-colors">{% trans "Privacy Policy" %}</a></li>
-            <li><a href="{% url 'storefront:cookies' %}" class="hover:text-white transition-colors">{% trans "Cookies Policy" %}</a></li>
-            {% if not user.is_authenticated %}
-            <li><a href="{% url 'inventory:login' %}" class="hover:text-white transition-colors text-slate-400">{% trans "Staff Access" %}</a></li>
-            {% endif %}
-          </ul>
+          </address>
         </div>
       </div>
 
       <!-- Bottom Legal & Brand Bar -->
-      <div class="border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-slate-400">
-        <span>© {% now "Y" %} {{ storefront.store_name }} Valencia · {{ storefront.address }}. {% trans "All rights reserved." %}</span>
-        <span class="text-xs text-primary-fixed font-medium">
+      <div class="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-300 text-xs">
+        <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-6 text-center sm:text-left">
+          <span>© {% now "Y" %} Rápido Pack Valencia. {% trans "All rights reserved." %}</span>
+          <div class="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
+            <a href="{% url 'storefront:legal_notice' %}" class="underline decoration-white/20 underline-offset-4 hover:text-white transition-colors">{% trans "Legal Notice" %}</a>
+            <span class="text-white/25" aria-hidden="true">·</span>
+            <a href="{% url 'storefront:privacy' %}" class="underline decoration-white/20 underline-offset-4 hover:text-white transition-colors">{% trans "Privacy" %}</a>
+            <span class="text-white/25" aria-hidden="true">·</span>
+            <a href="{% url 'storefront:cookies' %}" class="underline decoration-white/20 underline-offset-4 hover:text-white transition-colors">{% trans "Cookies" %}</a>
+            {% if not user.is_authenticated %}
+            <span class="text-white/25" aria-hidden="true">·</span>
+            <a href="{% url 'inventory:login' %}" class="underline decoration-white/20 underline-offset-4 hover:text-white transition-colors">{% trans "Staff Access" %}</a>
+            {% endif %}
+          </div>
+        </div>
+        <p class="text-slate-300/80 text-center sm:text-right">
           {% trans "Physical Store & Online Shelf · Alfafar, Valencia" %}
-        </span>
+        </p>
       </div>
     </div>
   </footer>
