@@ -189,10 +189,9 @@ class InternationalizationTests(TestCase):
         response = self.client.get(reverse("storefront:home"))
         self.assertEqual(response.status_code, 200)
         content_es = response.content.decode("utf-8")
-        self.assertIn("Tu punto de confianza en Alfafar", content_es)
-        self.assertIn("Servicios de paquetería", content_es)
-        self.assertIn("Lo último en nuestra tienda", content_es)
-        self.assertIn("Visítanos en Alfafar", content_es)
+        self.assertIn("Estantería Outlet y Segunda Mano", content_es)
+        self.assertIn("artículos disponibles", content_es)
+        self.assertIn("Cómo comprar", content_es)
         self.assertIn("Paquetería", content_es)
         self.assertIn("Tienda", content_es)
 
@@ -201,13 +200,13 @@ class InternationalizationTests(TestCase):
         response = self.client.get(reverse("storefront:home"))
         self.assertEqual(response.status_code, 200)
         content_en = response.content.decode("utf-8")
-        self.assertIn("Your trusted local hub in Alfafar", content_en)
-        self.assertIn("Parcel Services", content_en)
-        self.assertIn("Latest arrivals in our store", content_en)
-        self.assertIn("Visit us in Alfafar", content_en)
-        self.assertIn("Store", content_en)
+        self.assertIn("Outlet & Second-Hand Shelf", content_en)
+        self.assertIn("items available", content_en)
+        self.assertIn("How to buy", content_en)
+        self.assertIn("Parcel Hub", content_en)
+        self.assertIn("Store Shelf", content_en)
         # Ensure Spanish raw source is not displayed in English mode
-        self.assertNotIn("Tu punto de confianza en Alfafar", content_en)
+        self.assertNotIn("Estantería Outlet y Segunda Mano", content_en)
 
     def test_storefront_how_to_buy_renders_bilingual_correctly(self):
         # 1. Spanish mode
@@ -229,26 +228,37 @@ class InternationalizationTests(TestCase):
         self.assertIn("Cash, Bizum, or Debit/Credit Card at the counter.", content_en)
         self.assertNotIn("¿Cómo comprar en Rápido Pack Alfafar?", content_en)
 
-    def test_storefront_legal_pages_render_bilingual_correctly(self):
-        pages = [
-            ("storefront:legal_notice", "Identificación de la Tienda", "Store Identification"),
-            ("storefront:privacy", "Protección de Datos (RGPD / LOPDGDD)", "Data Protection (GDPR / LOPDGDD)"),
-            ("storefront:cookies", "Solo Cookies Técnicas", "Technical Cookies Only"),
+    def test_storefront_legal_redirects_and_cookie_banner_bilingual(self):
+        redirects = [
+            ("storefront:legal_notice", "https://rapidopackvalencia.es/aviso-legal"),
+            ("storefront:privacy", "https://rapidopackvalencia.es/privacidad"),
+            ("storefront:cookies", "https://rapidopackvalencia.es/cookies"),
         ]
-        for url_name, expected_es, expected_en in pages:
-            # Spanish
-            self.client.cookies["django_language"] = "es"
-            resp_es = self.client.get(reverse(url_name))
-            self.assertEqual(resp_es.status_code, 200)
-            self.assertIn(expected_es, resp_es.content.decode("utf-8"))
+        for url_name, target_url in redirects:
+            resp = self.client.get(reverse(url_name), follow=False)
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(resp["Location"], target_url)
 
-            # English
-            self.client.cookies["django_language"] = "en"
-            resp_en = self.client.get(reverse(url_name))
-            self.assertEqual(resp_en.status_code, 200)
-            content_en = resp_en.content.decode("utf-8")
-            self.assertIn(expected_en, content_en)
-            self.assertNotIn(expected_es, content_en)
+        # Spanish cookie banner & footer trigger
+        self.client.cookies["django_language"] = "es"
+        resp_es = self.client.get(reverse("storefront:home"))
+        self.assertEqual(resp_es.status_code, 200)
+        html_es = resp_es.content.decode("utf-8")
+        self.assertIn("Configurar cookies", html_es)
+        self.assertIn("Control de Cookies", html_es)
+        self.assertIn("Aceptar todas", html_es)
+        self.assertIn("Guardar selección", html_es)
+
+        # English cookie banner & footer trigger
+        self.client.cookies["django_language"] = "en"
+        resp_en = self.client.get(reverse("storefront:home"))
+        self.assertEqual(resp_en.status_code, 200)
+        html_en = resp_en.content.decode("utf-8")
+        self.assertIn("Configure cookies", html_en)
+        self.assertIn("Cookie Control", html_en)
+        self.assertIn("Accept all", html_en)
+        self.assertIn("Save selection", html_en)
+        self.assertNotIn("Control de Cookies", html_en)
 
     def test_compile_locales_management_command(self):
         from io import StringIO

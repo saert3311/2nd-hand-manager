@@ -1,8 +1,10 @@
 import json
+import re
 from decimal import Decimal, InvalidOperation
 from urllib.parse import quote
 from xml.sax.saxutils import escape as xml_escape
 
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.paginator import Paginator
 from django.db.models import Count, F, Prefetch, Q
 from django.http import Http404, HttpResponse, HttpResponseRedirect
@@ -19,6 +21,8 @@ from inventory.models import (
     StorefrontConfiguration,
 )
 from inventory.services.search_service import build_search_query
+
+from .context_processors import ASTRO_LANDING_URL, get_request_storefront_config
 
 PUBLIC_PAGE_SIZE = 20
 
@@ -54,12 +58,12 @@ CONDITION_PARAM_ALIASES = {
     "vintage": ProductCondition.VINTAGE,
 }
 
-CONDITION_TO_SPANISH_SLUG = {
-    ProductCondition.NEW_WITH_TAGS: "nuevo-con-etiquetas",
-    ProductCondition.VERY_GOOD: "muy-bueno",
-    ProductCondition.GOOD: "buen-estado",
-    ProductCondition.VINTAGE: "vintage",
-}
+_JSON_LD_ESCAPES = str.maketrans({"<": "\\u003c", ">": "\\u003e", "&": "\\u0026"})
+
+
+def _dumps_json_ld(data: dict) -> str:
+    """Serialize JSON-LD safely for HTML <script> blocks by escaping <, >, and &."""
+    return json.dumps(data, ensure_ascii=False).translate(_JSON_LD_ESCAPES)
 
 PRICE_PARAM_ALIASES = {
     "0-20": "under_20",
@@ -85,11 +89,29 @@ SORT_PARAM_ALIASES = {
 }
 
 
+def _compute_savings_pct(product: Product) -> int | None:
+    """Computes whole-percentage discount vs. estimated retail price when meaningful (5%–95%)."""
+    if (
+        product.estimated_retail_price
+        and product.sale_price
+        and product.estimated_retail_price > product.sale_price
+    ):
+        try:
+            diff = product.estimated_retail_price - product.sale_price
+            pct = int(round((diff / product.estimated_retail_price) * 100))
+            if 5 <= pct <= 95:
+                return pct
+        except (ArithmeticError, ValueError, TypeError):
+            return None
+    return None
+
+
 def _sanitize_public_product(product: Product) -> Product:
     """
     Defense-in-depth firewall: ensures internal-only fields (raw_note, created_by_id,
     origin provider/pallet, and acquisition_cost) are blanked in memory so no template
-    or serializer can ever leak them.
+    or serializer can ever leak them. Also attaches display-ready savings_pct and
+    prefetched active_listing_links without triggering extra queries.
     """
     product.__dict__["raw_note"] = ""
     product.__dict__["created_by_id"] = None
@@ -98,73 +120,48 @@ def _sanitize_public_product(product: Product) -> Product:
     product.__dict__["acquisition_cost"] = None
     product._state.fields_cache.pop("provider", None)
     product._state.fields_cache.pop("pallet", None)
+    product.savings_pct = _compute_savings_pct(product)
+    prefetched = getattr(product, "_prefetched_objects_cache", {})
+    product.active_listing_links = list(prefetched["listing_links"]) if "listing_links" in prefetched else []
     return product
 
 
-def _get_public_queryset():
-    return (
-        Product.objects.public_visible()
-        .select_related("category")
-        .only(
-            *SAFE_PUBLIC_PRODUCT_FIELDS,
-            "category__id",
-            "category__name",
-            "category__name_en",
-            "category__slug",
-            "category__icon",
-            "category__order",
-        )
-        .prefetch_related(
-            Prefetch("images", queryset=ProductImage.objects.order_by("order", "id")),
-            Prefetch(
-                "listing_links",
-                queryset=ProductListingLink.objects.filter(is_active=True)
-                .select_related("site")
-                .order_by("site__order", "site__name"),
-            ),
-        )
-    )
+def _build_breadcrumb_schema(items: list[tuple[str, str]]) -> dict:
+    """Builds Schema.org BreadcrumbList JSON-LD metadata from ordered (name, url) pairs."""
+    return {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": idx,
+                "name": str(name),
+                "item": url,
+            }
+            for idx, (name, url) in enumerate(items, start=1)
+            if name and url
+        ],
+    }
 
 
-def _parse_decimal(val: str):
-    if not val:
-        return None
-    try:
-        d = Decimal(val.strip().replace(",", "."))
-        return d if d >= Decimal("0.00") else None
-    except (InvalidOperation, ValueError, TypeError):
-        return None
+def _build_local_business_schema(store_config: StorefrontConfiguration, home_url: str) -> dict:
+    """Builds Schema.org LocalBusiness JSON-LD metadata for the public store shelf."""
+    raw_phone = store_config.clean_whatsapp_number
+    business_phone = "+34640397434" if raw_phone in ("", "34600000000") else f"+{raw_phone}"
+    raw_email = (store_config.contact_email or "").strip()
+    business_email = "info@rapidopackvalencia.es" if raw_email in ("", "info@rapidopack.es") else raw_email
 
-
-def home_view(request):
-    """
-    Corporate Business Landing Page (/) for Rápido Pack (rapidopack.es).
-    Showcases parcel point services (SEUR, GLS, InPost, Amazon Hub, Kanguro, DHL),
-    Punto Pack, brand identity ("Quiénes somos"), the 4 newest available products
-    ("Recién llegados"), trust stats, Alfafar location & contact, and LocalBusiness JSON-LD.
-    """
-    latest_products = list(
-        _get_public_queryset()
-        .filter(is_sold=False, is_reserved=False)
-        .order_by("-created_at")[:4]
-    )
-    for prod in latest_products:
-        _sanitize_public_product(prod)
-
-    store_config = StorefrontConfiguration.get_solo()
-    home_url = request.build_absolute_uri(reverse("storefront:home"))
-
-    local_business_schema = {
+    return {
         "@context": "https://schema.org",
         "@type": "LocalBusiness",
         "name": store_config.store_name,
         "description": _(
-            "Punto de paquetería multimarca (SEUR, GLS, InPost, Amazon, Kanguro, DHL), "
-            "Punto Pack oficial y tienda de segunda mano y oportunidad con artículos revisados en Alfafar, Valencia."
+            "Outlet and second-hand opportunity store with verified items and in-store testing benches in Alfafar, Valencia."
         ),
         "url": home_url,
-        "telephone": f"+{store_config.clean_whatsapp_number}",
-        "email": store_config.contact_email,
+        "sameAs": [f"{ASTRO_LANDING_URL}/"],
+        "telephone": business_phone,
+        "email": business_email,
         "priceRange": "€",
         "address": {
             "@type": "PostalAddress",
@@ -190,32 +187,78 @@ def home_view(request):
         ],
         "hasOfferCatalog": {
             "@type": "OfferCatalog",
-            "name": _("Parcel Services, Punto Pack and Second-Hand Store"),
+            "name": _("Second-Hand & Outlet Store Shelf"),
             "itemListElement": [
-                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": _("Official Punto Pack & Multi-Carrier Parcel Hub (SEUR, GLS, InPost, Amazon, Kanguro, DHL)")}},
-                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": _("Parcel shipping, pickups, and returns in Alfafar")}},
                 {"@type": "Offer", "itemOffered": {"@type": "Service", "name": _("Secondhand and opportunity store with verified items")}},
+                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": _("Free 24h WhatsApp reservation and in-store testing in Alfafar")}},
+                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": _("Protected shipping across Spain via Wallapop, Vinted, and Milanuncios")}},
             ],
         },
     }
 
-    context = {
-        "latest_products": latest_products,
-        "featured_products": latest_products,
-        "canonical_url": home_url,
-        "local_business_json_ld": json.dumps(local_business_schema, ensure_ascii=False),
-        "is_landing_page": True,
-    }
-    return render(request, "storefront/home.html", context)
+
+def _get_public_queryset():
+    return (
+        Product.objects.public_visible()
+        .select_related("category")
+        .only(
+            *SAFE_PUBLIC_PRODUCT_FIELDS,
+            "category__id",
+            "category__name",
+            "category__name_en",
+            "category__slug",
+            "category__icon",
+            "category__order",
+            "category__is_active",
+        )
+        .prefetch_related(
+            Prefetch("images", queryset=ProductImage.objects.order_by("order", "id")),
+            Prefetch(
+                "listing_links",
+                queryset=ProductListingLink.objects.filter(is_active=True)
+                .select_related("site")
+                .order_by("site__order", "site__name"),
+            ),
+        )
+    )
+
+
+def _parse_decimal(val: str):
+    if not val:
+        return None
+    try:
+        d = Decimal(val.strip().replace(",", "."))
+        return d if d >= Decimal("0.00") else None
+    except (InvalidOperation, ValueError, TypeError):
+        return None
+
+
+def home_view(request):
+    """
+    Public Storefront Root (/).
+    Serves the digital Store Shelf directly now that the corporate/parcel landing page
+    is managed externally by Astro at rapidopackvalencia.es.
+    """
+    return catalog_view(request)
 
 
 def category_catalog_view(request, category_slug: str):
     """
-    Category-filtered Marketplace Catalog (/tienda/categoria/<slug:category_slug>/).
+    Category-filtered Marketplace Catalog (/categoria/<slug:category_slug>/).
     Returns 404 if the category slug is not one of the active official categories.
     """
     active_category = get_object_or_404(Category, slug=category_slug, is_active=True)
     return catalog_view(request, category_slug=active_category.slug, resolved_category=active_category)
+
+
+def legacy_category_redirect_view(request, category_slug: str):
+    """
+    Redirects legacy /tienda/categoria/<slug>/ URLs permanently (301) to /categoria/<slug>/.
+    """
+    target = reverse("storefront:category", kwargs={"category_slug": category_slug})
+    if request.META.get("QUERY_STRING"):
+        target = f"{target}?{request.META['QUERY_STRING']}"
+    return redirect(target, permanent=True)
 
 
 def catalog_view(request, category_slug: str | None = None, resolved_category: Category | None = None):
@@ -274,14 +317,14 @@ def catalog_view(request, category_slug: str | None = None, resolved_category: C
         qs = qs.filter(build_search_query(search_query, scope="public"))
 
     if sort_by == "price_asc":
-        qs = qs.order_by("is_sold", "sale_price", "-created_at")
+        qs = qs.order_by("is_sold", "sale_price", "-created_at", "-id")
     elif sort_by == "price_desc":
-        qs = qs.order_by("is_sold", "-sale_price", "-created_at")
+        qs = qs.order_by("is_sold", "-sale_price", "-created_at", "-id")
     elif sort_by == "featured":
-        qs = qs.order_by("is_sold", "-is_featured", "-created_at")
+        qs = qs.order_by("is_sold", "-is_featured", "-created_at", "-id")
     else:
         sort_by = "newest"
-        qs = qs.order_by("is_sold", "-is_featured", "-created_at")
+        qs = qs.order_by("is_sold", "-is_featured", "-created_at", "-id")
 
     paginator = Paginator(qs, PUBLIC_PAGE_SIZE)
     page_number = request.GET.get("page")
@@ -301,50 +344,83 @@ def catalog_view(request, category_slug: str | None = None, resolved_category: C
         del extra_params["page"]
     query_string = extra_params.urlencode()
 
-    # Category counts for active visible inventory
-    visible_base_ids = Product.objects.public_visible().values_list("id", flat=True)
-    categories_with_counts = (
+    # Category counts for active available (unsold) visible inventory
+    available_base_ids = Product.objects.public_visible().filter(is_sold=False).values_list("id", flat=True)
+    raw_categories = list(
         Category.objects.filter(is_active=True)
         .annotate(
             visible_count=Count(
                 "products",
-                filter=Q(products__id__in=visible_base_ids),
+                filter=Q(products__id__in=available_base_ids),
                 distinct=True,
             )
         )
         .order_by("order", "name")
     )
+    categories_with_counts = sorted(
+        raw_categories,
+        key=lambda c: (0 if (c.visible_count > 0 or c.slug == category_slug_clean) else 1, c.order, c.name),
+    )
+    hidden_categories_count = sum(
+        1 for c in categories_with_counts if c.visible_count == 0 and c.slug != category_slug_clean
+    )
 
     base_filter_url = (
         reverse("storefront:category", kwargs={"category_slug": active_category.slug})
         if active_category and category_slug
-        else reverse("storefront:catalog")
+        else reverse("storefront:home")
     )
+    canonical_url = request.build_absolute_uri(base_filter_url)
+    store_config = get_request_storefront_config(request)
+    local_business_schema = _build_local_business_schema(store_config, canonical_url)
+    has_query_filters = bool(
+        condition_filter
+        or price_range
+        or min_price_raw
+        or max_price_raw
+        or search_query
+        or (raw_sort and sort_by != "newest")
+        or (not category_slug and category_slug_clean)
+    )
+    should_noindex = bool(paginator.count == 0 or has_query_filters)
+    if active_category:
+        meta_description = _(
+            "%(category)s at Rápido Pack Valencia (Alfafar): inspected second-hand and outlet items, "
+            "free 24h WhatsApp hold, in-store testing benches, and protected shipping across Spain."
+        ) % {"category": active_category.get_localized_name()}
+        breadcrumb_schema = _build_breadcrumb_schema(
+            [
+                (_("Store Shelf"), request.build_absolute_uri(reverse("storefront:home"))),
+                (active_category.get_localized_name(), canonical_url),
+            ]
+        )
+        breadcrumb_json_ld = _dumps_json_ld(breadcrumb_schema)
+    else:
+        meta_description = store_config.hero_subtitle
+        breadcrumb_json_ld = ""
 
     context = {
         "page_obj": page_obj,
         "products": page_obj.object_list,
         "paginator": paginator,
-        "total_results": paginator.count,
         "total_count": paginator.count,
         "elided_page_range": elided_page_range,
         "query_string": query_string,
         "categories": categories_with_counts,
+        "hidden_categories_count": hidden_categories_count,
         "active_category": category_slug_clean,
         "active_category_obj": active_category,
-        "category_filter": category_slug_clean,
         "base_filter_url": base_filter_url,
+        "canonical_url": canonical_url,
+        "meta_description": meta_description,
+        "should_noindex": should_noindex,
+        "breadcrumb_json_ld": breadcrumb_json_ld,
+        "local_business_json_ld": _dumps_json_ld(local_business_schema),
         "active_condition": condition_filter,
-        "active_estado": CONDITION_TO_SPANISH_SLUG.get(condition_filter, ""),
-        "condition_filter": condition_filter,
         "condition_choices": ProductCondition.choices,
         "active_price": price_range,
-        "price_filter": price_range,
-        "min_price": min_price_raw,
-        "max_price": max_price_raw,
         "search_query": search_query,
         "active_sort": sort_by,
-        "sort_by": sort_by,
         "has_active_filters": bool(
             category_slug_clean or condition_filter or price_range or min_price_raw or max_price_raw or search_query
         ),
@@ -405,7 +481,7 @@ def public_product_detail_view(request, slug: str, pk: int):
     Product.objects.filter(pk=product.pk).update(views_count=F("views_count") + 1)
     product.views_count = (product.views_count or 0) + 1
 
-    store_config = StorefrontConfiguration.get_solo()
+    store_config = get_request_storefront_config(request)
     canonical_url = request.build_absolute_uri(product.get_public_url())
 
     images = list(product.images.all())
@@ -419,7 +495,7 @@ def public_product_detail_view(request, slug: str, pk: int):
     if product.category_id:
         same_cat = list(
             related_qs.filter(category_id=product.category_id).order_by(
-                "is_sold", "-is_featured", "-created_at"
+                "is_sold", "-is_featured", "-created_at", "-id"
             )[:4]
         )
         if len(same_cat) < 4:
@@ -427,14 +503,14 @@ def public_product_detail_view(request, slug: str, pk: int):
             existing_ids = [p.pk for p in same_cat]
             others = list(
                 related_qs.exclude(pk__in=existing_ids).order_by(
-                    "is_sold", "-is_featured", "-created_at"
+                    "is_sold", "-is_featured", "-created_at", "-id"
                 )[:needed]
             )
             related_products = same_cat + others
         else:
             related_products = same_cat
     else:
-        related_products = list(related_qs.order_by("is_sold", "-is_featured", "-created_at")[:4])
+        related_products = list(related_qs.order_by("is_sold", "-is_featured", "-created_at", "-id")[:4])
 
     for rel in related_products:
         _sanitize_public_product(rel)
@@ -489,34 +565,28 @@ def public_product_detail_view(request, slug: str, pk: int):
         if line.strip()
     ]
 
-    # Discount percentage if estimated_retail_price > sale_price
-    savings_pct = None
-    if (
-        product.estimated_retail_price
-        and product.sale_price
-        and product.estimated_retail_price > product.sale_price
-    ):
-        try:
-            diff = product.estimated_retail_price - product.sale_price
-            pct = int(round((diff / product.estimated_retail_price) * 100))
-            if 5 <= pct <= 95:
-                savings_pct = pct
-        except (ArithmeticError, ValueError, TypeError):
-            savings_pct = None
+    breadcrumb_items = [(_("Store Shelf"), request.build_absolute_uri(reverse("storefront:home")))]
+    if product.category and product.category.is_active:
+        breadcrumb_items.append(
+            (
+                product.category.get_localized_name(),
+                request.build_absolute_uri(reverse("storefront:category", kwargs={"category_slug": product.category.slug})),
+            )
+        )
+    breadcrumb_items.append((product.ai_title, canonical_url))
 
     context = {
         "product": product,
         "images": images,
         "primary_image": primary_image,
         "primary_image_url": primary_image_abs_url,
-        "primary_image_abs_url": primary_image_abs_url,
         "active_links": active_links,
         "related_products": related_products,
         "canonical_url": canonical_url,
-        "whatsapp_direct_url": _build_whatsapp_inquiry_url(request, product, store_config),
-        "schema_json_ld": json.dumps(schema_data, ensure_ascii=False),
+        "breadcrumb_json_ld": _dumps_json_ld(_build_breadcrumb_schema(breadcrumb_items)),
+        "schema_json_ld": _dumps_json_ld(schema_data),
         "description_lines": description_lines,
-        "savings_pct": savings_pct,
+        "savings_pct": product.savings_pct,
     }
     return render(request, "storefront/product_detail.html", context)
 
@@ -531,15 +601,27 @@ def how_to_buy_view(request):
         "storefront/how_to_buy.html",
         {
             "page_title": _("How to buy at Rápido Pack Alfafar?"),
+            "canonical_url": request.build_absolute_uri(reverse("storefront:how_to_buy")),
         },
     )
+
+
+_BOT_USER_AGENT_RE = re.compile(r"(bot|spider|crawler|headless)", re.IGNORECASE)
+
+
+def _should_track_outbound_click(request) -> bool:
+    """Count outbound clicks only for human GET requests, ignoring crawlers and HEAD probes."""
+    if request.method != "GET":
+        return False
+    user_agent = (request.META.get("HTTP_USER_AGENT") or "").strip()
+    return not _BOT_USER_AGENT_RE.search(user_agent)
 
 
 def go_store_whatsapp_view(request):
     """
     General store WhatsApp redirector (/go/whatsapp/) used by landing page and header CTAs.
     """
-    store_config = StorefrontConfiguration.get_solo()
+    store_config = get_request_storefront_config(request)
     text = _(
         "Hello %(store)s, I am contacting you from your website to inquire about parcel services or items in your Alfafar store."
     ) % {"store": store_config.store_name}
@@ -555,8 +637,9 @@ def go_whatsapp_view(request, pk: int):
     product = get_object_or_404(_get_public_queryset(), pk=pk)
     _sanitize_public_product(product)
 
-    Product.objects.filter(pk=product.pk).update(whatsapp_clicks=F("whatsapp_clicks") + 1)
-    store_config = StorefrontConfiguration.get_solo()
+    if _should_track_outbound_click(request):
+        Product.objects.filter(pk=product.pk).update(whatsapp_clicks=F("whatsapp_clicks") + 1)
+    store_config = get_request_storefront_config(request)
     target_url = _build_whatsapp_inquiry_url(request, product, store_config)
     return HttpResponseRedirect(target_url)
 
@@ -574,23 +657,28 @@ def go_marketplace_link_view(request, link_pk: int):
     if not Product.objects.public_visible().filter(pk=link.product_id).exists():
         raise Http404("Product is not publicly visible.")
 
-    ProductListingLink.objects.filter(pk=link.pk).update(clicks_count=F("clicks_count") + 1)
+    if _should_track_outbound_click(request):
+        ProductListingLink.objects.filter(pk=link.pk).update(clicks_count=F("clicks_count") + 1)
     return HttpResponseRedirect(link.url)
 
 
 def sitemap_view(request):
     """
-    Dynamic XML sitemap (/sitemap.xml) listing only public URLs:
-    /, /tienda/, /tienda/categoria/<slug>/ (12), /tienda/producto/<slug>-<pk>/ (public_visible()),
-    /como-comprar/, and legal pages (/aviso-legal/, /privacidad/, /cookies/).
-    Never exposes internal routes or notes.
+    Dynamic XML sitemap (/sitemap.xml) listing only canonical 200-status indexable URLs:
+    /, populated /categoria/<slug>/ pages, /tienda/producto/<slug>-<pk>/ (public_visible()),
+    and /como-comprar/. Duplicate (/tienda/), empty category, and redirecting legal routes are omitted.
     """
+    visible_product_ids = Product.objects.public_visible().values_list("id", flat=True)
     products = (
         Product.objects.public_visible()
         .only("id", "ai_title", "updated_at", "status", "is_sold")
         .order_by("-updated_at")
     )
-    categories = Category.objects.filter(is_active=True).order_by("order", "name")
+    categories = (
+        Category.objects.filter(is_active=True, products__id__in=visible_product_ids)
+        .distinct()
+        .order_by("order", "name")
+    )
 
     urls = [
         {
@@ -599,29 +687,9 @@ def sitemap_view(request):
             "priority": "1.0",
         },
         {
-            "loc": request.build_absolute_uri(reverse("storefront:catalog")),
-            "changefreq": "daily",
-            "priority": "0.9",
-        },
-        {
             "loc": request.build_absolute_uri(reverse("storefront:how_to_buy")),
             "changefreq": "monthly",
             "priority": "0.5",
-        },
-        {
-            "loc": request.build_absolute_uri(reverse("storefront:legal_notice")),
-            "changefreq": "monthly",
-            "priority": "0.3",
-        },
-        {
-            "loc": request.build_absolute_uri(reverse("storefront:privacy")),
-            "changefreq": "monthly",
-            "priority": "0.3",
-        },
-        {
-            "loc": request.build_absolute_uri(reverse("storefront:cookies")),
-            "changefreq": "monthly",
-            "priority": "0.3",
         },
     ]
 
@@ -673,6 +741,7 @@ def robots_view(request):
     lines = [
         "User-agent: *",
         "Allow: /",
+        "Allow: /categoria/",
         "Allow: /tienda/",
         "Disallow: /admin/",
         "Disallow: /panel/",
@@ -690,33 +759,20 @@ def robots_view(request):
 
 
 def legal_notice_view(request):
-    return render(
-        request,
-        "storefront/legal_page.html",
-        {
-            "page_type": "legal_notice",
-            "page_title": _("Legal Notice and Terms of Use"),
-        },
-    )
+    """Redirect canonical legal notice traffic to rapidopackvalencia.es/aviso-legal."""
+    return HttpResponseRedirect(f"{ASTRO_LANDING_URL}/aviso-legal")
 
 
 def privacy_policy_view(request):
-    return render(
-        request,
-        "storefront/legal_page.html",
-        {
-            "page_type": "privacy_policy",
-            "page_title": _("Privacy Policy (GDPR)"),
-        },
-    )
+    """Redirect canonical privacy policy traffic to rapidopackvalencia.es/privacidad."""
+    return HttpResponseRedirect(f"{ASTRO_LANDING_URL}/privacidad")
 
 
 def cookies_policy_view(request):
-    return render(
-        request,
-        "storefront/legal_page.html",
-        {
-            "page_type": "cookies_policy",
-            "page_title": _("Cookies Policy"),
-        },
-    )
+    """Redirect canonical cookies policy traffic to rapidopackvalencia.es/cookies."""
+    return HttpResponseRedirect(f"{ASTRO_LANDING_URL}/cookies")
+
+
+def favicon_view(request):
+    """Redirect root /favicon.ico requests permanently to the Rápido Pack favicon asset."""
+    return redirect(staticfiles_storage.url("storefront/img/favicon.ico"), permanent=True)

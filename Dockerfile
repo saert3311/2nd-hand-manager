@@ -58,8 +58,8 @@ RUN if [ -z "$BUILD_TIME" ]; then \
     fi && \
     chown appuser:appgroup /app/build_date.txt /app/build_commit.txt 2>/dev/null || true
 
-# Ensure entrypoint script has execution permissions
-RUN chmod +x /app/docker/entrypoint.sh
+# Ensure entrypoint script has LF line endings and execution permissions
+RUN sed -i 's/\r$//' /app/docker/entrypoint.sh && chmod +x /app/docker/entrypoint.sh
 
 # Switch to unprivileged non-root user
 USER appuser

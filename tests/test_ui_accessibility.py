@@ -80,9 +80,6 @@ class UIAccessibilityAndDesignSystemTest(TestCase):
             reverse("storefront:home"),
             reverse("storefront:catalog"),
             reverse("storefront:how_to_buy"),
-            reverse("storefront:legal_notice"),
-            reverse("storefront:privacy"),
-            reverse("storefront:cookies"),
             self.product.get_public_url(),
         ]:
             resp = self.client.get(url)

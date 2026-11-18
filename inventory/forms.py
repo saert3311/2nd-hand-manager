@@ -1,9 +1,11 @@
+import ipaddress
 from decimal import Decimal
 
 from django import forms
 from django.conf import settings
 from django.contrib.admin.forms import AdminAuthenticationForm
 from django.contrib.auth.forms import AuthenticationForm
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
@@ -34,24 +36,59 @@ class PalletChoiceField(forms.ModelChoiceField):
         return base
 
 
+def extract_validated_client_ip(request) -> str | None:
+    """
+    Extract and validate the client IP from proxy headers without trusting
+    spoofable leftmost X-Forwarded-For entries.
+    """
+    if not request:
+        return None
+
+    candidates: list[str] = []
+    cf_ip = (request.META.get("HTTP_CF_CONNECTING_IP") or "").strip()
+    if cf_ip:
+        candidates.append(cf_ip)
+
+    x_forwarded = (request.META.get("HTTP_X_FORWARDED_FOR") or "").strip()
+    if x_forwarded:
+        hops = [part.strip() for part in x_forwarded.split(",") if part.strip()]
+        if hops:
+            candidates.append(hops[-1])
+
+    remote_addr = (request.META.get("REMOTE_ADDR") or "").strip()
+    if remote_addr:
+        candidates.append(remote_addr)
+
+    for candidate in candidates:
+        try:
+            return str(ipaddress.ip_address(candidate))
+        except ValueError:
+            continue
+    return None
+
+
 class TurnstileValidationMixin:
     """
-    Mixin for Django authentication forms that validates Cloudflare Turnstile tokens
-    prior to evaluating password credentials.
+    Mixin for Django authentication forms that enforces login rate limiting and
+    validates Cloudflare Turnstile tokens prior to evaluating password credentials.
     """
 
     def clean(self):
+        remote_ip = extract_validated_client_ip(getattr(self, "request", None))
+        username = "".join((self.cleaned_data.get("username") or self.data.get("username") or "").split()).lower()
+        rate_limit = getattr(settings, "LOGIN_RATE_LIMIT_ATTEMPTS", 10)
+        rate_window = getattr(settings, "LOGIN_RATE_LIMIT_WINDOW_SECONDS", 300)
+        rate_key = f"login_fail:{remote_ip or 'local'}:{username}"
+
+        attempts = cache.get(rate_key, 0)
+        if attempts >= rate_limit:
+            raise forms.ValidationError(
+                _("Too many failed login attempts. Please wait a few minutes and try again."),
+                code="rate_limited",
+            )
+
         if getattr(settings, "TURNSTILE_ENABLED", False):
             turnstile_token = self.data.get("cf-turnstile-response")
-            remote_ip = None
-            request = getattr(self, "request", None)
-            if request:
-                x_forwarded = request.META.get("HTTP_X_FORWARDED_FOR")
-                if x_forwarded:
-                    remote_ip = x_forwarded.split(",")[0].strip()
-                else:
-                    remote_ip = request.META.get("REMOTE_ADDR")
-
             if not turnstile_token:
                 raise forms.ValidationError(
                     _("Please complete the security challenge."),
@@ -62,7 +99,15 @@ class TurnstileValidationMixin:
                     _("Security verification failed. Please try again."),
                     code="turnstile_failed",
                 )
-        return super().clean()
+
+        try:
+            cleaned_data = super().clean()
+        except forms.ValidationError:
+            cache.set(rate_key, attempts + 1, timeout=rate_window)
+            raise
+
+        cache.delete(rate_key)
+        return cleaned_data
 
 
 class TurnstileAuthenticationForm(TurnstileValidationMixin, AuthenticationForm):

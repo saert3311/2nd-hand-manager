@@ -206,10 +206,17 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 page.wait_for_selector("h1")
                 self._assert_no_horizontal_overflow(page, f"storefront_how_to_buy_{vp_name}", w, h)
 
-                # 5. Legal Notice
-                page.goto(f"{self.live_server_url}{reverse('storefront:legal_notice')}")
+                # 5. Cookie Control dialog (collapsed first-visit & expanded preferences via footer trigger)
+                page.goto(f"{self.live_server_url}{reverse('storefront:home')}")
                 page.wait_for_selector("h1")
-                self._assert_no_horizontal_overflow(page, f"storefront_legal_{vp_name}", w, h)
+                footer_cookie_btn = page.locator("#footer-cookie-settings-btn")
+                footer_cookie_btn.scroll_into_view_if_needed()
+                footer_cookie_btn.click()
+                page.wait_for_selector("#cookie-banner-container:not(.hidden)")
+                page.wait_for_selector("#cookie-settings-panel:not(.hidden)")
+                self._assert_no_horizontal_overflow(page, f"storefront_cookie_modal_{vp_name}", w, h)
+                page.click("#cookie-quick-close-btn")
+                page.wait_for_selector("#cookie-banner-container", state="hidden")
 
                 # 6. Custom 404 page
                 page.goto(f"{self.live_server_url}/non-existent-route-xyz-404/")

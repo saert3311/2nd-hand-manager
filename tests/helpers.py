@@ -91,12 +91,16 @@ def start_shared_browser(test_cls, headless=True):
 
 
 def abort_nonessential_fonts(page):
-    """Abort external webfont requests so slow network fonts cannot stall Playwright loads."""
+    """Abort external webfont and analytics requests so offline/headless Playwright loads stay deterministic."""
+    blocked_hosts = (
+        "fonts.googleapis.com",
+        "fonts.gstatic.com",
+        "googletagmanager.com",
+        "google-analytics.com",
+    )
     page.route(
         "**/*",
-        lambda route: route.abort()
-        if any(host in route.request.url for host in ("fonts.googleapis.com", "fonts.gstatic.com"))
-        else route.continue_(),
+        lambda route: route.abort() if any(host in route.request.url for host in blocked_hosts) else route.continue_(),
     )
 
 

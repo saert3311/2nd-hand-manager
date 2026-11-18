@@ -885,5 +885,43 @@ Provide uniform, non-blocking, accessible loading progress across long-running A
 4. **Bilingual Localization & Verification (`locale/`, `tests/test_action_loading_feedback.py`, `CHANGELOG.md`)**:
    - Translate new UI labels (`es`/`en`), compile `.mo` via `manage.py compile_locales`, verify template rendering + Playwright interactions (including delayed `/intake/identify/` skeleton, `#aiForm` skeleton, cancelled vs. confirmed `data-confirm-message`, `pageshow` reset, and `360×800` / `320×711` zero overflow).
 
+---
+
+## Phase 55: Public Store Shelf Redesign & Astro Frontpage Alignment (`redesign_store_shelf`)
+
+### Overview
+Retire the redundant Django corporate landing page (`home.html`) now handled by Astro at `https://rapidopackvalencia.es`, make the Store Shelf the root public view (`/` & `/tienda/`), synchronize the public design system (`#ffffff`/`#f4f6f8`, `#111820`, `#059652`, `Outfit`, `Plus Jakarta Sans`, `JetBrains Mono`), and declutter shelf cards by removing repetitive per-card WhatsApp/action buttons while keeping WhatsApp primary and external store links prominent on Product Detail and the bottom Store Shelf banner. Internal `inventory/` workflows remain untouched.
+
+### Technical Design
+1. **Storefront Context & Routing (`storefront/context_processors.py`, `storefront/views.py`)**:
+   - Expose `astro_landing_url` (`https://rapidopackvalencia.es`) and `active_marketplace_sites` in `storefront_config`.
+   - Enrich `_sanitize_public_product` with in-memory `savings_pct` and `active_listing_links`; enrich `catalog_view` with `canonical_url`, `local_business_json_ld`, and `active_marketplace_sites`; delegate `home_view` directly to `catalog_view`; delete `storefront/templates/storefront/home.html`.
+2. **Public Shell & Shelf Templates (`storefront/templates/storefront/`)**:
+   - Synchronize `base_public.html` tokens, fonts, top accent bar, Astro-linked header navigation, WhatsApp CTA (`bg-[#25D366] text-slate-950`), and dark `#111820` footer.
+   - Redesign `catalog.html` into a compact `01 // ESTANTERÍA ONLINE` editorial header, unified search + `#categoryRail` + compact filter bar, 4-col/2-col/1-col shelf grid, and `02 // CONTACTO Y OTRAS TIENDAS` dark `#111820` bottom banner.
+   - Redesign `_product_card.html` into button-free shelf items with `1:1` `#f4f6f8` pedestal, `-XX% PVP` / `FEATURED` (`bg-amber-400 text-slate-950`) / `RESERVED` / `SOLD` badges, condition pill, subtle `W`/`V`/`M` indicators, `JetBrains Mono` category + `Ref. #`, and clickable `<h3><a>` title.
+   - Refresh `product_detail.html`, `_purchase_box.html`, `_how_to_buy_modal.html`, `how_to_buy.html`, and `legal_page.html` to match the new visual tokens.
+3. **Bilingual Localization, Automated Tests & Live Browser Check**:
+   - Update `locale/es/LC_MESSAGES/django.po` and run `manage.py compile_locales`.
+   - Update `tests/test_storefront.py`, `tests/test_i18n.py`, and `tests/test_browser_daily_workflow.py` and verify full `manage.py test`, `manage.py check`, `ruff check .`, and Playwright desktop/mobile browser rendering.
+
+---
+
+## Phase 56: Storefront Top Bar & Logo Parity with `rapidopackvalencia.es` (`redesign_store_shelf`)
+
+### Overview
+Align `base_public.html`'s `<header>` pixel-for-pixel with `https://rapidopackvalencia.es` (self-hosted official logo `logo-rapido-pack-valencia.png`, `h-28 sm:h-32 lg:h-36`, `INICIO / PAQUETERÍA / OUTLET / CONTACTO`, `xl:` live status indicator, `640 39 74 34` phone pill, and `<details>` mobile drawer) so shoppers perceive zero visual discontinuity between Astro and Django. Relocate `ES | EN` language switching to the footer and keep `"How to buy"` + `"WhatsApp"` inside the Store Shelf (`catalog.html`) and footer.
+
+### Technical Design
+1. **Static Logo & Header Context (`storefront/static/storefront/img/logo-rapido-pack-valencia.png`, `storefront/context_processors.py`)**:
+   - Bundle the official `916×641` PNG logo in `storefront/static/storefront/img/`.
+   - Expose `store_phone_display` (`"640 39 74 34"`), `store_phone_href` (`"tel:640397434"`), `store_is_open`, and localized `store_live_status_label` (computed against `Europe/Madrid` store schedule) from `storefront_config`.
+2. **Astro-Parity Header & Footer Language Switcher (`storefront/templates/storefront/base_public.html`, `catalog.html`)**:
+   - Render the exact `rapidopackvalencia.es` `<header>` and native `<details id="mobileNavDrawer">` drawer (with `Escape` and outside-click dismissal).
+   - Place the `ES | EN` language switcher and `bg-[#25D366] text-slate-950` WhatsApp CTA in the dark `#111820` footer, and add `"How to buy"` + `"WhatsApp"` CTAs cleanly inside the `01 //` shelf header in `catalog.html`.
+3. **Localization, Tests & Live Browser Parity Check**:
+   - Update `locale/` `.po`/`.mo` catalogs, update `tests/test_storefront.py`, `tests/test_i18n.py`, and `tests/test_browser_daily_workflow.py`, run full `manage.py test` + `ruff check .`, and visually inspect desktop (`1440×900`) + mobile (`360×800`, closed & open drawer).
+
+
 
 

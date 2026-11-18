@@ -4352,3 +4352,310 @@ msgstr "Creando..."
 
 msgid "Deleting..."
 msgstr "Eliminando..."
+
+msgid "24h Hold"
+msgstr "Reserva 24h"
+
+msgid "Alfafar Physical Store"
+msgstr "Tienda Física Alfafar"
+
+msgid "Alfafar Store · L–S"
+msgstr "Tienda Alfafar · L–S"
+
+msgid "Also listed on external marketplaces"
+msgstr "También disponible en otras tiendas"
+
+msgid "Clear"
+msgstr "Limpiar"
+
+msgid "DIRECT CONTACT & IN-STORE TESTING"
+msgstr "CONTACTO DIRECTO Y PRUEBA EN TIENDA"
+
+msgid ""
+"Every item page shows its direct marketplace links. You can also explore our"
+" official profiles across Spain:"
+msgstr ""
+"Cada artículo incluye sus enlaces directos de envío. También puedes explorar"
+" nuestros perfiles oficiales:"
+
+msgid "Free 24h WhatsApp hold"
+msgstr "Reserva gratis 24h por WhatsApp"
+
+msgid "Free 24h WhatsApp reservation and in-store testing in Alfafar"
+msgstr "Reserva gratis 24h por WhatsApp y prueba en tienda en Alfafar"
+
+msgid "Get directions"
+msgstr "Cómo llegar"
+
+msgid ""
+"Hello %(store)s, I am contacting you from your website to inquire about "
+"parcel services or items in your Alfafar store."
+msgstr ""
+"Hola %(store)s, os contacto desde la web para consultar sobre servicios de "
+"paquetería o artículos de vuestra tienda en Alfafar."
+
+msgid ""
+"Hola %(store)s, me interesa el artículo %(title)s (%(ref)s - %(price)s). "
+"¿Sigue disponible en la tienda de Alfafar? %(url)s"
+msgstr ""
+"Hola %(store)s, me interesa el artículo %(title)s (%(ref)s - %(price)s). "
+"¿Sigue disponible en la tienda de Alfafar? %(url)s"
+
+msgid ""
+"Hola %(store)s, me interesa saber si sigue disponible o entrar en lista de "
+"espera para: %(title)s (%(ref)s - %(price)s) %(url)s"
+msgstr ""
+"Hola %(store)s, me interesa saber si sigue disponible o entrar en lista de "
+"espera para: %(title)s (%(ref)s - %(price)s) %(url)s"
+
+msgid "In Store"
+msgstr "En tienda"
+
+msgid "In-store testing benches with power"
+msgstr "Bancos de prueba con enchufe en tienda"
+
+msgid "In-store testing benches with power (Alfafar)"
+msgstr "Mesas de prueba con enchufe (Alfafar)"
+
+msgid "Interested in an item or looking for something specific?"
+msgstr "¿Te interesa algún artículo o buscas algo en concreto?"
+
+msgid ""
+"Message us directly on WhatsApp to reserve any shelf item for 24 hours "
+"without commitment, or come inspect and plug it in at our Alfafar store."
+msgstr ""
+"Escríbenos directamente por WhatsApp para reservar cualquier artículo 24 "
+"horas sin compromiso o pásate a probarlo en nuestra tienda de Alfafar."
+
+msgid ""
+"Multi-carrier parcel hub and curated second-hand & outlet shelf. Inspect "
+"items in person on our testing benches or hold them 24h via WhatsApp."
+msgstr ""
+"Punto de paquetería multimarca y estantería de segunda mano y outlet. Prueba"
+" los artículos en persona en nuestros bancos de prueba o resérvalos 24h por "
+"WhatsApp."
+
+msgid "Navigation"
+msgstr "Navegación"
+
+msgid ""
+"Need nationwide shipping? Ask us on WhatsApp or visit our official "
+"marketplace profiles:"
+msgstr ""
+"¿Necesitas envío a toda España? Consúltanos por WhatsApp o visita nuestros "
+"perfiles oficiales:"
+
+msgid "ONLINE SHELF · OUTLET & SECOND-HAND"
+msgstr "ESTANTERÍA ONLINE · OUTLET Y SEGUNDA MANO"
+
+msgid "Other stores & protected shipping"
+msgstr "Otras tiendas y envío protegido"
+
+msgid "Other stores & protected shipping:"
+msgstr "Otras tiendas y envío protegido:"
+
+msgid "Outlet & Second-Hand Store Shelf in Alfafar"
+msgstr "Estantería Outlet y Segunda Mano en Alfafar"
+
+msgid ""
+"Outlet and second-hand opportunity store with verified items and in-store "
+"testing benches in Alfafar, Valencia."
+msgstr ""
+"Tienda outlet y segunda mano con artículos revisados y bancos de prueba con "
+"enchufe en Alfafar, Valencia."
+
+msgid "Parcel Hub"
+msgstr "Paquetería"
+
+msgid "Physical Store & Online Shelf · Alfafar, Valencia"
+msgstr "Tienda Física y Estantería Web · Alfafar, Valencia"
+
+msgid "Protected shipping across Spain via Wallapop, Vinted, and Milanuncios"
+msgstr "Envío protegido a toda España vía Wallapop, Vinted y Milanuncios"
+
+msgid "Protected shipping via Wallapop & Vinted"
+msgstr "Envío protegido en Wallapop y Vinted"
+
+msgid "Search shelf items, brands, Ref #..."
+msgstr "Buscar en la estantería, marcas, Ref #..."
+
+msgid "Second-Hand & Outlet Store Shelf"
+msgstr "Estantería de Segunda Mano y Outlet"
+
+msgid "Show all categories"
+msgstr "Ver todas las categorías"
+
+msgid "Store Shelf"
+msgstr "Tienda"
+
+msgid ""
+"Test electronics and inspect every item in person before paying, or request "
+"protected delivery across Spain."
+msgstr ""
+"Prueba artículos eléctricos y revísalos en persona antes de pagar, o "
+"solicita envío protegido a toda España."
+
+msgid "UP TO -70% RRP"
+msgstr "HASTA -70% PVP"
+
+msgid ""
+"Visit our store in Alfafar, inspect the item closely, and test it on our "
+"benches before deciding."
+msgstr ""
+"Pásate por nuestra tienda en Alfafar, revisa el artículo en persona y "
+"pruébalo en nuestros bancos antes de decidirte."
+
+msgid ""
+"We update our shelf daily with new arrivals at our Alfafar store. Clear the "
+"filters or message us directly on WhatsApp."
+msgstr ""
+"Actualizamos la estantería cada día con novedades en nuestra tienda de "
+"Alfafar. Limpia los filtros o pregúntanos directamente por WhatsApp."
+
+msgid "WhatsApp"
+msgstr "WhatsApp"
+
+msgid "WhatsApp Direct"
+msgstr "WhatsApp Directo"
+
+msgid "UP TO -70%% RRP"
+msgstr "HASTA -70%% PVP"
+
+msgid "100%% real photograph of the item in stock (Alfafar Studio)"
+msgstr "Fotografía 100%% real del artículo en stock (Taller Alfafar)"
+
+msgid "100%% Real Photos"
+msgstr "Fotos 100%% Reales"
+
+msgid "Closed now · Mon–Fri 9:30–20:00"
+msgstr "Cerrado ahora · L–V 9:30–20:00"
+
+msgid "How to get to the store"
+msgstr "Cómo llegar al local"
+
+msgid "Mon–Fri 9:30–20:00 · Sat 10:00–15:00"
+msgstr "L–V 9:30–20:00 · Sáb 10:00–15:00"
+
+msgid "Open navigation menu"
+msgstr "Abrir menú de navegación"
+
+msgid "Open now · Until 15:00"
+msgstr "Abierto ahora · Hasta 15:00"
+
+msgid "Open now · Until 20:00"
+msgstr "Abierto ahora · Hasta 20:00"
+
+msgid "Rápido Pack Valencia — Go to Home"
+msgstr "Rápido Pack Valencia — Ir a Inicio"
+
+msgid "All conditions"
+msgstr "Todos los estados"
+
+msgid "All prices"
+msgstr "Todos los precios"
+
+msgid "Free pickup"
+msgstr "Recogida gratuita"
+
+msgid "Outlet & Second-Hand Shelf"
+msgstr "Estantería Outlet y Segunda Mano"
+
+msgid "Reserved (24h hold)"
+msgstr "Reservado (24h)"
+
+msgid "Sort"
+msgstr "Ordenar"
+
+msgid "Featured & newest"
+msgstr "Destacados y novedades"
+
+msgid "Show active only"
+msgstr "Ver solo con stock"
+
+msgid "1. Pickup in Alfafar"
+msgstr "1. Recogida en Alfafar"
+
+msgid "Hold 24h free via WhatsApp, test in store with power, and pay by Cash, Bizum, or Card."
+msgstr "Reserva 24h gratis por WhatsApp, pruébalo con enchufe y paga con Efectivo, Bizum o Tarjeta."
+
+msgid "2. Protected shipping"
+msgstr "2. Envío protegido"
+
+msgid "Available on items listed on Wallapop, Vinted, or Milanuncios with escrow protection and shock-proof packaging."
+msgstr "Disponible en artículos publicados en Wallapop, Vinted o Milanuncios con pago seguro y embalaje protector."
+
+msgid "3. Inspected & real photos"
+msgstr "3. Revisado y fotos reales"
+
+msgid "Every unit is checked in Alfafar. Need extra photos or video? Ask us directly on WhatsApp."
+msgstr "Cada unidad se revisa en Alfafar. ¿Quieres más fotos o vídeo? Pídenoslo por WhatsApp."
+
+msgid "Privacy"
+msgstr "Privacidad"
+
+msgid "Cookies"
+msgstr "Cookies"
+
+msgid "Configure cookies"
+msgstr "Configurar cookies"
+
+msgid "Privacy & Cookies"
+msgstr "Privacidad & Cookies"
+
+msgid "Cookie Control"
+msgstr "Control de Cookies"
+
+msgid "Temporarily close cookie notice"
+msgstr "Cerrar aviso de cookies temporalmente"
+
+msgid "At Rápido Pack Valencia we use essential technical cookies for secure operation and Google analytics cookies to measure visits in aggregate and improve our catalog."
+msgstr "En Rápido Pack Valencia utilizamos cookies técnicas necesarias para el funcionamiento seguro del sitio y cookies analíticas de Google para medir de forma agregada las visitas y mejorar nuestro catálogo."
+
+msgid "Technical & Security Cookies"
+msgstr "Cookies Técnicas y Seguridad"
+
+msgid "Essential for navigation, Turnstile anti-spam, and saving your preferences."
+msgstr "Imprescindibles para navegación, Turnstile anti-spam y guardar tus preferencias."
+
+msgid "Mandatory"
+msgstr "Obligatorias"
+
+msgid "Analytics Cookies (Google)"
+msgstr "Cookies Analíticas (Google)"
+
+msgid "Anonymous aggregated measurement of web traffic and most viewed sections."
+msgstr "Medición agregada anónima de tráfico web y secciones más vistas."
+
+msgid "Read Cookies Policy"
+msgstr "Leer Política de Cookies"
+
+msgid "Save selection"
+msgstr "Guardar selección"
+
+msgid "Accept all"
+msgstr "Aceptar todas"
+
+msgid "Reject"
+msgstr "Rechazar"
+
+msgid "Configure preferences"
+msgstr "Configurar preferencias"
+
+msgid "%(category)s at Rápido Pack Valencia (Alfafar): inspected second-hand and outlet items, free 24h WhatsApp hold, in-store testing benches, and protected shipping across Spain."
+msgstr "%(category)s en Rápido Pack Valencia (Alfafar): artículos revisados de segunda mano y outlet, reserva gratis 24h por WhatsApp, bancos de prueba con enchufe y envío protegido a toda España."
+
+msgid "Catalog products"
+msgstr "Productos del catálogo"
+
+msgid "Too many failed login attempts. Please wait a few minutes and try again."
+msgstr "Demasiados intentos de inicio de sesión fallidos. Espera unos minutos e inténtalo de nuevo."
+
+msgid "Too many AI requests. Please wait a moment and try again."
+msgstr "Demasiadas solicitudes de IA. Espera un momento e inténtalo de nuevo."
+
+
+
+
+
+
+

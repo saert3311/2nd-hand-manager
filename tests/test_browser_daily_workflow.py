@@ -131,32 +131,54 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
 
         page.route("**/intake/identify/", handle_identify)
 
-        # PART I: PUBLIC CUSTOMER STOREFRONT EXPERIENCE
+        # PART I: PUBLIC CUSTOMER STOREFRONT EXPERIENCE (Store Shelf at / and /tienda/)
         page.goto(f"{self.live_server_url}{reverse('storefront:home')}")
-        page.wait_for_selector("#paqueteria")
+        page.wait_for_selector("#categoryRail")
         self.assertIn("Rápido Pack", page.content())
-        self.assertIn("SEUR", page.content())
-        self.assertIn("GLS", page.content())
-        self.assertIn("InPost", page.content())
+        self.assertIn("logo-rapido-pack-valencia.png", page.content())
+        self.assertIn("https://rapidopackvalencia.es", page.content())
         self.assertTrue(page.locator('text="Bicicleta de Montaña Orbea MX 29"').first.is_visible())
-        page.screenshot(path=str(self.artifacts_dir / "daily_00_corporate_landing_page.png"))
+        self.assertEqual(
+            page.locator(f'a[href*="/go/whatsapp/{self.public_bike.pk}/"]').count(),
+            0,
+            "Shelf cards must stay decluttered without per-card WhatsApp buttons",
+        )
+
+        # Interactive Cookie Consent Banner + Footer Re-open + Persist across navigations
+        page.wait_for_selector("#cookie-banner-container:not(.hidden)")
+        self.assertTrue(page.locator("#cookie-banner-container").is_visible())
+        page.click("#cookie-accept-all-btn")
+        page.wait_for_selector("#cookie-banner-container", state="hidden")
+        self.assertIn("rpv_cookie_consent=", page.evaluate("() => document.cookie"))
+        footer_cookie_btn = page.locator("#footer-cookie-settings-btn")
+        footer_cookie_btn.scroll_into_view_if_needed()
+        footer_cookie_btn.click()
+        page.wait_for_selector("#cookie-banner-container:not(.hidden)")
+        self.assertTrue(page.locator("#cookie-settings-panel").is_visible())
+        self.assertTrue(page.locator("#cookie-analytics-toggle").is_checked())
+        page.click("#cookie-quick-close-btn")
+        page.wait_for_selector("#cookie-banner-container", state="hidden")
+        page.screenshot(path=str(self.artifacts_dir / "daily_00_store_shelf_home.png"))
 
         page.goto(f"{self.live_server_url}{reverse('storefront:catalog')}")
         page.wait_for_selector("#categoryRail")
-        self.assertIn("Rápido Pack", page.content())
         self.assertIn("Alfafar", page.content())
         assert_visible_images_loaded(self, page)
         page.screenshot(path=str(self.artifacts_dir / "daily_00_public_catalog.png"))
 
-        # Category Rail filtering (Bicicletas)
+        # Category Rail filtering (Bicicletas) + GTM dataLayer list event check
+        shelf_events = page.evaluate("() => (window.dataLayer || []).map((e) => e && e.event).filter(Boolean)")
+        self.assertIn("view_item_list", shelf_events)
         with page.expect_navigation():
             page.click('#categoryRail a:has-text("Bicicletas")')
         page.wait_for_selector('text="Bicicleta de Montaña Orbea MX 29"')
         self.assertTrue(page.locator('text="Bicicleta de Montaña Orbea MX 29"').is_visible())
 
-        # 'Cómo comprar en Alfafar' modal
+        # 'Cómo comprar en Alfafar' modal + GTM how_to_buy_open event
         page.click('button:has-text("Cómo comprar"), button:has-text("How to buy")')
         page.wait_for_selector("#how-to-buy-dialog[open]")
+        modal_events = page.evaluate("() => (window.dataLayer || []).map((e) => e && e.event).filter(Boolean)")
+        self.assertIn("how_to_buy_open", modal_events)
         modal_title = page.inner_text("#how-to-buy-title")
         self.assertTrue("Rápido Pack Alfafar" in modal_title or "comprar" in modal_title.lower())
         page.screenshot(path=str(self.artifacts_dir / "daily_00_how_to_buy_modal.png"))
@@ -164,10 +186,12 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         page.wait_for_selector("#how-to-buy-dialog", state="hidden")
         self.assertFalse(page.locator("#how-to-buy-dialog").is_visible())
 
-        # Public Product Detail Page + verify real rendered media (naturalWidth > 0)
+        # Public Product Detail Page + verify real rendered media (naturalWidth > 0) + GTM view_item
         with page.expect_navigation():
             page.click('h3:has-text("Bicicleta de Montaña Orbea MX 29") a')
         page.wait_for_selector("#mainProductPhoto")
+        detail_events = page.evaluate("() => (window.dataLayer || []).map((e) => e && e.event).filter(Boolean)")
+        self.assertIn("view_item", detail_events)
         assert_visible_images_loaded(self, page, "#mainProductPhoto")
         page.screenshot(path=str(self.artifacts_dir / "daily_00_product_detail_public.png"))
 
@@ -203,15 +227,19 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         page.wait_for_selector('text="Bicicleta de Montaña Orbea MX 29"')
         self.assertTrue(page.locator('text="Bicicleta de Montaña Orbea MX 29"').first.is_visible())
 
-        # Legal and privacy pages
-        for legal_path, heading_es, heading_en in [
-            (reverse("storefront:legal_notice"), "Aviso Legal", "Legal Notice and Terms of Use"),
-            (reverse("storefront:privacy"), "Política de Privacidad", "Privacy Policy (GDPR)"),
-            (reverse("storefront:cookies"), "Política de Cookies", "Cookies Policy"),
+        # Canonical footer legal links & HTTP 302 redirects to rapidopackvalencia.es
+        for route_name, expected_target in [
+            ("storefront:legal_notice", "https://rapidopackvalencia.es/aviso-legal"),
+            ("storefront:privacy", "https://rapidopackvalencia.es/privacidad"),
+            ("storefront:cookies", "https://rapidopackvalencia.es/cookies"),
         ]:
-            page.goto(f"{self.live_server_url}{legal_path}")
-            page.wait_for_selector(f"h1:has-text('{heading_es}'), h1:has-text('{heading_en}')")
-            self.assertIn("Rápido Pack", page.content())
+            self.assertGreater(page.locator(f'footer a[href="{expected_target}"]').count(), 0)
+            resp = page.context.request.get(
+                f"{self.live_server_url}{reverse(route_name)}",
+                max_redirects=0,
+            )
+            self.assertEqual(resp.status, 302)
+            self.assertEqual(resp.headers.get("location"), expected_target)
 
         # PART II: STAFF INTAKE & AI VALUATION WORKFLOW
         page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
@@ -290,12 +318,14 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         pallet_select = page.locator("#palletFilterForm select[name='pallet']")
         self.assertTrue(pallet_select.is_visible())
 
-        with page.expect_navigation():
+        with page.expect_navigation(wait_until="domcontentloaded"):
             pallet_select.select_option("none")
+        page.wait_for_selector("#palletFilterForm select[name='pallet']")
         self.assertFalse(page.locator('text="Chaqueta Barbour Beaufort Encerada"').is_visible())
 
-        with page.expect_navigation():
+        with page.expect_navigation(wait_until="domcontentloaded"):
             page.locator("#palletFilterForm select[name='pallet']").select_option(str(product.pallet.id))
+        page.wait_for_selector('text="Chaqueta Barbour Beaufort Encerada"')
         self.assertTrue(page.locator('text="Chaqueta Barbour Beaufort Encerada"').first.is_visible())
 
         # Product Detail View
@@ -452,13 +482,13 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         # Switch to Spanish first so baseline ES state is guaranteed regardless of test LANGUAGE_CODE
         with page.expect_navigation():
             page.locator('button[name="language"][value="es"]').first.click()
-        page.wait_for_selector("#paqueteria")
+        page.wait_for_selector("#categoryRail")
 
         page_text_es = page.content()
         self.assertEqual(page.locator("html").get_attribute("lang"), "es")
-        self.assertIn("Tu punto de confianza en Alfafar", page_text_es)
-        self.assertIn("Servicios de paquetería", page_text_es)
-        self.assertIn("Lo último en nuestra tienda", page_text_es)
+        self.assertIn("Estantería Outlet y Segunda Mano", page_text_es)
+        self.assertIn("Control de Cookies", page_text_es)
+        self.assertIn("Cómo comprar", page_text_es)
         page.screenshot(path=str(self.artifacts_dir / "daily_bilingual_01_es.png"))
 
         # Switch to English
@@ -466,14 +496,14 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         self.assertTrue(en_btn.is_visible())
         with page.expect_navigation():
             en_btn.click()
-        page.wait_for_selector("#paqueteria")
+        page.wait_for_selector("#categoryRail")
 
         page_text_en = page.content()
         self.assertEqual(page.locator("html").get_attribute("lang"), "en")
-        self.assertIn("Your trusted local hub in Alfafar", page_text_en)
-        self.assertIn("Parcel Services", page_text_en)
-        self.assertIn("Latest arrivals in our store", page_text_en)
-        self.assertNotIn("Tu punto de confianza en Alfafar", page_text_en)
+        self.assertIn("Outlet &amp; Second-Hand Shelf", page_text_en)
+        self.assertIn("Cookie Control", page_text_en)
+        self.assertIn("How to buy", page_text_en)
+        self.assertNotIn("Estantería Outlet y Segunda Mano", page_text_en)
         page.screenshot(path=str(self.artifacts_dir / "daily_bilingual_02_en.png"))
 
         # How-to-Buy guide in English
