@@ -228,5 +228,23 @@
       dialog.showModal();
     }
   }
+
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ ecommerce: null });
+  window.dataLayer.push({
+    event: 'view_item',
+    ecommerce: {
+      currency: 'EUR',
+      value: {{ product.price|unlocalize|default:0 }},
+      items: [{
+        item_id: '{{ product.public_reference|escapejs }}',
+        item_name: '{{ product.ai_title|escapejs }}',
+        item_category: '{% if product.category %}{{ product.category.get_localized_name|escapejs }}{% endif %}',
+        item_condition: '{{ product.condition|default:""|escapejs }}',
+        price: {{ product.price|unlocalize|default:0 }},
+        availability: '{% if product.status == "sold" %}sold{% elif product.is_reserved %}reserved{% else %}in_stock{% endif %}'
+      }]
+    }
+  });
 </script>
 {% endblock %}

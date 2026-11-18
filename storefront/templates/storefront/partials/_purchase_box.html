@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n l10n %}
 <!-- Clean Sticky Purchase & Contact Column (1px dividers, single primary CTA) -->
 <div class="bg-white rounded-2xl p-5 sm:p-6 border border-border-subtle space-y-5">
 
@@ -77,6 +77,11 @@
       <a href="{% url 'storefront:go_whatsapp_product' product.pk %}"
          target="_blank"
          rel="noopener noreferrer"
+         data-gtm-event="whatsapp_click"
+         data-gtm-location="product_detail"
+         data-item-id="{{ product.public_reference }}"
+         data-item-name="{{ product.ai_title }}"
+         {% if product.price %}data-item-price="{{ product.price|unlocalize }}"{% endif %}
          class="w-full bg-[#25D366] hover:bg-[#20ba59] text-slate-950 text-sm font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 text-center transition-colors active:scale-[0.99]">
         <span class="material-symbols-outlined text-[18px]" aria-hidden="true">chat</span>
         <span>{% trans "Join waiting list via WhatsApp" %}</span>
@@ -85,6 +90,11 @@
       <a href="{% url 'storefront:go_whatsapp_product' product.pk %}"
          target="_blank"
          rel="noopener noreferrer"
+         data-gtm-event="whatsapp_click"
+         data-gtm-location="product_detail"
+         data-item-id="{{ product.public_reference }}"
+         data-item-name="{{ product.ai_title }}"
+         {% if product.price %}data-item-price="{{ product.price|unlocalize }}"{% endif %}
          class="w-full bg-[#25D366] hover:bg-[#20ba59] text-slate-950 py-3.5 px-4 rounded-xl flex flex-col items-center justify-center text-center transition-colors active:scale-[0.99]">
         <span class="flex items-center gap-2 font-display text-base font-bold">
           <span class="material-symbols-outlined text-[20px]" aria-hidden="true">chat</span>
@@ -117,6 +127,11 @@
       <a href="{% url 'storefront:go_listing' link.pk %}"
          target="_blank"
          rel="noopener noreferrer"
+         data-gtm-event="marketplace_click"
+         data-marketplace-name="{{ link.get_platform_display }}"
+         data-item-id="{{ product.public_reference }}"
+         data-item-name="{{ product.ai_title }}"
+         {% if product.price %}data-item-price="{{ product.price|unlocalize }}"{% endif %}
          class="inline-flex items-center gap-2 px-3.5 py-2 min-h-[40px] rounded-xl bg-surface-alt hover:bg-mint-wash text-sm font-semibold text-[#111820] hover:text-primary-hover transition-colors group max-w-full min-w-0">
         {% if link.platform == 'wallapop' %}
           <span class="w-2.5 h-2.5 rounded-full bg-[#13C1AC] shrink-0" aria-hidden="true"></span>

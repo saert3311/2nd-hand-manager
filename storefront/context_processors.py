@@ -3,6 +3,7 @@ from datetime import datetime
 from urllib.parse import unquote
 from zoneinfo import ZoneInfo
 
+from django.conf import settings
 from django.urls import reverse
 from django.utils.translation import gettext as _
 
@@ -114,6 +115,13 @@ def storefront_config(request):
     authenticated = bool(user and user.is_authenticated)
     manager_flag = bool(authenticated and is_manager(user))
     assistant_flag = bool(authenticated and is_assistant(user))
+    staff_member = bool(
+        manager_flag
+        or assistant_flag
+        or (authenticated and (getattr(user, "is_staff", False) or getattr(user, "is_superuser", False)))
+    )
+    gtm_container_id = getattr(settings, "GTM_CONTAINER_ID", GTM_CONTAINER_ID)
+    gtm_enabled = bool(gtm_container_id and not staff_member)
 
     try:
         whatsapp_url = reverse("storefront:go_whatsapp")
@@ -128,7 +136,8 @@ def storefront_config(request):
         "storefront": config,
         "store_config": config,
         "astro_landing_url": ASTRO_LANDING_URL,
-        "gtm_container_id": GTM_CONTAINER_ID,
+        "gtm_container_id": gtm_container_id,
+        "gtm_enabled": gtm_enabled,
         "cookie_consent_name": COOKIE_CONSENT_NAME,
         "cookie_consent_decided": cookie_consent_decided,
         "cookie_analytics_granted": cookie_analytics_granted,
@@ -140,7 +149,7 @@ def storefront_config(request):
         "storefront_whatsapp_url": whatsapp_url,
         "storefront_direct_wa_url": f"https://wa.me/{config.clean_whatsapp_number}",
         "nav_categories": categories,
-        "is_staff_member": manager_flag or assistant_flag,
+        "is_staff_member": staff_member,
         "is_manager_user": manager_flag,
         "is_assistant_user": assistant_flag,
     }

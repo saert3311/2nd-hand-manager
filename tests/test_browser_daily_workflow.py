@@ -166,15 +166,19 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         assert_visible_images_loaded(self, page)
         page.screenshot(path=str(self.artifacts_dir / "daily_00_public_catalog.png"))
 
-        # Category Rail filtering (Bicicletas)
+        # Category Rail filtering (Bicicletas) + GTM dataLayer list event check
+        shelf_events = page.evaluate("() => (window.dataLayer || []).map((e) => e && e.event).filter(Boolean)")
+        self.assertIn("view_item_list", shelf_events)
         with page.expect_navigation():
             page.click('#categoryRail a:has-text("Bicicletas")')
         page.wait_for_selector('text="Bicicleta de Montaña Orbea MX 29"')
         self.assertTrue(page.locator('text="Bicicleta de Montaña Orbea MX 29"').is_visible())
 
-        # 'Cómo comprar en Alfafar' modal
+        # 'Cómo comprar en Alfafar' modal + GTM how_to_buy_open event
         page.click('button:has-text("Cómo comprar"), button:has-text("How to buy")')
         page.wait_for_selector("#how-to-buy-dialog[open]")
+        modal_events = page.evaluate("() => (window.dataLayer || []).map((e) => e && e.event).filter(Boolean)")
+        self.assertIn("how_to_buy_open", modal_events)
         modal_title = page.inner_text("#how-to-buy-title")
         self.assertTrue("Rápido Pack Alfafar" in modal_title or "comprar" in modal_title.lower())
         page.screenshot(path=str(self.artifacts_dir / "daily_00_how_to_buy_modal.png"))
@@ -182,10 +186,12 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         page.wait_for_selector("#how-to-buy-dialog", state="hidden")
         self.assertFalse(page.locator("#how-to-buy-dialog").is_visible())
 
-        # Public Product Detail Page + verify real rendered media (naturalWidth > 0)
+        # Public Product Detail Page + verify real rendered media (naturalWidth > 0) + GTM view_item
         with page.expect_navigation():
             page.click('h3:has-text("Bicicleta de Montaña Orbea MX 29") a')
         page.wait_for_selector("#mainProductPhoto")
+        detail_events = page.evaluate("() => (window.dataLayer || []).map((e) => e && e.event).filter(Boolean)")
+        self.assertIn("view_item", detail_events)
         assert_visible_images_loaded(self, page, "#mainProductPhoto")
         page.screenshot(path=str(self.artifacts_dir / "daily_00_product_detail_public.png"))
 

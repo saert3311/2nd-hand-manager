@@ -20,8 +20,11 @@ Implement a **shared first-party root-domain cookie (`rpv_cookie_consent`) + `lo
    - First-time undecided visitors see the floating bottom-right `#cookie-banner-container` (`Control de Cookies` with `Aceptar todas`, `Rechazar`, and `Configurar preferencias`), styled with `>= 12px` typography and full `320px`/`360px` OPPO A74 mobile safety.
 
 4. **Google Consent Mode v2 + GTM (`GTM-PGBXBVXJ`)**:
-   - Initializes `gtag('consent', 'default', ...)` in `<head>` with `ad_storage`, `ad_user_data`, and `ad_personalization` denied, and `analytics_storage` matched to `cookie_analytics_granted`.
+   - Configures `GTM_CONTAINER_ID` via `config/settings.py` & `.env.example` (defaulting to `GTM-PGBXBVXJ`).
+   - Initializes `gtag('consent', 'default', ...)` in `<head>` with `ad_storage`, `ad_user_data`, and `ad_personalization` denied, and `analytics_storage` matched to `cookie_analytics_granted`, followed by both the `<head>` `gtm.js` loader and `<body>` `<noscript>` iframe fallback.
    - Calls `gtag('consent', 'update', { analytics_storage: ... })` immediately on Accept, Reject, or Save Selection.
+   - **E-Commerce & Lead `dataLayer` Events**: Pushes `view_item_list` and `search` on catalog views, `view_item` on product detail pages, `how_to_buy_open` when opening the quick guide modal, and delegated `whatsapp_click` / `marketplace_click` lead events (with item ID, title, category, condition, and EUR price).
+   - **Staff Exclusion (`gtm_enabled=False`)**: When an authenticated manager or assistant browses the public storefront (`is_staff_member=True`), `gtm.js` and the `<noscript>` iframe are omitted and `traffic_type: 'internal'` is pushed to `dataLayer` so team inspections never pollute visitor analytics.
 
 5. **Canonical Legal Redirects (`/aviso-legal/`, `/privacidad/`, `/cookies/`)**:
    - Storefront legal routes redirect (HTTP 302) directly to `https://rapidopackvalencia.es/{aviso-legal,privacidad,cookies}` and are excluded from `/sitemap.xml` so the main corporate site remains the single source of truth.

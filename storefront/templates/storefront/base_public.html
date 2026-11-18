@@ -16,8 +16,7 @@
   <meta property="og:type" content="website">
   {% endblock %}
 
-  <!-- Google Consent Mode v2 + Google Tag Manager (GTM-PGBXBVXJ) -->
-  {% with gtm_id=gtm_container_id|default:'GTM-PGBXBVXJ' %}
+  <!-- Google Consent Mode v2 + Google Tag Manager -->
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){window.dataLayer.push(arguments);}
@@ -28,15 +27,21 @@
       'analytics_storage': '{{ cookie_analytics_granted|yesno:"granted,denied" }}',
       'wait_for_update': 500
     });
+    window.dataLayer.push({
+      'page_section': 'storefront',
+      'language': '{{ LANGUAGE_CODE|default:"es"|escapejs }}',
+      'traffic_type': '{{ is_staff_member|yesno:"internal,public" }}'
+    });
+    {% if gtm_enabled %}
     if (!navigator.webdriver) {
       (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
       new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
       j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-      })(window,document,'script','dataLayer','{{ gtm_id|escapejs }}');
+      })(window,document,'script','dataLayer','{{ gtm_container_id|escapejs }}');
     }
+    {% endif %}
   </script>
-  {% endwith %}
 
   <!-- 2-Font Pairing aligned with rapidopackvalencia.es: Outfit (Display & Prices) + Plus Jakarta Sans (Body & UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -129,6 +134,9 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-surface font-sans text-on-surface antialiased selection:bg-mint-wash selection:text-primary flex flex-col min-h-full">
+  {% if gtm_enabled %}
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ gtm_container_id|urlencode }}" height="0" width="0" style="display:none;visibility:hidden" title="Google Tag Manager"></iframe></noscript>
+  {% endif %}
 
   <!-- Skip to Main Content Link (WCAG 2.4.1) -->
   <a href="#main-content"
@@ -397,6 +405,8 @@
 
   <script>
     function openHowToBuyModal() {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({ event: 'how_to_buy_open' });
       const dialog = document.getElementById('how-to-buy-dialog');
       if (dialog && typeof dialog.showModal === 'function') {
         dialog.showModal();
@@ -404,6 +414,36 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener('click', (event) => {
+        const waLink = event.target.closest('a[href*="/go/whatsapp/"], [data-gtm-event="whatsapp_click"]');
+        if (waLink) {
+          window.dataLayer = window.dataLayer || [];
+          const priceVal = parseFloat(waLink.getAttribute('data-item-price') || '');
+          window.dataLayer.push({
+            event: 'whatsapp_click',
+            lead_channel: 'whatsapp',
+            lead_location: waLink.getAttribute('data-gtm-location') || 'storefront',
+            item_id: waLink.getAttribute('data-item-id') || '',
+            item_name: waLink.getAttribute('data-item-name') || '',
+            value: Number.isFinite(priceVal) ? priceVal : undefined,
+            currency: 'EUR'
+          });
+        }
+        const mpLink = event.target.closest('a[href*="/go/link/"], [data-gtm-event="marketplace_click"]');
+        if (mpLink) {
+          window.dataLayer = window.dataLayer || [];
+          const priceVal = parseFloat(mpLink.getAttribute('data-item-price') || '');
+          window.dataLayer.push({
+            event: 'marketplace_click',
+            marketplace_name: mpLink.getAttribute('data-marketplace-name') || mpLink.textContent.trim(),
+            item_id: mpLink.getAttribute('data-item-id') || '',
+            item_name: mpLink.getAttribute('data-item-name') || '',
+            value: Number.isFinite(priceVal) ? priceVal : undefined,
+            currency: 'EUR'
+          });
+        }
+      });
+
       const mobileDrawer = document.getElementById('mobileNavDrawer');
       if (mobileDrawer) {
         document.addEventListener('click', (event) => {

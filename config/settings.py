@@ -251,4 +251,7 @@ APP_BUILD_COMMIT = os.getenv('APP_BUILD_COMMIT', '').strip()
 APP_VERSION = os.getenv('APP_VERSION', '2.11.0').strip()
 APP_ENV = os.getenv('APP_ENV', '').strip()
 
+# Google Tag Manager Container ID (shared across rapidopackvalencia.es and store subdomain)
+GTM_CONTAINER_ID = os.getenv('GTM_CONTAINER_ID', 'GTM-PGBXBVXJ').strip()
+
 

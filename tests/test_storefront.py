@@ -5,7 +5,7 @@ from io import StringIO
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import escape
@@ -731,3 +731,39 @@ class StorefrontMarketplaceTests(TestCase):
             self.assertIn('aria-hidden="true"', banner_tag)
             toggle_tag = re.search(r'<input[^>]*id="cookie-analytics-toggle"[^>]*>', html_rejected).group(0)
             self.assertNotIn("checked", toggle_tag)
+
+        # 4. GTM <noscript>, dataLayer e-commerce/lead events, staff exclusion & override setting
+        self.assertIn(
+            '<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PGBXBVXJ"',
+            html_fresh,
+        )
+        self.assertIn("'traffic_type': 'public'", html_fresh)
+        self.assertIn("event: 'view_item_list'", html_fresh)
+
+        search_resp = self.client.get(f"{reverse('storefront:home')}?q=sony")
+        search_html = search_resp.content.decode("utf-8")
+        self.assertIn("event: 'search'", search_html)
+        self.assertIn("search_term: 'sony'", search_html)
+
+        detail_prod = self._create_published_product(
+            title="Auriculares Sony GTM",
+            price=Decimal("89.00"),
+            category=self.tech_cat,
+        )
+        detail_html = self.client.get(detail_prod.get_public_url()).content.decode("utf-8")
+        self.assertIn("event: 'view_item'", detail_html)
+        self.assertIn('data-gtm-event="whatsapp_click"', detail_html)
+        self.assertIn('data-gtm-event="marketplace_click"', detail_html)
+
+        with override_settings(GTM_CONTAINER_ID="GTM-TEST999"):
+            custom_html = self.client.get(reverse("storefront:home")).content.decode("utf-8")
+            self.assertIn("GTM-TEST999", custom_html)
+
+        # Logged-in staff members must not load GTM container scripts
+        self.client.force_login(self.staff_user)
+        staff_resp = self.client.get(reverse("storefront:home"))
+        self.assertFalse(staff_resp.context["gtm_enabled"])
+        staff_html = staff_resp.content.decode("utf-8")
+        self.assertIn("'traffic_type': 'internal'", staff_html)
+        self.assertNotIn("googletagmanager.com/ns.html", staff_html)
+        self.assertNotIn("googletagmanager.com/gtm.js", staff_html)
