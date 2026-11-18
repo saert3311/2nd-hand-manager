@@ -131,11 +131,16 @@ def storefront_config(request):
     store_is_open, store_live_status_label = _compute_live_store_status()
     raw_consent = request.COOKIES.get(COOKIE_CONSENT_NAME) if hasattr(request, "COOKIES") else None
     cookie_consent_decided, cookie_analytics_granted = _parse_rpv_cookie_consent(raw_consent)
+    try:
+        default_canonical_url = request.build_absolute_uri(request.path)
+    except Exception:
+        default_canonical_url = ""
 
     return {
         "storefront": config,
         "store_config": config,
         "astro_landing_url": ASTRO_LANDING_URL,
+        "default_canonical_url": default_canonical_url,
         "gtm_container_id": gtm_container_id,
         "gtm_enabled": gtm_enabled,
         "cookie_consent_name": COOKIE_CONSENT_NAME,

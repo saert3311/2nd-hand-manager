@@ -4641,6 +4641,13 @@ msgstr "Rechazar"
 msgid "Configure preferences"
 msgstr "Configurar preferencias"
 
+msgid "%(category)s at Rápido Pack Valencia (Alfafar): inspected second-hand and outlet items, free 24h WhatsApp hold, in-store testing benches, and protected shipping across Spain."
+msgstr "%(category)s en Rápido Pack Valencia (Alfafar): artículos revisados de segunda mano y outlet, reserva gratis 24h por WhatsApp, bancos de prueba con enchufe y envío protegido a toda España."
+
+msgid "Catalog products"
+msgstr "Productos del catálogo"
+
+
 
 
 

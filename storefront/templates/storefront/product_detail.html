@@ -5,8 +5,7 @@
 {% block meta_description %}{{ product.ai_description|truncatechars:160 }}{% endblock %}
 
 {% block meta_seo %}
-<link rel="canonical" href="{{ canonical_url }}">
-<meta property="og:site_name" content="{{ storefront.store_name }} ({{ storefront.domain }})">
+<meta property="og:site_name" content="{{ storefront.store_name }} (rapidopackvalencia.es)">
 <meta property="og:title" content="{{ product.ai_title }} ({{ product.public_reference }})">
 <meta property="og:description" content="{{ product.ai_description|truncatechars:200 }}">
 <meta property="og:url" content="{{ canonical_url }}">
@@ -19,6 +18,9 @@
 <meta property="product:price:currency" content="EUR">
 {% endif %}
 <script type="application/ld+json">{{ schema_json_ld|safe }}</script>
+{% if breadcrumb_json_ld %}
+<script type="application/ld+json">{{ breadcrumb_json_ld|safe }}</script>
+{% endif %}
 {% endblock %}
 
 {% block staff_bar_extra %}
@@ -65,6 +67,8 @@
               <img id="mainProductPhoto"
                    src="{{ first_image.image.url }}"
                    alt="{{ product.ai_title }}"
+                   width="800"
+                   height="800"
                    fetchpriority="high"
                    onclick="openImageLightbox()"
                    class="w-full h-full object-cover cursor-zoom-in transition-transform duration-300 {% if product.status == 'sold' %}grayscale opacity-75{% else %}group-hover:scale-[1.02]{% endif %}">
@@ -96,7 +100,10 @@
                     class="thumbnail-btn w-20 h-20 rounded-xl overflow-hidden shrink-0 p-0.5 transition-colors border {% if forloop.first %}border-primary ring-2 ring-primary{% else %}border-border-subtle hover:border-primary/40{% endif %}">
               <img src="{{ img.image.url }}"
                    alt="{{ product.ai_title }} - {{ forloop.counter }}"
+                   width="80"
+                   height="80"
                    loading="lazy"
+                   decoding="async"
                    class="w-full h-full object-cover rounded-lg">
             </button>
             {% endfor %}

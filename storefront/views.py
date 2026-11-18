@@ -125,8 +125,31 @@ def _sanitize_public_product(product: Product) -> Product:
     return product
 
 
+def _build_breadcrumb_schema(items: list[tuple[str, str]]) -> dict:
+    """Builds Schema.org BreadcrumbList JSON-LD metadata from ordered (name, url) pairs."""
+    return {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": idx,
+                "name": str(name),
+                "item": url,
+            }
+            for idx, (name, url) in enumerate(items, start=1)
+            if name and url
+        ],
+    }
+
+
 def _build_local_business_schema(store_config: StorefrontConfiguration, home_url: str) -> dict:
     """Builds Schema.org LocalBusiness JSON-LD metadata for the public store shelf."""
+    raw_phone = store_config.clean_whatsapp_number
+    business_phone = "+34640397434" if raw_phone in ("", "34600000000") else f"+{raw_phone}"
+    raw_email = (store_config.contact_email or "").strip()
+    business_email = "info@rapidopackvalencia.es" if raw_email in ("", "info@rapidopack.es") else raw_email
+
     return {
         "@context": "https://schema.org",
         "@type": "LocalBusiness",
@@ -135,8 +158,9 @@ def _build_local_business_schema(store_config: StorefrontConfiguration, home_url
             "Outlet and second-hand opportunity store with verified items and in-store testing benches in Alfafar, Valencia."
         ),
         "url": home_url,
-        "telephone": f"+{store_config.clean_whatsapp_number}",
-        "email": store_config.contact_email,
+        "sameAs": [f"{ASTRO_LANDING_URL}/"],
+        "telephone": business_phone,
+        "email": business_email,
         "priceRange": "€",
         "address": {
             "@type": "PostalAddress",
@@ -353,6 +377,32 @@ def catalog_view(request, category_slug: str | None = None, resolved_category: C
     canonical_url = request.build_absolute_uri(canonical_path)
     store_config = StorefrontConfiguration.get_solo()
     local_business_schema = _build_local_business_schema(store_config, canonical_url)
+    has_query_filters = bool(
+        condition_filter
+        or price_range
+        or min_price_raw
+        or max_price_raw
+        or search_query
+        or (raw_sort and sort_by != "newest")
+        or (not category_slug and category_slug_clean)
+    )
+    should_noindex = bool(paginator.count == 0 or has_query_filters)
+    if active_category:
+        meta_description = _(
+            "%(category)s at Rápido Pack Valencia (Alfafar): inspected second-hand and outlet items, "
+            "free 24h WhatsApp hold, in-store testing benches, and protected shipping across Spain."
+        ) % {"category": active_category.get_localized_name()}
+        breadcrumb_schema = _build_breadcrumb_schema(
+            [
+                (_("Store Shelf"), request.build_absolute_uri(reverse("storefront:home"))),
+                (active_category.get_localized_name(), canonical_url),
+            ]
+        )
+        breadcrumb_json_ld = json.dumps(breadcrumb_schema, ensure_ascii=False)
+    else:
+        meta_description = store_config.hero_subtitle
+        breadcrumb_json_ld = ""
+
     active_marketplace_sites = list(
         MarketplaceSite.objects.filter(is_active=True)
         .exclude(base_url="")
@@ -374,6 +424,9 @@ def catalog_view(request, category_slug: str | None = None, resolved_category: C
         "category_filter": category_slug_clean,
         "base_filter_url": base_filter_url,
         "canonical_url": canonical_url,
+        "meta_description": meta_description,
+        "should_noindex": should_noindex,
+        "breadcrumb_json_ld": breadcrumb_json_ld,
         "local_business_json_ld": json.dumps(local_business_schema, ensure_ascii=False),
         "active_marketplace_sites": active_marketplace_sites,
         "active_condition": condition_filter,
@@ -531,6 +584,16 @@ def public_product_detail_view(request, slug: str, pk: int):
         if line.strip()
     ]
 
+    breadcrumb_items = [(_("Store Shelf"), request.build_absolute_uri(reverse("storefront:home")))]
+    if product.category and product.category.is_active:
+        breadcrumb_items.append(
+            (
+                product.category.get_localized_name(),
+                request.build_absolute_uri(reverse("storefront:category", kwargs={"category_slug": product.category.slug})),
+            )
+        )
+    breadcrumb_items.append((product.ai_title, canonical_url))
+
     context = {
         "product": product,
         "images": images,
@@ -541,6 +604,7 @@ def public_product_detail_view(request, slug: str, pk: int):
         "related_products": related_products,
         "canonical_url": canonical_url,
         "whatsapp_direct_url": _build_whatsapp_inquiry_url(request, product, store_config),
+        "breadcrumb_json_ld": json.dumps(_build_breadcrumb_schema(breadcrumb_items), ensure_ascii=False),
         "schema_json_ld": json.dumps(schema_data, ensure_ascii=False),
         "description_lines": description_lines,
         "savings_pct": product.savings_pct,
@@ -558,6 +622,7 @@ def how_to_buy_view(request):
         "storefront/how_to_buy.html",
         {
             "page_title": _("How to buy at Rápido Pack Alfafar?"),
+            "canonical_url": request.build_absolute_uri(reverse("storefront:how_to_buy")),
         },
     )
 
@@ -607,28 +672,27 @@ def go_marketplace_link_view(request, link_pk: int):
 
 def sitemap_view(request):
     """
-    Dynamic XML sitemap (/sitemap.xml) listing only canonical 200-status public URLs:
-    /, /tienda/, /categoria/<slug>/, /tienda/producto/<slug>-<pk>/ (public_visible()),
-    and /como-comprar/. Legal pages redirect to rapidopackvalencia.es and are omitted.
-    Never exposes internal routes or notes.
+    Dynamic XML sitemap (/sitemap.xml) listing only canonical 200-status indexable URLs:
+    /, populated /categoria/<slug>/ pages, /tienda/producto/<slug>-<pk>/ (public_visible()),
+    and /como-comprar/. Duplicate (/tienda/), empty category, and redirecting legal routes are omitted.
     """
+    visible_product_ids = Product.objects.public_visible().values_list("id", flat=True)
     products = (
         Product.objects.public_visible()
         .only("id", "ai_title", "updated_at", "status", "is_sold")
         .order_by("-updated_at")
     )
-    categories = Category.objects.filter(is_active=True).order_by("order", "name")
+    categories = (
+        Category.objects.filter(is_active=True, products__id__in=visible_product_ids)
+        .distinct()
+        .order_by("order", "name")
+    )
 
     urls = [
         {
             "loc": request.build_absolute_uri(reverse("storefront:home")),
             "changefreq": "daily",
             "priority": "1.0",
-        },
-        {
-            "loc": request.build_absolute_uri(reverse("storefront:catalog")),
-            "changefreq": "daily",
-            "priority": "0.9",
         },
         {
             "loc": request.build_absolute_uri(reverse("storefront:how_to_buy")),

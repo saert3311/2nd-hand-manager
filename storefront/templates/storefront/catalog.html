@@ -2,16 +2,19 @@
 {% load i18n l10n %}
 
 {% block title %}{% if active_category_obj %}{{ active_category_obj.get_localized_name }} · {% endif %}{{ storefront.store_name }} Valencia · {% trans "Store Shelf" %}{% endblock %}
+{% block meta_description %}{{ meta_description|default:storefront.hero_subtitle }}{% endblock %}
 
 {% block meta_seo %}
-<link rel="canonical" href="{{ canonical_url }}">
-<meta property="og:site_name" content="{{ storefront.store_name }} ({{ storefront.domain }})">
+<meta property="og:site_name" content="{{ storefront.store_name }} (rapidopackvalencia.es)">
 <meta property="og:title" content="{% if active_category_obj %}{{ active_category_obj.get_localized_name }} · {% endif %}{{ storefront.store_name }} Valencia">
-<meta property="og:description" content="{{ storefront.hero_subtitle }}">
+<meta property="og:description" content="{{ meta_description|default:storefront.hero_subtitle }}">
 <meta property="og:url" content="{{ canonical_url }}">
 <meta property="og:type" content="website">
 {% if local_business_json_ld %}
 <script type="application/ld+json">{{ local_business_json_ld|safe }}</script>
+{% endif %}
+{% if breadcrumb_json_ld %}
+<script type="application/ld+json">{{ breadcrumb_json_ld|safe }}</script>
 {% endif %}
 {% endblock %}
 
@@ -155,6 +158,7 @@
   <section class="w-full bg-surface py-7 sm:py-9">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {% if products %}
+      <h2 class="sr-only">{% trans "Catalog products" %}</h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-8">
         {% for product in products %}
           {% include "storefront/partials/_product_card.html" with product=product is_lcp=forloop.first %}

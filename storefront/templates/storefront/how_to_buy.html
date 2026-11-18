@@ -4,6 +4,14 @@
 {% block title %}{{ page_title }} · {{ storefront.store_name }}{% endblock %}
 {% block meta_description %}{% trans "Shopping guide, 24-hour WhatsApp reservations, free store pickup in Alfafar, and protected delivery across Spain." %}{% endblock %}
 
+{% block meta_seo %}
+<meta property="og:site_name" content="{{ storefront.store_name }} (rapidopackvalencia.es)">
+<meta property="og:title" content="{{ page_title }} · {{ storefront.store_name }}">
+<meta property="og:description" content="{% trans 'Shopping guide, 24-hour WhatsApp reservations, free store pickup in Alfafar, and protected delivery across Spain.' %}">
+<meta property="og:url" content="{{ canonical_url|default:default_canonical_url }}">
+<meta property="og:type" content="website">
+{% endblock %}
+
 {% block content %}
 <section class="w-full py-8 sm:py-12">
   <div class="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8">

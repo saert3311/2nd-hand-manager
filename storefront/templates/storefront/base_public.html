@@ -6,6 +6,13 @@
   <meta name="text-scale" content="scale">
   <title>{% block title %}{{ storefront.store_name }} Valencia · {% trans "Outlet & Second-Hand Store Shelf in Alfafar" %}{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}{{ storefront.hero_subtitle }}{% endblock %}">
+  <meta name="robots" content="{% if should_noindex %}noindex, follow{% else %}index, follow, max-image-preview:large{% endif %}">
+  <link rel="canonical" href="{{ canonical_url|default:default_canonical_url }}">
+  <link rel="alternate" hreflang="es" href="{{ canonical_url|default:default_canonical_url }}">
+  <link rel="alternate" hreflang="en" href="{{ canonical_url|default:default_canonical_url }}">
+  <link rel="alternate" hreflang="x-default" href="{{ canonical_url|default:default_canonical_url }}">
+  <meta property="og:locale" content="{% if LANGUAGE_CODE == 'en' %}en_GB{% else %}es_ES{% endif %}">
+  <meta property="og:locale:alternate" content="{% if LANGUAGE_CODE == 'en' %}es_ES{% else %}en_GB{% endif %}">
   <link rel="icon" type="image/png" sizes="192x192" href="{% static 'inventory/icons/icon-192.png' %}">
   <link rel="apple-touch-icon" href="{% static 'inventory/icons/apple-touch-icon.png' %}">
 
@@ -49,62 +56,66 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS with Rápido Pack Valencia Design Tokens -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Pre-Compiled Tailwind CSS (Zero Render-Blocking) + Deferred JIT Fallback -->
+  <link rel="stylesheet" href="{% static 'storefront/css/storefront.css' %}">
   <script id="tailwind-config">
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            "surface": "#ffffff",
-            "surface-bright": "#ffffff",
-            "surface-alt": "#f4f6f8",
-            "background": "#ffffff",
-            "surface-container-lowest": "#ffffff",
-            "surface-container-low": "#f4f6f8",
-            "surface-container": "#e8eef3",
-            "surface-container-high": "#e2e8f0",
-            "surface-container-highest": "#cbd5e1",
-            "surface-variant": "#cbd5e1",
-            "surface-dark": "#111820",
-            "on-surface": "#111820",
-            "on-background": "#111820",
-            "on-surface-variant": "#334155",
-            "outline": "#526071",
-            "text-muted": "#526071",
-            "outline-variant": "#cbd5e1",
-            "border-subtle": "#e2e8f0",
-            "primary": "#059652",
-            "primary-hover": "#047842",
-            "primary-container": "#047842",
-            "primary-fixed": "#6ee7b7",
-            "primary-fixed-dim": "#34d399",
-            "on-primary-fixed": "#022c22",
-            "mint-wash": "#ecfdf5",
-            "on-primary": "#ffffff",
-            "secondary": "#047842",
-            "secondary-container": "#059652",
-            "secondary-fixed": "#ecfdf5",
-            "on-secondary-fixed": "#047842",
-            "on-secondary": "#ffffff",
-            "error": "#ba1a1a",
-            "error-container": "#ffdad6",
-            "on-error": "#ffffff"
-          },
-          fontFamily: {
-            "sans": ["Plus Jakarta Sans", "system-ui", "-apple-system", "sans-serif"],
-            "display": ["Outfit", "system-ui", "-apple-system", "sans-serif"],
-            "mono": ["Plus Jakarta Sans", "system-ui", "-apple-system", "sans-serif"],
-            "label-button": ["Plus Jakarta Sans", "system-ui", "-apple-system", "sans-serif"]
-          },
-          boxShadow: {
-            "2xs": "0 1px 2px 0 rgba(17, 24, 32, 0.05)"
+    function applyRpvTailwindConfig() {
+      if (typeof tailwind === 'undefined') return;
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface": "#ffffff",
+              "surface-bright": "#ffffff",
+              "surface-alt": "#f4f6f8",
+              "background": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-low": "#f4f6f8",
+              "surface-container": "#e8eef3",
+              "surface-container-high": "#e2e8f0",
+              "surface-container-highest": "#cbd5e1",
+              "surface-variant": "#cbd5e1",
+              "surface-dark": "#111820",
+              "on-surface": "#111820",
+              "on-background": "#111820",
+              "on-surface-variant": "#334155",
+              "outline": "#526071",
+              "text-muted": "#526071",
+              "outline-variant": "#cbd5e1",
+              "border-subtle": "#e2e8f0",
+              "primary": "#059652",
+              "primary-hover": "#047842",
+              "primary-container": "#047842",
+              "primary-fixed": "#6ee7b7",
+              "primary-fixed-dim": "#34d399",
+              "on-primary-fixed": "#022c22",
+              "mint-wash": "#ecfdf5",
+              "on-primary": "#ffffff",
+              "secondary": "#047842",
+              "secondary-container": "#059652",
+              "secondary-fixed": "#ecfdf5",
+              "on-secondary-fixed": "#047842",
+              "on-secondary": "#ffffff",
+              "error": "#ba1a1a",
+              "error-container": "#ffdad6",
+              "on-error": "#ffffff"
+            },
+            fontFamily: {
+              "sans": ["Plus Jakarta Sans", "system-ui", "-apple-system", "sans-serif"],
+              "display": ["Outfit", "system-ui", "-apple-system", "sans-serif"],
+              "mono": ["Plus Jakarta Sans", "system-ui", "-apple-system", "sans-serif"],
+              "label-button": ["Plus Jakarta Sans", "system-ui", "-apple-system", "sans-serif"]
+            },
+            boxShadow: {
+              "2xs": "0 1px 2px 0 rgba(17, 24, 32, 0.05)"
+            }
           }
         }
-      }
-    };
+      };
+    }
   </script>
+  <script src="https://cdn.tailwindcss.com" defer onload="applyRpvTailwindConfig()"></script>
   <style>
     body {
       -webkit-tap-highlight-color: transparent;

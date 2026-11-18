@@ -7,6 +7,9 @@
     {% if first_image %}
       <img src="{{ first_image.image.url }}"
            alt="{{ product.ai_title }}"
+           width="600"
+           height="600"
+           decoding="async"
            {% if is_lcp %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
            class="w-full h-full object-cover {% if product.status == 'sold' %}grayscale opacity-65{% else %}group-hover:scale-[1.03] transition-transform duration-300{% endif %}">
     {% else %}

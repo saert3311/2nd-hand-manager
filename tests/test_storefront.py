@@ -431,27 +431,66 @@ class StorefrontMarketplaceTests(TestCase):
         product = self._create_published_product(
             title="Cafetera DeLonghi Dedica EC685",
             price=Decimal("75.00"),
+            category=self.tech_cat,
             is_reserved=True,
         )
         detail_resp = self.client.get(product.get_public_url())
         html = detail_resp.content.decode("utf-8")
+        self.assertEqual(html.count('rel="canonical"'), 1)
+        self.assertIn('hreflang="es"', html)
+        self.assertIn('hreflang="en"', html)
+        self.assertIn('hreflang="x-default"', html)
+        self.assertIn('property="og:locale"', html)
         self.assertIn('property="og:type" content="product"', html)
         self.assertIn('property="product:price:amount" content="75.00"', html)
         self.assertIn('type="application/ld+json"', html)
+        self.assertIn('"@type": "BreadcrumbList"', html)
         self.assertIn("https://schema.org/LimitedAvailability", html)
+        self.assertIn("storefront/css/storefront.css", html)
+        self.assertIn("defer onload=\"applyRpvTailwindConfig()\"", html)
+
+        # Homepage LocalBusiness schema consistency & indexable directives
+        home_html = self.client.get(reverse("storefront:home")).content.decode("utf-8")
+        self.assertIn('"+34640397434"', home_html)
+        self.assertIn('"https://rapidopackvalencia.es/"', home_html)
+        self.assertIn('<meta name="robots" content="index, follow, max-image-preview:large">', home_html)
+
+        # Populated category page has unique meta description, BreadcrumbList JSON-LD, and index directive
+        cat_html = self.client.get(
+            reverse("storefront:category", kwargs={"category_slug": self.tech_cat.slug})
+        ).content.decode("utf-8")
+        self.assertIn("inspected second-hand and outlet items", cat_html)
+        self.assertIn('"@type": "BreadcrumbList"', cat_html)
+        self.assertIn('<meta name="robots" content="index, follow, max-image-preview:large">', cat_html)
+
+        # Empty categories & filtered/search views are marked noindex, follow to prevent Soft 404 / faceted bloat
+        empty_cat_html = self.client.get(
+            reverse("storefront:category", kwargs={"category_slug": self.collectibles_cat.slug})
+        ).content.decode("utf-8")
+        self.assertIn('<meta name="robots" content="noindex, follow">', empty_cat_html)
+        search_html = self.client.get(f"{reverse('storefront:home')}?q=cafetera").content.decode("utf-8")
+        self.assertIn('<meta name="robots" content="noindex, follow">', search_html)
 
         # Standalone How-to-Buy page (/como-comprar/)
         how_resp = self.client.get(reverse("storefront:how_to_buy"))
         self.assertEqual(how_resp.status_code, 200)
-        self.assertIn("Alfafar", how_resp.content.decode("utf-8"))
+        how_html = how_resp.content.decode("utf-8")
+        self.assertIn("Alfafar", how_html)
+        self.assertEqual(how_html.count('rel="canonical"'), 1)
+        self.assertIn('property="og:url"', how_html)
 
-        # Sitemap XML
+        # Sitemap XML excludes /tienda/ duplicate and empty categories
         sitemap_resp = self.client.get(reverse("storefront:sitemap"))
         self.assertEqual(sitemap_resp.status_code, 200)
         sitemap_xml = sitemap_resp.content.decode("utf-8")
         self.assertIn(product.get_public_url(), sitemap_xml)
-        self.assertIn(reverse("storefront:catalog"), sitemap_xml)
         self.assertIn(reverse("storefront:how_to_buy"), sitemap_xml)
+        self.assertIn(reverse("storefront:category", kwargs={"category_slug": self.tech_cat.slug}), sitemap_xml)
+        self.assertNotIn(f"<loc>http://testserver{reverse('storefront:catalog')}</loc>", sitemap_xml)
+        self.assertNotIn(reverse("storefront:category", kwargs={"category_slug": self.bicycles_cat.slug}), sitemap_xml)
+        self.assertNotIn(
+            reverse("storefront:category", kwargs={"category_slug": self.collectibles_cat.slug}), sitemap_xml
+        )
 
         # Robots.txt
         robots_resp = self.client.get(reverse("storefront:robots"))
