@@ -1,0 +1,348 @@
+{% load i18n %}
+<!-- Floating Cookie Control Dialog Aligned with rapidopackvalencia.es -->
+<div id="cookie-banner-container"
+     role="dialog"
+     aria-modal="false"
+     aria-labelledby="cookie-banner-title"
+     aria-describedby="cookie-banner-desc"
+     {% if cookie_consent_decided %}hidden aria-hidden="true"{% endif %}
+     class="{% if cookie_consent_decided %}hidden {% endif %}fixed bottom-0 inset-x-0 sm:bottom-4 sm:right-4 sm:inset-x-auto z-50 w-full sm:max-w-md p-2.5 sm:p-0 pointer-events-none">
+  <div class="pointer-events-auto bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-border-subtle shadow-2xl p-4 sm:p-6 flex flex-col gap-3.5 text-on-surface transition-all duration-300 max-h-[calc(100dvh-1.25rem)] overflow-y-auto min-w-0">
+
+    <!-- Header -->
+    <div class="flex items-start justify-between gap-3 min-w-0">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-8 h-8 rounded-lg bg-mint-wash flex items-center justify-center text-primary-hover shrink-0">
+          <span class="material-symbols-outlined text-[19px]" aria-hidden="true">cookie</span>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="font-mono text-xs uppercase tracking-wider text-primary-hover font-semibold">00 // {% trans "Privacy & Cookies" %}</span>
+          <h2 id="cookie-banner-title" class="font-display text-base sm:text-lg font-bold text-surface-dark leading-tight break-words">{% trans "Cookie Control" %}</h2>
+        </div>
+      </div>
+      <button type="button"
+              id="cookie-quick-close-btn"
+              class="text-text-muted hover:text-on-surface p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg transition-colors cursor-pointer shrink-0"
+              aria-label="{% trans 'Temporarily close cookie notice' %}">
+        <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+      </button>
+    </div>
+
+    <!-- Summary Description -->
+    <p id="cookie-banner-desc" class="font-sans text-xs sm:text-sm text-on-surface-variant leading-relaxed break-words">
+      {% trans "At Rápido Pack Valencia we use essential technical cookies for secure operation and Google analytics cookies to measure visits in aggregate and improve our catalog." %}
+    </p>
+
+    <!-- Collapsible Preferences Panel -->
+    <div id="cookie-settings-panel" class="hidden flex-col gap-3 pt-2 border-t border-border-subtle min-w-0">
+      <div class="flex flex-col gap-2.5 font-sans text-xs">
+        <div class="p-3 bg-surface-alt rounded-xl border border-border-subtle flex items-start justify-between gap-3 min-w-0">
+          <div class="flex flex-col gap-0.5 min-w-0">
+            <span class="font-semibold text-on-surface">{% trans "Technical & Security Cookies" %}</span>
+            <span class="text-text-muted text-xs leading-normal break-words">{% trans "Essential for navigation, Turnstile anti-spam, and saving your preferences." %}</span>
+          </div>
+          <span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-mono text-xs font-semibold shrink-0">{% trans "Mandatory" %}</span>
+        </div>
+
+        <div class="p-3 bg-surface-alt rounded-xl border border-border-subtle flex items-start justify-between gap-3 min-w-0">
+          <div class="flex flex-col gap-0.5 min-w-0">
+            <label for="cookie-analytics-toggle" class="font-semibold text-on-surface cursor-pointer select-none">{% trans "Analytics Cookies (Google)" %}</label>
+            <span class="text-text-muted text-xs leading-normal break-words">{% trans "Anonymous aggregated measurement of web traffic and most viewed sections." %}</span>
+          </div>
+          <div class="flex items-center shrink-0 pt-0.5">
+            <input type="checkbox"
+                   id="cookie-analytics-toggle"
+                   {% if cookie_analytics_granted %}checked{% endif %}
+                   class="h-5 w-5 sm:h-4 sm:w-4 rounded border-border-subtle text-primary accent-primary cursor-pointer">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+        <a href="{{ astro_landing_url }}/cookies" class="text-primary-hover hover:underline font-mono text-xs font-semibold">{% trans "Read Cookies Policy" %} →</a>
+        <button type="button"
+                id="cookie-save-settings-btn"
+                class="px-4 py-2 min-h-[38px] bg-surface-dark hover:bg-primary text-on-primary font-label-button text-xs font-semibold rounded-lg transition-colors cursor-pointer">
+          {% trans "Save selection" %}
+        </button>
+      </div>
+    </div>
+
+    <!-- Primary Actions -->
+    <div id="cookie-main-actions" class="flex flex-col gap-2 pt-1 border-t border-border-subtle/60">
+      <div class="grid grid-cols-2 gap-2">
+        <button type="button"
+                id="cookie-accept-all-btn"
+                class="w-full min-h-[42px] inline-flex items-center justify-center gap-1.5 px-3 py-2.5 bg-primary hover:bg-primary-hover text-on-primary font-label-button text-xs sm:text-sm font-semibold rounded-xl transition-all active:scale-[0.98] cursor-pointer shadow-sm">
+          <span>{% trans "Accept all" %}</span>
+        </button>
+        <button type="button"
+                id="cookie-reject-all-btn"
+                class="w-full min-h-[42px] inline-flex items-center justify-center gap-1.5 px-3 py-2.5 bg-surface-alt hover:bg-surface-container text-on-surface border border-border-subtle font-label-button text-xs sm:text-sm font-semibold rounded-xl transition-all active:scale-[0.98] cursor-pointer">
+          <span>{% trans "Reject" %}</span>
+        </button>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 text-xs pt-1">
+        <button type="button"
+                id="cookie-toggle-settings-btn"
+                aria-expanded="false"
+                aria-controls="cookie-settings-panel"
+                class="inline-flex items-center gap-1 text-on-surface-variant hover:text-primary-hover font-sans text-xs underline decoration-border-subtle hover:decoration-primary transition-colors cursor-pointer py-1">
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">tune</span>
+          <span>{% trans "Configure preferences" %}</span>
+        </button>
+        <a href="{{ astro_landing_url }}/cookies"
+           class="text-text-muted hover:text-primary-hover font-sans text-xs underline decoration-border-subtle transition-colors">
+          {% trans "Cookies Policy" %}
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  (function () {
+    var COOKIE_NAME = '{{ cookie_consent_name|default:"rpv_cookie_consent"|escapejs }}';
+    var GRANTED_TOKENS = new Set(['accepted', 'accept_all', 'all', 'granted', 'true', '1', 'analytics']);
+    var DENIED_TOKENS = new Set(['rejected', 'reject_all', 'essential', 'necessary', 'denied', 'false', '0', 'technical']);
+
+    function getElements() {
+      return {
+        banner: document.getElementById('cookie-banner-container'),
+        panel: document.getElementById('cookie-settings-panel'),
+        toggle: document.getElementById('cookie-analytics-toggle'),
+        togglePanelBtn: document.getElementById('cookie-toggle-settings-btn'),
+        acceptBtn: document.getElementById('cookie-accept-all-btn'),
+        rejectBtn: document.getElementById('cookie-reject-all-btn'),
+        saveBtn: document.getElementById('cookie-save-settings-btn'),
+        closeBtn: document.getElementById('cookie-quick-close-btn'),
+        footerBtn: document.getElementById('footer-cookie-settings-btn')
+      };
+    }
+
+    function parseConsentValue(raw) {
+      if (!raw || typeof raw !== 'string') return null;
+      var text = raw.trim();
+      if (!text) return null;
+      try {
+        text = decodeURIComponent(text);
+      } catch (_) {}
+
+      if (text.charAt(0) === '{') {
+        try {
+          var obj = JSON.parse(text);
+          if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return null;
+          var keys = ['analytics', 'analytics_storage', 'status', 'choice'];
+          for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            if (!(key in obj)) continue;
+            var val = obj[key];
+            if (typeof val === 'boolean') return { decided: true, analytics: val };
+            if (typeof val === 'string') {
+              var norm = val.trim().toLowerCase();
+              if (GRANTED_TOKENS.has(norm)) return { decided: true, analytics: true };
+              if (DENIED_TOKENS.has(norm)) return { decided: true, analytics: false };
+            }
+          }
+          if ('essential' in obj || 'necessary' in obj) {
+            return { decided: true, analytics: false };
+          }
+          return null;
+        } catch (_) {
+          return null;
+        }
+      }
+
+      var lowered = text.toLowerCase();
+      if (GRANTED_TOKENS.has(lowered)) return { decided: true, analytics: true };
+      if (DENIED_TOKENS.has(lowered)) return { decided: true, analytics: false };
+      return null;
+    }
+
+    function readCookieRaw(name) {
+      var prefix = name + '=';
+      var parts = document.cookie ? document.cookie.split(';') : [];
+      for (var i = 0; i < parts.length; i++) {
+        var part = parts[i].trim();
+        if (part.indexOf(prefix) === 0) {
+          return part.slice(prefix.length);
+        }
+      }
+      return '';
+    }
+
+    function readConsentState() {
+      var cookieState = parseConsentValue(readCookieRaw(COOKIE_NAME));
+      if (cookieState) return { decided: true, analytics: cookieState.analytics, source: 'cookie' };
+      try {
+        var lsState = parseConsentValue(window.localStorage.getItem(COOKIE_NAME));
+        if (lsState) return { decided: true, analytics: lsState.analytics, source: 'localStorage' };
+      } catch (_) {}
+      return { decided: false, analytics: false, source: 'none' };
+    }
+
+    function writeConsentState(analyticsGranted) {
+      var payload = {
+        essential: true,
+        analytics: Boolean(analyticsGranted),
+        version: 1,
+        updatedAt: new Date().toISOString()
+      };
+      var serialized = JSON.stringify(payload);
+      var host = (window.location.hostname || '').toLowerCase();
+      var isRpvDomain = host === 'rapidopackvalencia.es' || host.endsWith('.rapidopackvalencia.es');
+      var domainAttr = isRpvDomain ? '; Domain=.rapidopackvalencia.es' : '';
+      var secureAttr = window.location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = COOKIE_NAME + '=' + encodeURIComponent(serialized) + '; Path=/; Max-Age=31536000; SameSite=Lax' + domainAttr + secureAttr;
+      try {
+        window.localStorage.setItem(COOKIE_NAME, serialized);
+      } catch (_) {}
+      return payload;
+    }
+
+    function updateGoogleConsent(analyticsGranted) {
+      var analyticsValue = analyticsGranted ? 'granted' : 'denied';
+      window.dataLayer = window.dataLayer || [];
+      if (typeof window.gtag === 'function') {
+        window.gtag('consent', 'update', {
+          ad_storage: 'denied',
+          ad_user_data: 'denied',
+          ad_personalization: 'denied',
+          analytics_storage: analyticsValue
+        });
+      } else {
+        window.dataLayer.push([
+          'consent',
+          'update',
+          {
+            ad_storage: 'denied',
+            ad_user_data: 'denied',
+            ad_personalization: 'denied',
+            analytics_storage: analyticsValue
+          }
+        ]);
+      }
+      window.dataLayer.push({
+        event: 'cookie_consent_update',
+        analytics_consent: analyticsValue
+      });
+    }
+
+    function setPanelExpanded(expanded) {
+      var els = getElements();
+      if (!els.panel) return;
+      els.panel.classList.toggle('hidden', !expanded);
+      els.panel.classList.toggle('flex', expanded);
+      if (els.togglePanelBtn) {
+        els.togglePanelBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      }
+    }
+
+    function showCookieBanner(expandSettings) {
+      var els = getElements();
+      if (!els.banner) return;
+      var state = readConsentState();
+      if (els.toggle) {
+        els.toggle.checked = Boolean(state.analytics);
+      }
+      setPanelExpanded(Boolean(expandSettings));
+      els.banner.hidden = false;
+      els.banner.removeAttribute('aria-hidden');
+      els.banner.classList.remove('hidden');
+    }
+
+    function hideCookieBanner() {
+      var els = getElements();
+      if (!els.banner) return;
+      els.banner.classList.add('hidden');
+      els.banner.hidden = true;
+      els.banner.setAttribute('aria-hidden', 'true');
+    }
+
+    function saveAndApplyConsent(analyticsGranted) {
+      writeConsentState(analyticsGranted);
+      updateGoogleConsent(analyticsGranted);
+      var els = getElements();
+      if (els.toggle) {
+        els.toggle.checked = Boolean(analyticsGranted);
+      }
+      hideCookieBanner();
+    }
+
+    window.rpvCookieConsent = {
+      read: readConsentState,
+      write: writeConsentState,
+      open: showCookieBanner,
+      close: hideCookieBanner
+    };
+
+    function initCookieConsent() {
+      var els = getElements();
+      if (!els.banner) return;
+
+      var state = readConsentState();
+      if (state.decided) {
+        if (state.source === 'cookie') {
+          try {
+            window.localStorage.setItem(
+              COOKIE_NAME,
+              JSON.stringify({ essential: true, analytics: state.analytics, version: 1 })
+            );
+          } catch (_) {}
+        } else if (state.source === 'localStorage') {
+          writeConsentState(state.analytics);
+          updateGoogleConsent(state.analytics);
+        }
+        if (els.toggle) {
+          els.toggle.checked = Boolean(state.analytics);
+        }
+        hideCookieBanner();
+      } else {
+        showCookieBanner(false);
+      }
+
+      if (els.acceptBtn) {
+        els.acceptBtn.addEventListener('click', function () {
+          saveAndApplyConsent(true);
+        });
+      }
+      if (els.rejectBtn) {
+        els.rejectBtn.addEventListener('click', function () {
+          saveAndApplyConsent(false);
+        });
+      }
+      if (els.saveBtn) {
+        els.saveBtn.addEventListener('click', function () {
+          saveAndApplyConsent(Boolean(els.toggle && els.toggle.checked));
+        });
+      }
+      if (els.togglePanelBtn) {
+        els.togglePanelBtn.addEventListener('click', function () {
+          var isExpanded = els.panel && !els.panel.classList.contains('hidden');
+          setPanelExpanded(!isExpanded);
+        });
+      }
+      if (els.closeBtn) {
+        els.closeBtn.addEventListener('click', function () {
+          hideCookieBanner();
+        });
+      }
+      if (els.footerBtn) {
+        els.footerBtn.addEventListener('click', function () {
+          showCookieBanner(true);
+          if (els.toggle) {
+            els.toggle.focus({ preventScroll: true });
+          }
+        });
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initCookieConsent);
+    } else {
+      initCookieConsent();
+    }
+  })();
+</script>

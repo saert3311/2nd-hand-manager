@@ -4596,6 +4596,52 @@ msgstr "Privacidad"
 msgid "Cookies"
 msgstr "Cookies"
 
+msgid "Configure cookies"
+msgstr "Configurar cookies"
+
+msgid "Privacy & Cookies"
+msgstr "Privacidad & Cookies"
+
+msgid "Cookie Control"
+msgstr "Control de Cookies"
+
+msgid "Temporarily close cookie notice"
+msgstr "Cerrar aviso de cookies temporalmente"
+
+msgid "At Rápido Pack Valencia we use essential technical cookies for secure operation and Google analytics cookies to measure visits in aggregate and improve our catalog."
+msgstr "En Rápido Pack Valencia utilizamos cookies técnicas necesarias para el funcionamiento seguro del sitio y cookies analíticas de Google para medir de forma agregada las visitas y mejorar nuestro catálogo."
+
+msgid "Technical & Security Cookies"
+msgstr "Cookies Técnicas y Seguridad"
+
+msgid "Essential for navigation, Turnstile anti-spam, and saving your preferences."
+msgstr "Imprescindibles para navegación, Turnstile anti-spam y guardar tus preferencias."
+
+msgid "Mandatory"
+msgstr "Obligatorias"
+
+msgid "Analytics Cookies (Google)"
+msgstr "Cookies Analíticas (Google)"
+
+msgid "Anonymous aggregated measurement of web traffic and most viewed sections."
+msgstr "Medición agregada anónima de tráfico web y secciones más vistas."
+
+msgid "Read Cookies Policy"
+msgstr "Leer Política de Cookies"
+
+msgid "Save selection"
+msgstr "Guardar selección"
+
+msgid "Accept all"
+msgstr "Aceptar todas"
+
+msgid "Reject"
+msgstr "Rechazar"
+
+msgid "Configure preferences"
+msgstr "Configurar preferencias"
+
+
 
 
 

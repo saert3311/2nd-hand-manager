@@ -465,11 +465,18 @@ class StorefrontMarketplaceTests(TestCase):
         self.assertIn("Disallow: /dashboard/", robots_txt)
         self.assertIn("Disallow: /intake/", robots_txt)
 
-        # Legal pages
-        for route_name in ("legal_notice", "privacy", "cookies"):
-            resp = self.client.get(reverse(f"storefront:{route_name}"))
-            self.assertEqual(resp.status_code, 200)
-            self.assertIn("Carrer del Comte Ronrée, 8", resp.content.decode("utf-8"))
+        # Legal pages redirect to canonical rapidopackvalencia.es URLs and are omitted from store sitemap
+        expected_redirects = {
+            "legal_notice": "https://rapidopackvalencia.es/aviso-legal",
+            "privacy": "https://rapidopackvalencia.es/privacidad",
+            "cookies": "https://rapidopackvalencia.es/cookies",
+        }
+        for route_name, target_url in expected_redirects.items():
+            route_path = reverse(f"storefront:{route_name}")
+            resp = self.client.get(route_path, follow=False)
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(resp["Location"], target_url)
+            self.assertNotIn(route_path, sitemap_xml)
 
     def test_heuristic_taxonomy_and_classify_products_command(self):
         slug, cond = infer_taxonomy_heuristically(
@@ -664,3 +671,65 @@ class StorefrontMarketplaceTests(TestCase):
         linked_html = linked_resp.content.decode("utf-8")
         self.assertIn("Also available with protected shipping on:", linked_html)
         self.assertIn(reverse("storefront:go_listing", kwargs={"link_pk": link.pk}), linked_html)
+
+    def test_cookie_consent_banner_and_cross_subdomain_sync_state(self):
+        from urllib.parse import quote
+
+        from storefront.context_processors import _parse_rpv_cookie_consent
+
+        # Unit parser verification for JSON, URL-encoded JSON, scalar tokens, and malformed payloads
+        self.assertEqual(_parse_rpv_cookie_consent(None), (False, False))
+        self.assertEqual(_parse_rpv_cookie_consent(""), (False, False))
+        self.assertEqual(_parse_rpv_cookie_consent("accepted"), (True, True))
+        self.assertEqual(_parse_rpv_cookie_consent("rejected"), (True, False))
+        self.assertEqual(_parse_rpv_cookie_consent('{"essential":true,"analytics":true}'), (True, True))
+        self.assertEqual(_parse_rpv_cookie_consent(quote('{"essential":true,"analytics":false}')), (True, False))
+        self.assertEqual(_parse_rpv_cookie_consent('{"analytics_storage":"granted"}'), (True, True))
+        self.assertEqual(_parse_rpv_cookie_consent("{broken-json"), (False, False))
+
+        # 1. Fresh visitor without cookie sees undecided cookie banner & denied analytics default
+        self.client.cookies.pop("rpv_cookie_consent", None)
+        resp_fresh = self.client.get(reverse("storefront:home"))
+        self.assertEqual(resp_fresh.status_code, 200)
+        self.assertFalse(resp_fresh.context["cookie_consent_decided"])
+        self.assertFalse(resp_fresh.context["cookie_analytics_granted"])
+        html_fresh = resp_fresh.content.decode("utf-8")
+        self.assertIn("GTM-PGBXBVXJ", html_fresh)
+        self.assertIn("'analytics_storage': 'denied'", html_fresh)
+        self.assertIn('id="footer-cookie-settings-btn"', html_fresh)
+        self.assertIn('id="cookie-banner-container"', html_fresh)
+        self.assertIn('id="cookie-accept-all-btn"', html_fresh)
+        self.assertIn('id="cookie-reject-all-btn"', html_fresh)
+        self.assertIn('id="cookie-save-settings-btn"', html_fresh)
+        self.assertIn('id="cookie-toggle-settings-btn"', html_fresh)
+        self.assertIn("Domain=.rapidopackvalencia.es", html_fresh)
+        banner_tag_fresh = re.search(r'<div id="cookie-banner-container"[^>]*>', html_fresh).group(0)
+        self.assertNotIn('aria-hidden="true"', banner_tag_fresh)
+
+        # 2. Visitor arriving with cross-subdomain analytics-accepted cookie gets hidden banner & granted default
+        for cookie_val in (quote('{"essential":true,"analytics":true,"version":1}'), "accepted"):
+            self.client.cookies["rpv_cookie_consent"] = cookie_val
+            resp_accepted = self.client.get(reverse("storefront:home"))
+            self.assertEqual(resp_accepted.status_code, 200)
+            self.assertTrue(resp_accepted.context["cookie_consent_decided"])
+            self.assertTrue(resp_accepted.context["cookie_analytics_granted"])
+            html_accepted = resp_accepted.content.decode("utf-8")
+            self.assertIn("'analytics_storage': 'granted'", html_accepted)
+            banner_tag = re.search(r'<div id="cookie-banner-container"[^>]*>', html_accepted).group(0)
+            self.assertIn('aria-hidden="true"', banner_tag)
+            toggle_tag = re.search(r'<input[^>]*id="cookie-analytics-toggle"[^>]*>', html_accepted).group(0)
+            self.assertIn("checked", toggle_tag)
+
+        # 3. Visitor arriving with rejected/essential-only cookie gets hidden banner & denied analytics
+        for cookie_val in ("rejected", quote('{"essential":true,"analytics":false,"version":1}')):
+            self.client.cookies["rpv_cookie_consent"] = cookie_val
+            resp_rejected = self.client.get(reverse("storefront:home"))
+            self.assertEqual(resp_rejected.status_code, 200)
+            self.assertTrue(resp_rejected.context["cookie_consent_decided"])
+            self.assertFalse(resp_rejected.context["cookie_analytics_granted"])
+            html_rejected = resp_rejected.content.decode("utf-8")
+            self.assertIn("'analytics_storage': 'denied'", html_rejected)
+            banner_tag = re.search(r'<div id="cookie-banner-container"[^>]*>', html_rejected).group(0)
+            self.assertIn('aria-hidden="true"', banner_tag)
+            toggle_tag = re.search(r'<input[^>]*id="cookie-analytics-toggle"[^>]*>', html_rejected).group(0)
+            self.assertNotIn("checked", toggle_tag)

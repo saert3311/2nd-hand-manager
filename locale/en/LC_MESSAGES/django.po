@@ -4142,6 +4142,52 @@ msgstr "Privacy"
 msgid "Cookies"
 msgstr "Cookies"
 
+msgid "Configure cookies"
+msgstr "Configure cookies"
+
+msgid "Privacy & Cookies"
+msgstr "Privacy & Cookies"
+
+msgid "Cookie Control"
+msgstr "Cookie Control"
+
+msgid "Temporarily close cookie notice"
+msgstr "Temporarily close cookie notice"
+
+msgid "At Rápido Pack Valencia we use essential technical cookies for secure operation and Google analytics cookies to measure visits in aggregate and improve our catalog."
+msgstr "At Rápido Pack Valencia we use essential technical cookies for secure operation and Google analytics cookies to measure visits in aggregate and improve our catalog."
+
+msgid "Technical & Security Cookies"
+msgstr "Technical & Security Cookies"
+
+msgid "Essential for navigation, Turnstile anti-spam, and saving your preferences."
+msgstr "Essential for navigation, Turnstile anti-spam, and saving your preferences."
+
+msgid "Mandatory"
+msgstr "Mandatory"
+
+msgid "Analytics Cookies (Google)"
+msgstr "Analytics Cookies (Google)"
+
+msgid "Anonymous aggregated measurement of web traffic and most viewed sections."
+msgstr "Anonymous aggregated measurement of web traffic and most viewed sections."
+
+msgid "Read Cookies Policy"
+msgstr "Read Cookies Policy"
+
+msgid "Save selection"
+msgstr "Save selection"
+
+msgid "Accept all"
+msgstr "Accept all"
+
+msgid "Reject"
+msgstr "Reject"
+
+msgid "Configure preferences"
+msgstr "Configure preferences"
+
+
 
 
 

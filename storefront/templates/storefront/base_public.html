@@ -16,6 +16,28 @@
   <meta property="og:type" content="website">
   {% endblock %}
 
+  <!-- Google Consent Mode v2 + Google Tag Manager (GTM-PGBXBVXJ) -->
+  {% with gtm_id=gtm_container_id|default:'GTM-PGBXBVXJ' %}
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){window.dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'analytics_storage': '{{ cookie_analytics_granted|yesno:"granted,denied" }}',
+      'wait_for_update': 500
+    });
+    if (!navigator.webdriver) {
+      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','{{ gtm_id|escapejs }}');
+    }
+  </script>
+  {% endwith %}
+
   <!-- 2-Font Pairing aligned with rapidopackvalencia.es: Outfit (Display & Prices) + Plus Jakarta Sans (Body & UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -348,6 +370,12 @@
             <a href="{{ astro_landing_url }}/privacidad" class="underline decoration-white/20 underline-offset-4 hover:text-white transition-colors">{% trans "Privacy" %}</a>
             <span class="text-white/25" aria-hidden="true">·</span>
             <a href="{{ astro_landing_url }}/cookies" class="underline decoration-white/20 underline-offset-4 hover:text-white transition-colors">{% trans "Cookies" %}</a>
+            <span class="text-white/25" aria-hidden="true">·</span>
+            <button type="button"
+                    id="footer-cookie-settings-btn"
+                    class="hover:text-white transition-colors underline decoration-white/20 underline-offset-4 cursor-pointer text-left font-mono">
+              {% trans "Configure cookies" %}
+            </button>
             {% if not user.is_authenticated %}
             <span class="text-white/25" aria-hidden="true">·</span>
             <a href="{% url 'inventory:login' %}" class="underline decoration-white/20 underline-offset-4 hover:text-white transition-colors">{% trans "Staff Access" %}</a>
@@ -363,6 +391,9 @@
 
   <!-- How to Buy Modal -->
   {% include "storefront/partials/_how_to_buy_modal.html" %}
+
+  <!-- Cookie Consent Modal / Floating Banner (Synced with rapidopackvalencia.es) -->
+  {% include "storefront/partials/_cookie_banner.html" %}
 
   <script>
     function openHowToBuyModal() {

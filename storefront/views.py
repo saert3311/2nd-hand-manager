@@ -21,6 +21,8 @@ from inventory.models import (
 )
 from inventory.services.search_service import build_search_query
 
+from .context_processors import ASTRO_LANDING_URL
+
 PUBLIC_PAGE_SIZE = 20
 
 SAFE_PUBLIC_PRODUCT_FIELDS = (
@@ -605,9 +607,9 @@ def go_marketplace_link_view(request, link_pk: int):
 
 def sitemap_view(request):
     """
-    Dynamic XML sitemap (/sitemap.xml) listing only public URLs:
-    /, /tienda/, /tienda/categoria/<slug>/ (12), /tienda/producto/<slug>-<pk>/ (public_visible()),
-    /como-comprar/, and legal pages (/aviso-legal/, /privacidad/, /cookies/).
+    Dynamic XML sitemap (/sitemap.xml) listing only canonical 200-status public URLs:
+    /, /tienda/, /categoria/<slug>/, /tienda/producto/<slug>-<pk>/ (public_visible()),
+    and /como-comprar/. Legal pages redirect to rapidopackvalencia.es and are omitted.
     Never exposes internal routes or notes.
     """
     products = (
@@ -632,21 +634,6 @@ def sitemap_view(request):
             "loc": request.build_absolute_uri(reverse("storefront:how_to_buy")),
             "changefreq": "monthly",
             "priority": "0.5",
-        },
-        {
-            "loc": request.build_absolute_uri(reverse("storefront:legal_notice")),
-            "changefreq": "monthly",
-            "priority": "0.3",
-        },
-        {
-            "loc": request.build_absolute_uri(reverse("storefront:privacy")),
-            "changefreq": "monthly",
-            "priority": "0.3",
-        },
-        {
-            "loc": request.build_absolute_uri(reverse("storefront:cookies")),
-            "changefreq": "monthly",
-            "priority": "0.3",
         },
     ]
 
@@ -716,33 +703,15 @@ def robots_view(request):
 
 
 def legal_notice_view(request):
-    return render(
-        request,
-        "storefront/legal_page.html",
-        {
-            "page_type": "legal_notice",
-            "page_title": _("Legal Notice and Terms of Use"),
-        },
-    )
+    """Redirect canonical legal notice traffic to rapidopackvalencia.es/aviso-legal."""
+    return HttpResponseRedirect(f"{ASTRO_LANDING_URL}/aviso-legal")
 
 
 def privacy_policy_view(request):
-    return render(
-        request,
-        "storefront/legal_page.html",
-        {
-            "page_type": "privacy_policy",
-            "page_title": _("Privacy Policy (GDPR)"),
-        },
-    )
+    """Redirect canonical privacy policy traffic to rapidopackvalencia.es/privacidad."""
+    return HttpResponseRedirect(f"{ASTRO_LANDING_URL}/privacidad")
 
 
 def cookies_policy_view(request):
-    return render(
-        request,
-        "storefront/legal_page.html",
-        {
-            "page_type": "cookies_policy",
-            "page_title": _("Cookies Policy"),
-        },
-    )
+    """Redirect canonical cookies policy traffic to rapidopackvalencia.es/cookies."""
+    return HttpResponseRedirect(f"{ASTRO_LANDING_URL}/cookies")

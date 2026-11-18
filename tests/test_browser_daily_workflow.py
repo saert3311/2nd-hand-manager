@@ -143,6 +143,21 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             0,
             "Shelf cards must stay decluttered without per-card WhatsApp buttons",
         )
+
+        # Interactive Cookie Consent Banner + Footer Re-open + Persist across navigations
+        page.wait_for_selector("#cookie-banner-container:not(.hidden)")
+        self.assertTrue(page.locator("#cookie-banner-container").is_visible())
+        page.click("#cookie-accept-all-btn")
+        page.wait_for_selector("#cookie-banner-container", state="hidden")
+        self.assertIn("rpv_cookie_consent=", page.evaluate("() => document.cookie"))
+        footer_cookie_btn = page.locator("#footer-cookie-settings-btn")
+        footer_cookie_btn.scroll_into_view_if_needed()
+        footer_cookie_btn.click()
+        page.wait_for_selector("#cookie-banner-container:not(.hidden)")
+        self.assertTrue(page.locator("#cookie-settings-panel").is_visible())
+        self.assertTrue(page.locator("#cookie-analytics-toggle").is_checked())
+        page.click("#cookie-quick-close-btn")
+        page.wait_for_selector("#cookie-banner-container", state="hidden")
         page.screenshot(path=str(self.artifacts_dir / "daily_00_store_shelf_home.png"))
 
         page.goto(f"{self.live_server_url}{reverse('storefront:catalog')}")
@@ -206,15 +221,19 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         page.wait_for_selector('text="Bicicleta de Montaña Orbea MX 29"')
         self.assertTrue(page.locator('text="Bicicleta de Montaña Orbea MX 29"').first.is_visible())
 
-        # Legal and privacy pages
-        for legal_path, heading_es, heading_en in [
-            (reverse("storefront:legal_notice"), "Aviso Legal", "Legal Notice and Terms of Use"),
-            (reverse("storefront:privacy"), "Política de Privacidad", "Privacy Policy (GDPR)"),
-            (reverse("storefront:cookies"), "Política de Cookies", "Cookies Policy"),
+        # Canonical footer legal links & HTTP 302 redirects to rapidopackvalencia.es
+        for route_name, expected_target in [
+            ("storefront:legal_notice", "https://rapidopackvalencia.es/aviso-legal"),
+            ("storefront:privacy", "https://rapidopackvalencia.es/privacidad"),
+            ("storefront:cookies", "https://rapidopackvalencia.es/cookies"),
         ]:
-            page.goto(f"{self.live_server_url}{legal_path}")
-            page.wait_for_selector(f"h1:has-text('{heading_es}'), h1:has-text('{heading_en}')")
-            self.assertIn("Rápido Pack", page.content())
+            self.assertGreater(page.locator(f'footer a[href="{expected_target}"]').count(), 0)
+            resp = page.context.request.get(
+                f"{self.live_server_url}{reverse(route_name)}",
+                max_redirects=0,
+            )
+            self.assertEqual(resp.status, 302)
+            self.assertEqual(resp.headers.get("location"), expected_target)
 
         # PART II: STAFF INTAKE & AI VALUATION WORKFLOW
         page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
