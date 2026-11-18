@@ -13,8 +13,9 @@
   <link rel="alternate" hreflang="x-default" href="{{ canonical_url|default:default_canonical_url }}">
   <meta property="og:locale" content="{% if LANGUAGE_CODE == 'en' %}en_GB{% else %}es_ES{% endif %}">
   <meta property="og:locale:alternate" content="{% if LANGUAGE_CODE == 'en' %}es_ES{% else %}en_GB{% endif %}">
-  <link rel="icon" type="image/png" sizes="192x192" href="{% static 'inventory/icons/icon-192.png' %}">
-  <link rel="apple-touch-icon" href="{% static 'inventory/icons/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" href="{% static 'storefront/img/logo-rapido-pack-valencia.png' %}">
+  <link rel="icon" href="{% static 'storefront/img/favicon.ico' %}" sizes="48x48">
+  <link rel="apple-touch-icon" sizes="180x180" href="{% static 'storefront/img/apple-touch-icon.png' %}">
 
   {% block meta_seo %}
   <meta property="og:site_name" content="{{ storefront.store_name }} ({{ storefront.domain }})">

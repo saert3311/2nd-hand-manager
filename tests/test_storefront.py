@@ -524,6 +524,18 @@ class StorefrontMarketplaceTests(TestCase):
             self.assertEqual(resp["Location"], target_url)
             self.assertNotIn(route_path, sitemap_xml)
 
+        # Storefront favicons match rapidopackvalencia.es branding (not internal 2ndHand icons)
+        home_html = self.client.get(reverse("storefront:home")).content.decode("utf-8")
+        self.assertIn("storefront/img/logo-rapido-pack-valencia.png", home_html)
+        self.assertIn("storefront/img/favicon.ico", home_html)
+        self.assertIn("storefront/img/apple-touch-icon.png", home_html)
+        self.assertNotIn("inventory/icons/icon-192.png", home_html)
+        self.assertNotIn("inventory/icons/apple-touch-icon.png", home_html)
+
+        fav_resp = self.client.get(reverse("storefront:favicon"), follow=False)
+        self.assertEqual(fav_resp.status_code, 301)
+        self.assertIn("storefront/img/favicon.ico", fav_resp["Location"])
+
     def test_heuristic_taxonomy_and_classify_products_command(self):
         slug, cond = infer_taxonomy_heuristically(
             "Bicicleta de montaña Orbea 29 pulgadas",

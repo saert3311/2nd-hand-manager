@@ -4,6 +4,7 @@ from decimal import Decimal, InvalidOperation
 from urllib.parse import quote
 from xml.sax.saxutils import escape as xml_escape
 
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.paginator import Paginator
 from django.db.models import Count, F, Prefetch, Q
 from django.http import Http404, HttpResponse, HttpResponseRedirect
@@ -770,3 +771,8 @@ def privacy_policy_view(request):
 def cookies_policy_view(request):
     """Redirect canonical cookies policy traffic to rapidopackvalencia.es/cookies."""
     return HttpResponseRedirect(f"{ASTRO_LANDING_URL}/cookies")
+
+
+def favicon_view(request):
+    """Redirect root /favicon.ico requests permanently to the Rápido Pack favicon asset."""
+    return redirect(staticfiles_storage.url("storefront/img/favicon.ico"), permanent=True)

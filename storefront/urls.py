@@ -4,6 +4,7 @@ from .views import (
     catalog_view,
     category_catalog_view,
     cookies_policy_view,
+    favicon_view,
     go_marketplace_link_view,
     go_store_whatsapp_view,
     go_whatsapp_view,
@@ -44,4 +45,5 @@ urlpatterns = [
     path("legal/cookies/", cookies_policy_view, name="legacy_cookies_policy"),
     path("sitemap.xml", sitemap_view, name="sitemap"),
     path("robots.txt", robots_view, name="robots"),
+    path("favicon.ico", favicon_view, name="favicon"),
 ]
