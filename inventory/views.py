@@ -75,6 +75,29 @@ from .services.trash_service import (
 )
 
 PAGE_SIZE = 20
+ALLOWED_PAGE_SIZES: tuple[int, ...] = (20, 50, 100)
+DASHBOARD_PER_PAGE_SESSION_KEY = "dashboard_per_page"
+
+
+def _resolve_dashboard_page_size(request) -> int:
+    """Resolve and persist a whitelisted dashboard page size from query params or session."""
+    raw_per_page = request.GET.get("per_page", "").strip()
+    if raw_per_page:
+        try:
+            requested = int(raw_per_page)
+        except ValueError:
+            requested = None
+        if requested in ALLOWED_PAGE_SIZES:
+            if request.session.get(DASHBOARD_PER_PAGE_SESSION_KEY) != requested:
+                request.session[DASHBOARD_PER_PAGE_SESSION_KEY] = requested
+            return requested
+
+    saved = request.session.get(DASHBOARD_PER_PAGE_SESSION_KEY)
+    if isinstance(saved, int) and saved in ALLOWED_PAGE_SIZES:
+        return saved
+    if isinstance(saved, str) and saved.isdigit() and int(saved) in ALLOWED_PAGE_SIZES:
+        return int(saved)
+    return PAGE_SIZE
 
 
 def _is_ai_rate_limited(user_id: int) -> bool:
@@ -294,6 +317,7 @@ def dashboard_view(request):
     pallet_filter = request.GET.get("pallet", "").strip()
     provider_filter = request.GET.get("provider", "").strip()
     compliance_filter = request.GET.get("compliance", "").strip().lower()
+    per_page = _resolve_dashboard_page_size(request)
 
     # Query only marketplace sites that have at least one active published product
     available_platforms = (
@@ -335,7 +359,10 @@ def dashboard_view(request):
 
     products = _apply_dashboard_scope_filters(
         Product.objects.select_related("category", "sold_marketplace", "pallet", "provider")
-        .prefetch_related("images", "listing_links__site")
+        .prefetch_related(
+            Prefetch("images", queryset=ProductImage.objects.order_by("order", "id")),
+            "listing_links__site",
+        )
         .all(),
         platform_filter,
         pallet_filter,
@@ -442,7 +469,7 @@ def dashboard_view(request):
         ),
     )
 
-    paginator = Paginator(products, PAGE_SIZE)
+    paginator = Paginator(products, per_page)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
@@ -453,11 +480,20 @@ def dashboard_view(request):
         else []
     )
 
-    # Clean query string for pagination links preserving status, platform & search filter
+    # Clean query string for pagination links preserving status, platform, search & page size
     extra_params = request.GET.copy()
-    if "page" in extra_params:
-        del extra_params["page"]
+    extra_params.pop("page", None)
+    if per_page != PAGE_SIZE:
+        extra_params["per_page"] = str(per_page)
+    else:
+        extra_params.pop("per_page", None)
     query_string = extra_params.urlencode()
+
+    # Base query string for page-size pills (resets page to 1, preserves active filters)
+    per_page_params = request.GET.copy()
+    per_page_params.pop("page", None)
+    per_page_params.pop("per_page", None)
+    per_page_base_query = per_page_params.urlencode()
 
     trash_metrics = get_trash_metrics() if status_filter == "erased" else None
 
@@ -520,6 +556,10 @@ def dashboard_view(request):
         "flagged_compliance_count": counts["flagged_compliance_count"] or 0,
         "trash_metrics": trash_metrics,
         "can_manage": can_manage,
+        "per_page": per_page,
+        "allowed_page_sizes": ALLOWED_PAGE_SIZES,
+        "default_page_size": PAGE_SIZE,
+        "per_page_base_query": per_page_base_query,
     }
     return render(request, "inventory/dashboard.html", context)
 

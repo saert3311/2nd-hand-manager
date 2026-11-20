@@ -850,6 +850,12 @@ class Product(models.Model):
 
     @property
     def primary_image(self):
+        prefetched = getattr(self, "_prefetched_objects_cache", None)
+        if prefetched and "images" in prefetched:
+            images = prefetched["images"]
+            if not images:
+                return None
+            return min(images, key=lambda img: (img.order, img.id))
         return self.images.order_by("order", "id").first()
 
     @property
