@@ -971,3 +971,46 @@ Task 210 (Backend Whitelist, Session Memory & Zero-N+1 Prefetch)
 
 ### Open Questions
 - None — placement (above grid + bottom nav), persistence (URL + Django session), and control style (segmented pill buttons `20 | 50 | 100`) were approved by the user.
+
+
+---
+
+## Phase 58: PWA Dashboard Launch & Backend-Only Installability (`feat/pwa-dashboard-backend-only`)
+
+### Overview
+Configure the installed PWA (`manifest_view` in `inventory/views.py`) to launch directly into `/dashboard/` (`"start_url": "/dashboard/"`, `"id": "/dashboard/"`, `"scope": "/"`), restrict `<link rel="manifest">` and iOS standalone install meta tags strictly to authenticated backend users on `/dashboard/` (using the browser's native install prompt only), ensure zero PWA install metadata or Service Worker registration on all public storefront routes (`storefront/`) and unauthenticated `/login/`, keep Service Worker (`/sw.js`) registration active across authenticated backend pages for Web Push notifications, open navbar/drawer Storefront links in a new tab (`target="_blank" rel="noopener noreferrer"`), and update default push fallback URLs in `sw.js` and `push_service.py` to `"/dashboard/"` per [`docs/prds/PRD-pwa-dashboard-launch-and-backend-only-install.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-pwa-dashboard-launch-and-backend-only-install.md).
+
+### Architecture Decisions
+1. **Manifest Launch Target & Stable Identity (`inventory/views.py`):**
+   - Add `"id": "/dashboard/"`, update `"start_url": "/dashboard/"`, and keep `"scope": "/"` so sibling backend routes (`/intake/`, `/products/<pk>/`, `/pallets/`) stay in seamless standalone mode without an in-app browser URL bar.
+   - Keep `GET /manifest.json` returning HTTP `200 OK` (`application/manifest+json`) without `@login_required` redirects, because browsers fetch linked manifests without credentials by default.
+2. **Dashboard-Only Installability Head Block (`inventory/templates/inventory/base.html`, `inventory/templates/inventory/dashboard.html`):**
+   - Extract `<link rel="manifest" href="{% url 'inventory:manifest' %}">` and iOS standalone meta tags (`apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`, `apple-mobile-web-app-title`) out of `base.html` into an empty `{% block pwa_install_head %}{% endblock %}`.
+   - Override `{% block pwa_install_head %}` exclusively in `dashboard.html` wrapped in `{% if user.is_authenticated %}` so both Managers and Assistants get native browser installability strictly on `/dashboard/`, with no custom in-page install button UI.
+   - Keep standard tab/bookmark metadata (`<meta name="theme-color">`, `<link rel="apple-touch-icon">`, `<link rel="icon">`) in `base.html`.
+3. **Auth-Gated Service Worker & Surface Isolation (`inventory/templates/inventory/base.html`, `storefront/`):**
+   - Gate `/sw.js` registration (`scope: '/'`) and `setAppBadge` / `clearAppBadge` sync in `base.html` behind `{% if user.is_authenticated %}` so Web Push (`🔔 Enable Alerts`) keeps working across `/dashboard/`, `/intake/`, `/products/<pk>/`, and `/pallets/`, while unauthenticated `/login/` and all public `storefront/` routes emit zero `<link rel="manifest">`, zero standalone meta tags, and zero Service Worker registration.
+   - Keep `storefront/` runtime views and templates untouched (`base_public.html` already emits no manifest or SW).
+4. **Storefront Escape Hatch & Push Fallback Consistency (`base.html`, `sw.js`, `push_service.py`):**
+   - Add `target="_blank" rel="noopener noreferrer"` to both the desktop navbar Storefront link and mobile drawer Storefront link (`#mobile-link-storefront`) in `inventory/templates/inventory/base.html` so tapping Storefront from inside an installed standalone PWA opens the public catalog in a browser tab instead of navigating the PWA window into the storefront.
+   - Update default fallback push URLs in `inventory/templates/inventory/sw.js` (`payload.url` and `notificationclick` `targetPath`) and `inventory/services/push_service.py` (`send_push_to_subscription`, `send_push_to_user`, `send_push_to_group`) from `"/"` to `"/dashboard/"`.
+
+### Dependency Graph
+```text
+Task 213 (Manifest Dashboard Target, Explicit ID & Push Fallback URLs)
+    └── Task 214 (Dashboard-Only Manifest Head Block, Auth-Gated SW & Storefront New-Tab Links)
+            └── Task 215 (Unit, Role, Surface-Isolation & Playwright E2E Tests + Changelog)
+                    └── Checkpoint 58 (Zero-Failure Quality Gate & Merge Approval Request)
+```
+
+### Risks and Mitigations
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Protecting `/manifest.json` with `@login_required` breaks credential-less browser manifest fetches | High | Keep `/manifest.json` HTTP `200 OK` JSON and gate installability via `<link rel="manifest">` emission strictly on authenticated `/dashboard/`. |
+| Narrowing SW scope to `/dashboard/` stalls `navigator.serviceWorker.ready` on `/intake/` and `/products/<pk>/`, breaking Push subscription | High | Keep SW `scope: "/"` gated behind `{% if user.is_authenticated %}` in `base.html`. |
+| Staff clicking Storefront inside installed PWA (`scope: "/"`) traps the standalone window on `/` | Med | Add `target="_blank" rel="noopener noreferrer"` on desktop and mobile (`#mobile-link-storefront`) Storefront links. |
+| Devices that previously installed the PWA may cache legacy `start_url: "/"` | Med | Declare explicit `"id": "/dashboard/"` to cleanly separate app identity; document one-time reinstall caveat on rollout. |
+| Existing `test_base_template_renders_pwa_meta_and_push_toggles` asserts `rel="manifest"` on `/intake/` (and manual script `verify_workday_all_cases.py` checks `/login/`) | Med | Update `tests/test_pwa_push.py` to enforce the full PRD Section 5.2 surface matrix; leave legacy manual script `verify_workday_all_cases.py` out of scope unless requested. |
+
+### Open Questions
+- None — all design decisions confirmed by the user.
