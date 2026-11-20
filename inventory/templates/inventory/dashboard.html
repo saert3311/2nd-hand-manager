@@ -3,6 +3,16 @@
 
 {% block title %}{% trans "Dashboard - 2ndHand Staging" %}{% endblock %}
 
+{% block pwa_install_head %}
+{% if user.is_authenticated %}
+  <!-- Dashboard-Only PWA Manifest & Standalone Install Meta Tags -->
+  <link rel="manifest" href="{% url 'inventory:manifest' %}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="2ndHand">
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="space-y-6">
 

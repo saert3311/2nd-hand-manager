@@ -5,12 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="text-scale" content="scale">
   <title>{% block title %}2ndHand Staging{% endblock %}</title>
-  <!-- PWA Manifest & Standalone Meta Tags -->
-  <link rel="manifest" href="{% url 'inventory:manifest' %}">
+  <!-- PWA Icons & Theme Metadata (install manifest injected only on /dashboard/ for authenticated staff) -->
+  {% block pwa_install_head %}{% endblock %}
   <meta name="theme-color" content="#059669">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="2ndHand">
   <link rel="apple-touch-icon" href="{% static 'inventory/icons/apple-touch-icon.png' %}">
   <link rel="icon" type="image/png" sizes="192x192" href="{% static 'inventory/icons/icon-192.png' %}">
   <!-- Tailwind CSS via CDN -->
@@ -150,7 +147,10 @@
               <span aria-hidden="true">📦</span> {% trans "Pallets" %}
             </a>
             {% endif %}
-            <a href="{% url 'storefront:catalog' %}" class="px-3 py-1.5 text-sm font-medium text-slate-700 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition">
+            <a href="{% url 'storefront:catalog' %}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="px-3 py-1.5 text-sm font-medium text-slate-700 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition">
               <span aria-hidden="true">🏪</span> {% trans "Storefront" %}
             </a>
             {% if pending_clarifications_count > 0 %}
@@ -314,6 +314,8 @@
 
         <a href="{% url 'storefront:catalog' %}"
            id="mobile-link-storefront"
+           target="_blank"
+           rel="noopener noreferrer"
            class="flex items-center gap-3 px-3 py-2.5 text-base font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition min-h-[44px]">
           <span class="text-lg">🏪</span>
           <span>{% trans "Public Storefront" %}</span>
@@ -475,7 +477,8 @@
     {% endif %}
   </footer>
 
-  <!-- Global PWA Service Worker Registration -->
+  {% if user.is_authenticated %}
+  <!-- Authenticated Backend PWA Service Worker Registration & App Badge Sync -->
   <script>
     (function() {
       if ('serviceWorker' in navigator) {
@@ -494,6 +497,7 @@
       }
     })();
   </script>
+  {% endif %}
 
   {% if user.is_authenticated %}
   <script>
