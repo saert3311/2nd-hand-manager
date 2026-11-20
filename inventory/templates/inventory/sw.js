@@ -23,7 +23,7 @@ self.addEventListener('push', (event) => {
   let payload = {
     title: '2ndHand Staging',
     body: 'New activity in the inventory hub.',
-    url: '/',
+    url: '/dashboard/',
     tag: '2ndhand-general',
     icon: '/static/inventory/icons/icon-192.png',
     badge: '/static/inventory/icons/icon-192.png',
@@ -46,7 +46,7 @@ self.addEventListener('push', (event) => {
     tag: payload.tag || '2ndhand-general',
     renotify: true,
     data: {
-      url: payload.url || '/',
+      url: payload.url || '/dashboard/',
     },
   };
 
@@ -74,7 +74,7 @@ self.addEventListener('notificationclick', (event) => {
   const targetPath =
     event.notification.data && event.notification.data.url
       ? event.notification.data.url
-      : '/';
+      : '/dashboard/';
   const targetUrl = new URL(targetPath, self.location.origin).href;
 
   event.waitUntil(

@@ -1123,10 +1123,11 @@ def manifest_view(request):
     Serves the W3C Web App Manifest (/manifest.json) for PWA installation.
     """
     manifest_data = {
+        "id": "/dashboard/",
         "name": "2ndHand Product Intake & Staging Hub",
         "short_name": "2ndHand",
         "description": str(_("Mobile intake & AI staging workspace for second-hand inventory.")),
-        "start_url": "/",
+        "start_url": "/dashboard/",
         "scope": "/",
         "display": "standalone",
         "orientation": "portrait-primary",

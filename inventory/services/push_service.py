@@ -39,7 +39,7 @@ def send_push_to_subscription(
     subscription: PushSubscription,
     title: str,
     body: str,
-    url: str = "/",
+    url: str = "/dashboard/",
     tag: str = "",
     badge_count: int | None = None,
 ) -> bool:
@@ -57,7 +57,7 @@ def send_push_to_subscription(
     payload = {
         "title": title,
         "body": body,
-        "url": url or "/",
+        "url": url or "/dashboard/",
         "tag": tag or "2ndhand-general",
         "icon": "/static/inventory/icons/icon-192.png",
         "badge": "/static/inventory/icons/icon-192.png",
@@ -109,7 +109,7 @@ def send_push_to_user(
     user,
     title: str,
     body: str,
-    url: str = "/",
+    url: str = "/dashboard/",
     tag: str = "",
     badge_count: int | None = None,
 ) -> int:
@@ -139,7 +139,7 @@ def send_push_to_group(
     group_name: str,
     title: str,
     body: str,
-    url: str = "/",
+    url: str = "/dashboard/",
     tag: str = "",
     badge_count: int | None = None,
 ) -> int:
