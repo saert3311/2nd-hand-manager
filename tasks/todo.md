@@ -4161,14 +4161,14 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ### Task 210: Backend Page-Size Resolution, Session Memory & Zero-N+1 Image Prefetch
 **Description:** Implement strict server-side whitelisting (`20`, `50`, `100`) with Django session persistence, normalized pagination/filter query strings, and cache-aware `ProductImage` prefetching in `inventory/models.py` and `inventory/views.py` so rendering 100 products maintains constant `O(1)` SQL query counts without touching the public storefront.
 **Acceptance criteria:**
-- [ ] `Product.primary_image` checks `self._prefetched_objects_cache["images"]` (`min(..., key=lambda img: (img.order, img.id))`) when prefetched, falling back to `self.images.order_by("order", "id").first()` otherwise.
-- [ ] `inventory/views.py` defines `ALLOWED_PAGE_SIZES = (20, 50, 100)`, `DASHBOARD_PER_PAGE_SESSION_KEY = "dashboard_per_page"`, and `_resolve_dashboard_page_size(request) -> int` with strict whitelisting and session persistence.
-- [ ] `dashboard_view` prefetches ordered `ProductImage` rows (`Prefetch("images", queryset=ProductImage.objects.order_by("order", "id"))`), paginates with resolved `per_page`, and passes `per_page`, `allowed_page_sizes`, `default_page_size`, `per_page_base_query`, and normalized `query_string` (stripping `page` and invalid `per_page`).
-- [ ] Public storefront (`storefront/views.py`) remains untouched at `PUBLIC_PAGE_SIZE = 20`.
+- [x] `Product.primary_image` checks `self._prefetched_objects_cache["images"]` (`min(..., key=lambda img: (img.order, img.id))`) when prefetched, falling back to `self.images.order_by("order", "id").first()` otherwise.
+- [x] `inventory/views.py` defines `ALLOWED_PAGE_SIZES = (20, 50, 100)`, `DASHBOARD_PER_PAGE_SESSION_KEY = "dashboard_per_page"`, and `_resolve_dashboard_page_size(request) -> int` with strict whitelisting and session persistence.
+- [x] `dashboard_view` prefetches ordered `ProductImage` rows (`Prefetch("images", queryset=ProductImage.objects.order_by("order", "id"))`), paginates with resolved `per_page`, and passes `per_page`, `allowed_page_sizes`, `default_page_size`, `per_page_base_query`, and normalized `query_string` (stripping `page` and invalid `per_page`).
+- [x] Public storefront (`storefront/views.py`) remains untouched at `PUBLIC_PAGE_SIZE = 20`.
 **Verification:**
-- [ ] `.venv\Scripts\python.exe manage.py check`
-- [ ] `.venv\Scripts\python.exe manage.py test tests.test_pagination_search tests.test_dashboard tests.test_models`
-- [ ] `.venv\Scripts\ruff.exe check inventory/models.py inventory/views.py`
+- [x] `.venv\Scripts\python.exe manage.py check`
+- [x] `.venv\Scripts\python.exe manage.py test tests.test_pagination_search tests.test_dashboard tests.test_models`
+- [x] `.venv\Scripts\ruff.exe check inventory/models.py inventory/views.py`
 **Dependencies:** None
 **Files likely touched:**
 - `inventory/models.py`
@@ -4180,14 +4180,14 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ### Task 211: Above-Grid Results Bar, Connected Segmented Selector (`demolab` Craft) & Lazy Card Thumbnails
 **Description:** Consult `modern-web-guidance` first, then build `#dashboardResultsBar` and the connected `20 | 50 | 100` segmented pill selector (`#perPageSelector`) directly above the product grid in `inventory/templates/inventory/dashboard.html`, propagate `per_page` across all dashboard tabs/forms/links when non-default, and optimize card thumbnails for 100-item pages.
 **Acceptance criteria:**
-- [ ] Consult `modern-web-guidance` for segmented control and lazy image best practices prior to template changes.
-- [ ] Render `#dashboardResultsBar` directly above the product grid whenever `products` is non-empty (visible even on 1-page result sets; hidden when empty) as a clean hairline utility strip with `tabular-nums`, `text-sm` (`14px`) above-the-fold typography, and zero nested card-in-card clutter.
-- [ ] Render `#perPageSelector` (`role="group"`, `aria-label="{% trans 'Products per page' %}"`) as a connected segmented pill toggle (`20 | 50 | 100`) using `per_page_base_query`, `aria-current="true"` on the active option, `min-h-[36px] min-w-[42px]` touch targets, WCAG AA contrast (`>= 4.5:1`), and explicit `transition-[background-color,color,box-shadow] duration-150 ease-out motion-reduce:transition-none`.
-- [ ] Propagate `per_page` when `per_page != default_page_size` across status tabs, filter forms (`search`, `platform`, `pallet`, `provider`), sub-filters (`sync`, `channel`, `compliance`), clear-search, clear-filters, and cross-tab recovery links; keep "Clear filters" button visibility decoupled from `per_page`.
-- [ ] Optimize card rendering with `{% with primary_img=product.primary_image %}`, `{{ product.images.all|length }}`, `{% if forloop.counter > 4 %}loading="lazy"{% endif %} decoding="async"`, and `tabular-nums` on bottom pagination summary.
+- [x] Consult `modern-web-guidance` for segmented control and lazy image best practices prior to template changes.
+- [x] Render `#dashboardResultsBar` directly above the product grid whenever `products` is non-empty (visible even on 1-page result sets; hidden when empty) as a clean hairline utility strip with `tabular-nums`, `text-sm` (`14px`) above-the-fold typography, and zero nested card-in-card clutter.
+- [x] Render `#perPageSelector` (`role="group"`, `aria-label="{% trans 'Products per page' %}"`) as a connected segmented pill toggle (`20 | 50 | 100`) using `per_page_base_query`, `aria-current="true"` on the active option, `min-h-[36px] min-w-[42px]` touch targets, WCAG AA contrast (`>= 4.5:1`), and explicit `transition-[background-color,color,box-shadow] duration-150 ease-out motion-reduce:transition-none`.
+- [x] Propagate `per_page` when `per_page != default_page_size` across status tabs, filter forms (`search`, `platform`, `pallet`, `provider`), sub-filters (`sync`, `channel`, `compliance`), clear-search, clear-filters, and cross-tab recovery links; keep "Clear filters" button visibility decoupled from `per_page`.
+- [x] Optimize card rendering with `{% with primary_img=product.primary_image %}`, `{{ product.images.all|length }}`, `{% if forloop.counter > 4 %}loading="lazy"{% endif %} decoding="async"`, and `tabular-nums` on bottom pagination summary.
 **Verification:**
-- [ ] `.venv\Scripts\python.exe manage.py test tests.test_dashboard tests.test_pagination_search`
-- [ ] Browser/manual check: Confirm `#dashboardResultsBar` and `#perPageSelector` render cleanly on both 1-page and multi-page result sets.
+- [x] `.venv\Scripts\python.exe manage.py test tests.test_dashboard tests.test_pagination_search`
+- [x] Browser/manual check: Confirm `#dashboardResultsBar` and `#perPageSelector` render cleanly on both 1-page and multi-page result sets.
 **Dependencies:** Task 210
 **Files likely touched:**
 - `inventory/templates/inventory/dashboard.html`
@@ -4198,14 +4198,14 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ### Task 212: Bilingual Localization (ES/EN), Automated Unit/Query/Playwright Tests, Visual Audit & Changelog
 **Description:** Translate and compile new UI strings in Spanish and English, expand unit, query-count, role, and Playwright OPPO A74/desktop responsive tests, visually inspect rendered desktop and mobile screenshots per `plugin:demolab`, and document Phase 57 under `CHANGELOG.md`.
 **Acceptance criteria:**
-- [ ] Add Spanish and English translations for `"Products per page"`, `"Per page:"`, and `"Show %(count)s products per page"` in `locale/*/LC_MESSAGES/django.po` and compile `.mo` via `manage.py compile_locales`.
-- [ ] Extend `tests/test_pagination_search.py` covering default `20`, `20/50/100` switching (with 105 products), session persistence & explicit reset to `20`, invalid `per_page` fallback & non-propagation, filter/search composability & page reset to 1, "Clear filters" preserving `per_page`, 1-page bar visibility & 0-item hiding, Manager + Assistant access, `assertNumQueries` equality between 20 and 100 items with images, lazy-loading attributes after card 4, and ES/EN localization.
-- [ ] Extend `tests/test_oppo_a74_responsive.py` (`360×800` & `320×711` in Spanish) and `tests/test_dashboard_responsive.py` (`768×1024`, `1024×768`, `1440×900`) verifying `#dashboardResultsBar` and `#perPageSelector` visibility, bounding-box fit, and zero horizontal overflow (`scrollWidth <= clientWidth`).
-- [ ] Visually inspect rendered desktop (`1440×900`) and mobile (`390×844`, `360×800`, `320×711`) screenshots and resolve any spacing, wrapping, or contrast issues.
-- [ ] Document Phase 57 in `CHANGELOG.md` under `## [Unreleased]`.
+- [x] Add Spanish and English translations for `"Products per page"`, `"Per page:"`, and `"Show %(count)s products per page"` in `locale/*/LC_MESSAGES/django.po` and compile `.mo` via `manage.py compile_locales`.
+- [x] Extend `tests/test_pagination_search.py` covering default `20`, `20/50/100` switching (with 105 products), session persistence & explicit reset to `20`, invalid `per_page` fallback & non-propagation, filter/search composability & page reset to 1, "Clear filters" preserving `per_page`, 1-page bar visibility & 0-item hiding, Manager + Assistant access, `assertNumQueries` equality between 20 and 100 items with images, lazy-loading attributes after card 4, and ES/EN localization.
+- [x] Extend `tests/test_oppo_a74_responsive.py` (`360×800` & `320×711` in Spanish) and `tests/test_dashboard_responsive.py` (`768×1024`, `1024×768`, `1440×900`) verifying `#dashboardResultsBar` and `#perPageSelector` visibility, bounding-box fit, and zero horizontal overflow (`scrollWidth <= clientWidth`).
+- [x] Visually inspect rendered desktop (`1440×900`) and mobile (`390×844`, `360×800`, `320×711`) screenshots and resolve any spacing, wrapping, or contrast issues.
+- [x] Document Phase 57 in `CHANGELOG.md` under `## [Unreleased]`.
 **Verification:**
-- [ ] `.venv\Scripts\python.exe manage.py compile_locales`
-- [ ] `.venv\Scripts\python.exe manage.py test tests.test_pagination_search tests.test_dashboard tests.test_oppo_a74_responsive tests.test_dashboard_responsive`
+- [x] `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] `.venv\Scripts\python.exe manage.py test tests.test_pagination_search tests.test_dashboard tests.test_oppo_a74_responsive tests.test_dashboard_responsive`
 **Dependencies:** Task 211
 **Files likely touched:**
 - `locale/es/LC_MESSAGES/django.po`
@@ -4221,9 +4221,9 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ---
 
 ### Checkpoint 57: Phase 57 Complete & Quality Gate
-- [ ] `.venv\Scripts\ruff.exe check .` passes with 0 errors/warnings.
-- [ ] `.venv\Scripts\python.exe manage.py check` passes with 0 issues.
-- [ ] `.venv\Scripts\python.exe manage.py compile_locales` succeeds cleanly.
-- [ ] `.venv\Scripts\python.exe manage.py test` passes 100%.
-- [ ] Desktop & mobile (`1440×900`, `390×844`, `360×800`, `320×711`) screenshots visually verified with zero horizontal overflow.
+- [x] `.venv\Scripts\ruff.exe check .` passes with 0 errors/warnings.
+- [x] `.venv\Scripts\python.exe manage.py check` passes with 0 issues.
+- [x] `.venv\Scripts\python.exe manage.py compile_locales` succeeds cleanly.
+- [x] `.venv\Scripts\python.exe manage.py test` passes 100%.
+- [x] Desktop & mobile (`1440×900`, `390×844`, `360×800`, `320×711`) screenshots visually verified with zero horizontal overflow.
 - [ ] User approval requested before merging `feat/dashboard-page-size-selector` into `master`.

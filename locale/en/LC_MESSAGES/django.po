@@ -4193,6 +4193,15 @@ msgstr "%(category)s at Rápido Pack Valencia (Alfafar): inspected second-hand a
 msgid "Catalog products"
 msgstr "Catalog products"
 
+msgid "Products per page"
+msgstr "Products per page"
+
+msgid "Per page:"
+msgstr "Per page:"
+
+msgid "Show %(count)s products per page"
+msgstr "Show %(count)s products per page"
+
 
 
 

@@ -255,8 +255,15 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 assert_visible_images_loaded(self, page)
                 self._assert_no_horizontal_overflow(page, f"dashboard_{vp_name}", w, h)
                 self._assert_controls_visible_and_inside_viewport(
-                    page, ['nav[role="tablist"]', "input[name='q']"], f"Dashboard {vp_name}"
+                    page,
+                    ['nav[role="tablist"]', "input[name='q']", "#dashboardResultsBar", "#perPageSelector"],
+                    f"Dashboard {vp_name}",
                 )
+
+            with page.expect_navigation():
+                page.click('#perPageSelector a[href*="per_page=50"]')
+            page.wait_for_selector('#perPageSelector a[href*="per_page=50"][aria-current="true"]')
+            self._assert_no_horizontal_overflow(page, "dashboard_per_page_50_oppo_lowdpi", 320, 711)
 
             # 3. Intake Page (+ uploaded image preview)
             page.goto(f"{self.live_server_url}{reverse('inventory:intake')}")

@@ -4653,6 +4653,15 @@ msgstr "Demasiados intentos de inicio de sesión fallidos. Espera unos minutos e
 msgid "Too many AI requests. Please wait a moment and try again."
 msgstr "Demasiadas solicitudes de IA. Espera un momento e inténtalo de nuevo."
 
+msgid "Products per page"
+msgstr "Productos por página"
+
+msgid "Per page:"
+msgstr "Por página:"
+
+msgid "Show %(count)s products per page"
+msgstr "Mostrar %(count)s productos por página"
+
 
 
 

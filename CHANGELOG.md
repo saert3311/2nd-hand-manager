@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Dashboard Configurable Page Size Selector (20 / 50 / 100 — Phase 57)**:
+  - **Whitelisted Page Size & Session Persistence (`inventory/views.py`)**: Added `_resolve_dashboard_page_size` enforcing `ALLOWED_PAGE_SIZES = (20, 50, 100)` (default `20`) with Django session persistence (`dashboard_per_page`), graceful fallback & non-propagation for invalid `?per_page=` inputs, reset-to-page-1 behavior via `per_page_base_query`, and full filter/search composability (keeping `/tienda/` fixed at `20` items/page).
+  - **Above-Grid Results Bar & Connected Segmented Toggle (`inventory/templates/inventory/dashboard.html`)**: Added `#dashboardResultsBar` directly above the product grid (visible whenever results are non-empty, even on single-page results) featuring the localized results counter and a 1-tap `#perPageSelector` (`20 | 50 | 100`) segmented pill control with `tabular-nums`, `aria-current="true"`, explicit CSS transitions, and zero horizontal overflow down to OPPO A74 `360×800` and `320×711` viewports.
+  - **Zero-N+1 Image Prefetch & Lazy Card Loading (`inventory/models.py`, `inventory/views.py`, `dashboard.html`)**: Made `Product.primary_image` prefetch-cache-aware alongside ordered `Prefetch("images", ...)`, switched card photo counters to `product.images.all|length` for constant `O(1)` SQL query counts across 20 and 100 items, and added `fetchpriority="high"` on the first card image + `loading="lazy"` (`forloop.counter > 4`) and `decoding="async"` on card thumbnails.
+  - **Bilingual Catalog & Tests (`locale/`, `tests/test_pagination_search.py`, `tests/test_oppo_a74_responsive.py`, `tests/test_dashboard_responsive.py`)**: Added and compiled ES/EN translations and verified page-size switching, session persistence, role access, query-count parity, lazy attributes, Spanish rendering, and desktop/mobile responsive layouts.
+
 ### Changed & Improved
 - **Public Store Shelf Redesign & Astro Frontpage Alignment (Phase 55 — Public Storefront Only)**:
   - **Retired Duplicate Corporate Landing Page (`storefront/views.py`, deleted `home.html`)**: Delegated `/` (`storefront:home`) directly to `catalog_view` while preserving `/tienda/` (`storefront:catalog`), `/tienda/categoria/<slug>/`, `/tienda/producto/<slug>-<pk>/`, `/como-comprar/`, `/go/whatsapp/`, `/go/link/<link_pk>/`, `/sitemap.xml`, `/robots.txt`, and legal routes. Internal `inventory/` routes, templates, models, and workflows remain 100% untouched.

@@ -85,6 +85,25 @@ class DashboardResponsiveUITests(StaticLiveServerTestCase):
                 page.set_viewport_size({"width": width, "height": height})
 
                 self.assertTrue(page.locator("#palletFilterForm").is_visible(), f"Pallet filter form must be visible at {label}")
+                self.assertTrue(
+                    page.locator("#dashboardResultsBar").is_visible(),
+                    f"Results bar must be visible at {label}",
+                )
+                selector = page.locator("#perPageSelector")
+                self.assertTrue(selector.is_visible(), f"Page size selector must be visible at {label}")
+                selector_box = selector.bounding_box()
+                self.assertIsNotNone(selector_box)
+                self.assertLessEqual(
+                    selector_box["x"] + selector_box["width"],
+                    width + 1,
+                    f"Page size selector overflows viewport at {label}",
+                )
+
+                if width >= 1024:
+                    overflow = page.evaluate(
+                        "() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1"
+                    )
+                    self.assertFalse(overflow, f"Horizontal overflow detected on dashboard at {label}")
 
                 tablist = page.locator('nav[role="tablist"]')
                 self.assertTrue(tablist.is_visible(), f"Status tablist must be visible at {label}")
