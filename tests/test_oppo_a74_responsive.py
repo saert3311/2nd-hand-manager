@@ -274,9 +274,20 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 self._assert_no_horizontal_overflow(page, f"intake_{vp_name}", w, h)
                 self._assert_controls_visible_and_inside_viewport(
                     page,
-                    ["label[for='cameraInput']", "label[for='imageInput']", "#identifyBtn", "#submitBtn"],
+                    ["label[for='cameraInput']", "label[for='imageInput']", "#id_raw_note", "#identifyBtn", "#submitBtn"],
                     f"Intake {vp_name}",
                 )
+                preview_box = page.locator("#previewContainer").bounding_box()
+                note_box = page.locator("#id_raw_note").bounding_box()
+                identify_box = page.locator("#identifyBtn").bounding_box()
+                origin_box = page.locator("#id_origin").bounding_box()
+                self.assertLessEqual(preview_box["y"] + preview_box["height"], note_box["y"] + 2)
+                self.assertLessEqual(note_box["y"] + note_box["height"], identify_box["y"] + 2)
+                self.assertLess(identify_box["y"], origin_box["y"])
+                note_font_size = page.evaluate(
+                    "() => parseFloat(window.getComputedStyle(document.querySelector('#id_raw_note')).fontSize)"
+                )
+                self.assertGreaterEqual(note_font_size, 16.0, "Mobile intake notes font-size must be >= 16px")
 
             # 4. Pallets & Providers Hub + Provider Edit
             page.goto(f"{self.live_server_url}{reverse('inventory:pallets')}")

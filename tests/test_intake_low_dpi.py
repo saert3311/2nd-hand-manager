@@ -123,3 +123,20 @@ class IntakeLowDPITests(TestCase):
         self.assertIsNotNone(product)
         self.assertEqual(product.images.count(), 1)
         self.assertEqual(product.sale_price, Decimal("29.99"))
+
+    def test_notes_field_positioned_directly_below_uploaded_photos(self):
+        """Field Notes / Short Description sits right below uploaded photo previews and above AI Identify & Origin."""
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode("utf-8")
+
+        self.assertIn('aria-describedby="rawNoteHelp"', html)
+        self.assertIn('id="rawNoteHelp"', html)
+
+        pos_preview = html.index('id="previewContainer"')
+        pos_notes = html.index('id="id_raw_note"')
+        pos_identify = html.index('id="identifyBtn"')
+        pos_origin = html.index('id="id_origin"')
+        self.assertLess(pos_preview, pos_notes)
+        self.assertLess(pos_notes, pos_identify)
+        self.assertLess(pos_identify, pos_origin)

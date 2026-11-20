@@ -132,8 +132,9 @@ class ProductIntakeForm(forms.ModelForm):
         widget=forms.Textarea(attrs={
             "rows": 3,
             "maxlength": "5000",
+            "aria-describedby": "rawNoteHelp",
             "placeholder": _("Brief description / field notes (e.g., 'Vintage 90s Nike windbreaker, blue/white, small tear on left sleeve')"),
-            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition bg-slate-50 focus:bg-white resize-y"
+            "class": "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-[border-color,background-color,box-shadow] duration-150 ease-out motion-reduce:transition-none bg-slate-50 focus:bg-white resize-y"
         }),
         required=False,
         label=_("Raw Field Notes")
