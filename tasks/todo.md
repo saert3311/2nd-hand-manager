@@ -4236,12 +4236,12 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ### Task 213: Update Web App Manifest Launch Target, Explicit `id`, and Default Push Fallback URLs
 **Description:** Update `manifest_view` (`/manifest.json`) so installed PWAs launch directly into `/dashboard/` with an explicit stable app `id`, and align default fallback push notification URLs in `sw.js` and `push_service.py` to `/dashboard/`.
 **Acceptance criteria:**
-- [ ] `manifest_view` in `inventory/views.py` sets `"id": "/dashboard/"` and `"start_url": "/dashboard/"` while keeping `"scope": "/"` and returning HTTP `200 OK` (`application/manifest+json`) without auth redirects.
-- [ ] `inventory/templates/inventory/sw.js` defaults `payload.url` and `notificationclick` fallback `targetPath` to `"/dashboard/"` instead of `"/"`.
-- [ ] `inventory/services/push_service.py` updates default `url: str = "/dashboard/"` and `"url": url or "/dashboard/"` across `send_push_to_subscription`, `send_push_to_user`, and `send_push_to_group`.
+- [x] `manifest_view` in `inventory/views.py` sets `"id": "/dashboard/"` and `"start_url": "/dashboard/"` while keeping `"scope": "/"` and returning HTTP `200 OK` (`application/manifest+json`) without auth redirects.
+- [x] `inventory/templates/inventory/sw.js` defaults `payload.url` and `notificationclick` fallback `targetPath` to `"/dashboard/"` instead of `"/"`.
+- [x] `inventory/services/push_service.py` updates default `url: str = "/dashboard/"` and `"url": url or "/dashboard/"` across `send_push_to_subscription`, `send_push_to_user`, and `send_push_to_group`.
 **Verification:**
-- [ ] `.venv\Scripts\python.exe manage.py check`
-- [ ] `.venv\Scripts\ruff.exe check inventory/views.py inventory/services/push_service.py`
+- [x] `.venv\Scripts\python.exe manage.py check`
+- [x] `.venv\Scripts\ruff.exe check inventory/views.py inventory/services/push_service.py`
 **Dependencies:** None
 **Files likely touched:**
 - `inventory/views.py`
@@ -4254,14 +4254,14 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ### Task 214: Restrict PWA Manifest & Standalone Tags to Authenticated Dashboard, Gate SW Registration, and Open Storefront Links in New Tab
 **Description:** Isolate PWA installability exclusively to authenticated `/dashboard/` using a dedicated head block (browser native prompt only), gate `/sw.js` registration and App Badging behind `user.is_authenticated`, and configure Storefront nav links to open in a new tab without modifying `storefront/` runtime code.
 **Acceptance criteria:**
-- [ ] `inventory/templates/inventory/base.html` replaces inline `<link rel="manifest">` and `apple-mobile-web-app-*` standalone meta tags with empty `{% block pwa_install_head %}{% endblock %}` while keeping `theme-color`, `apple-touch-icon`, and `icon-192.png` tab metadata.
-- [ ] `inventory/templates/inventory/dashboard.html` populates `{% block pwa_install_head %}` guarded by `{% if user.is_authenticated %}` with `<link rel="manifest" href="{% url 'inventory:manifest' %}">` and iOS standalone meta tags (`apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`, `apple-mobile-web-app-title`), with zero custom install button UI.
-- [ ] `inventory/templates/inventory/base.html` wraps `/sw.js` registration (`scope: '/'`) and `setAppBadge` / `clearAppBadge` sync inside `{% if user.is_authenticated %}` so `/login/` registers no Service Worker while `/dashboard/`, `/intake/`, `/products/<pk>/`, and `/pallets/` retain Web Push support.
-- [ ] Desktop and mobile (`#mobile-link-storefront`) Storefront navigation links in `inventory/templates/inventory/base.html` include `target="_blank" rel="noopener noreferrer"`.
-- [ ] Public storefront pages (`storefront/templates/storefront/base_public.html` and children) emit zero `<link rel="manifest">`, zero standalone meta tags, and zero Service Worker registration for both anonymous and authenticated users.
+- [x] `inventory/templates/inventory/base.html` replaces inline `<link rel="manifest">` and `apple-mobile-web-app-*` standalone meta tags with empty `{% block pwa_install_head %}{% endblock %}` while keeping `theme-color`, `apple-touch-icon`, and `icon-192.png` tab metadata.
+- [x] `inventory/templates/inventory/dashboard.html` populates `{% block pwa_install_head %}` guarded by `{% if user.is_authenticated %}` with `<link rel="manifest" href="{% url 'inventory:manifest' %}">` and iOS standalone meta tags (`apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`, `apple-mobile-web-app-title`), with zero custom install button UI.
+- [x] `inventory/templates/inventory/base.html` wraps `/sw.js` registration (`scope: '/'`) and `setAppBadge` / `clearAppBadge` sync inside `{% if user.is_authenticated %}` so `/login/` registers no Service Worker while `/dashboard/`, `/intake/`, `/products/<pk>/`, and `/pallets/` retain Web Push support.
+- [x] Desktop and mobile (`#mobile-link-storefront`) Storefront navigation links in `inventory/templates/inventory/base.html` include `target="_blank" rel="noopener noreferrer"`.
+- [x] Public storefront pages (`storefront/templates/storefront/base_public.html` and children) emit zero `<link rel="manifest">`, zero standalone meta tags, and zero Service Worker registration for both anonymous and authenticated users.
 **Verification:**
-- [ ] `.venv\Scripts\python.exe manage.py check`
-- [ ] Manual/template check confirming surface matrix compliance across `/dashboard/`, `/intake/`, `/login/`, `/`, `/tienda/`, and `/como-comprar/`.
+- [x] `.venv\Scripts\python.exe manage.py check`
+- [x] Manual/template check confirming surface matrix compliance across `/dashboard/`, `/intake/`, `/login/`, `/`, `/tienda/`, and `/como-comprar/`.
 **Dependencies:** Task 213
 **Files likely touched:**
 - `inventory/templates/inventory/base.html`
@@ -4273,14 +4273,14 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ### Task 215: Expand Automated Unit, Surface-Isolation, and Playwright E2E Tests + Changelog
 **Description:** Update and expand `tests/test_pwa_push.py` with comprehensive unit, role, surface-isolation, and Playwright real-browser tests verifying dashboard-only PWA installability, public storefront and `/login/` isolation, preserved backend Service Worker/Web Push behavior, Storefront `target="_blank"` links, and push fallback URLs; record Phase 58 in `CHANGELOG.md` and check off `tasks/todo.md`.
 **Acceptance criteria:**
-- [ ] `PWAManifestAndServiceWorkerTests` asserts `"id": "/dashboard/"`, `"start_url": "/dashboard/"`, and `"scope": "/"` on `GET /manifest.json`, verifies `"/dashboard/"` defaults in `/sw.js` and `push_service.py`, and verifies the complete PRD Section 5.2 surface matrix across Manager & Assistant `/dashboard/`, `/intake/`, `/products/<pk>/`, `/pallets/`, `/login/`, and public `/`, `/tienda/`, `/como-comprar/` (anonymous & authenticated), plus `target="_blank" rel="noopener noreferrer"` on Storefront links.
-- [ ] `BrowserPWAServiceWorkerAndPushTests` verifies in Playwright Chromium that: (1) anonymous `/` and `/login/` have zero `link[rel="manifest"]` and `0` registered Service Workers; (2) authenticated `/dashboard/` has `link[rel="manifest"]` (`/manifest.json`), active `/sw.js` at root scope, and visible `#push-toggle-btn`; (3) authenticated `/intake/` has zero `link[rel="manifest"]` while retaining active `/sw.js` and `#push-toggle-btn`; and (4) authenticated `/` has zero `link[rel="manifest"]`.
-- [ ] Phase 58 is documented in `CHANGELOG.md` under `## [Unreleased]` and Tasks 213–215 are checked off in `tasks/todo.md`.
+- [x] `PWAManifestAndServiceWorkerTests` asserts `"id": "/dashboard/"`, `"start_url": "/dashboard/"`, and `"scope": "/"` on `GET /manifest.json`, verifies `"/dashboard/"` defaults in `/sw.js` and `push_service.py`, and verifies the complete PRD Section 5.2 surface matrix across Manager & Assistant `/dashboard/`, `/intake/`, `/products/<pk>/`, `/pallets/`, `/login/`, and public `/`, `/tienda/`, `/como-comprar/` (anonymous & authenticated), plus `target="_blank" rel="noopener noreferrer"` on Storefront links.
+- [x] `BrowserPWAServiceWorkerAndPushTests` verifies in Playwright Chromium that: (1) anonymous `/` and `/login/` have zero `link[rel="manifest"]` and `0` registered Service Workers; (2) authenticated `/dashboard/` has `link[rel="manifest"]` (`/manifest.json`), active `/sw.js` at root scope, and visible `#push-toggle-btn`; (3) authenticated `/intake/` has zero `link[rel="manifest"]` while retaining active `/sw.js` and `#push-toggle-btn`; and (4) authenticated `/` has zero `link[rel="manifest"]`.
+- [x] Phase 58 is documented in `CHANGELOG.md` under `## [Unreleased]` and Tasks 213–215 are checked off in `tasks/todo.md`.
 **Verification:**
-- [ ] `.venv\Scripts\python.exe manage.py test tests.test_pwa_push tests.test_storefront tests.test_auth -v 2`
-- [ ] `.venv\Scripts\ruff.exe check .`
-- [ ] `.venv\Scripts\python.exe manage.py check`
-- [ ] `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] `.venv\Scripts\python.exe manage.py test tests.test_pwa_push tests.test_storefront tests.test_auth -v 2`
+- [x] `.venv\Scripts\ruff.exe check .`
+- [x] `.venv\Scripts\python.exe manage.py check`
+- [x] `.venv\Scripts\python.exe manage.py compile_locales`
 **Dependencies:** Task 213, Task 214
 **Files likely touched:**
 - `tests/test_pwa_push.py`
@@ -4291,8 +4291,8 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ---
 
 ### Checkpoint 58: Phase 58 Complete & Quality Gate
-- [ ] `.venv\Scripts\ruff.exe check .` passes with 0 errors/warnings.
-- [ ] `.venv\Scripts\python.exe manage.py check` passes with 0 issues.
-- [ ] `.venv\Scripts\python.exe manage.py compile_locales` succeeds cleanly.
-- [ ] `.venv\Scripts\python.exe manage.py test` passes 100%.
+- [x] `.venv\Scripts\ruff.exe check .` passes with 0 errors/warnings.
+- [x] `.venv\Scripts\python.exe manage.py check` passes with 0 issues.
+- [x] `.venv\Scripts\python.exe manage.py compile_locales` succeeds cleanly.
+- [x] `.venv\Scripts\python.exe manage.py test` passes 100%.
 - [ ] User approval requested before merging `feat/pwa-dashboard-backend-only` into `master`.

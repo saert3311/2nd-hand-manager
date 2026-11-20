@@ -1,5 +1,6 @@
 import io
 import json
+import re
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -37,7 +38,16 @@ User = get_user_model()
 class PWAManifestAndServiceWorkerTests(TestCase):
     def setUp(self):
         self.client = Client()
+        self.assistant_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
+        self.manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
+
         self.user = User.objects.create_user(username="assistant_pwa", password="password123")
+        self.user.groups.add(self.assistant_group)
+
+        self.manager = User.objects.create_user(
+            username="manager_pwa", password="password123", is_staff=True
+        )
+        self.manager.groups.add(self.manager_group)
 
     def test_manifest_json_endpoint(self):
         response = self.client.get(reverse("inventory:manifest"))
@@ -45,10 +55,11 @@ class PWAManifestAndServiceWorkerTests(TestCase):
         self.assertEqual(response["Content-Type"], "application/manifest+json")
 
         data = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(data["id"], "/dashboard/")
         self.assertEqual(data["short_name"], "2ndHand")
         self.assertEqual(data["display"], "standalone")
         self.assertEqual(data["scope"], "/")
-        self.assertEqual(data["start_url"], "/")
+        self.assertEqual(data["start_url"], "/dashboard/")
         self.assertEqual(data["theme_color"], "#059669")
         self.assertGreaterEqual(len(data["icons"]), 4)
         purposes = {icon["purpose"] for icon in data["icons"]}
@@ -68,6 +79,10 @@ class PWAManifestAndServiceWorkerTests(TestCase):
         self.assertIn("self.addEventListener('push'", body)
         self.assertIn("self.addEventListener('notificationclick'", body)
         self.assertIn("self.registration.showNotification", body)
+        self.assertIn("url: '/dashboard/'", body)
+        self.assertIn("payload.url || '/dashboard/'", body)
+        self.assertIn(": '/dashboard/';", body)
+        self.assertNotIn("url: '/'", body)
 
     def test_pwa_static_icons_exist_and_dimensions(self):
         icons_dir = Path(settings.BASE_DIR) / "inventory" / "static" / "inventory" / "icons"
@@ -83,16 +98,83 @@ class PWAManifestAndServiceWorkerTests(TestCase):
                 self.assertEqual(img.format, "PNG")
                 self.assertEqual(img.size, dims)
 
-    def test_base_template_renders_pwa_meta_and_push_toggles(self):
-        self.client.login(username="assistant_pwa", password="password123")
-        response = self.client.get(reverse("inventory:intake"))
+    def test_dashboard_renders_pwa_manifest_for_manager_and_assistant(self):
+        storefront_href = reverse("storefront:catalog")
+        for account in (self.manager, self.user):
+            self.client.force_login(account)
+            response = self.client.get(reverse("inventory:dashboard"))
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, '<link rel="manifest" href="/manifest.json">')
+            self.assertContains(response, '<meta name="apple-mobile-web-app-capable" content="yes">')
+            self.assertContains(response, 'name="theme-color" content="#059669"')
+            self.assertContains(response, "apple-touch-icon.png")
+            self.assertContains(response, "navigator.serviceWorker.register")
+            self.assertContains(response, 'id="push-toggle-btn"')
+            self.assertContains(response, 'id="mobile-push-toggle-btn"')
+
+            html = response.content.decode("utf-8")
+            storefront_anchors = re.findall(
+                rf'<a[^>]*href="{re.escape(storefront_href)}"[^>]*>',
+                html,
+                flags=re.DOTALL,
+            )
+            self.assertEqual(len(storefront_anchors), 2)
+            for anchor in storefront_anchors:
+                self.assertIn('target="_blank"', anchor)
+                self.assertIn('rel="noopener noreferrer"', anchor)
+
+    def test_non_dashboard_backend_pages_omit_manifest_but_keep_service_worker(self):
+        product = Product.objects.create(
+            raw_note="PWA non-dashboard check",
+            ai_title="Vintage Lamp",
+            created_by=self.user,
+        )
+        targets = [
+            (self.user, reverse("inventory:intake")),
+            (self.user, reverse("inventory:product_detail", kwargs={"pk": product.pk})),
+            (self.manager, reverse("inventory:intake")),
+            (self.manager, reverse("inventory:product_detail", kwargs={"pk": product.pk})),
+            (self.manager, reverse("inventory:pallets")),
+        ]
+        for account, url in targets:
+            self.client.force_login(account)
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            self.assertNotContains(response, 'rel="manifest"')
+            self.assertNotContains(response, "apple-mobile-web-app-capable")
+            self.assertContains(response, 'name="theme-color" content="#059669"')
+            self.assertContains(response, "apple-touch-icon.png")
+            self.assertContains(response, "navigator.serviceWorker.register")
+            self.assertContains(response, 'id="push-toggle-btn"')
+            self.assertContains(response, 'id="mobile-push-toggle-btn"')
+
+    def test_login_page_omits_manifest_and_service_worker(self):
+        self.client.logout()
+        response = self.client.get(reverse("inventory:login"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'rel="manifest"')
-        self.assertContains(response, 'name="theme-color" content="#059669"')
-        self.assertContains(response, "apple-touch-icon.png")
-        self.assertContains(response, "navigator.serviceWorker.register")
-        self.assertContains(response, 'id="push-toggle-btn"')
-        self.assertContains(response, 'id="mobile-push-toggle-btn"')
+        self.assertNotContains(response, 'rel="manifest"')
+        self.assertNotContains(response, "apple-mobile-web-app-capable")
+        self.assertNotContains(response, "navigator.serviceWorker.register")
+
+    def test_public_storefront_omits_manifest_and_service_worker_for_anonymous_and_staff(self):
+        public_urls = [
+            reverse("storefront:home"),
+            reverse("storefront:catalog"),
+            reverse("storefront:how_to_buy"),
+        ]
+        for account in (None, self.manager, self.user):
+            if account is None:
+                self.client.logout()
+            else:
+                self.client.force_login(account)
+            for url in public_urls:
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertNotContains(response, 'rel="manifest"')
+                self.assertNotContains(response, "apple-mobile-web-app-capable")
+                self.assertNotContains(response, "navigator.serviceWorker.register")
+                self.assertNotContains(response, "/manifest.json")
+                self.assertNotContains(response, "/sw.js")
 
 
 class VAPIDCommandAndPushServiceTests(TestCase):
@@ -180,6 +262,39 @@ class VAPIDCommandAndPushServiceTests(TestCase):
             )
             self.assertEqual(mgr_sent, 1)
             mock_webpush.assert_called_once()
+
+    @patch("inventory.services.push_service.webpush")
+    def test_push_default_fallback_url_is_dashboard(self, mock_webpush):
+        with override_settings(
+            VAPID_PUBLIC_KEY=self.pub_key,
+            VAPID_PRIVATE_KEY=self.priv_key,
+        ):
+            send_push_to_subscription(
+                self.sub_assistant,
+                title="Default Sub",
+                body="No url arg",
+            )
+            send_push_to_subscription(
+                self.sub_assistant,
+                title="Empty Sub",
+                body="Empty url arg",
+                url="",
+            )
+            send_push_to_user(
+                self.assistant,
+                title="Default User",
+                body="No url arg",
+            )
+            send_push_to_group(
+                ROLE_MANAGER,
+                title="Default Group",
+                body="No url arg",
+            )
+
+        self.assertEqual(mock_webpush.call_count, 4)
+        for call in mock_webpush.call_args_list:
+            payload = json.loads(call.kwargs["data"])
+            self.assertEqual(payload["url"], "/dashboard/")
 
     @patch("inventory.services.push_service.webpush")
     def test_expired_subscription_pruned_on_410_and_404(self, mock_webpush):
@@ -432,34 +547,97 @@ class BrowserPWAServiceWorkerAndPushTests(StaticLiveServerTestCase):
 
         with sync_playwright() as p:
             browser = launch_test_browser(p)
-            context = browser.new_context(viewport={"width": 1280, "height": 800})
-            page = context.new_page()
-            abort_nonessential_fonts(page)
+            try:
+                context = browser.new_context(viewport={"width": 1280, "height": 800})
+                page = context.new_page()
+                abort_nonessential_fonts(page)
 
-            page.goto(f"{self.live_server_url}/login/")
-            page.locator("#id_username").fill("browser_pwa_mgr")
-            page.locator("#id_password").fill("password123")
-            with page.expect_navigation():
-                page.click("#loginSubmitBtn")
+                # 1. Anonymous public storefront has zero manifest, standalone meta, or SW registrations
+                page.goto(f"{self.live_server_url}/")
+                self.assertEqual(page.locator('link[rel="manifest"]').count(), 0)
+                self.assertEqual(page.locator('meta[name="apple-mobile-web-app-capable"]').count(), 0)
+                public_sw_count = page.evaluate(
+                    """async () => {
+                        if (!('serviceWorker' in navigator)) return 0;
+                        const regs = await navigator.serviceWorker.getRegistrations();
+                        return regs.length;
+                    }"""
+                )
+                self.assertEqual(public_sw_count, 0)
 
-            # Verify manifest link and fetchable JSON
-            manifest_href = page.get_attribute('link[rel="manifest"]', "href")
-            self.assertEqual(manifest_href, "/manifest.json")
+                # 2. Anonymous /login/ also has zero manifest, standalone meta, or SW registrations
+                page.goto(f"{self.live_server_url}/login/")
+                self.assertEqual(page.locator('link[rel="manifest"]').count(), 0)
+                self.assertEqual(page.locator('meta[name="apple-mobile-web-app-capable"]').count(), 0)
+                login_sw_count = page.evaluate(
+                    """async () => {
+                        if (!('serviceWorker' in navigator)) return 0;
+                        const regs = await navigator.serviceWorker.getRegistrations();
+                        return regs.length;
+                    }"""
+                )
+                self.assertEqual(login_sw_count, 0)
 
-            # Wait for Service Worker registration at root scope
-            sw_scope = page.evaluate(
-                """async () => {
-                    if (!('serviceWorker' in navigator)) return null;
-                    const reg = await navigator.serviceWorker.ready;
-                    return reg ? reg.scope : null;
-                }"""
-            )
-            self.assertEqual(sw_scope, f"{self.live_server_url}/")
+                # 3. Sign in as manager -> lands on /dashboard/ with manifest, SW, and new-tab storefront link
+                page.locator("#id_username").fill("browser_pwa_mgr")
+                page.locator("#id_password").fill("password123")
+                with page.expect_navigation():
+                    page.click("#loginSubmitBtn")
 
-            # Verify push toggle button is rendered in navbar
-            toggle_btn = page.locator("#push-toggle-btn")
-            self.assertTrue(toggle_btn.is_visible())
-            self.assertEqual(toggle_btn.get_attribute("data-subscribed"), "false")
+                self.assertIn("/dashboard/", page.url)
+                manifest_href = page.get_attribute('link[rel="manifest"]', "href")
+                self.assertEqual(manifest_href, "/manifest.json")
+                self.assertEqual(
+                    page.get_attribute('meta[name="apple-mobile-web-app-capable"]', "content"),
+                    "yes",
+                )
 
-            browser.close()
+                manifest_payload = page.evaluate(
+                    """async () => {
+                        const resp = await fetch('/manifest.json');
+                        return await resp.json();
+                    }"""
+                )
+                self.assertEqual(manifest_payload["id"], "/dashboard/")
+                self.assertEqual(manifest_payload["start_url"], "/dashboard/")
+                self.assertEqual(manifest_payload["scope"], "/")
+
+                sw_scope = page.evaluate(
+                    """async () => {
+                        if (!('serviceWorker' in navigator)) return null;
+                        const reg = await navigator.serviceWorker.ready;
+                        return reg ? reg.scope : null;
+                    }"""
+                )
+                self.assertEqual(sw_scope, f"{self.live_server_url}/")
+
+                toggle_btn = page.locator("#push-toggle-btn")
+                self.assertTrue(toggle_btn.is_visible())
+                self.assertEqual(toggle_btn.get_attribute("data-subscribed"), "false")
+
+                storefront_link = page.locator('#desktop-nav a[href="/tienda/"]')
+                self.assertEqual(storefront_link.get_attribute("target"), "_blank")
+                rel_tokens = set((storefront_link.get_attribute("rel") or "").split())
+                self.assertTrue({"noopener", "noreferrer"}.issubset(rel_tokens))
+
+                # 4. Authenticated /intake/ omits manifest/standalone tags while keeping SW & push toggle
+                page.goto(f"{self.live_server_url}/intake/")
+                self.assertEqual(page.locator('link[rel="manifest"]').count(), 0)
+                self.assertEqual(page.locator('meta[name="apple-mobile-web-app-capable"]').count(), 0)
+                intake_sw_scope = page.evaluate(
+                    """async () => {
+                        if (!('serviceWorker' in navigator)) return null;
+                        const reg = await navigator.serviceWorker.ready;
+                        return reg ? reg.scope : null;
+                    }"""
+                )
+                self.assertEqual(intake_sw_scope, f"{self.live_server_url}/")
+                self.assertTrue(page.locator("#push-toggle-btn").is_visible())
+
+                # 5. Authenticated staff visiting public storefront / sees zero manifest or standalone tags
+                page.goto(f"{self.live_server_url}/")
+                self.assertEqual(page.locator('link[rel="manifest"]').count(), 0)
+                self.assertEqual(page.locator('meta[name="apple-mobile-web-app-capable"]').count(), 0)
+            finally:
+                browser.close()
 
