@@ -925,3 +925,49 @@ Align `base_public.html`'s `<header>` pixel-for-pixel with `https://rapidopackva
 
 
 
+---
+
+## Phase 57: Dashboard Configurable Page Size Selector (20 / 50 / 100) (`feat/dashboard-page-size-selector`)
+
+### Overview
+Add a whitelisted `20 / 50 / 100` products-per-page selector (`#perPageSelector`) inside a compact above-grid results bar (`#dashboardResultsBar`) on `/dashboard/`, backed by `?per_page=` URL parameters and Django session persistence (`request.session["dashboard_per_page"]`), full filter/search composability, constant `O(1)` SQL image prefetching + lazy thumbnail loading for 100-item pages, and `plugin:demolab` (`gemini-frontend-design`) UI craft. The public storefront (`/tienda/`, `PUBLIC_PAGE_SIZE = 20`) remains strictly out of scope and untouched.
+
+### Architecture Decisions & `plugin:demolab` (`gemini-frontend-design`) Craft
+1. **Strict Whitelist & Session Memory (`inventory/views.py`)**:
+   - Define `PAGE_SIZE = 20`, `ALLOWED_PAGE_SIZES: tuple[int, ...] = (20, 50, 100)`, `DASHBOARD_PER_PAGE_SESSION_KEY = "dashboard_per_page"`, and `_resolve_dashboard_page_size(request) -> int`.
+   - When `?per_page=` is a valid whitelisted integer (`20`, `50`, or `100`), apply it and persist to `request.session["dashboard_per_page"]` (writing only when changed).
+   - When `?per_page=` is missing, non-numeric, or outside `(20, 50, 100)`, ignore it cleanly without error and fall back to a valid saved session preference or `PAGE_SIZE` (`20`). Malformed `per_page` params are stripped from pagination/navigation query strings.
+   - Clicking `20` explicitly navigates to `?per_page=20...`, overwriting any previously stored `50` or `100` session preference.
+2. **Zero-N+1 Scaling for 100-Item Pages (`inventory/models.py`, `inventory/views.py`, `dashboard.html`)**:
+   - Update `Product.primary_image` to inspect `getattr(self, "_prefetched_objects_cache", None)` and compute `min(images, key=lambda img: (img.order, img.id))` in memory when `"images"` is prefetched, guaranteeing identical ordering semantics to `.order_by("order", "id").first()` with zero extra SQL queries.
+   - Update `dashboard_view` to use `Prefetch("images", queryset=ProductImage.objects.order_by("order", "id"))`.
+   - In `dashboard.html`, cache `{% with primary_img=product.primary_image %}` once per card, replace `{{ product.images.count }}` with `{{ product.images.all|length }}`, and add `{% if forloop.counter > 4 %}loading="lazy"{% endif %} decoding="async"` on card `<img>` tags to keep LCP fast and mobile memory bounded on 100-card views.
+3. **Query & Filter Composability (`inventory/views.py`, `dashboard.html`)**:
+   - Build `per_page_base_query` (`request.GET.copy()` minus `page` and `per_page`) so switching page size always resets to page 1 while preserving `status`, `q`, `platform`, `pallet`, `provider`, `channel`, `sync`, and `compliance`.
+   - Normalize `query_string` for bottom pagination links (omitting `per_page` when `20`, keeping `per_page=<n>` when non-default, stripping malformed `per_page`).
+   - Preserve `per_page` across status tabs, secondary filter forms (`search`, `platform`, `pallet`, `provider`), tertiary sub-filter pills (`sync`, `channel`), policy alert toggle, cross-tab recovery links, and "Clear filters" when `per_page != default_page_size`; never trigger the "Clear filters" button solely because a non-default `per_page` is active.
+4. **UI Craft (`plugin:demolab` / `gemini-frontend-design` + `modern-web-guidance`)**:
+   - Render `#dashboardResultsBar` directly above the product grid whenever `paginator.count > 0` (even when all results fit on 1 page) as a clean hairline utility strip (`border-b border-slate-200/80 pb-3`) on the page canvas rather than a nested card-in-card box, keeping bottom navigation (`Previous`, elided pages, `Next`) inside `{% if page_obj.has_other_pages %}` below the grid.
+   - Render `#perPageSelector` (`role="group"`, `aria-label="{% trans 'Products per page' %}"`) as a connected segmented pill toggle (`20 | 50 | 100`) instead of separate bordered buttons, applying `tabular-nums`, sentence-case `Per page:` / `Por página:` label, `text-sm` (`14px`, `>= 13px`) above-the-fold sizing, WCAG AA contrast (`>= 4.5:1`), `min-h-[36px] min-w-[42px]` touch targets, and explicit transition properties (`transition-[background-color,color,box-shadow] duration-150 ease-out motion-reduce:transition-none`, never `transition-all`).
+   - Consult `modern-web-guidance` before implementing HTML/CSS UI updates in Task 211.
+   - Visually inspect rendered desktop (`1440×900`) and mobile (`390×844`, `360×800`, `320×711`) screenshots in both EN and ES.
+
+### Dependency Graph
+```text
+Task 210 (Backend Whitelist, Session Memory & Zero-N+1 Prefetch)
+    └── Task 211 (Above-Grid Results Bar, Connected Segmented Selector & Lazy Thumbnails)
+            └── Task 212 (ES/EN Localization, Unit/Query/Playwright Tests, Visual Audit & Changelog)
+                    └── Checkpoint 57 (Quality Gate & Merge Approval Request)
+```
+
+### Risks and Mitigations
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Session preference traps user at `50`/`100` if `20` pill omits `per_page` | Med | All three pill links explicitly pass `?per_page=<size>` (`20`, `50`, or `100`) so clicking `20` resets session back to `20`. |
+| Django `blocktrans` placeholder mismatch (`%(count)s` vs `%(count)d`) drops Spanish translation | Med | Standardize on `%(count)s` across template, PRD, and `.po` catalogs, verified in ES unit tests. |
+| N+1 SQL queries spike to ~300+ queries at 100 items/page | High | Cache-aware `Product.primary_image`, ordered `Prefetch`, `images.all\|length`, locked down by `assertNumQueries` equality test between 20 and 100 products. |
+| Narrow OPPO A74 (`320×711`) horizontal overflow with expanded Spanish labels | High | Stack `#dashboardResultsBar` (`flex-col sm:flex-row`) with `min-w-0` and assert `scrollWidth <= clientWidth` in Playwright at `360×800` and `320×711`. |
+| Public storefront `/tienda/` pagination accidentally altered | Med | Keep `storefront/views.py` (`PUBLIC_PAGE_SIZE = 20`) untouched and verify existing storefront tests remain 100% green. |
+
+### Open Questions
+- None — placement (above grid + bottom nav), persistence (URL + Django session), and control style (segmented pill buttons `20 | 50 | 100`) were approved by the user.

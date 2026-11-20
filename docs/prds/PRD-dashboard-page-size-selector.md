@@ -86,12 +86,12 @@ Always run project commands via the workspace virtual environment (`.venv\Script
 ### 5.2 UI Placement, Segmented Pill Control & Responsiveness (`dashboard.html`)
 - **Above-Grid Compact Results Bar (`#dashboardResultsBar`):**
   - Rendered directly above the product catalog grid whenever `products` is non-empty (`paginator.count > 0`), remaining visible even when all matching items fit on a single page (e.g., 35 products with `50` per page). Hidden when `paginator.count == 0`.
-  - Uses responsive layout `flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white px-4 py-3 rounded-2xl shadow-sm border border-slate-200`.
+  - Follows `plugin:demolab` (`gemini-frontend-design`) workspace craft: styled as a clean hairline-separated utility strip (`border-b border-slate-200/80 pb-3`) on the page canvas with zero nested card-in-card clutter, `tabular-nums` alignment on counts and size numerals, sentence-case UI labels, `text-sm` (`14px`, >= `13px`) above-the-fold typography, and responsive stacking (`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3`).
   - **Left side:** Localized results summary (`Showing {{ start }} to {{ end }} of {{ total }} products`), avoiding duplicate summary clutter when only one bar is visible.
-  - **Right side:** Compact segmented pill control (`#perPageSelector`, `role="group"`, `aria-label="{% trans 'Products per page' %}"`) featuring the label `{% trans "Per page:" %}` and three 1-tap `<a>` pill buttons (`20`, `50`, `100`).
+  - **Right side:** Compact connected segmented pill control (`#perPageSelector`, `role="group"`, `aria-label="{% trans 'Products per page' %}"`) featuring the sentence-case label `{% trans "Per page:" %}` and three 1-tap `<a>` pill segments (`20`, `50`, `100`).
     - Active option receives high-contrast highlight (`bg-white text-emerald-800 shadow-xs ring-1 ring-emerald-200 font-bold`) and `aria-current="true"`.
-    - Inactive options render cleanly (`text-slate-700 hover:text-slate-900 hover:bg-slate-200/60`) with accessible `aria-label`.
-    - Each pill maintains comfortable touch geometry (`min-h-[36px] min-w-[40px]`), `>= 12px` (`text-xs sm:text-sm`) typography, and WCAG 2.1 AA contrast (`>= 4.5:1`).
+    - Inactive options render cleanly (`text-slate-700 hover:text-slate-900 hover:bg-slate-200/60`) with accessible `aria-label` and explicit CSS transition properties (`transition-[background-color,color,box-shadow] duration-150 ease-out motion-reduce:transition-none`, never `transition-all`).
+    - Each pill maintains comfortable touch geometry (`min-h-[36px] min-w-[42px]`), `text-sm` (`14px`) typography, and WCAG 2.1 AA contrast (`>= 4.5:1`).
 - **Bottom Pagination Bar (`{% if page_obj.has_other_pages %}`):**
   - Remains below the product grid for `Previous`, elided page numbers, and `Next` navigation, preserving `query_string`.
 - **OPPO A74 & Narrow Mobile Guardrails:**
@@ -111,7 +111,7 @@ Always run project commands via the workspace virtual environment (`.venv\Script
 Add and compile all new UI strings:
 - `"Products per page"` → `"Productos por página"`
 - `"Per page:"` → `"Por página:"`
-- `"Show %(count)d products per page"` → `"Mostrar %(count)d productos por página"`
+- `"Show %(count)s products per page"` → `"Mostrar %(count)s productos por página"`
 
 ---
 
