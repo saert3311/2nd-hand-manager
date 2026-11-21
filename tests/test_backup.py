@@ -5,8 +5,10 @@ import tempfile
 from datetime import datetime, timedelta
 from datetime import timezone as dt_timezone
 from io import StringIO
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.core.files.storage import InMemoryStorage
@@ -264,18 +266,15 @@ class BackupDatabaseServiceTests(TestCase):
         self.assertEqual(log.triggered_by, self.user)
 
     def test_backup_database_local_only(self):
-        """Test local_only mode writes backup into BASE_DIR / backups."""
-        log = backup_database(local_only=True)
+        """Test local_only mode writes backup into BASE_DIR / backups (isolated via TemporaryDirectory)."""
+        with tempfile.TemporaryDirectory() as tmp_dir, override_settings(BASE_DIR=Path(tmp_dir)):
+            log = backup_database(local_only=True)
 
-        self.assertEqual(log.status, BackupStatus.SUCCESS)
-        self.assertTrue(os.path.exists(log.remote_path))
-
-        # Cleanup local test backup
-        try:
-            if os.path.exists(log.remote_path):
-                os.remove(log.remote_path)
-        except OSError:
-            pass
+            self.assertEqual(log.status, BackupStatus.SUCCESS)
+            self.assertTrue(os.path.exists(log.remote_path))
+            self.assertTrue(
+                Path(log.remote_path).resolve().is_relative_to((Path(tmp_dir) / "backups").resolve())
+            )
 
     @patch("inventory.services.backup_service.sqlite3.connect")
     def test_backup_database_sqlite_exception(self, mock_connect):
@@ -290,10 +289,13 @@ class BackupDatabaseServiceTests(TestCase):
         self.assertEqual(log.file_size, 0)
         self.assertIsNotNone(log.pk)
 
-    @override_settings(DATABASES={"default": {"ENGINE": "django.db.backends.postgresql", "NAME": "mydb"}})
     def test_backup_database_unsupported_engine(self):
-        """Test attempting backup on non-SQLite database logs failure."""
-        log = backup_database(storage=self.storage)
+        """Test attempting backup on non-SQLite database logs failure without mutating DB settings."""
+        with patch.dict(
+            settings.DATABASES,
+            {"default": {"ENGINE": "django.db.backends.postgresql", "NAME": "mydb"}},
+        ):
+            log = backup_database(storage=self.storage)
 
         self.assertEqual(log.status, BackupStatus.FAILED)
         self.assertIn("Automated backups only support SQLite engines", log.error_message)

@@ -435,6 +435,7 @@ class IntakePreflightServiceTests(TestCase):
         )
 
         cache.delete(GEMINI_MODELS_CACHE_KEY)
+        self.addCleanup(cache.delete, GEMINI_MODELS_CACHE_KEY)
 
         def _make_model(name, display, actions=None):
             m = MagicMock()
@@ -466,7 +467,15 @@ class IntakePreflightServiceTests(TestCase):
         self.assertNotIn("gemma-4-31b-it", model_ids)
         self.assertNotIn("gemini-embedding-001", model_ids)
 
-    def test_admin_form_populates_dynamic_model_choices_and_preserves_custom(self):
+    @patch(
+        "inventory.admin.fetch_available_gemini_models",
+        return_value=[
+            ("gemini-4-hydrogen", "Gemini 4 Hydrogen"),
+            ("gemini-3.8-flash", "Gemini 3.8 Flash"),
+            ("gemini-3.5-flash-lite", "Gemini 3.5 Flash-Lite"),
+        ],
+    )
+    def test_admin_form_populates_dynamic_model_choices_and_preserves_custom(self, mock_fetch_models):
         from inventory.admin import AIPromptConfigurationAdminForm
 
         custom_cfg = AIPromptConfiguration.objects.create(
@@ -479,6 +488,7 @@ class IntakePreflightServiceTests(TestCase):
             is_active=False,
         )
         form = AIPromptConfigurationAdminForm(instance=custom_cfg)
+        mock_fetch_models.assert_called_once_with(force_refresh=False)
         primary_values = [val for val, _ in form.fields["model_name"].widget.choices]
         intake_values = [val for val, _ in form.fields["intake_model_name"].widget.choices]
         self.assertIn("gemini-4-hydrogen", primary_values)

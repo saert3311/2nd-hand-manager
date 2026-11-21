@@ -1,6 +1,9 @@
+from io import StringIO
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
+from django.core.management import call_command
 from django.http import HttpResponse
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
@@ -17,23 +20,26 @@ User = get_user_model()
 
 
 class AuthAndPermissionsTests(TestCase):
-    def setUp(self):
-        self.client = Client()
-        self.assistant_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
-        self.manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
+    @classmethod
+    def setUpTestData(cls):
+        cls.assistant_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
+        cls.manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
 
-        self.assistant_user = User.objects.create_user(
+        cls.assistant_user = User.objects.create_user(
             username="assistant_joe", password="password123"
         )
-        self.assistant_user.groups.add(self.assistant_group)
+        cls.assistant_user.groups.add(cls.assistant_group)
 
-        self.manager_user = User.objects.create_user(
+        cls.manager_user = User.objects.create_user(
             username="manager_mary", password="password123", is_staff=True
         )
 
-        self.regular_user = User.objects.create_user(
+        cls.regular_user = User.objects.create_user(
             username="regular_bob", password="password123"
         )
+
+    def setUp(self):
+        self.client = Client()
 
     def test_permission_helpers(self):
         self.assertTrue(is_assistant(self.assistant_user))
@@ -90,3 +96,26 @@ class AuthAndPermissionsTests(TestCase):
             {"username": "assistant_joe", "password": "password123"}
         )
         self.assertRedirects(response, reverse("inventory:intake"))
+
+
+class SetupRolesCommandTests(TestCase):
+    """Guard tests for production container boot (`setup_roles --no-demo-users`)."""
+
+    def test_no_demo_users_creates_groups_only_and_is_idempotent(self):
+        self.assertEqual(User.objects.count(), 0)
+        call_command("setup_roles", "--no-demo-users", stdout=StringIO())
+        call_command("setup_roles", "--no-demo-users", stdout=StringIO())
+
+        self.assertTrue(Group.objects.filter(name=ROLE_ASSISTANT).exists())
+        self.assertTrue(Group.objects.filter(name=ROLE_MANAGER).exists())
+        self.assertEqual(User.objects.count(), 0)
+
+    def test_default_mode_creates_demo_manager_and_assistant_accounts(self):
+        call_command("setup_roles", stdout=StringIO())
+
+        manager = User.objects.get(username="manager")
+        assistant = User.objects.get(username="assistant")
+        self.assertTrue(manager.is_staff)
+        self.assertTrue(manager.groups.filter(name=ROLE_MANAGER).exists())
+        self.assertFalse(assistant.is_staff)
+        self.assertTrue(assistant.groups.filter(name=ROLE_ASSISTANT).exists())
