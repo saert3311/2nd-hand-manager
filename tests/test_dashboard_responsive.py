@@ -12,10 +12,10 @@ from django.test import override_settings
 
 from inventory.models import Product, ProductStatus
 from tests.helpers import (
-    abort_nonessential_fonts,
     create_user_with_group,
     get_test_artifact_dir,
     login_in_browser,
+    open_browser_page,
     start_shared_browser,
 )
 
@@ -69,13 +69,11 @@ class DashboardResponsiveUITests(StaticLiveServerTestCase):
             ("desktop_1440x900", 1440, 900),
         ]
 
-        with self._browser.new_context(
+        with open_browser_page(
+            self._browser,
+            self,
             viewport={"width": 1280, "height": 800},
-            service_workers="block",
-        ) as context:
-            page = context.new_page()
-            abort_nonessential_fonts(page)
-
+        ) as (_context, page):
             login_in_browser(page, self.live_server_url, "testmanager", "password123")
             page.wait_for_selector('nav[role="tablist"]')
 
@@ -97,11 +95,10 @@ class DashboardResponsiveUITests(StaticLiveServerTestCase):
                     f"Page size selector overflows viewport at {label}",
                 )
 
-                if width >= 1024:
-                    overflow = page.evaluate(
-                        "() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1"
-                    )
-                    self.assertFalse(overflow, f"Horizontal overflow detected on dashboard at {label}")
+                overflow = page.evaluate(
+                    "() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1"
+                )
+                self.assertFalse(overflow, f"Horizontal overflow detected on dashboard at {label}")
 
                 tablist = page.locator('nav[role="tablist"]')
                 self.assertTrue(tablist.is_visible(), f"Status tablist must be visible at {label}")

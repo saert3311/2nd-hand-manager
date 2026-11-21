@@ -33,12 +33,13 @@ from inventory.models import (
 )
 from inventory.services.compliance_service import ensure_default_policy_clauses
 from tests.helpers import (
-    abort_nonessential_fonts,
     assert_visible_images_loaded,
     create_user_with_group,
     get_test_artifact_dir,
+    goto_authenticated,
     login_in_browser,
     make_test_image_bytes,
+    open_browser_page,
     start_shared_browser,
 )
 
@@ -178,13 +179,11 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
 
     def test_oppo_a74_public_storefront_responsive(self):
         """Test storefront Home, Catalog, Product Detail, How-to-Buy, Legal, and 404 at 360px and 320px."""
-        with self._browser.new_context(
+        with open_browser_page(
+            self._browser,
+            self,
             viewport={"width": 360, "height": 800},
-            service_workers="block",
-        ) as context:
-            page = context.new_page()
-            abort_nonessential_fonts(page)
-
+        ) as (_context, page):
             for vp_name, w, h in self.OPPO_VIEWPORTS:
                 page.set_viewport_size({"width": w, "height": h})
 
@@ -229,20 +228,23 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
 
     def test_oppo_a74_staff_workspace_responsive(self):
         """Test Login, Dashboard, Intake (+ dual buttons & preview cards), Product Detail, Pallets, and Policy Guard."""
-        with self._browser.new_context(
+        with open_browser_page(
+            self._browser,
+            self,
             viewport={"width": 360, "height": 800},
-            service_workers="block",
-        ) as context:
-            page = context.new_page()
-            abort_nonessential_fonts(page)
+        ) as (_context, page):
             page.on("dialog", lambda d: d.accept())
 
             # Switch to Spanish first so expanded Spanish strings are stress-tested
             page.goto(f"{self.live_server_url}{reverse('storefront:home')}")
             es_btn = page.locator('form[action*="/i18n/setlang/"] button[value="es"]').first
             if es_btn.count() > 0:
-                with page.expect_navigation():
+                with page.expect_response(
+                    lambda r: r.request.method == "POST" and "/i18n/setlang/" in r.url
+                ):
                     es_btn.click()
+                page.wait_for_load_state("domcontentloaded")
+                page.wait_for_selector('html[lang="es"]')
 
             # 1. Login Page
             page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
@@ -270,13 +272,13 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                     f"Dashboard {vp_name}",
                 )
 
-            with page.expect_navigation():
-                page.click('#perPageSelector a[href*="per_page=50"]')
+            page.click('#perPageSelector a[href*="per_page=50"]')
+            page.wait_for_url("**/dashboard/**per_page=50**")
             page.wait_for_selector('#perPageSelector a[href*="per_page=50"][aria-current="true"]')
             self._assert_no_horizontal_overflow(page, "dashboard_per_page_50_oppo_lowdpi", 320, 711)
 
             # 3. Intake Page (+ uploaded image preview)
-            page.goto(f"{self.live_server_url}{reverse('inventory:intake')}")
+            goto_authenticated(page, f"{self.live_server_url}{reverse('inventory:intake')}")
             page.wait_for_selector("#dropZone")
             page.set_input_files("#imageInput", str(self.sample_img_path))
             page.wait_for_selector("#previewGrid img")
@@ -300,7 +302,7 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 self.assertGreaterEqual(note_font_size, 16.0, "Mobile intake notes font-size must be >= 16px")
 
             # 4. Pallets & Providers Hub + Provider Edit
-            page.goto(f"{self.live_server_url}{reverse('inventory:pallets')}")
+            goto_authenticated(page, f"{self.live_server_url}{reverse('inventory:pallets')}")
             page.wait_for_selector("#btnCreatePallet")
             for vp_name, w, h in self.OPPO_VIEWPORTS:
                 self._assert_no_horizontal_overflow(page, f"pallets_{vp_name}", w, h)
@@ -312,13 +314,19 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
 
             seeded_provider = Provider.objects.order_by("id").first()
             if seeded_provider:
-                page.goto(f"{self.live_server_url}{reverse('inventory:provider_edit', kwargs={'pk': seeded_provider.pk})}")
+                goto_authenticated(
+                    page,
+                    f"{self.live_server_url}{reverse('inventory:provider_edit', kwargs={'pk': seeded_provider.pk})}",
+                )
                 page.wait_for_selector("main")
                 for vp_name, w, h in self.OPPO_VIEWPORTS:
                     self._assert_no_horizontal_overflow(page, f"provider_edit_{vp_name}", w, h)
 
             # 5. Product Detail Workspace (+ gallery edit controls, tabs, pending preview)
-            page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.p_active.pk})}")
+            goto_authenticated(
+                page,
+                f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.p_active.pk})}",
+            )
             page.wait_for_selector("#id_sale_price")
             assert_visible_images_loaded(self, page)
 

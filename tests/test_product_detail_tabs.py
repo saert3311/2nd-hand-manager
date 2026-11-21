@@ -1,5 +1,4 @@
 import io
-import os
 import re
 from decimal import Decimal
 
@@ -12,7 +11,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import translation
 from PIL import Image
-from playwright.sync_api import expect, sync_playwright
+from playwright.sync_api import expect
 
 from inventory.models import (
     Category,
@@ -28,10 +27,10 @@ from inventory.models import (
     SaleChannelType,
 )
 from tests.helpers import (
-    abort_nonessential_fonts,
     goto_authenticated,
-    launch_test_browser,
     login_in_browser,
+    open_browser_page,
+    start_shared_browser,
 )
 
 
@@ -368,8 +367,8 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
 
     @classmethod
     def setUpClass(cls):
-        os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
         super().setUpClass()
+        cls._browser = start_shared_browser(cls)
 
     def setUp(self):
         self.managers_group, _ = Group.objects.get_or_create(name="managers")
@@ -411,19 +410,13 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
         """Verifies ARIA keyboard nav, ?tab=/#hash, beforematch, live counters, cross-tab validation, Ctrl+S guard, and copy helpers."""
         detail_url = f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.product.pk})}"
 
-        with sync_playwright() as p:
-            browser = launch_test_browser(p)
-            context = browser.new_context(
-                viewport={"width": 1280, "height": 850},
-                locale="en-US",
-                extra_http_headers={"Accept-Language": "en"},
-                service_workers="block",
-            )
-            page = context.new_page()
-            abort_nonessential_fonts(page)
-            page_errors = []
-            page.on("pageerror", lambda err: page_errors.append(str(err)))
-
+        with open_browser_page(
+            self._browser,
+            self,
+            viewport={"width": 1280, "height": 850},
+            locale="en-US",
+            extra_http_headers={"Accept-Language": "en"},
+        ) as (context, page):
             # Record clipboard writes via stub that works consistently in headless Chrome
             page.add_init_script("""
                 window.__copiedPayloads = [];
@@ -506,8 +499,12 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
             page.click("#btnCopyFullListingPack")
 
             # 8. Ctrl+S from Tab 1 saves form to DB
-            with page.expect_navigation():
+            with page.expect_response(
+                lambda r: r.request.method == "POST" and f"/products/{self.product.pk}/" in r.url
+            ):
                 page.locator("#id_ai_title").press("Control+s")
+            page.wait_for_load_state("domcontentloaded")
+            expect(page.locator("#unsavedChangesBadge")).to_have_class(re.compile(r"\bhidden\b"), timeout=10000)
             self.product.refresh_from_db()
             self.assertEqual(self.product.ai_title, "Sony WH-1000XM4 Edicion Prueba")
 
@@ -520,7 +517,3 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
                 tl.dispatchEvent(new Event('scroll'));
             }""")
             expect(page.locator("#detailWorkspaceTabScrollHint")).to_have_class(re.compile(r"\bhidden\b"))
-
-            self.assertEqual(page_errors, [], f"Unexpected browser JS errors: {page_errors}")
-            context.close()
-            browser.close()

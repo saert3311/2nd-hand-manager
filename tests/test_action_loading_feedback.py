@@ -24,12 +24,12 @@ from django.urls import reverse
 
 from inventory.models import MarketplaceSite, Product, ProductClarification, ProductImage
 from tests.helpers import (
-    abort_nonessential_fonts,
     create_user_with_group,
     get_test_artifact_dir,
     goto_authenticated,
     login_in_browser,
     make_test_image_bytes,
+    open_browser_page,
     start_shared_browser,
 )
 
@@ -158,12 +158,6 @@ class ActionLoadingFeedbackBrowserTests(StaticLiveServerTestCase):
             asked_by=self.manager,
         )
 
-    def _login(self, context):
-        page = context.new_page()
-        abort_nonessential_fonts(page)
-        login_in_browser(page, self.live_server_url, "fb_e2e_mgr", "password123")
-        return page
-
     def _assert_no_horizontal_overflow(self, page, label):
         metrics = page.evaluate(
             "() => ({ scrollW: document.documentElement.scrollWidth, clientW: document.documentElement.clientWidth })"
@@ -177,13 +171,14 @@ class ActionLoadingFeedbackBrowserTests(StaticLiveServerTestCase):
     def test_intake_delayed_ai_identify_skeleton_timer_and_oppo_viewports(self):
         for label, width, height in self.OPPO_VIEWPORTS:
             with self.subTest(viewport=label):
-                context = self._browser.new_context(
+                with open_browser_page(
+                    self._browser,
+                    self,
                     viewport={"width": width, "height": height},
                     locale="en-US",
-                    service_workers="block",
-                )
-                try:
-                    page = self._login(context)
+                    failure_name=f"{self.id()}_{label}",
+                ) as (_context, page):
+                    login_in_browser(page, self.live_server_url, "fb_e2e_mgr", "password123")
                     goto_authenticated(page, f"{self.live_server_url}{reverse('inventory:intake')}")
                     self._assert_no_horizontal_overflow(page, f"{label} initial intake")
 
@@ -234,17 +229,15 @@ class ActionLoadingFeedbackBrowserTests(StaticLiveServerTestCase):
                     self.assertEqual(page.get_attribute("#aiIdentificationSkeleton", "aria-busy"), "false")
                     self.assertIn("Mahlkonig Vario Grinder", page.inner_text("#advisoryTitle"))
                     self._assert_no_horizontal_overflow(page, f"{label} after identification completed")
-                finally:
-                    context.close()
 
     def test_product_detail_ai_skeleton_confirm_modal_cancel_and_pageshow_reset(self):
-        context = self._browser.new_context(
+        with open_browser_page(
+            self._browser,
+            self,
             viewport={"width": 360, "height": 800},
             locale="en-US",
-            service_workers="block",
-        )
-        try:
-            page = self._login(context)
+        ) as (_context, page):
+            login_in_browser(page, self.live_server_url, "fb_e2e_mgr", "password123")
             detail_url = f"{self.live_server_url}{reverse('inventory:product_detail', args=[self.product.pk])}"
             goto_authenticated(page, detail_url)
             self._assert_no_horizontal_overflow(page, "product_detail 360x800")
@@ -302,5 +295,3 @@ class ActionLoadingFeedbackBrowserTests(StaticLiveServerTestCase):
             self.assertIsNone(save_btn.get_attribute("data-loading-active"))
             self.assertFalse(save_btn.is_disabled())
             self.assertIn("Save Listing Changes", save_btn.inner_text())
-        finally:
-            context.close()

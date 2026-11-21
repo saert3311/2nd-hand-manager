@@ -17,6 +17,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import override_settings
 from django.urls import reverse
+from playwright.sync_api import expect
 
 from inventory.models import (
     Category,
@@ -27,11 +28,11 @@ from inventory.models import (
     ProductStatus,
 )
 from tests.helpers import (
-    abort_nonessential_fonts,
     create_user_with_group,
     get_test_artifact_dir,
     goto_authenticated,
     login_in_browser,
+    open_browser_page,
     start_shared_browser,
 )
 
@@ -79,13 +80,12 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
     def test_accessibility_and_mobile_workflow_in_real_chrome(self):
         native_dialogs = []
 
-        context = self._browser.new_context(
+        with open_browser_page(
+            self._browser,
+            self,
             viewport={"width": 1280, "height": 900},
-            service_workers="block",
-        )
-        page = context.new_page()
-        try:
-            abort_nonessential_fonts(page)
+            failure_name="phase39_desktop",
+        ) as (_context, page):
             page.on("dialog", lambda d: (native_dialogs.append(d.message), d.dismiss()))
 
             # 1. Public Storefront Skip Link & WCAG AAA contrast
@@ -157,7 +157,8 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
             page.screenshot(path=str(self.artifacts_dir / "04_staff_skip_link_focused.png"))
 
             # 5. Staging Product Detail: Heading, ARIA tabs & Validation role="alert"
-            page.goto(f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.product.pk})}")
+            detail_url = f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.product.pk})}"
+            goto_authenticated(page, detail_url)
             page.wait_for_selector("h1")
 
             self.assertIn("Chaqueta Vintage Harrington", page.inner_text("h1"))
@@ -178,8 +179,11 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
             # Test Form Validation Errors with role='alert'
             page.click("#tabBtnWorkspaceListing")
             page.check('input[name="is_sold"]')
-            with page.expect_navigation():
-                page.click('button:has-text("Guardar cambios"), button:has-text("Save Listing Changes")')
+            with page.expect_response(
+                lambda r: r.request.method == "POST" and f"/products/{self.product.pk}/" in r.url
+            ):
+                page.click("#btnSaveListingChanges")
+            page.wait_for_load_state("domcontentloaded")
             page.wait_for_selector('[role="alert"]')
             alert_el = page.locator('[role="alert"]').first
             self.assertTrue(alert_el.is_visible(), "Inline validation error with role='alert' must be visible")
@@ -187,9 +191,13 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
 
             # Uncheck is_sold and save cleanly
             page.uncheck('input[name="is_sold"]')
-            with page.expect_navigation():
-                page.click('button:has-text("Guardar cambios"), button:has-text("Save Listing Changes")')
+            with page.expect_response(
+                lambda r: r.request.method == "POST" and f"/products/{self.product.pk}/" in r.url
+            ):
+                page.click("#btnSaveListingChanges")
+            page.wait_for_load_state("domcontentloaded")
             page.wait_for_selector("#tabBtnWorkspaceChannels")
+            expect(page.locator('input[name="is_sold"]')).not_to_be_checked()
 
             # 6. Accessible #actionConfirmModal without native dialogs
             page.click("#tabBtnWorkspaceChannels")
@@ -216,25 +224,28 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
 
             delete_btn.click()
             page.wait_for_selector("#actionConfirmModal:not(.hidden)")
-            with page.expect_navigation():
+            with page.expect_response(
+                lambda r: r.request.method == "POST" and f"/products/{self.product.pk}/links/" in r.url
+            ):
                 page.click("#btnProceedActionConfirm")
+            page.wait_for_load_state("domcontentloaded")
             page.wait_for_selector("#main-content")
+            self.assertEqual(page.locator('div[data-site-slug="wallapop"]').count(), 0)
 
             self.assertEqual(len(native_dialogs), 0, f"Unexpected native JS dialogs triggered: {native_dialogs}")
 
             # 7. Mobile Viewport 390x844: iOS auto-zoom prevention (>= 16px) & zero overflow
-            with self._browser.new_context(
+            with open_browser_page(
+                self._browser,
+                self,
                 viewport={"width": 390, "height": 844},
-                service_workers="block",
-            ) as mobile_context:
-                mobile_page = mobile_context.new_page()
-                abort_nonessential_fonts(mobile_page)
-
+                failure_name="phase39_mobile_390x844",
+            ) as (_mobile_context, mobile_page):
                 login_in_browser(mobile_page, self.live_server_url, "manager_phase39", "password123")
 
                 goto_authenticated(
                     mobile_page,
-                    f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.product.pk})}",
+                    detail_url,
                 )
                 mobile_page.wait_for_selector("#id_sale_price")
 
@@ -250,5 +261,3 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
 
                 has_overflow = mobile_page.evaluate("() => document.documentElement.scrollWidth > window.innerWidth")
                 self.assertFalse(has_overflow, "Mobile detail view must not have horizontal overflow at 390px width")
-        finally:
-            context.close()
