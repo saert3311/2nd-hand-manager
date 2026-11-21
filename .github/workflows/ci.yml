@@ -15,15 +15,18 @@ jobs:
   static-checks:
     name: Static Analysis, Migrations & Locales
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
+    outputs:
+      app_version: ${{ steps.app_version.outputs.version }}
 
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up Python 3.13
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -51,18 +54,29 @@ jobs:
           python manage.py compile_locales
           git diff --exit-code locale/
 
+      - name: Resolve Application Version
+        id: app_version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(python3 -c "import re, sys; content = open('config/settings.py').read(); match = re.search(r'APP_VERSION\s*=\s*os\.getenv\([^\)]+,\s*[\x27\x22]([^\x27\x22]+)[\x27\x22]', content); sys.exit('ERROR: Could not resolve default APP_VERSION from config/settings.py') if not match else print(match.group(1))")
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          fi
+
   quality-gates:
     name: Automated Unit, Integration & Browser Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
 
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up Python 3.13
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -82,39 +96,41 @@ jobs:
           SECRET_KEY: ci-test-secret-key-12345
           DEBUG: 'False'
           GEMINI_API_KEY: ci-test-mock-gemini-key
+          PLAYWRIGHT_USE_BUNDLED_CHROMIUM: '1'
+          PLAYWRIGHT_FAILURE_DIR: playwright-failure-artifacts
         run: |
           python manage.py test
+
+      - name: Upload Playwright Failure Artifacts
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: playwright-failure-artifacts
+          path: playwright-failure-artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
 
   docker-build-and-smoke-test:
     name: Docker Build & Container Smoke Test
     needs: [static-checks, quality-gates]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
 
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Get current build timestamp
         id: build_time
         run: echo "now=$(date -u +'%Y-%m-%d %H:%M UTC')" >> $GITHUB_OUTPUT
 
-      - name: Resolve Application Version
-        id: app_version
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          else
-            VERSION=$(python3 -c "import re; content = open('config/settings.py').read(); match = re.search(r'APP_VERSION\s*=\s*os\.getenv\([^\)]+,\s*[\x27\x22]([^\x27\x22]+)[\x27\x22]', content); print(match.group(1) if match else '2.10.0')")
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-          fi
-
       - name: Gate 4 - Build Docker Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: ./Dockerfile
@@ -124,7 +140,7 @@ jobs:
           build-args: |
             BUILD_TIME=${{ steps.build_time.outputs.now }}
             BUILD_COMMIT=${{ github.sha }}
-            APP_VERSION=${{ steps.app_version.outputs.version }}
+            APP_VERSION=${{ needs.static-checks.outputs.app_version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -146,7 +162,7 @@ jobs:
             -p 8000:8000 \
             -e SECRET_KEY="smoke-test-secret-key-do-not-use-in-production" \
             -e DEBUG="False" \
-            -e ALLOWED_HOSTS="*" \
+            -e ALLOWED_HOSTS="127.0.0.1,localhost" \
             secondhand-staging:ci
 
           echo "Waiting for container and migrations..."
@@ -170,13 +186,13 @@ jobs:
           fi
 
           # 1. Verify Public Corporate Business Landing Page & Storefront Catalog
-          RESPONSE_PUBLIC=$(curl -s -L http://127.0.0.1:8000/)
-          echo "$RESPONSE_PUBLIC" | grep -iE "(Rápido Pack|segunda mano|paquetería)" > /dev/null
-          if [ $? -eq 0 ]; then
+          RESPONSE_PUBLIC=$(curl -sS -L http://127.0.0.1:8000/)
+          if echo "$RESPONSE_PUBLIC" | grep -iqE "(Rápido Pack|segunda mano|paquetería)"; then
             echo "PASS: Public corporate landing page verified in smoke test response."
           else
             echo "ERROR: Expected public storefront content missing from root response."
             echo "$RESPONSE_PUBLIC" | head -n 30
+            docker logs staging-smoke-test | tail -n 50
             exit 1
           fi
 
@@ -185,6 +201,7 @@ jobs:
             echo "PASS: Public catalog endpoint (/tienda/) responded with HTTP 200."
           else
             echo "ERROR: Public catalog (/tienda/) responded with HTTP $STATUS_CATALOG instead of 200."
+            docker logs staging-smoke-test | tail -n 50
             exit 1
           fi
 
@@ -194,6 +211,7 @@ jobs:
             echo "PASS: Public search endpoint (/tienda/?q=camara) responded with HTTP 200."
           else
             echo "ERROR: Public search (/tienda/?q=camara) responded with HTTP $STATUS_SEARCH instead of 200."
+            docker logs staging-smoke-test | tail -n 50
             exit 1
           fi
 
@@ -208,6 +226,7 @@ jobs:
               echo "PASS: WhiteNoise served ${static_asset} (HTTP 200)."
             else
               echo "ERROR: ${static_asset} returned HTTP $STATUS_ASSET instead of 200."
+              docker logs staging-smoke-test | tail -n 50
               exit 1
             fi
           done
@@ -220,16 +239,16 @@ jobs:
             exit 1
           fi
 
-          HEADERS_ROOT=$(curl -sI -H "X-Forwarded-Proto: https" http://127.0.0.1:8000/)
-          echo "$HEADERS_ROOT" | grep -qi "^X-Frame-Options: DENY" && \
-          echo "$HEADERS_ROOT" | grep -qi "^X-Content-Type-Options: nosniff" && \
-          echo "$HEADERS_ROOT" | grep -qi "^Strict-Transport-Security:" && \
-          echo "$HEADERS_ROOT" | grep -qi "^Referrer-Policy:"
-          if [ $? -eq 0 ]; then
+          HEADERS_ROOT=$(curl -sSI -H "X-Forwarded-Proto: https" http://127.0.0.1:8000/)
+          if echo "$HEADERS_ROOT" | grep -qi "^X-Frame-Options: DENY" && \
+             echo "$HEADERS_ROOT" | grep -qi "^X-Content-Type-Options: nosniff" && \
+             echo "$HEADERS_ROOT" | grep -qi "^Strict-Transport-Security:" && \
+             echo "$HEADERS_ROOT" | grep -qi "^Referrer-Policy:"; then
             echo "PASS: Production security headers verified on Gunicorn root response."
           else
             echo "ERROR: Expected security headers missing on root response."
             echo "$HEADERS_ROOT"
+            docker logs staging-smoke-test | tail -n 50
             exit 1
           fi
 
@@ -259,24 +278,24 @@ jobs:
             fi
           done
 
-          echo "$RESPONSE_PUBLIC" | grep -q "https://rapidopackvalencia.es/outlet" && \
-          ! echo "$RESPONSE_PUBLIC" | grep -q "header-live-status" && \
-          echo "$RESPONSE_PUBLIC" | grep -q "cookie-banner-container" && \
-          echo "$RESPONSE_PUBLIC" | grep -q "footer-cookie-settings-btn" && \
-          echo "$RESPONSE_PUBLIC" | grep -q "GTM-PGBXBVXJ"
-          if [ $? -eq 0 ]; then
+          if echo "$RESPONSE_PUBLIC" | grep -q "https://rapidopackvalencia.es/outlet" && \
+             ! echo "$RESPONSE_PUBLIC" | grep -q "header-live-status" && \
+             echo "$RESPONSE_PUBLIC" | grep -q "cookie-banner-container" && \
+             echo "$RESPONSE_PUBLIC" | grep -q "footer-cookie-settings-btn" && \
+             echo "$RESPONSE_PUBLIC" | grep -q "GTM-PGBXBVXJ"; then
             echo "PASS: Updated navbar (Outlet + Tienda without live-status), Cookie Control UI, and GTM-PGBXBVXJ verified in root HTML."
           else
             echo "ERROR: Expected navbar links, cookie consent UI, or GTM-PGBXBVXJ missing/unexpected in root HTML."
+            docker logs staging-smoke-test | tail -n 50
             exit 1
           fi
 
-          RESPONSE_CONSENTED=$(curl -s -H "Cookie: rpv_cookie_consent=accepted" http://127.0.0.1:8000/)
-          echo "$RESPONSE_CONSENTED" | grep -q "'analytics_storage': 'granted'"
-          if [ $? -eq 0 ]; then
+          RESPONSE_CONSENTED=$(curl -sS -H "Cookie: rpv_cookie_consent=accepted" http://127.0.0.1:8000/)
+          if echo "$RESPONSE_CONSENTED" | grep -q "'analytics_storage': 'granted'"; then
             echo "PASS: Shared rpv_cookie_consent=accepted cookie synced SSR Consent Mode to granted."
           else
             echo "ERROR: SSR Consent Mode did not reflect rpv_cookie_consent=accepted."
+            echo "$RESPONSE_CONSENTED" | head -n 40
             exit 1
           fi
 
@@ -290,20 +309,53 @@ jobs:
             fi
           done
 
+          # 1d. Verify Phase 58 PWA Contract (Dashboard launch manifest, SW headers, public surface isolation)
+          MANIFEST_JSON=$(curl -fsS http://127.0.0.1:8000/manifest.json)
+          if echo "$MANIFEST_JSON" | python3 -c "import json, sys; d = json.load(sys.stdin); assert d['id'] == '/dashboard/' and d['start_url'] == '/dashboard/' and d['scope'] == '/'"; then
+            echo "PASS: /manifest.json verified with dashboard launch id/start_url and scope=/."
+          else
+            echo "ERROR: /manifest.json failed Phase 58 schema verification."
+            echo "$MANIFEST_JSON"
+            exit 1
+          fi
+
+          SW_HEADERS=$(curl -fsSI http://127.0.0.1:8000/sw.js)
+          if echo "$SW_HEADERS" | grep -qi "^Service-Worker-Allowed: /" && \
+             echo "$SW_HEADERS" | grep -qi "^Cache-Control:.*no-cache"; then
+            echo "PASS: /sw.js headers verified (Service-Worker-Allowed: /, no-cache)."
+          else
+            echo "ERROR: /sw.js headers missing Service-Worker-Allowed or Cache-Control."
+            echo "$SW_HEADERS"
+            exit 1
+          fi
+
+          if ! echo "$RESPONSE_PUBLIC" | grep -qiE 'rel=["'\'']manifest["'\'']|apple-mobile-web-app-capable|/sw\.js'; then
+            echo "PASS: Public storefront (/) omits PWA manifest, standalone meta tags, and /sw.js."
+          else
+            echo "ERROR: Public storefront (/) unexpectedly rendered backend PWA install or SW tags."
+            exit 1
+          fi
+
           # 2. Verify Internal Staff Portal & Staging Hub
-          RESPONSE_STAFF=$(curl -s -L http://127.0.0.1:8000/panel/)
-          echo "$RESPONSE_STAFF" | grep -i "2ndHand" > /dev/null
-          if [ $? -eq 0 ]; then
+          RESPONSE_STAFF=$(curl -sS -L http://127.0.0.1:8000/panel/)
+          if echo "$RESPONSE_STAFF" | grep -iq "2ndHand"; then
             echo "PASS: Internal staging hub branding (2ndHand) verified in staff portal response."
           else
             echo "ERROR: Expected staging hub content missing from /panel/ response."
             echo "$RESPONSE_STAFF" | head -n 30
+            docker logs staging-smoke-test | tail -n 50
+            exit 1
+          fi
+
+          if ! echo "$RESPONSE_STAFF" | grep -qiE 'rel=["'\'']manifest["'\'']|/sw\.js'; then
+            echo "PASS: Unauthenticated login portal (/panel/) omits manifest and /sw.js registration."
+          else
+            echo "ERROR: Unauthenticated login portal unexpectedly rendered manifest or /sw.js."
             exit 1
           fi
 
           # Verify that compilation build timestamp is present in staging footer
-          echo "$RESPONSE_STAFF" | grep -i "footer-build-time" > /dev/null
-          if [ $? -eq 0 ]; then
+          if echo "$RESPONSE_STAFF" | grep -iq "footer-build-time"; then
             echo "PASS: Build compilation timestamp verified in staging footer response."
           else
             echo "ERROR: Build compilation timestamp missing from staging footer response."
@@ -337,6 +389,7 @@ jobs:
     name: Build & Push to GitHub Container Registry (GHCR)
     needs: [static-checks, quality-gates, docker-build-and-smoke-test]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     if: (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) && github.event_name == 'push'
     permissions:
       contents: read
@@ -344,16 +397,16 @@ jobs:
 
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Log in to GitHub Container Registry (GHCR)
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -361,7 +414,7 @@ jobs:
 
       - name: Extract Docker metadata (tags, labels)
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
@@ -373,18 +426,8 @@ jobs:
         id: build_time
         run: echo "now=$(date -u +'%Y-%m-%d %H:%M UTC')" >> $GITHUB_OUTPUT
 
-      - name: Resolve Application Version
-        id: app_version
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          else
-            VERSION=$(python3 -c "import re; content = open('config/settings.py').read(); match = re.search(r'APP_VERSION\s*=\s*os\.getenv\([^\)]+,\s*[\x27\x22]([^\x27\x22]+)[\x27\x22]', content); print(match.group(1) if match else '2.10.0')")
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-          fi
-
       - name: Gate 7 - Build and Push Production Image to GHCR (Multi-Arch)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: ./Dockerfile
@@ -395,6 +438,6 @@ jobs:
           build-args: |
             BUILD_TIME=${{ steps.build_time.outputs.now }}
             BUILD_COMMIT=${{ github.sha }}
-            APP_VERSION=${{ steps.app_version.outputs.version }}
+            APP_VERSION=${{ needs.static-checks.outputs.app_version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
