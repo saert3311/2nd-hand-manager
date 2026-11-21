@@ -1,5 +1,4 @@
 import datetime
-import io
 from decimal import Decimal
 from unittest.mock import patch
 
@@ -7,13 +6,11 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.exceptions import ValidationError
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import DatabaseError, connection
 from django.test import TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import translation
-from PIL import Image
 
 from inventory.forms import ProductIntakeForm
 from inventory.models import (
@@ -33,18 +30,12 @@ from tests.helpers import (
     create_user_with_group,
     goto_authenticated,
     login_in_browser,
+    make_test_image_file,
     open_browser_page,
     start_shared_browser,
 )
 
 User = get_user_model()
-
-
-def _make_test_image_file(name="test.jpg"):
-    buf = io.BytesIO()
-    Image.new("RGB", (120, 120), color=(40, 140, 90)).save(buf, format="JPEG")
-    buf.seek(0)
-    return SimpleUploadedFile(name, buf.read(), content_type="image/jpeg")
 
 
 class ProviderModelAndGoldenSyncTests(TestCase):
@@ -310,7 +301,7 @@ class OriginIntakeAndPermissionsViewsTests(TestCase):
             {
                 "origin": f"pallet:{self.pallet.pk}",
                 "raw_note": "Sony TV pallet unit",
-                "images": _make_test_image_file("tv.jpg"),
+                "images": make_test_image_file("tv.jpg", color=(40, 140, 90)),
             },
         )
         self.assertEqual(resp_post1.status_code, 302)
@@ -330,7 +321,7 @@ class OriginIntakeAndPermissionsViewsTests(TestCase):
             {
                 "origin": f"provider:{self.walkin.pk}",
                 "raw_note": "Walk-in acoustic guitar",
-                "images": _make_test_image_file("guitar.jpg"),
+                "images": make_test_image_file("guitar.jpg", color=(40, 140, 90)),
             },
         )
         self.assertEqual(resp_post2.status_code, 302)

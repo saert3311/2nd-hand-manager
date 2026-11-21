@@ -16,11 +16,6 @@ class ProductIntakeViewTests(TestCase):
         cls.user = User.objects.create_user(username="assistant1", password="password123")
         cls.url = reverse("inventory:intake")
 
-    def create_dummy_image(self, name="photo.jpg", format="JPEG"):
-        return make_test_image_file(
-            name=name, size=(80, 80), color="red", image_format=format, content_type=f"image/{format.lower()}"
-        )
-
     def test_intake_requires_login(self):
         resp = self.client.get(self.url)
         self.assertRedirects(resp, f"{reverse('inventory:login')}?next={self.url}")
@@ -49,8 +44,10 @@ class ProductIntakeViewTests(TestCase):
 
     def test_intake_post_with_valid_images_success(self):
         self.client.force_login(self.user)
-        img1 = self.create_dummy_image("front.jpg")
-        img2 = self.create_dummy_image("back.png", format="PNG")
+        img1 = make_test_image_file(name="front.jpg", size=(80, 80), color="red")
+        img2 = make_test_image_file(
+            name="back.png", size=(80, 80), color="red", image_format="PNG", content_type="image/png"
+        )
 
         resp = self.client.post(
             self.url,
@@ -72,7 +69,7 @@ class ProductIntakeViewTests(TestCase):
 
     def test_intake_post_exceeding_max_images_fails(self):
         self.client.force_login(self.user)
-        images = [self.create_dummy_image(f"img_{i}.jpg") for i in range(11)]
+        images = [make_test_image_file(name=f"img_{i}.jpg", size=(80, 80), color="red") for i in range(11)]
 
         resp = self.client.post(
             self.url,
@@ -87,7 +84,7 @@ class ProductIntakeViewTests(TestCase):
 
     def test_intake_post_with_optional_sale_price_persists(self):
         self.client.force_login(self.user)
-        img = self.create_dummy_image("item.jpg")
+        img = make_test_image_file(name="item.jpg", size=(80, 80), color="red")
 
         resp = self.client.post(
             self.url,
@@ -105,7 +102,7 @@ class ProductIntakeViewTests(TestCase):
 
     def test_intake_sale_price_displays_in_dashboard_and_product_detail(self):
         self.client.force_login(self.user)
-        img = self.create_dummy_image("item.jpg")
+        img = make_test_image_file(name="item.jpg", size=(80, 80), color="red")
 
         self.client.post(
             self.url,
@@ -142,7 +139,7 @@ class ProductIntakeViewTests(TestCase):
 
     def test_intake_post_with_blank_sale_price_sets_none(self):
         self.client.force_login(self.user)
-        img = self.create_dummy_image("item.jpg")
+        img = make_test_image_file(name="item.jpg", size=(80, 80), color="red")
 
         resp = self.client.post(
             self.url,
@@ -159,7 +156,7 @@ class ProductIntakeViewTests(TestCase):
 
     def test_intake_post_with_negative_sale_price_fails(self):
         self.client.force_login(self.user)
-        img = self.create_dummy_image("item.jpg")
+        img = make_test_image_file(name="item.jpg", size=(80, 80), color="red")
 
         resp = self.client.post(
             self.url,
@@ -228,7 +225,7 @@ class ProductIntakeViewTests(TestCase):
 
     def test_intake_post_with_ai_title_persists_and_sets_display_title(self):
         self.client.force_login(self.user)
-        img = self.create_dummy_image("item.jpg")
+        img = make_test_image_file(name="item.jpg", size=(80, 80), color="red")
 
         resp = self.client.post(
             self.url,
@@ -249,7 +246,7 @@ class ProductIntakeViewTests(TestCase):
 
     def test_intake_post_without_ai_title_falls_back_to_raw_note_or_id(self):
         self.client.force_login(self.user)
-        img = self.create_dummy_image("item.jpg")
+        img = make_test_image_file(name="item.jpg", size=(80, 80), color="red")
 
         resp = self.client.post(
             self.url,

@@ -1,5 +1,3 @@
-import io
-
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
@@ -11,18 +9,12 @@ from inventory.services.image_service import (
     validate_image_file,
     validate_images_count,
 )
+from tests.helpers import make_test_image_file
 
 
 class ImageServiceTests(TestCase):
-    def create_test_image_file(self, filename="test.jpg", format="JPEG", size=(100, 100), color="blue"):
-        img = Image.new("RGB", size, color=color)
-        buf = io.BytesIO()
-        img.save(buf, format=format)
-        buf.seek(0)
-        return SimpleUploadedFile(filename, buf.getvalue(), content_type=f"image/{format.lower()}")
-
     def test_convert_jpeg_to_webp_success(self):
-        uploaded = self.create_test_image_file(filename="vintage_jacket.jpg", format="JPEG")
+        uploaded = make_test_image_file(name="vintage_jacket.jpg", size=(100, 100), color="blue", image_format="JPEG")
         webp_file = process_and_convert_to_webp(uploaded)
 
         self.assertTrue(webp_file.name.endswith(".webp"))
@@ -34,7 +26,13 @@ class ImageServiceTests(TestCase):
             self.assertEqual(img.size, (100, 100))
 
     def test_convert_png_to_webp_preserves_dimensions(self):
-        uploaded = self.create_test_image_file(filename="shoes.png", format="PNG", size=(300, 200), color="green")
+        uploaded = make_test_image_file(
+            name="shoes.png",
+            size=(300, 200),
+            color="green",
+            image_format="PNG",
+            content_type="image/png",
+        )
         webp_file = process_and_convert_to_webp(uploaded)
 
         with Image.open(webp_file) as img:
@@ -69,7 +67,7 @@ class ImageServiceTests(TestCase):
             validate_images_count(invalid_list)
 
     def test_downscales_images_exceeding_2560px(self):
-        uploaded = self.create_test_image_file(filename="huge_landscape.jpg", format="JPEG", size=(3000, 1500))
+        uploaded = make_test_image_file(name="huge_landscape.jpg", size=(3000, 1500), color="blue", image_format="JPEG")
         webp_file = process_and_convert_to_webp(uploaded)
 
         with Image.open(webp_file) as img:
@@ -79,7 +77,7 @@ class ImageServiceTests(TestCase):
     def test_supports_high_megapixels_mobile_camera_without_bomb_error(self):
         # 30 Megapixels image (6000 x 5000) simulates modern 48MP/50MP smartphone camera output
         # Previously failed when Image.MAX_IMAGE_PIXELS was 25_000_000
-        uploaded = self.create_test_image_file(filename="phone_camera_50mp.jpg", format="JPEG", size=(6000, 5000))
+        uploaded = make_test_image_file(name="phone_camera_50mp.jpg", size=(6000, 5000), color="blue", image_format="JPEG")
         validate_image_file(uploaded)
         webp_file = process_and_convert_to_webp(uploaded)
 
@@ -89,7 +87,13 @@ class ImageServiceTests(TestCase):
             self.assertEqual(img.size[1], round(5000 * 2560 / 6000))
 
     def test_convert_webp_input_to_webp_output_success(self):
-        uploaded = self.create_test_image_file(filename="client_compressed.webp", format="WEBP", size=(800, 600))
+        uploaded = make_test_image_file(
+            name="client_compressed.webp",
+            size=(800, 600),
+            color="blue",
+            image_format="WEBP",
+            content_type="image/webp",
+        )
         webp_file = process_and_convert_to_webp(uploaded)
 
         with Image.open(webp_file) as img:

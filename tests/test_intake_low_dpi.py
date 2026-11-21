@@ -20,11 +20,6 @@ class IntakeLowDPITests(TestCase):
     def setUp(self):
         self.client.force_login(self.user)
 
-    def create_dummy_image(self, name="photo.jpg", format="JPEG"):
-        return make_test_image_file(
-            name=name, size=(80, 80), color="green", image_format=format, content_type=f"image/{format.lower()}"
-        )
-
     def test_preview_grid_and_advisory_banner_structure(self):
         """Verify semantic preview grid, streamlined header, advisory banner, and photo action controls."""
         resp = self.client.get(self.url)
@@ -109,7 +104,7 @@ class IntakeLowDPITests(TestCase):
     def test_intake_submission_preserves_post_workflow(self):
         """Ensure form POST and image persistence continue working without regressions with the new miniature markup."""
         self.client.login(username="scanner_assistant", password="password123")
-        img = self.create_dummy_image("compact_test.jpg")
+        img = make_test_image_file(name="compact_test.jpg", size=(80, 80), color="green")
         data = {
             "images": [img],
             "raw_note": "Scanner intake test note for compact UI",

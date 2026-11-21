@@ -1,16 +1,14 @@
-import io
 import json
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import translation
-from PIL import Image
 
 from inventory.models import Product, ProductImage
 from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
+from tests.helpers import make_test_image_file
 
 User = get_user_model()
 
@@ -44,11 +42,9 @@ class PhotoReorderingBackendTests(TestCase):
         self.reorder_url = reverse("inventory:product_reorder_images", kwargs={"pk": self.product.pk})
 
     def _create_product_image(self, product, name, order=0):
-        buf = io.BytesIO()
-        img = Image.new("RGB", (60, 60), color="blue")
-        img.save(buf, format="WEBP")
-        buf.seek(0)
-        file = SimpleUploadedFile(name, buf.getvalue(), content_type="image/webp")
+        file = make_test_image_file(
+            name=name, size=(60, 60), color="blue", image_format="WEBP", content_type="image/webp"
+        )
         return ProductImage.objects.create(product=product, image=file, order=order)
 
     def test_unauthenticated_reorder_redirects(self):
@@ -181,13 +177,6 @@ class PhotoReorderingIntakeUITests(TestCase):
         self.user.groups.add(self.assistant_group)
         self.url = reverse("inventory:intake")
 
-    def create_dummy_image(self, name="photo.jpg"):
-        buf = io.BytesIO()
-        img = Image.new("RGB", (60, 60), color="green")
-        img.save(buf, format="JPEG")
-        buf.seek(0)
-        return SimpleUploadedFile(name, buf.getvalue(), content_type="image/jpeg")
-
     def test_intake_template_renders_reordering_guidance_and_controls(self):
         self.client.login(username="assistant_ui", password="password123")
         resp = self.client.get(self.url)
@@ -215,9 +204,9 @@ class PhotoReorderingIntakeUITests(TestCase):
 
     def test_intake_submission_preserves_image_order(self):
         self.client.login(username="assistant_ui", password="password123")
-        imgA = self.create_dummy_image("A_cover.jpg")
-        imgB = self.create_dummy_image("B_second.jpg")
-        imgC = self.create_dummy_image("C_third.jpg")
+        imgA = make_test_image_file("A_cover.jpg", size=(60, 60), color="green")
+        imgB = make_test_image_file("B_second.jpg", size=(60, 60), color="green")
+        imgC = make_test_image_file("C_third.jpg", size=(60, 60), color="green")
 
         resp = self.client.post(
             self.url,
@@ -257,11 +246,9 @@ class PhotoReorderingDetailUITests(TestCase):
 
         # 3 images
         for i in range(3):
-            buf = io.BytesIO()
-            img = Image.new("RGB", (60, 60), color="red")
-            img.save(buf, format="WEBP")
-            buf.seek(0)
-            file = SimpleUploadedFile(f"det_{i}.webp", buf.getvalue(), content_type="image/webp")
+            file = make_test_image_file(
+                f"det_{i}.webp", size=(60, 60), color="red", image_format="WEBP", content_type="image/webp"
+            )
             ProductImage.objects.create(product=self.product, image=file, order=i)
 
         self.detail_url = reverse("inventory:product_detail", kwargs={"pk": self.product.pk})
@@ -296,11 +283,9 @@ class PhotoReorderingDetailUITests(TestCase):
     def test_single_image_detail_view_hides_reorder_button(self):
         # Product with only 1 image
         single_prod = Product.objects.create(raw_note="Single photo", created_by=self.assistant)
-        buf = io.BytesIO()
-        img = Image.new("RGB", (60, 60), color="yellow")
-        img.save(buf, format="WEBP")
-        buf.seek(0)
-        file = SimpleUploadedFile("single.webp", buf.getvalue(), content_type="image/webp")
+        file = make_test_image_file(
+            "single.webp", size=(60, 60), color="yellow", image_format="WEBP", content_type="image/webp"
+        )
         ProductImage.objects.create(product=single_prod, image=file, order=0)
 
         self.client.login(username="manager_ui", password="password123")

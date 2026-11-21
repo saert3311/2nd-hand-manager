@@ -1,19 +1,17 @@
-import io
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth.models import Group, User
 from django.core.files.base import ContentFile
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from PIL import Image
 
 from inventory.models import Product, ProductImage
 from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
 from inventory.services.ai_service import ProductListingSchema, generate_product_listing
 from inventory.services.image_service import process_and_convert_to_webp
 from inventory.services.storage import OCIObjectStorage
+from tests.helpers import make_test_image_bytes, make_test_image_file
 
 
 class OCIObjectStorageBackendTests(TestCase):
@@ -80,13 +78,6 @@ class StorageDecouplingAndIntakeTests(TestCase):
         self.assistant.groups.add(asst_group)
         self.manager.groups.add(mgr_group)
 
-    def create_sample_uploaded_image(self, name="item.jpg", color="blue"):
-        buf = io.BytesIO()
-        img = Image.new("RGB", (120, 120), color=color)
-        img.save(buf, format="JPEG")
-        buf.seek(0)
-        return SimpleUploadedFile(name, buf.getvalue(), content_type="image/jpeg")
-
     def test_image_service_and_product_image_save_to_storage_not_local_disk(self):
         with self.settings(
             MEDIA_ROOT=self.temp_media,
@@ -95,7 +86,7 @@ class StorageDecouplingAndIntakeTests(TestCase):
                 "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
             },
         ):
-            uploaded = self.create_sample_uploaded_image(name="jacket.jpg")
+            uploaded = make_test_image_file(name="jacket.jpg", size=(120, 120), color="blue")
             webp_file = process_and_convert_to_webp(uploaded)
 
             product = Product.objects.create(raw_note="Vintage windbreaker", created_by=self.assistant)
@@ -125,8 +116,8 @@ class StorageDecouplingAndIntakeTests(TestCase):
         ):
             self.client.login(username="asst_user", password="password123")
 
-            img1 = self.create_sample_uploaded_image(name="photo1.jpg", color="red")
-            img2 = self.create_sample_uploaded_image(name="photo2.jpg", color="green")
+            img1 = make_test_image_file(name="photo1.jpg", size=(120, 120), color="red")
+            img2 = make_test_image_file(name="photo2.jpg", size=(120, 120), color="green")
 
             resp = self.client.post(
                 reverse("inventory:intake"),
@@ -165,13 +156,9 @@ class StorageDecouplingAndIntakeTests(TestCase):
         self.client.login(username="mgr_user", password="password123")
 
         product = Product.objects.create(raw_note="Seiko vintage diver watch")
-        img_buf = io.BytesIO()
-        Image.new("RGB", (60, 60), color="navy").save(img_buf, format="WEBP")
-        img_buf.seek(0)
-
         ProductImage.objects.create(
             product=product,
-            image=ContentFile(img_buf.getvalue(), name="diver_01.webp"),
+            image=ContentFile(make_test_image_bytes(size=(60, 60), color="navy", image_format="WEBP"), name="diver_01.webp"),
             order=0,
         )
 
@@ -200,13 +187,9 @@ class StorageDecouplingAndIntakeTests(TestCase):
         mock_client.models.generate_content.return_value = mock_response
 
         product = Product.objects.create(raw_note="1980s Seiko diver watch")
-        img_buf = io.BytesIO()
-        Image.new("RGB", (80, 80), color="black").save(img_buf, format="WEBP")
-        img_buf.seek(0)
-
         ProductImage.objects.create(
             product=product,
-            image=ContentFile(img_buf.getvalue(), name="seiko.webp"),
+            image=ContentFile(make_test_image_bytes(size=(80, 80), color="black", image_format="WEBP"), name="seiko.webp"),
             order=0,
         )
 

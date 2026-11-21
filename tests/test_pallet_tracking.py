@@ -1,29 +1,19 @@
 import datetime
-import io
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import translation
-from PIL import Image
 
 from inventory.forms import PalletForm, ProductIntakeForm
 from inventory.models import Pallet, Product, ProductStatus
 from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
+from tests.helpers import make_test_image_file
 
 User = get_user_model()
-
-
-def create_dummy_image():
-    file_obj = io.BytesIO()
-    image = Image.new("RGB", (100, 100), color="blue")
-    image.save(file_obj, format="JPEG")
-    file_obj.seek(0)
-    return SimpleUploadedFile("test_sample.jpg", file_obj.read(), content_type="image/jpeg")
 
 
 class PalletTrackingTests(TestCase):
@@ -205,7 +195,7 @@ class PalletTrackingTests(TestCase):
         self.assertEqual(response1.context["form"].initial.get("pallet"), self.pallet1.pk)
 
         # 2. Assistant catalogs item with pallet1
-        img1 = create_dummy_image()
+        img1 = make_test_image_file("test_sample.jpg", size=(100, 100), color="blue")
         post_response = self.client.post(
             reverse("inventory:intake"),
             data={
@@ -231,7 +221,7 @@ class PalletTrackingTests(TestCase):
         self.assertEqual(response2.context["form"].initial.get("pallet"), self.pallet1.pk)
 
         # 4. Assistant catalogs standalone walk-in item without pallet ("none")
-        img2 = create_dummy_image()
+        img2 = make_test_image_file("test_sample.jpg", size=(100, 100), color="blue")
         post_response2 = self.client.post(
             reverse("inventory:intake"),
             data={

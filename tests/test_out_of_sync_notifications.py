@@ -1,14 +1,11 @@
-import io
 from decimal import Decimal
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import translation
-from PIL import Image
 
 from inventory.models import (
     ClarificationCategory,
@@ -21,16 +18,9 @@ from inventory.models import (
 )
 from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
 from inventory.services.push_service import send_out_of_sync_notification
+from tests.helpers import make_test_image_file
 
 User = get_user_model()
-
-
-def create_test_image(filename="test.png", color="blue"):
-    img_byte_arr = io.BytesIO()
-    image = Image.new("RGB", (100, 100), color=color)
-    image.save(img_byte_arr, format="PNG")
-    img_byte_arr.seek(0)
-    return SimpleUploadedFile(filename, img_byte_arr.read(), content_type="image/png")
 
 
 @override_settings(
@@ -151,7 +141,11 @@ class OutOfSyncNotificationLifecycleTests(TestCase):
             sale_price=Decimal("150.00"),
             created_by=self.assistant,
         )
-        ProductImage.objects.create(product=self.product, image=create_test_image("img1.png"), order=0)
+        ProductImage.objects.create(
+            product=self.product,
+            image=make_test_image_file("img1.png", size=(100, 100), color="blue", image_format="PNG", content_type="image/png"),
+            order=0,
+        )
         ProductListingLink.objects.create(
             product=self.product,
             site=self.site,
@@ -247,7 +241,7 @@ class OutOfSyncNotificationLifecycleTests(TestCase):
     def test_photo_upload_on_published_product_triggers_notification(self, mock_notify):
         mock_notify.return_value = 1
         upload_url = reverse("inventory:product_upload_images", kwargs={"pk": self.product.pk})
-        img = create_test_image("img2.png", color="green")
+        img = make_test_image_file("img2.png", size=(100, 100), color="green", image_format="PNG", content_type="image/png")
         response = self.client_mgr.post(upload_url, {"images": [img]}, follow=True)
 
         self.assertEqual(response.status_code, 200)
@@ -258,7 +252,11 @@ class OutOfSyncNotificationLifecycleTests(TestCase):
     @patch("inventory.services.push_service.send_out_of_sync_notification")
     def test_photo_delete_on_published_product_triggers_notification(self, mock_notify):
         # Add a 2nd image first without triggering published sync
-        img2 = ProductImage.objects.create(product=self.product, image=create_test_image("img2.png"), order=1)
+        img2 = ProductImage.objects.create(
+            product=self.product,
+            image=make_test_image_file("img2.png", size=(100, 100), color="blue", image_format="PNG", content_type="image/png"),
+            order=1,
+        )
         self.product.needs_platform_sync = False
         self.product.save(update_fields=["needs_platform_sync"])
         mock_notify.reset_mock()
@@ -275,7 +273,11 @@ class OutOfSyncNotificationLifecycleTests(TestCase):
     @patch("inventory.services.push_service.send_out_of_sync_notification")
     def test_photo_reorder_cover_on_published_product_triggers_notification(self, mock_notify):
         img1 = self.product.images.first()
-        img2 = ProductImage.objects.create(product=self.product, image=create_test_image("img2.png"), order=1)
+        img2 = ProductImage.objects.create(
+            product=self.product,
+            image=make_test_image_file("img2.png", size=(100, 100), color="blue", image_format="PNG", content_type="image/png"),
+            order=1,
+        )
         self.product.needs_platform_sync = False
         self.product.save(update_fields=["needs_platform_sync"])
         mock_notify.reset_mock()

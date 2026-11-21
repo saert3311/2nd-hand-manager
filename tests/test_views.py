@@ -57,11 +57,6 @@ class IntakeIdentifyViewTests(TestCase):
         cls.manager.is_staff = True
         cls.manager.save(update_fields=["is_staff"])
 
-    def create_dummy_image(self, name="photo.jpg", format="JPEG"):
-        return make_test_image_file(
-            name=name, size=(60, 60), color="blue", image_format=format, content_type=f"image/{format.lower()}"
-        )
-
     def test_anonymous_user_redirected_to_login(self):
         resp = self.client.post(self.url)
         self.assertRedirects(resp, f"{reverse('inventory:login')}?next={self.url}")
@@ -94,7 +89,7 @@ class IntakeIdentifyViewTests(TestCase):
 
     def test_post_with_exceeded_image_count_returns_400(self):
         self.client.force_login(self.assistant)
-        images = [self.create_dummy_image(f"photo_{i}.jpg") for i in range(11)]
+        images = [make_test_image_file(name=f"photo_{i}.jpg", size=(60, 60), color="blue") for i in range(11)]
         resp = self.client.post(self.url, {"images": images})
         self.assertEqual(resp.status_code, 400)
         data = resp.json()
@@ -112,7 +107,7 @@ class IntakeIdentifyViewTests(TestCase):
         }
 
         self.client.force_login(self.assistant)
-        img = self.create_dummy_image("shoe.jpg")
+        img = make_test_image_file(name="shoe.jpg", size=(60, 60), color="blue")
         resp = self.client.post(self.url, {"images": [img], "raw_note": "Sneaker from garage"})
 
         self.assertEqual(resp.status_code, 200)
@@ -140,7 +135,7 @@ class IntakeIdentifyViewTests(TestCase):
         }
 
         self.client.force_login(self.manager)
-        img = self.create_dummy_image("watch.jpg")
+        img = make_test_image_file(name="watch.jpg", size=(60, 60), color="blue")
         resp = self.client.post(self.url, {"images": [img]})
 
         self.assertEqual(resp.status_code, 200)
@@ -156,7 +151,7 @@ class IntakeIdentifyViewTests(TestCase):
         }
 
         self.client.force_login(self.assistant)
-        img = self.create_dummy_image("item.jpg")
+        img = make_test_image_file(name="item.jpg", size=(60, 60), color="blue")
         resp = self.client.post(self.url, {"images": [img]})
 
         self.assertEqual(resp.status_code, 200)

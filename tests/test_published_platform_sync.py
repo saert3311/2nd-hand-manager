@@ -1,12 +1,9 @@
-import io
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
-from PIL import Image
 
 from inventory.models import (
     ClarificationCategory,
@@ -21,16 +18,9 @@ from inventory.models import (
     ProductStatusLog,
 )
 from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
+from tests.helpers import make_test_image_file
 
 User = get_user_model()
-
-
-def create_test_image(filename="test.png", color="red"):
-    img_byte_arr = io.BytesIO()
-    image = Image.new("RGB", (100, 100), color=color)
-    image.save(img_byte_arr, format="PNG")
-    img_byte_arr.seek(0)
-    return SimpleUploadedFile(filename, img_byte_arr.read(), content_type="image/png")
 
 
 class PublishedProductPlatformSyncTests(TestCase):
@@ -80,12 +70,12 @@ class PublishedProductPlatformSyncTests(TestCase):
         )
         self.img1 = ProductImage.objects.create(
             product=self.product,
-            image=create_test_image("img1.png", "blue"),
+            image=make_test_image_file("img1.png", size=(100, 100), color="blue", image_format="PNG", content_type="image/png"),
             order=0,
         )
         self.img2 = ProductImage.objects.create(
             product=self.product,
-            image=create_test_image("img2.png", "green"),
+            image=make_test_image_file("img2.png", size=(100, 100), color="green", image_format="PNG", content_type="image/png"),
             order=1,
         )
         self.link = ProductListingLink.objects.create(
@@ -179,7 +169,7 @@ class PublishedProductPlatformSyncTests(TestCase):
 
     def test_manager_can_upload_additional_photos(self):
         url = reverse("inventory:product_upload_images", kwargs={"pk": self.product.pk})
-        new_photo = create_test_image("img3.png", "yellow")
+        new_photo = make_test_image_file("img3.png", size=(100, 100), color="yellow", image_format="PNG", content_type="image/png")
         response = self.client_mgr.post(url, {"images": [new_photo]}, follow=True)
         self.assertEqual(response.status_code, 200)
 
@@ -192,13 +182,13 @@ class PublishedProductPlatformSyncTests(TestCase):
         for i in range(8):
             ProductImage.objects.create(
                 product=self.product,
-                image=create_test_image(f"batch_{i}.png", "purple"),
+                image=make_test_image_file(f"batch_{i}.png", size=(100, 100), color="purple", image_format="PNG", content_type="image/png"),
                 order=2 + i,
             )
         self.assertEqual(self.product.images.count(), 10)
 
         url = reverse("inventory:product_upload_images", kwargs={"pk": self.product.pk})
-        extra_photo = create_test_image("img11.png", "white")
+        extra_photo = make_test_image_file("img11.png", size=(100, 100), color="white", image_format="PNG", content_type="image/png")
         response = self.client_mgr.post(url, {"images": [extra_photo]}, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.product.images.count(), 10)
@@ -244,7 +234,7 @@ class PublishedProductPlatformSyncTests(TestCase):
         # Add third image
         img3 = ProductImage.objects.create(
             product=self.product,
-            image=create_test_image("img3.png", "orange"),
+            image=make_test_image_file("img3.png", size=(100, 100), color="orange", image_format="PNG", content_type="image/png"),
             order=2,
         )
         url = reverse("inventory:product_reorder_images", kwargs={"pk": self.product.pk})
@@ -260,7 +250,10 @@ class PublishedProductPlatformSyncTests(TestCase):
 
     def test_assistant_cannot_upload_or_delete_photos(self):
         upload_url = reverse("inventory:product_upload_images", kwargs={"pk": self.product.pk})
-        res1 = self.client_asst.post(upload_url, {"images": [create_test_image("asst.png")]})
+        res1 = self.client_asst.post(
+            upload_url,
+            {"images": [make_test_image_file("asst.png", size=(100, 100), color="red", image_format="PNG", content_type="image/png")]},
+        )
         self.assertIn(res1.status_code, (302, 403))
 
         del_url = reverse("inventory:product_delete_image", kwargs={"pk": self.product.pk, "image_id": self.img2.id})
@@ -393,7 +386,7 @@ class PublishedProductPlatformSyncTests(TestCase):
 
         # Then upload another photo via the view endpoint
         upload_url = reverse("inventory:product_upload_images", kwargs={"pk": self.product.pk})
-        extra_img = create_test_image("extra.png", "purple")
+        extra_img = make_test_image_file("extra.png", size=(100, 100), color="purple", image_format="PNG", content_type="image/png")
         response = self.client_mgr.post(upload_url, {"images": [extra_img]}, follow=True)
         self.assertEqual(response.status_code, 200)
 
@@ -497,7 +490,7 @@ class PublishedProductPlatformSyncTests(TestCase):
         )
         ProductImage.objects.create(
             product=store_only,
-            image=create_test_image("store_only.png", "green"),
+            image=make_test_image_file("store_only.png", size=(100, 100), color="green", image_format="PNG", content_type="image/png"),
             order=0,
         )
         store_only.refresh_from_db()
@@ -511,7 +504,7 @@ class PublishedProductPlatformSyncTests(TestCase):
         store_only.save(changed_by=self.manager)
 
         upload_url = reverse("inventory:product_upload_images", kwargs={"pk": store_only.pk})
-        extra_img = create_test_image("store_only_2.png", "yellow")
+        extra_img = make_test_image_file("store_only_2.png", size=(100, 100), color="yellow", image_format="PNG", content_type="image/png")
         resp = self.client_mgr.post(upload_url, {"images": [extra_img]}, follow=True)
         self.assertEqual(resp.status_code, 200)
 

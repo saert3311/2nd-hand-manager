@@ -1,13 +1,9 @@
-from io import BytesIO
-
 from django.contrib.auth import get_user_model
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
-from PIL import Image
 
 from inventory.models import MarketplaceSite, Product, ProductImage, ProductListingLink, ProductStatus
-from tests.helpers import create_role_users
+from tests.helpers import create_role_users, make_test_image_file
 
 User = get_user_model()
 
@@ -43,21 +39,14 @@ class DetailPhotoUploadComponentTests(TestCase):
         self.client_asst = Client()
         self.client_asst.force_login(self.assistant)
 
-    def _create_dummy_image_file(self, filename="sample.jpg", color=(40, 90, 160)):
-        stream = BytesIO()
-        img = Image.new("RGB", (300, 300), color=color)
-        img.save(stream, format="JPEG")
-        return SimpleUploadedFile(
-            filename,
-            stream.getvalue(),
-            content_type="image/jpeg",
-        )
-
     def _create_product_image(self, product, order=0):
-        img_file = self._create_dummy_image_file(f"prod_{product.pk}_{order}.jpg")
         return ProductImage.objects.create(
             product=product,
-            image=img_file,
+            image=make_test_image_file(
+                name=f"prod_{product.pk}_{order}.jpg",
+                size=(300, 300),
+                color=(40, 90, 160),
+            ),
             order=order,
         )
 
@@ -149,8 +138,8 @@ class DetailPhotoUploadComponentTests(TestCase):
     def test_upload_additional_photos_via_form_endpoint(self):
         """Posting photos to product_upload_images adds photos and preserves order."""
         upload_url = reverse("inventory:product_upload_images", kwargs={"pk": self.product.pk})
-        f1 = self._create_dummy_image_file("extra1.jpg")
-        f2 = self._create_dummy_image_file("extra2.jpg")
+        f1 = make_test_image_file("extra1.jpg", size=(300, 300), color=(40, 90, 160))
+        f2 = make_test_image_file("extra2.jpg", size=(300, 300), color=(40, 90, 160))
 
         resp = self.client_manager.post(upload_url, {"images": [f1, f2]})
         self.assertEqual(resp.status_code, 302)
@@ -172,7 +161,7 @@ class DetailPhotoUploadComponentTests(TestCase):
         self.product.save()
 
         upload_url = reverse("inventory:product_upload_images", kwargs={"pk": self.product.pk})
-        f1 = self._create_dummy_image_file("tag_photo.jpg")
+        f1 = make_test_image_file("tag_photo.jpg", size=(300, 300), color=(40, 90, 160))
 
         resp = self.client_manager.post(upload_url, {"images": [f1]})
         self.assertEqual(resp.status_code, 302)
@@ -189,8 +178,8 @@ class DetailPhotoUploadComponentTests(TestCase):
         self.assertEqual(self.product.images.count(), 9)
 
         upload_url = reverse("inventory:product_upload_images", kwargs={"pk": self.product.pk})
-        f1 = self._create_dummy_image_file("f1.jpg")
-        f2 = self._create_dummy_image_file("f2.jpg")
+        f1 = make_test_image_file("f1.jpg", size=(300, 300), color=(40, 90, 160))
+        f2 = make_test_image_file("f2.jpg", size=(300, 300), color=(40, 90, 160))
 
         resp = self.client_manager.post(upload_url, {"images": [f1, f2]})
         self.assertEqual(resp.status_code, 302)

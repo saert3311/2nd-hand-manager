@@ -1,4 +1,3 @@
-import io
 import json
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
@@ -6,10 +5,8 @@ from unittest.mock import MagicMock, patch
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
-from PIL import Image
 
 from inventory.forms import ProductIntakeForm
 from inventory.models import Product
@@ -19,6 +16,7 @@ from inventory.services.ai_service import (
     _clean_price,
     identify_intake_product,
 )
+from tests.helpers import make_test_image_bytes, make_test_image_file
 
 User = get_user_model()
 
@@ -78,10 +76,7 @@ class IdentifyIntakeProductValuationTests(TestCase):
     """Unit tests for identify_intake_product parsing valuation estimates."""
 
     def setUp(self):
-        buf = io.BytesIO()
-        img = Image.new("RGB", (50, 50), color="blue")
-        img.save(buf, format="JPEG")
-        self.sample_bytes = [buf.getvalue()]
+        self.sample_bytes = [make_test_image_bytes(size=(50, 50), color="blue")]
 
     @patch("inventory.services.ai_service.genai.Client")
     def test_identify_parses_valuation_from_parsed_response(self, mock_client_class):
@@ -216,13 +211,6 @@ class IntakeAndDetailValuationViewTests(TestCase):
         self.manager = User.objects.create_user(username="manager_val", password="password123")
         self.manager.groups.add(self.manager_group)
 
-    def create_dummy_image(self, name="item.jpg"):
-        buf = io.BytesIO()
-        img = Image.new("RGB", (40, 40), color="green")
-        img.save(buf, format="JPEG")
-        buf.seek(0)
-        return SimpleUploadedFile(name, buf.getvalue(), content_type="image/jpeg")
-
     def test_intake_page_renders_valuation_containers(self):
         self.client.login(username="assistant_val", password="password123")
         resp = self.client.get(reverse("inventory:intake"))
@@ -256,7 +244,7 @@ class IntakeAndDetailValuationViewTests(TestCase):
             "estimated_resale_price": 75.0,
         }
         self.client.login(username="assistant_val", password="password123")
-        img = self.create_dummy_image()
+        img = make_test_image_file(name="item.jpg", size=(40, 40), color="green")
 
         resp = self.client.post(
             reverse("inventory:intake_identify"),

@@ -22,9 +22,6 @@ class IntakeIdentificationGateTests(TestCase):
     def setUp(self):
         self.client.force_login(self.user)
 
-    def create_dummy_image(self, name="photo.jpg", format="JPEG"):
-        return make_test_image_file(name=name, size=(60, 60), color="blue", image_format=format, content_type=f"image/{format.lower()}")
-
     def test_submit_button_initially_disabled_in_html(self):
         """Verify the Save button renders with disabled attribute and accessibility attributes on initial page load."""
         resp = self.client.get(self.url)
@@ -77,7 +74,7 @@ class IntakeIdentificationGateTests(TestCase):
             "estimated_resale_price": 180.00,
         }
 
-        img = self.create_dummy_image("walkman.jpg")
+        img = make_test_image_file(name="walkman.jpg", size=(60, 60), color="blue")
         resp = self.client.post(self.identify_url, {"images": [img], "raw_note": "Vintage walkman"})
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
@@ -102,7 +99,7 @@ class IntakeIdentificationGateTests(TestCase):
             "estimated_resale_price": None,
         }
 
-        img = self.create_dummy_image("unclear.jpg")
+        img = make_test_image_file(name="unclear.jpg", size=(60, 60), color="blue")
         resp = self.client.post(self.identify_url, {"images": [img]})
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
@@ -112,7 +109,7 @@ class IntakeIdentificationGateTests(TestCase):
     def test_backend_submission_persists_valid_product(self):
         """Verify that the backend intake view persists valid submissions successfully."""
         self.client.login(username="assistant_gate", password="password123")
-        img = self.create_dummy_image("item.jpg")
+        img = make_test_image_file(name="item.jpg", size=(60, 60), color="blue")
 
         resp = self.client.post(
             self.url,

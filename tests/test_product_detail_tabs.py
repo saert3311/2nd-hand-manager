@@ -1,16 +1,13 @@
-import io
 import re
 from decimal import Decimal
 
 from django.contrib.auth.models import Group, User
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.test import TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import translation
-from PIL import Image
 from playwright.sync_api import expect
 
 from inventory.models import (
@@ -29,17 +26,10 @@ from inventory.models import (
 from tests.helpers import (
     goto_authenticated,
     login_in_browser,
+    make_test_image_file,
     open_browser_page,
     start_shared_browser,
 )
-
-
-def _create_sample_image(name="photo.jpg"):
-    buf = io.BytesIO()
-    img = Image.new("RGB", (200, 200), color="teal")
-    img.save(buf, format="JPEG")
-    buf.seek(0)
-    return SimpleUploadedFile(name, buf.read(), content_type="image/jpeg")
 
 
 class ProductDetailTabbedRedesignTests(TestCase):
@@ -80,7 +70,7 @@ class ProductDetailTabbedRedesignTests(TestCase):
             status=ProductStatus.READY,
             created_by=self.assistant,
         )
-        ProductImage.objects.create(product=self.product, image=_create_sample_image())
+        ProductImage.objects.create(product=self.product, image=make_test_image_file("photo.jpg", size=(200, 200)))
 
     def test_workspace_renders_four_accessible_category_tabs_and_until_found_panels(self):
         """Product Detail renders 4 WAI-ARIA tabs with hidden='until-found' on inactive panels."""
@@ -390,7 +380,7 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
             status=ProductStatus.READY,
             created_by=self.manager,
         )
-        ProductImage.objects.create(product=self.product, image=_create_sample_image())
+        ProductImage.objects.create(product=self.product, image=make_test_image_file("photo.jpg", size=(200, 200)))
         ProductClarification.objects.create(
             product=self.product,
             question="¿Incluye cable USB-C?",
