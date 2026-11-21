@@ -27,6 +27,8 @@ from tests.helpers import (
     abort_nonessential_fonts,
     create_user_with_group,
     get_test_artifact_dir,
+    goto_authenticated,
+    login_in_browser,
     make_test_image_bytes,
     start_shared_browser,
 )
@@ -159,11 +161,7 @@ class ActionLoadingFeedbackBrowserTests(StaticLiveServerTestCase):
     def _login(self, context):
         page = context.new_page()
         abort_nonessential_fonts(page)
-        page.goto(f"{self.live_server_url}{reverse('inventory:login')}", wait_until="domcontentloaded")
-        page.fill('input[name="username"]', "fb_e2e_mgr")
-        page.fill('input[name="password"]', "password123")
-        with page.expect_navigation(wait_until="domcontentloaded"):
-            page.click('#main-content button[type="submit"]')
+        login_in_browser(page, self.live_server_url, "fb_e2e_mgr", "password123")
         return page
 
     def _assert_no_horizontal_overflow(self, page, label):
@@ -179,10 +177,14 @@ class ActionLoadingFeedbackBrowserTests(StaticLiveServerTestCase):
     def test_intake_delayed_ai_identify_skeleton_timer_and_oppo_viewports(self):
         for label, width, height in self.OPPO_VIEWPORTS:
             with self.subTest(viewport=label):
-                context = self._browser.new_context(viewport={"width": width, "height": height}, locale="en-US")
+                context = self._browser.new_context(
+                    viewport={"width": width, "height": height},
+                    locale="en-US",
+                    service_workers="block",
+                )
                 try:
                     page = self._login(context)
-                    page.goto(f"{self.live_server_url}{reverse('inventory:intake')}", wait_until="domcontentloaded")
+                    goto_authenticated(page, f"{self.live_server_url}{reverse('inventory:intake')}")
                     self._assert_no_horizontal_overflow(page, f"{label} initial intake")
 
                     pending_routes = []
@@ -236,11 +238,15 @@ class ActionLoadingFeedbackBrowserTests(StaticLiveServerTestCase):
                     context.close()
 
     def test_product_detail_ai_skeleton_confirm_modal_cancel_and_pageshow_reset(self):
-        context = self._browser.new_context(viewport={"width": 360, "height": 800}, locale="en-US")
+        context = self._browser.new_context(
+            viewport={"width": 360, "height": 800},
+            locale="en-US",
+            service_workers="block",
+        )
         try:
             page = self._login(context)
             detail_url = f"{self.live_server_url}{reverse('inventory:product_detail', args=[self.product.pk])}"
-            page.goto(detail_url, wait_until="domcontentloaded")
+            goto_authenticated(page, detail_url)
             self._assert_no_horizontal_overflow(page, "product_detail 360x800")
 
             # 1. Prevent form navigation via listener so we inspect in-flight skeleton & button spinner cleanly

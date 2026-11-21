@@ -37,6 +37,8 @@ from tests.helpers import (
     assert_visible_images_loaded,
     create_user_with_group,
     get_test_artifact_dir,
+    goto_authenticated,
+    login_in_browser,
     make_test_image_bytes,
     start_shared_browser,
 )
@@ -98,7 +100,10 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
 
     def test_complete_daily_workflow_in_real_chrome(self):
         img_path = str(self.sample_image_path)
-        context = self._browser.new_context(viewport={"width": 1280, "height": 900})
+        context = self._browser.new_context(
+            viewport={"width": 1280, "height": 900},
+            service_workers="block",
+        )
         page = context.new_page()
         abort_nonessential_fonts(page)
         page.on("dialog", lambda d: d.accept())
@@ -242,14 +247,10 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             self.assertEqual(resp.headers.get("location"), expected_target)
 
         # PART II: STAFF INTAKE & AI VALUATION WORKFLOW
-        page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
-        page.fill("#id_username", "manager_daily")
-        page.fill("#id_password", "password123")
-        with page.expect_navigation():
-            page.click("#loginSubmitBtn")
+        login_in_browser(page, self.live_server_url, "manager_daily", "password123")
 
         # Create Pallet #1
-        page.goto(f"{self.live_server_url}{reverse('inventory:pallets')}")
+        goto_authenticated(page, f"{self.live_server_url}{reverse('inventory:pallets')}")
         page.wait_for_selector("#btnCreatePallet")
         page.fill("#id_purchase_price", "350.00")
         page.fill("#id_estimated_value", "900.00")
@@ -441,7 +442,10 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         self.assertTrue(page.locator('text="Chaqueta Barbour Beaufort Encerada"').first.is_visible())
 
         # PART V: MOBILE RESPONSIVENESS (390x844)
-        mobile_context = self._browser.new_context(viewport={"width": 390, "height": 844})
+        mobile_context = self._browser.new_context(
+            viewport={"width": 390, "height": 844},
+            service_workers="block",
+        )
         mobile_page = mobile_context.new_page()
         abort_nonessential_fonts(mobile_page)
 
@@ -455,11 +459,7 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         mobile_page.screenshot(path=str(self.artifacts_dir / "daily_11_mobile_product_detail.png"))
         self.assertFalse(mobile_page.evaluate("() => document.documentElement.scrollWidth > window.innerWidth"))
 
-        mobile_page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
-        mobile_page.fill("#id_username", "manager_daily")
-        mobile_page.fill("#id_password", "password123")
-        with mobile_page.expect_navigation():
-            mobile_page.click("#loginSubmitBtn")
+        login_in_browser(mobile_page, self.live_server_url, "manager_daily", "password123")
         mobile_page.wait_for_selector('nav[role="tablist"]')
         mobile_page.screenshot(path=str(self.artifacts_dir / "daily_12_mobile_dashboard.png"))
         self.assertFalse(mobile_page.evaluate("() => document.documentElement.scrollWidth > window.innerWidth"))
@@ -472,7 +472,10 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         Verify Spanish <-> English switcher works across Storefront & Inventory via real clicks,
         updating HTML lang attribute, hero heading, nav links, and modals.
         """
-        context = self._browser.new_context(viewport={"width": 1280, "height": 900})
+        context = self._browser.new_context(
+            viewport={"width": 1280, "height": 900},
+            service_workers="block",
+        )
         page = context.new_page()
         abort_nonessential_fonts(page)
 

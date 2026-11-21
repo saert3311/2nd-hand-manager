@@ -30,7 +30,7 @@ from inventory.services.push_service import (
     send_push_to_subscription,
     send_push_to_user,
 )
-from tests.helpers import abort_nonessential_fonts, launch_test_browser
+from tests.helpers import abort_nonessential_fonts, launch_test_browser, login_in_browser
 
 User = get_user_model()
 
@@ -83,6 +83,15 @@ class PWAManifestAndServiceWorkerTests(TestCase):
         self.assertIn("payload.url || '/dashboard/'", body)
         self.assertIn(": '/dashboard/';", body)
         self.assertNotIn("url: '/'", body)
+
+    def test_manifest_and_service_worker_execute_zero_db_queries(self):
+        self.client.force_login(self.manager)
+        with self.assertNumQueries(0):
+            manifest_resp = self.client.get(reverse("inventory:manifest"))
+        self.assertEqual(manifest_resp.status_code, 200)
+        with self.assertNumQueries(0):
+            sw_resp = self.client.get(reverse("inventory:service_worker"))
+        self.assertEqual(sw_resp.status_code, 200)
 
     def test_pwa_static_icons_exist_and_dimensions(self):
         icons_dir = Path(settings.BASE_DIR) / "inventory" / "static" / "inventory" / "icons"
@@ -579,10 +588,14 @@ class BrowserPWAServiceWorkerAndPushTests(StaticLiveServerTestCase):
                 self.assertEqual(login_sw_count, 0)
 
                 # 3. Sign in as manager -> lands on /dashboard/ with manifest, SW, and new-tab storefront link
-                page.locator("#id_username").fill("browser_pwa_mgr")
-                page.locator("#id_password").fill("password123")
-                with page.expect_navigation():
-                    page.click("#loginSubmitBtn")
+                login_in_browser(
+                    page,
+                    self.live_server_url,
+                    "browser_pwa_mgr",
+                    "password123",
+                    navigate_to_login=False,
+                    wait_until="load",
+                )
 
                 self.assertIn("/dashboard/", page.url)
                 manifest_href = page.get_attribute('link[rel="manifest"]', "href")

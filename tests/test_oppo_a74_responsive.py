@@ -37,6 +37,7 @@ from tests.helpers import (
     assert_visible_images_loaded,
     create_user_with_group,
     get_test_artifact_dir,
+    login_in_browser,
     make_test_image_bytes,
     start_shared_browser,
 )
@@ -177,7 +178,10 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
 
     def test_oppo_a74_public_storefront_responsive(self):
         """Test storefront Home, Catalog, Product Detail, How-to-Buy, Legal, and 404 at 360px and 320px."""
-        with self._browser.new_context(viewport={"width": 360, "height": 800}) as context:
+        with self._browser.new_context(
+            viewport={"width": 360, "height": 800},
+            service_workers="block",
+        ) as context:
             page = context.new_page()
             abort_nonessential_fonts(page)
 
@@ -225,7 +229,10 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
 
     def test_oppo_a74_staff_workspace_responsive(self):
         """Test Login, Dashboard, Intake (+ dual buttons & preview cards), Product Detail, Pallets, and Policy Guard."""
-        with self._browser.new_context(viewport={"width": 360, "height": 800}) as context:
+        with self._browser.new_context(
+            viewport={"width": 360, "height": 800},
+            service_workers="block",
+        ) as context:
             page = context.new_page()
             abort_nonessential_fonts(page)
             page.on("dialog", lambda d: d.accept())
@@ -243,10 +250,13 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
             for vp_name, w, h in self.OPPO_VIEWPORTS:
                 self._assert_no_horizontal_overflow(page, f"login_{vp_name}", w, h)
 
-            page.fill("#id_username", "oppo_manager")
-            page.fill("#id_password", "password123")
-            with page.expect_navigation():
-                page.click("#loginSubmitBtn")
+            login_in_browser(
+                page,
+                self.live_server_url,
+                "oppo_manager",
+                "password123",
+                navigate_to_login=False,
+            )
             page.wait_for_selector('nav[role="tablist"]')
 
             # 2. Dashboard

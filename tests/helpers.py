@@ -2,6 +2,7 @@
 
 import io
 import os
+import re
 import tempfile
 from pathlib import Path
 
@@ -9,9 +10,16 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.urls import reverse
 from PIL import Image
 
 User = get_user_model()
+
+_BLOCKED_EXTERNAL_HOSTS_RE = re.compile(
+    r"^https?://(?:[^/]+\.)?"
+    r"(?:fonts\.googleapis\.com|fonts\.gstatic\.com|googletagmanager\.com|google-analytics\.com)"
+    r"(?:/|$)"
+)
 
 
 def make_test_image_bytes(size=(120, 120), color="teal", image_format="JPEG"):
@@ -91,17 +99,56 @@ def start_shared_browser(test_cls, headless=True):
 
 
 def abort_nonessential_fonts(page):
-    """Abort external webfont and analytics requests so offline/headless Playwright loads stay deterministic."""
-    blocked_hosts = (
-        "fonts.googleapis.com",
-        "fonts.gstatic.com",
-        "googletagmanager.com",
-        "google-analytics.com",
-    )
-    page.route(
-        "**/*",
-        lambda route: route.abort() if any(host in route.request.url for host in blocked_hosts) else route.continue_(),
-    )
+    """Abort external webfont and analytics requests without intercepting localhost app traffic."""
+    page.route(_BLOCKED_EXTERNAL_HOSTS_RE, lambda route: route.abort())
+
+
+def login_in_browser(
+    page,
+    live_server_url,
+    username,
+    password="password123",
+    expected_url_pattern="**/dashboard/**",
+    wait_until="domcontentloaded",
+    navigate_to_login=True,
+):
+    """Sign in via /login/ and deterministically wait for the post-login redirect URL."""
+    if navigate_to_login:
+        resp = page.goto(f"{live_server_url}{reverse('inventory:login')}", wait_until=wait_until)
+        if resp is None or resp.status != 200:
+            status = resp.status if resp is not None else None
+            raise AssertionError(f"GET /login/ failed: status={status} url={page.url}")
+
+    page.wait_for_selector("#id_username", timeout=10000)
+    page.fill("#id_username", username)
+    page.fill("#id_password", password)
+    page.click("#loginSubmitBtn")
+    try:
+        page.wait_for_url(expected_url_pattern, wait_until=wait_until, timeout=15000)
+    except Exception as exc:
+        alert_text = ""
+        alerts = page.locator('[role="alert"]')
+        if alerts.count() > 0:
+            alert_text = alerts.first.inner_text().strip()
+        raise AssertionError(
+            f"Login failed for user={username!r}: url={page.url!r}, "
+            f"title={page.title()!r}, alert={alert_text!r}"
+        ) from exc
+
+    if "/login/" in page.url:
+        raise AssertionError(f"Still on login page after submit for user={username!r}: url={page.url!r}")
+
+
+def goto_authenticated(page, url, wait_until="domcontentloaded"):
+    """Navigate to an authenticated route and fail immediately on auth redirects or non-200 HTTP errors."""
+    resp = page.goto(url, wait_until=wait_until)
+    status = resp.status if resp is not None else None
+    if status != 200 or "/login/" in page.url:
+        raise AssertionError(
+            f"Authenticated navigation to {url!r} failed: status={status}, "
+            f"landed_url={page.url!r}, title={page.title()!r}"
+        )
+    return resp
 
 
 def assert_visible_images_loaded(test_case, page, selector="img"):

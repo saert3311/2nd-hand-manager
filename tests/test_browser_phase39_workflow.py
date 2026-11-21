@@ -30,6 +30,8 @@ from tests.helpers import (
     abort_nonessential_fonts,
     create_user_with_group,
     get_test_artifact_dir,
+    goto_authenticated,
+    login_in_browser,
     start_shared_browser,
 )
 
@@ -77,7 +79,10 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
     def test_accessibility_and_mobile_workflow_in_real_chrome(self):
         native_dialogs = []
 
-        context = self._browser.new_context(viewport={"width": 1280, "height": 900})
+        context = self._browser.new_context(
+            viewport={"width": 1280, "height": 900},
+            service_workers="block",
+        )
         page = context.new_page()
         try:
             abort_nonessential_fonts(page)
@@ -134,13 +139,16 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
             self.assertEqual(page.locator("#id_password").get_attribute("autocomplete"), "current-password")
             page.screenshot(path=str(self.artifacts_dir / "03_login_h1_and_autocomplete.png"))
 
-            page.fill("#id_username", "manager_phase39")
-            page.fill("#id_password", "password123")
-            with page.expect_navigation():
-                page.click("#loginSubmitBtn")
+            login_in_browser(
+                page,
+                self.live_server_url,
+                "manager_phase39",
+                "password123",
+                navigate_to_login=False,
+            )
 
             # 4. Staff Dashboard Skip Link
-            page.goto(f"{self.live_server_url}{reverse('inventory:dashboard')}")
+            goto_authenticated(page, f"{self.live_server_url}{reverse('inventory:dashboard')}")
             page.wait_for_selector("#main-content")
 
             page.keyboard.press("Tab")
@@ -215,19 +223,18 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
             self.assertEqual(len(native_dialogs), 0, f"Unexpected native JS dialogs triggered: {native_dialogs}")
 
             # 7. Mobile Viewport 390x844: iOS auto-zoom prevention (>= 16px) & zero overflow
-            with self._browser.new_context(viewport={"width": 390, "height": 844}) as mobile_context:
+            with self._browser.new_context(
+                viewport={"width": 390, "height": 844},
+                service_workers="block",
+            ) as mobile_context:
                 mobile_page = mobile_context.new_page()
                 abort_nonessential_fonts(mobile_page)
 
-                mobile_page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
-                mobile_page.wait_for_selector("#id_username")
-                mobile_page.fill("#id_username", "manager_phase39")
-                mobile_page.fill("#id_password", "password123")
-                with mobile_page.expect_navigation():
-                    mobile_page.click("#loginSubmitBtn")
+                login_in_browser(mobile_page, self.live_server_url, "manager_phase39", "password123")
 
-                mobile_page.goto(
-                    f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.product.pk})}"
+                goto_authenticated(
+                    mobile_page,
+                    f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.product.pk})}",
                 )
                 mobile_page.wait_for_selector("#id_sale_price")
 

@@ -9,13 +9,13 @@ from decimal import Decimal
 
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import override_settings
-from django.urls import reverse
 
 from inventory.models import Product, ProductStatus
 from tests.helpers import (
     abort_nonessential_fonts,
     create_user_with_group,
     get_test_artifact_dir,
+    login_in_browser,
     start_shared_browser,
 )
 
@@ -69,16 +69,14 @@ class DashboardResponsiveUITests(StaticLiveServerTestCase):
             ("desktop_1440x900", 1440, 900),
         ]
 
-        with self._browser.new_context(viewport={"width": 1280, "height": 800}) as context:
+        with self._browser.new_context(
+            viewport={"width": 1280, "height": 800},
+            service_workers="block",
+        ) as context:
             page = context.new_page()
             abort_nonessential_fonts(page)
 
-            page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
-            page.wait_for_selector("#id_username")
-            page.fill("#id_username", "testmanager")
-            page.fill("#id_password", "password123")
-            with page.expect_navigation():
-                page.click("#loginSubmitBtn")
+            login_in_browser(page, self.live_server_url, "testmanager", "password123")
             page.wait_for_selector('nav[role="tablist"]')
 
             for label, width, height in viewports:

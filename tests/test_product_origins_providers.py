@@ -29,7 +29,13 @@ from inventory.services.origin_service import (
     get_providers_with_roi_stats,
     parse_origin_token,
 )
-from tests.helpers import abort_nonessential_fonts, create_user_with_group, start_shared_browser
+from tests.helpers import (
+    abort_nonessential_fonts,
+    create_user_with_group,
+    goto_authenticated,
+    login_in_browser,
+    start_shared_browser,
+)
 
 User = get_user_model()
 
@@ -670,21 +676,18 @@ class OriginInteractiveBrowserTests(StaticLiveServerTestCase):
         )
 
     def _new_logged_in_page(self):
-        context = self._browser.new_context()
+        context = self._browser.new_context(service_workers="block")
         page = context.new_page()
         abort_nonessential_fonts(page)
-        page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
-        page.fill("#id_username", "mgr_browser_origin")
-        page.fill("#id_password", "pw")
-        with page.expect_navigation():
-            page.click("#loginSubmitBtn")
+        login_in_browser(page, self.live_server_url, "mgr_browser_origin", "pw")
         return context, page
 
     def test_product_detail_locks_provider_while_pallet_selected_and_unlocks_on_clear(self):
         context, page = self._new_logged_in_page()
         try:
-            page.goto(
-                f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.pallet_product.pk})}"
+            goto_authenticated(
+                page,
+                f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.pallet_product.pk})}",
             )
             page.wait_for_selector("#id_provider")
 
@@ -706,7 +709,7 @@ class OriginInteractiveBrowserTests(StaticLiveServerTestCase):
     def test_pallets_hub_shared_delete_modal_works_for_pallet_and_provider(self):
         context, page = self._new_logged_in_page()
         try:
-            page.goto(f"{self.live_server_url}{reverse('inventory:pallets')}")
+            goto_authenticated(page, f"{self.live_server_url}{reverse('inventory:pallets')}")
             page.wait_for_selector(f"#pallet-card-{self.pallet.pk}")
 
             page.click(f"#pallet-card-{self.pallet.pk} button")

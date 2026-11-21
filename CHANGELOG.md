@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Zero-DB `/sw.js` & `/manifest.json` + CI Playwright Login/SW/Route Hardening**:
+  - **Stateless PWA Endpoints (`inventory/views.py`, `inventory/middleware.py`)**: Switched `service_worker_view` from `render(request, ...)` to `HttpResponse(render_to_string("inventory/sw.js"))` and bypassed `CurrentUserMiddleware` user/session evaluation on `/sw.js` and `/manifest.json` so serving static PWA endpoints executes zero SQL queries during concurrent browser requests.
+  - **Test-Mode 5xx Request Visibility (`config/settings.py`)**: Configured `django.request` `ERROR` console logging under `IS_TESTING` so unexpected 5xx tracebacks surface immediately even when CI runs with `DEBUG=False`.
+  - **Deterministic Playwright Login & Route Isolation (`tests/helpers.py`, browser suites)**: Scoped `abort_nonessential_fonts()` via regex exclusively to external webfont/analytics hosts (eliminating catch-all `**/*` interception of localhost traffic), added `login_in_browser()` (`wait_for_url("**/dashboard/**")` with status/alert diagnostics) and `goto_authenticated()`, blocked Service Workers on non-PWA test contexts (`service_workers="block"`), and added `test_manifest_and_service_worker_execute_zero_db_queries`.
+
 ### Added
 - **Dashboard Configurable Page Size Selector (20 / 50 / 100 — Phase 57)**:
   - **Whitelisted Page Size & Session Persistence (`inventory/views.py`)**: Added `_resolve_dashboard_page_size` enforcing `ALLOWED_PAGE_SIZES = (20, 50, 100)` (default `20`) with Django session persistence (`dashboard_per_page`), graceful fallback & non-propagation for invalid `?per_page=` inputs, reset-to-page-1 behavior via `per_page_base_query`, and full filter/search composability (keeping `/tienda/` fixed at `20` items/page).

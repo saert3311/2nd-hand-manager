@@ -27,7 +27,12 @@ from inventory.models import (
     ProductStatus,
     SaleChannelType,
 )
-from tests.helpers import abort_nonessential_fonts, launch_test_browser
+from tests.helpers import (
+    abort_nonessential_fonts,
+    goto_authenticated,
+    launch_test_browser,
+    login_in_browser,
+)
 
 
 def _create_sample_image(name="photo.jpg"):
@@ -394,11 +399,13 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
         )
 
     def _login(self, page):
-        page.goto(f"{self.live_server_url}{reverse('inventory:login')}", wait_until="load")
-        page.fill("#id_username", "mgr_browser_tabs")
-        page.fill("#id_password", "password123")
-        with page.expect_navigation():
-            page.click("#loginSubmitBtn")
+        login_in_browser(
+            page,
+            self.live_server_url,
+            "mgr_browser_tabs",
+            "password123",
+            wait_until="load",
+        )
 
     def test_tabs_keyboard_deeplink_beforematch_counters_validation_and_clipboard(self):
         """Verifies ARIA keyboard nav, ?tab=/#hash, beforematch, live counters, cross-tab validation, Ctrl+S guard, and copy helpers."""
@@ -410,6 +417,7 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
                 viewport={"width": 1280, "height": 850},
                 locale="en-US",
                 extra_http_headers={"Accept-Language": "en"},
+                service_workers="block",
             )
             page = context.new_page()
             abort_nonessential_fonts(page)
@@ -435,7 +443,7 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
             self._login(page)
 
             # 1. URL query ?tab=notes activates Notes tab immediately
-            page.goto(f"{detail_url}?tab=notes", wait_until="load")
+            goto_authenticated(page, f"{detail_url}?tab=notes", wait_until="load")
             page.wait_for_selector("#detailWorkspaceTablist")
             self.assertEqual(page.locator("#tabBtnWorkspaceNotes").get_attribute("aria-selected"), "true")
             self.assertTrue(page.locator("#workspacePanelNotes").is_visible())
