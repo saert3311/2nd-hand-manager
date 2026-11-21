@@ -14,6 +14,7 @@ from django.db import transaction
 from django.db.models import Count, Max, Prefetch, Q
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.translation import get_language
@@ -1186,8 +1187,12 @@ def manifest_view(request):
 def service_worker_view(request):
     """
     Serves the root Service Worker (/sw.js) with root scope permission and zero caching.
+    Uses render_to_string without RequestContext so serving static SW JS incurs zero DB queries.
     """
-    response = render(request, "inventory/sw.js", content_type="application/javascript")
+    response = HttpResponse(
+        render_to_string("inventory/sw.js"),
+        content_type="application/javascript",
+    )
     response["Service-Worker-Allowed"] = "/"
     response["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return response

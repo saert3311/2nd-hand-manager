@@ -30,10 +30,14 @@ class CurrentUserMiddleware:
     making it available across model saves, signals, and audit log handlers.
     """
 
+    STATELESS_PWA_PATHS = ("/sw.js", "/manifest.json")
+
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
+        if request.path in self.STATELESS_PWA_PATHS:
+            return self.get_response(request)
         user = getattr(request, "user", None)
         authenticated_user = user if (user and getattr(user, "is_authenticated", False)) else None
         token = _current_user.set(authenticated_user)

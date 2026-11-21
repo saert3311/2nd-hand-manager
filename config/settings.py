@@ -208,6 +208,23 @@ if IS_TESTING:
             'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
         },
     }
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'handlers': {
+            'test_console_errors': {
+                'level': 'ERROR',
+                'class': 'logging.StreamHandler',
+            },
+        },
+        'loggers': {
+            'django.request': {
+                'handlers': ['test_console_errors'],
+                'level': 'ERROR',
+                'propagate': False,
+            },
+        },
+    }
 elif OCI_STORAGE_BUCKET_NAME and OCI_STORAGE_ACCESS_KEY and OCI_STORAGE_SECRET_KEY:
     STORAGES = {
         'default': {
