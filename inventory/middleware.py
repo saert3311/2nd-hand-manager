@@ -1,5 +1,7 @@
 from contextvars import ContextVar
 
+from django.conf import settings
+
 _current_user: ContextVar = ContextVar("current_user", default=None)
 
 
@@ -31,12 +33,23 @@ class CurrentUserMiddleware:
     """
 
     STATELESS_PWA_PATHS = ("/sw.js", "/manifest.json")
+    STATELESS_EXACT_PATHS = (*STATELESS_PWA_PATHS, "/favicon.ico")
 
     def __init__(self, get_response):
         self.get_response = get_response
 
+    @classmethod
+    def _is_stateless_request(cls, path: str) -> bool:
+        if path in cls.STATELESS_EXACT_PATHS:
+            return True
+        for prefix_attr in ("STATIC_URL", "MEDIA_URL"):
+            prefix = getattr(settings, prefix_attr, "") or ""
+            if prefix.startswith("/") and path.startswith(prefix):
+                return True
+        return False
+
     def __call__(self, request):
-        if request.path in self.STATELESS_PWA_PATHS:
+        if self._is_stateless_request(request.path):
             return self.get_response(request)
         user = getattr(request, "user", None)
         authenticated_user = user if (user and getattr(user, "is_authenticated", False)) else None

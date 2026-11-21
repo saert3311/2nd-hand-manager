@@ -111,8 +111,8 @@
           </a>
         </div>
 
-        <!-- Desktop Navigation Bar (≥ 768px / md:) -->
-        <div class="hidden md:flex items-center gap-4">
+        <!-- Desktop Navigation Bar (≥ 1024px / lg:) -->
+        <div class="hidden lg:flex items-center gap-4">
 
           <!-- Language Selector -->
           <form action="{% url 'set_language' %}" method="post" class="inline-flex items-center">
@@ -206,8 +206,8 @@
 
         </div>
 
-        <!-- Mobile Header Controls (< 768px / md:hidden) -->
-        <div class="flex md:hidden items-center gap-2">
+        <!-- Mobile/Tablet Header Controls (< 1024px / lg:hidden) -->
+        <div class="flex lg:hidden items-center gap-2">
           {% if user.is_authenticated %}
             {% if pending_clarifications_count > 0 %}
             <a href="{% url 'inventory:dashboard' %}?status=awaiting_info"
@@ -263,7 +263,7 @@
     <!-- Mobile Navigation Drawer Panel -->
     {% if user.is_authenticated %}
     <nav id="mobile-menu"
-         class="hidden md:hidden bg-white border-b border-slate-200 shadow-lg px-4 pt-3 pb-4 space-y-3"
+         class="hidden lg:hidden bg-white border-b border-slate-200 shadow-lg px-4 pt-3 pb-4 space-y-3"
          aria-label="{% trans 'Mobile navigation' %}">
       
       <!-- User Profile Card -->
