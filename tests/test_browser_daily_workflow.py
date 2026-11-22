@@ -20,6 +20,7 @@ from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.files.base import ContentFile
 from django.test import override_settings
 from django.urls import reverse
+from playwright.sync_api import expect
 
 from inventory.models import (
     Category,
@@ -107,7 +108,7 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
         ) as (_context, page):
             # 1. Store Shelf at /
             page.goto(f"{self.live_server_url}{reverse('storefront:home')}")
-            page.wait_for_selector("#categoryRail")
+            expect(page.locator("#categoryRail")).to_be_visible()
             self.assertIn("Rápido Pack", page.content())
             self.assertIn("logo-rapido-pack-valencia.png", page.content())
             self.assertIn("https://rapidopackvalencia.es", page.content())
@@ -119,51 +120,51 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             )
 
             # Interactive Cookie Consent Banner + Footer Re-open + Persist across navigations
-            page.wait_for_selector("#cookie-banner-container:not(.hidden)")
+            expect(page.locator("#cookie-banner-container:not(.hidden)")).to_be_visible()
             self.assertTrue(page.locator("#cookie-banner-container").is_visible())
-            page.click("#cookie-accept-all-btn")
-            page.wait_for_selector("#cookie-banner-container", state="hidden")
+            page.locator("#cookie-accept-all-btn").click()
+            expect(page.locator("#cookie-banner-container")).to_be_hidden()
             self.assertIn("rpv_cookie_consent=", page.evaluate("() => document.cookie"))
             footer_cookie_btn = page.locator("#footer-cookie-settings-btn")
             footer_cookie_btn.scroll_into_view_if_needed()
             footer_cookie_btn.click()
-            page.wait_for_selector("#cookie-banner-container:not(.hidden)")
+            expect(page.locator("#cookie-banner-container:not(.hidden)")).to_be_visible()
             self.assertTrue(page.locator("#cookie-settings-panel").is_visible())
             self.assertTrue(page.locator("#cookie-analytics-toggle").is_checked())
-            page.click("#cookie-quick-close-btn")
-            page.wait_for_selector("#cookie-banner-container", state="hidden")
+            page.locator("#cookie-quick-close-btn").click()
+            expect(page.locator("#cookie-banner-container")).to_be_hidden()
             page.screenshot(path=str(self.artifacts_dir / "daily_00_store_shelf_home.png"))
 
             # 2. Catalog (/tienda/) + Category Rail Filtering + GTM dataLayer
             page.goto(f"{self.live_server_url}{reverse('storefront:catalog')}")
-            page.wait_for_selector("#categoryRail")
+            expect(page.locator("#categoryRail")).to_be_visible()
             self.assertIn("Alfafar", page.content())
             assert_visible_images_loaded(self, page)
             page.screenshot(path=str(self.artifacts_dir / "daily_00_public_catalog.png"))
 
             shelf_events = page.evaluate("() => (window.dataLayer || []).map((e) => e && e.event).filter(Boolean)")
             self.assertIn("view_item_list", shelf_events)
-            page.click('#categoryRail a:has-text("Bicicletas")')
+            page.locator('#categoryRail a:has-text("Bicicletas")').first.click()
             page.wait_for_url("**/categoria/bicicletas/**")
-            page.wait_for_selector('text="Bicicleta de Montaña Orbea MX 29"')
-            self.assertTrue(page.locator('text="Bicicleta de Montaña Orbea MX 29"').is_visible())
+            expect(page.locator('text="Bicicleta de Montaña Orbea MX 29"').first).to_be_visible()
+            self.assertTrue(page.locator('text="Bicicleta de Montaña Orbea MX 29"').first.is_visible())
 
             # 3. 'Cómo comprar en Alfafar' modal + GTM how_to_buy_open event
-            page.click('button:has-text("Cómo comprar"), button:has-text("How to buy")')
-            page.wait_for_selector("#how-to-buy-dialog[open]")
+            page.locator('button:has-text("Cómo comprar"), button:has-text("How to buy")').first.click()
+            expect(page.locator("#how-to-buy-dialog[open]")).to_be_visible()
             modal_events = page.evaluate("() => (window.dataLayer || []).map((e) => e && e.event).filter(Boolean)")
             self.assertIn("how_to_buy_open", modal_events)
-            modal_title = page.inner_text("#how-to-buy-title")
+            modal_title = page.locator("#how-to-buy-title").inner_text()
             self.assertTrue("Rápido Pack Alfafar" in modal_title or "comprar" in modal_title.lower())
             page.screenshot(path=str(self.artifacts_dir / "daily_00_how_to_buy_modal.png"))
-            page.click("#how-to-buy-dialog button[aria-label]")
-            page.wait_for_selector("#how-to-buy-dialog", state="hidden")
+            page.locator("#how-to-buy-dialog button[aria-label]").first.click()
+            expect(page.locator("#how-to-buy-dialog")).to_be_hidden()
             self.assertFalse(page.locator("#how-to-buy-dialog").is_visible())
 
             # 4. Public Product Detail Page + verify real rendered media + GTM view_item
-            page.click('h3:has-text("Bicicleta de Montaña Orbea MX 29") a')
+            page.locator('h3:has-text("Bicicleta de Montaña Orbea MX 29") a').first.click()
             page.wait_for_url(f"**{self.public_bike.get_public_url()}")
-            page.wait_for_selector("#mainProductPhoto")
+            expect(page.locator("#mainProductPhoto")).to_be_visible()
             detail_events = page.evaluate("() => (window.dataLayer || []).map((e) => e && e.event).filter(Boolean)")
             self.assertIn("view_item", detail_events)
             assert_visible_images_loaded(self, page, "#mainProductPhoto")
@@ -182,20 +183,20 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
 
             # Canonical 301 slug redirect & secondary storefront routes
             page.goto(f"{self.live_server_url}/tienda/producto/outdated-slug-{self.public_bike.pk}/")
-            page.wait_for_selector("#mainProductPhoto")
+            expect(page.locator("#mainProductPhoto")).to_be_visible()
             self.assertIn(f"bicicleta-de-montana-orbea-mx-29-{self.public_bike.pk}", page.url)
 
             page.goto(f"{self.live_server_url}{reverse('storefront:how_to_buy')}")
-            page.wait_for_selector('h1:has-text("Cómo comprar"), h1:has-text("How to buy")')
+            expect(page.locator('h1:has-text("Cómo comprar"), h1:has-text("How to buy")').first).to_be_visible()
             self.assertIn("Alfafar", page.content())
             self.assertIn("Comte Ronrée", page.content())
 
             page.goto(f"{self.live_server_url}/tienda/categoria/bicicletas/")
-            page.wait_for_selector("#categoryRail")
+            expect(page.locator("#categoryRail")).to_be_visible()
             self.assertTrue(page.locator('text="Bicicleta de Montaña Orbea MX 29"').first.is_visible())
 
             page.goto(f"{self.live_server_url}/tienda/?estado=muy_bueno&orden=baratos")
-            page.wait_for_selector('text="Bicicleta de Montaña Orbea MX 29"')
+            expect(page.locator('text="Bicicleta de Montaña Orbea MX 29"').first).to_be_visible()
             self.assertTrue(page.locator('text="Bicicleta de Montaña Orbea MX 29"').first.is_visible())
 
             # Canonical footer legal links & HTTP 302 redirects to rapidopackvalencia.es
@@ -256,52 +257,52 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
 
             # Create Pallet #1
             goto_authenticated(page, f"{self.live_server_url}{reverse('inventory:pallets')}")
-            page.wait_for_selector("#btnCreatePallet")
-            page.fill("#id_purchase_price", "350.00")
-            page.fill("#id_estimated_value", "900.00")
-            page.fill("#id_notes", "Lote Liquidacion Chaquetas & Moda Alfafar")
+            expect(page.locator("#btnCreatePallet")).to_be_visible()
+            page.locator("#id_purchase_price").fill("350.00")
+            page.locator("#id_estimated_value").fill("900.00")
+            page.locator("#id_notes").fill("Lote Liquidacion Chaquetas & Moda Alfafar")
             with page.expect_response(lambda r: r.request.method == "POST" and "/pallets/" in r.url):
-                page.click("#btnCreatePallet")
+                page.locator("#btnCreatePallet").click()
             page.wait_for_load_state("domcontentloaded")
-            page.wait_for_selector('text="Pallet #1"')
+            expect(page.locator('text="Pallet #1"').first).to_be_visible()
             self.assertTrue(page.locator('text="Pallet #1"').first.is_visible())
             self.assertIn("350", page.content())
             self.assertIn("900", page.content())
 
             # Intake screen with Pallet #1 preselected
             goto_authenticated(page, f"{self.live_server_url}{reverse('inventory:intake')}")
-            page.wait_for_selector("#dropZone")
+            expect(page.locator("#dropZone")).to_be_visible()
             pallet_select = page.locator("#id_origin")
             self.assertTrue(pallet_select.is_visible())
             self.assertTrue(pallet_select.input_value().startswith("pallet:"))
 
             page.set_input_files("#imageInput", img_path)
-            page.wait_for_selector("#previewGrid img")
-            page.fill("#id_raw_note", "Barbour Beaufort vintage verde oliva, cremallera perfecta, ligera pátina.")
+            expect(page.locator("#previewGrid img").first).to_be_visible()
+            page.locator("#id_raw_note").fill("Barbour Beaufort vintage verde oliva, cremallera perfecta, ligera pátina.")
 
-            page.click("#identifyBtn")
-            page.wait_for_selector("#advisoryValuationContainer:not(.hidden)", timeout=10000)
+            page.locator("#identifyBtn").click()
+            expect(page.locator("#advisoryValuationContainer:not(.hidden)")).to_be_visible(timeout=10000)
 
-            self.assertIn("435", page.inner_text("#advisoryRetailPrice"))
-            self.assertIn("165", page.inner_text("#advisoryResalePrice"))
+            self.assertIn("435", page.locator("#advisoryRetailPrice").inner_text())
+            self.assertIn("165", page.locator("#advisoryResalePrice").inner_text())
             self.assertTrue(page.locator("#intakePriceBenchmarks").is_visible())
-            self.assertIn("435", page.inner_text("#badgeRefRetail"))
-            self.assertIn("165", page.inner_text("#badgeRefResale"))
+            self.assertIn("435", page.locator("#badgeRefRetail").inner_text())
+            self.assertIn("165", page.locator("#badgeRefResale").inner_text())
             page.screenshot(path=str(self.artifacts_dir / "daily_01_intake_valuation_benchmarks.png"))
 
             use_resale_btn = page.locator("#btnUseEstimatedResale")
             self.assertTrue(use_resale_btn.is_visible())
             use_resale_btn.click()
-            self.assertEqual(page.input_value("#id_sale_price"), "165.00")
-            self.assertEqual(page.input_value("#id_estimated_retail_price"), "435.00")
-            self.assertEqual(page.input_value("#id_estimated_resale_price"), "165.00")
+            self.assertEqual(page.locator("#id_sale_price").input_value(), "165.00")
+            self.assertEqual(page.locator("#id_estimated_retail_price").input_value(), "435.00")
+            self.assertEqual(page.locator("#id_estimated_resale_price").input_value(), "165.00")
             page.screenshot(path=str(self.artifacts_dir / "daily_02_intake_resale_applied.png"))
 
             with page.expect_response(
                 lambda r: r.request.method == "POST" and r.url.rstrip("/").endswith("/intake")
             ):
-                page.click("#submitBtn")
-            page.wait_for_selector("text=/cataloged successfully|catalogado con éxito/i", timeout=10000)
+                page.locator("#submitBtn").click()
+            expect(page.locator("text=/cataloged successfully|catalogado con éxito/i").first).to_be_visible(timeout=10000)
             page.wait_for_load_state("load")
 
             product = Product.objects.get(ai_title="Chaqueta Barbour Beaufort Encerada")
@@ -313,7 +314,7 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
 
             # Manager Staging Review & Dashboard Pallet Filtering
             goto_authenticated(page, f"{self.live_server_url}{reverse('inventory:dashboard')}")
-            page.wait_for_selector('a[href*="/products/"]')
+            expect(page.locator('a[href*="/products/"]').first).to_be_visible()
             assert_visible_images_loaded(self, page)
             page.screenshot(path=str(self.artifacts_dir / "daily_03_dashboard_with_item.png"))
 
@@ -330,12 +331,12 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
 
             pallet_select.select_option("none")
             page.wait_for_url("**pallet=none**")
-            page.wait_for_selector("#palletFilterForm select[name='pallet']")
+            expect(page.locator("#palletFilterForm select[name='pallet']")).to_be_visible()
             self.assertFalse(page.locator('text="Chaqueta Barbour Beaufort Encerada"').is_visible())
 
             page.locator("#palletFilterForm select[name='pallet']").select_option(str(product.pallet.id))
             page.wait_for_url(f"**pallet={product.pallet.id}**")
-            page.wait_for_selector('text="Chaqueta Barbour Beaufort Encerada"')
+            expect(page.locator('text="Chaqueta Barbour Beaufort Encerada"').first).to_be_visible()
             self.assertTrue(page.locator('text="Chaqueta Barbour Beaufort Encerada"').first.is_visible())
 
     def test_manager_detail_storefront_publish_reserve_and_sold_lifecycle(self):
@@ -374,7 +375,7 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             # Product Detail View
             detail_url = f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': product.pk})}"
             goto_authenticated(page, detail_url)
-            page.wait_for_selector("#id_sale_price")
+            expect(page.locator("#id_sale_price")).to_be_visible()
             assert_visible_images_loaded(self, page)
 
             pallet_badge = page.locator("#product-pallet-badge")
@@ -382,33 +383,32 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             self.assertIn("Pallet #1", pallet_badge.inner_text())
 
             self.assertTrue(page.locator("#detail-valuation-benchmarks").is_visible())
-            self.assertIn("435", page.inner_text("#ref-retail-price"))
-            self.assertIn("165", page.inner_text("#ref-resale-price"))
+            self.assertIn("435", page.locator("#ref-retail-price").inner_text())
+            self.assertIn("165", page.locator("#ref-resale-price").inner_text())
 
             apply_btn = page.locator("#btnApplyResalePrice")
             self.assertTrue(apply_btn.is_visible())
             self.assertEqual(apply_btn.get_attribute("data-resale"), "165.00")
 
-            self.assertTrue(len(page.inner_text("#footer-build-time")) > 0)
+            self.assertTrue(len(page.locator("#footer-build-time").inner_text()) > 0)
             page.screenshot(path=str(self.artifacts_dir / "daily_04_product_detail_valuation_benchmarks.png"))
 
             # Configure Storefront Controls & Description
             fashion_cat = self.cat_fashion
-            page.fill(
-                'textarea[name="ai_description"]',
+            page.locator('textarea[name="ai_description"]').fill(
                 "Auténtica chaqueta Barbour Beaufort encerada en color verde oliva. Talla C40. Fabricada en Inglaterra.",
             )
-            page.click("#tabBtnWorkspaceChannels")
-            page.select_option("#id_category", str(fashion_cat.pk))
-            page.select_option("#id_condition", ProductCondition.VERY_GOOD)
-            page.check("#id_is_public")
-            page.check("#id_is_featured")
+            page.locator("#tabBtnWorkspaceChannels").click()
+            page.locator("#id_category").select_option(str(fashion_cat.pk))
+            page.locator("#id_condition").select_option(ProductCondition.VERY_GOOD)
+            page.locator("#id_is_public").check()
+            page.locator("#id_is_featured").check()
             with page.expect_response(
                 lambda r: r.request.method == "POST" and f"/products/{product.pk}/" in r.url
             ):
-                page.click("#btnSaveListingChanges")
+                page.locator("#btnSaveListingChanges").click()
             page.wait_for_load_state("domcontentloaded")
-            page.wait_for_selector("#id_sale_price")
+            expect(page.locator("#id_sale_price")).to_be_visible()
 
             product.refresh_from_db()
             self.assertEqual(product.category, fashion_cat)
@@ -418,7 +418,7 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
 
             # Pallet Hub shows linked product
             goto_authenticated(page, f"{self.live_server_url}{reverse('inventory:pallets')}")
-            page.wait_for_selector('text="Pallet #1"')
+            expect(page.locator('text="Pallet #1"').first).to_be_visible()
             self.assertTrue(page.locator('text="1"').first.is_visible())
 
             # Attach marketplace link -> PUBLISHED
@@ -434,15 +434,14 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             self.assertEqual(product.status, ProductStatus.PUBLISHED)
 
             goto_authenticated(page, detail_url)
-            page.click("#tabBtnWorkspaceChannels")
-            page.wait_for_selector('a:has-text("Ver en Tienda Pública"), a:has-text("View in Storefront")')
-            self.assertTrue(
-                page.locator('a:has-text("Ver en Tienda Pública"), a:has-text("View in Storefront")').is_visible()
-            )
+            page.locator("#tabBtnWorkspaceChannels").click()
+            storefront_btn = page.locator('a:has-text("Ver en Tienda Pública"), a:has-text("View in Storefront")').first
+            expect(storefront_btn).to_be_visible()
+            self.assertTrue(storefront_btn.is_visible())
 
             # Live Storefront Validation & Reserved -> Sold Lifecycle
             page.goto(f"{self.live_server_url}{product.get_public_url()}")
-            page.wait_for_selector("#mainProductPhoto")
+            expect(page.locator("#mainProductPhoto")).to_be_visible()
             assert_visible_images_loaded(self, page, "#mainProductPhoto")
             page.screenshot(path=str(self.artifacts_dir / "daily_05_storefront_published_item.png"))
 
@@ -458,7 +457,7 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             product.is_reserved = True
             product.save(update_fields=["is_reserved"])
             page.reload()
-            page.wait_for_selector("text=/RESERVED|RESERVADO/i")
+            expect(page.locator("text=/RESERVED|RESERVADO/i").first).to_be_visible()
             self.assertTrue(page.locator("text=/RESERVED|RESERVADO/i").first.is_visible())
             page.screenshot(path=str(self.artifacts_dir / "daily_06_storefront_reserved_state.png"))
 
@@ -469,18 +468,18 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             self.assertEqual(product.sold_channel_type, "in_store")
 
             page.reload()
-            page.wait_for_selector("text=/SOLD|VENDIDO/i")
+            expect(page.locator("text=/SOLD|VENDIDO/i").first).to_be_visible()
             self.assertTrue(page.locator("text=/SOLD|VENDIDO/i").first.is_visible())
             page.screenshot(path=str(self.artifacts_dir / "daily_07_storefront_sold_state.png"))
 
             # Audit Trail & Sold Dashboard Tab
             goto_authenticated(page, detail_url)
-            page.wait_for_selector("#status-history-card, h3:has-text('Historial de Estados')")
+            expect(page.locator("#status-history-card, h3:has-text('Historial de Estados')").first).to_be_visible()
             self.assertIn("manager_daily", page.content())
             page.screenshot(path=str(self.artifacts_dir / "daily_08_staging_sold_audit_trail.png"))
 
             goto_authenticated(page, f"{self.live_server_url}{reverse('inventory:dashboard')}?status=sold")
-            page.wait_for_selector('text="Chaqueta Barbour Beaufort Encerada"')
+            expect(page.locator('text="Chaqueta Barbour Beaufort Encerada"').first).to_be_visible()
             page.screenshot(path=str(self.artifacts_dir / "daily_09_dashboard_sold_tab.png"))
             self.assertTrue(page.locator('text="Chaqueta Barbour Beaufort Encerada"').first.is_visible())
 
@@ -492,17 +491,17 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             viewport={"width": 390, "height": 844},
         ) as (_mobile_context, mobile_page):
             mobile_page.goto(f"{self.live_server_url}{reverse('storefront:catalog')}")
-            mobile_page.wait_for_selector("#categoryRail")
+            expect(mobile_page.locator("#categoryRail")).to_be_visible()
             mobile_page.screenshot(path=str(self.artifacts_dir / "daily_10_mobile_storefront_catalog.png"))
             self.assertFalse(mobile_page.evaluate("() => document.documentElement.scrollWidth > window.innerWidth"))
 
             mobile_page.goto(f"{self.live_server_url}{self.public_bike.get_public_url()}")
-            mobile_page.wait_for_selector("#mainProductPhoto")
+            expect(mobile_page.locator("#mainProductPhoto")).to_be_visible()
             mobile_page.screenshot(path=str(self.artifacts_dir / "daily_11_mobile_product_detail.png"))
             self.assertFalse(mobile_page.evaluate("() => document.documentElement.scrollWidth > window.innerWidth"))
 
             login_in_browser(mobile_page, self.live_server_url, "manager_daily", "password123")
-            mobile_page.wait_for_selector('nav[role="tablist"]')
+            expect(mobile_page.locator('nav[role="tablist"]').first).to_be_visible()
             mobile_page.screenshot(path=str(self.artifacts_dir / "daily_12_mobile_dashboard.png"))
             self.assertFalse(mobile_page.evaluate("() => document.documentElement.scrollWidth > window.innerWidth"))
 
@@ -517,14 +516,14 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             viewport={"width": 1280, "height": 900},
         ) as (_context, page):
             page.goto(f"{self.live_server_url}{reverse('storefront:home')}")
-            page.wait_for_selector('form[action*="/i18n/setlang/"]')
+            expect(page.locator('form[action*="/i18n/setlang/"]').first).to_be_visible()
 
             # Switch to Spanish first so baseline ES state is guaranteed regardless of test LANGUAGE_CODE
             with page.expect_response(lambda r: r.request.method == "POST" and "/i18n/setlang/" in r.url):
                 page.locator('button[name="language"][value="es"]').first.click()
             page.wait_for_load_state("domcontentloaded")
-            page.wait_for_selector('html[lang="es"]')
-            page.wait_for_selector("#categoryRail")
+            expect(page.locator("html")).to_have_attribute("lang", "es")
+            expect(page.locator("#categoryRail")).to_be_visible()
 
             page_text_es = page.content()
             self.assertEqual(page.locator("html").get_attribute("lang"), "es")
@@ -539,8 +538,8 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             with page.expect_response(lambda r: r.request.method == "POST" and "/i18n/setlang/" in r.url):
                 en_btn.click()
             page.wait_for_load_state("domcontentloaded")
-            page.wait_for_selector('html[lang="en"]')
-            page.wait_for_selector("#categoryRail")
+            expect(page.locator("html")).to_have_attribute("lang", "en")
+            expect(page.locator("#categoryRail")).to_be_visible()
 
             page_text_en = page.content()
             self.assertEqual(page.locator("html").get_attribute("lang"), "en")
@@ -552,7 +551,7 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
 
             # How-to-Buy guide in English
             page.goto(f"{self.live_server_url}{reverse('storefront:how_to_buy')}")
-            page.wait_for_selector("h1")
+            expect(page.locator("h1").first).to_be_visible()
             htb_text_en = page.content()
             self.assertIn("How to buy at Rápido Pack Alfafar?", htb_text_en)
             self.assertIn("24h no-commitment hold:", htb_text_en)
@@ -564,8 +563,8 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             with page.expect_response(lambda r: r.request.method == "POST" and "/i18n/setlang/" in r.url):
                 es_btn.click()
             page.wait_for_load_state("domcontentloaded")
-            page.wait_for_selector('html[lang="es"]')
-            page.wait_for_selector("h1")
+            expect(page.locator("html")).to_have_attribute("lang", "es")
+            expect(page.locator("h1").first).to_be_visible()
             htb_text_es = page.content()
             self.assertEqual(page.locator("html").get_attribute("lang"), "es")
             self.assertIn("¿Cómo comprar en Rápido Pack Alfafar?", htb_text_es)

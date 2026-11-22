@@ -591,10 +591,10 @@ class BrowserPWAServiceWorkerAndPushTests(StaticLiveServerTestCase):
             )
 
             self.assertIn("/dashboard/", page.url)
-            manifest_href = page.get_attribute('link[rel="manifest"]', "href")
+            manifest_href = page.locator('link[rel="manifest"]').get_attribute("href")
             self.assertEqual(manifest_href, "/manifest.json")
             self.assertEqual(
-                page.get_attribute('meta[name="apple-mobile-web-app-capable"]', "content"),
+                page.locator('meta[name="apple-mobile-web-app-capable"]').get_attribute("content"),
                 "yes",
             )
 

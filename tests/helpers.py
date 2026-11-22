@@ -201,10 +201,12 @@ def login_in_browser(
             status = resp.status if resp is not None else None
             raise AssertionError(f"GET /login/ failed: status={status} url={page.url}")
 
-    page.wait_for_selector("#id_username", timeout=10000)
-    page.fill("#id_username", username)
-    page.fill("#id_password", password)
-    page.click("#loginSubmitBtn")
+    from playwright.sync_api import expect
+
+    expect(page.locator("#id_username")).to_be_visible(timeout=10000)
+    page.locator("#id_username").fill(username)
+    page.locator("#id_password").fill(password)
+    page.locator("#loginSubmitBtn").click()
     try:
         page.wait_for_url(expected_url_pattern, wait_until=wait_until, timeout=15000)
     except Exception as exc:

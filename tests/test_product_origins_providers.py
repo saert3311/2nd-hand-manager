@@ -11,6 +11,7 @@ from django.test import TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import translation
+from playwright.sync_api import expect
 
 from inventory.forms import ProductIntakeForm
 from inventory.models import (
@@ -673,7 +674,7 @@ class OriginInteractiveBrowserTests(StaticLiveServerTestCase):
                 page,
                 f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.pallet_product.pk})}",
             )
-            page.wait_for_selector("#id_provider")
+            expect(page.locator("#id_provider")).to_be_visible()
 
             provider_select = page.locator("#id_provider")
             pallet_select = page.locator("#id_pallet")
@@ -692,18 +693,18 @@ class OriginInteractiveBrowserTests(StaticLiveServerTestCase):
         with open_browser_page(self._browser, self) as (_context, page):
             login_in_browser(page, self.live_server_url, "mgr_browser_origin", "pw")
             goto_authenticated(page, f"{self.live_server_url}{reverse('inventory:pallets')}")
-            page.wait_for_selector(f"#pallet-card-{self.pallet.pk}")
+            expect(page.locator(f"#pallet-card-{self.pallet.pk}")).to_be_visible()
 
-            page.click(f"#pallet-card-{self.pallet.pk} button")
+            page.locator(f"#pallet-card-{self.pallet.pk} button").first.click()
             modal = page.locator("#deleteOriginModal")
             self.assertTrue(modal.is_visible())
             self.assertIn("Pallet #77", page.locator("#deleteOriginModalWarning").inner_text())
-            page.click("#deleteOriginModal button:has-text('Cancel')")
+            page.locator("#deleteOriginModal button:has-text('Cancel')").first.click()
             self.assertFalse(modal.is_visible())
 
-            page.click("#tabBtnProviders")
-            page.click(f"#provider-card-{self.supplier.pk} button")
+            page.locator("#tabBtnProviders").click()
+            page.locator(f"#provider-card-{self.supplier.pk} button").first.click()
             self.assertTrue(modal.is_visible())
             self.assertIn("BrowserSup", page.locator("#deleteOriginModalWarning").inner_text())
-            page.click("#deleteOriginModal button:has-text('Cancel')")
+            page.locator("#deleteOriginModal button:has-text('Cancel')").first.click()
             self.assertFalse(modal.is_visible())

@@ -9,6 +9,7 @@ from decimal import Decimal
 
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import override_settings
+from playwright.sync_api import expect
 
 from inventory.models import Product, ProductStatus
 from tests.helpers import (
@@ -75,7 +76,7 @@ class DashboardResponsiveUITests(StaticLiveServerTestCase):
             viewport={"width": 1280, "height": 800},
         ) as (_context, page):
             login_in_browser(page, self.live_server_url, "testmanager", "password123")
-            page.wait_for_selector('nav[role="tablist"]')
+            expect(page.locator('nav[role="tablist"]').first).to_be_visible()
 
             for label, width, height in viewports:
                 page.set_viewport_size({"width": width, "height": height})

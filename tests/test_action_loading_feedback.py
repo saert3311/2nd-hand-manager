@@ -21,6 +21,7 @@ from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.files.base import ContentFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from playwright.sync_api import expect
 
 from inventory.models import MarketplaceSite, Product, ProductClarification, ProductImage
 from tests.helpers import (
@@ -187,12 +188,12 @@ class ActionLoadingFeedbackBrowserTests(StaticLiveServerTestCase):
                     page.set_input_files("#imageInput", str(self.sample_img_path))
                     page.wait_for_function("() => !document.getElementById('identifyBtn').disabled")
 
-                    page.click("#identifyBtn")
+                    page.locator("#identifyBtn").click()
 
                     # Skeleton appears with aria-busy="true", spinner, and non-blocked notes textarea while fetch is suspended
-                    page.wait_for_selector("#aiIdentificationSkeleton:not(.hidden)")
-                    self.assertEqual(page.get_attribute("#aiIdentificationSkeleton", "aria-busy"), "true")
-                    self.assertTrue(page.is_visible("#id_raw_note"))
+                    expect(page.locator("#aiIdentificationSkeleton:not(.hidden)")).to_be_visible()
+                    self.assertEqual(page.locator("#aiIdentificationSkeleton").get_attribute("aria-busy"), "true")
+                    self.assertTrue(page.locator("#id_raw_note").is_visible())
                     self._assert_no_horizontal_overflow(page, f"{label} during identifying skeleton")
 
                     # Wait for live elapsed timer to advance >= 1s while request stays in-flight
@@ -224,10 +225,10 @@ class ActionLoadingFeedbackBrowserTests(StaticLiveServerTestCase):
                     )
 
                     # Once completed, skeleton hides and advisory banner renders
-                    page.wait_for_selector("#aiAdvisoryBanner:not(.hidden)", timeout=5000)
-                    self.assertIn("hidden", page.get_attribute("#aiIdentificationSkeleton", "class"))
-                    self.assertEqual(page.get_attribute("#aiIdentificationSkeleton", "aria-busy"), "false")
-                    self.assertIn("Mahlkonig Vario Grinder", page.inner_text("#advisoryTitle"))
+                    expect(page.locator("#aiAdvisoryBanner:not(.hidden)")).to_be_visible(timeout=5000)
+                    self.assertIn("hidden", page.locator("#aiIdentificationSkeleton").get_attribute("class") or "")
+                    self.assertEqual(page.locator("#aiIdentificationSkeleton").get_attribute("aria-busy"), "false")
+                    self.assertIn("Mahlkonig Vario Grinder", page.locator("#advisoryTitle").inner_text())
                     self._assert_no_horizontal_overflow(page, f"{label} after identification completed")
 
     def test_product_detail_ai_skeleton_confirm_modal_cancel_and_pageshow_reset(self):
@@ -251,30 +252,30 @@ class ActionLoadingFeedbackBrowserTests(StaticLiveServerTestCase):
                   }, { once: false });
                 }"""
             )
-            page.click("#aiBtn")
-            page.wait_for_selector("#aiGeneratingSkeleton:not(.hidden)")
-            self.assertEqual(page.get_attribute("#aiGeneratingSkeleton", "aria-busy"), "true")
-            self.assertEqual(page.get_attribute("#aiBtn", "aria-busy"), "true")
+            page.locator("#aiBtn").click()
+            expect(page.locator("#aiGeneratingSkeleton:not(.hidden)")).to_be_visible()
+            self.assertEqual(page.locator("#aiGeneratingSkeleton").get_attribute("aria-busy"), "true")
+            self.assertEqual(page.locator("#aiBtn").get_attribute("aria-busy"), "true")
             self._assert_no_horizontal_overflow(page, "product_detail 360x800 during aiGeneratingSkeleton")
 
             # 2. Dispatch pageshow (bfcache restoration) and verify full cleanup
             page.evaluate("() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))")
             page.wait_for_function("() => document.getElementById('aiGeneratingSkeleton').classList.contains('hidden')")
             self.assertFalse(page.evaluate("() => document.getElementById('aiBtn').disabled"))
-            self.assertIsNone(page.get_attribute("#aiBtn", "aria-busy"))
+            self.assertIsNone(page.locator("#aiBtn").get_attribute("aria-busy"))
 
             # 3. Verify cancelling data-confirm-message modal does NOT leave trigger button stuck in loading state
-            page.click("#tabBtnWorkspaceNotes")
+            page.locator("#tabBtnWorkspaceNotes").click()
             dismiss_btn = page.locator("form[data-confirm-message] button[type='submit']").first
             dismiss_btn.click()
-            page.wait_for_selector("#actionConfirmModal:not(.hidden)")
-            page.click("#btnCancelActionConfirm")
+            expect(page.locator("#actionConfirmModal:not(.hidden)")).to_be_visible()
+            page.locator("#btnCancelActionConfirm").click()
             page.wait_for_function("() => document.getElementById('actionConfirmModal').classList.contains('hidden')")
             self.assertIsNone(dismiss_btn.get_attribute("data-loading-active"))
             self.assertFalse(dismiss_btn.is_disabled())
 
             # 4. Verify regular data-loading-text button transitions and resets on pageshow
-            page.click("#tabBtnWorkspaceListing")
+            page.locator("#tabBtnWorkspaceListing").click()
             save_btn = page.locator("#btnSaveListingChanges")
             page.evaluate(
                 """() => {

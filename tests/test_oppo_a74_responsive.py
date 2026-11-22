@@ -19,6 +19,7 @@ from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.files.base import ContentFile
 from django.test import override_settings
 from django.urls import reverse
+from playwright.sync_api import expect
 
 from inventory.models import (
     Category,
@@ -189,41 +190,41 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
 
                 # 1. Public Storefront Home
                 page.goto(f"{self.live_server_url}{reverse('storefront:home')}")
-                page.wait_for_selector("h1")
+                expect(page.locator("h1").first).to_be_visible()
                 self._assert_no_horizontal_overflow(page, f"storefront_home_{vp_name}", w, h)
 
                 # 2. Storefront Catalog
                 page.goto(f"{self.live_server_url}{reverse('storefront:catalog')}")
-                page.wait_for_selector("#categoryRail")
+                expect(page.locator("#categoryRail")).to_be_visible()
                 assert_visible_images_loaded(self, page)
                 self._assert_no_horizontal_overflow(page, f"storefront_catalog_{vp_name}", w, h)
 
                 # 3. Public Product Detail
                 page.goto(f"{self.live_server_url}{self.p_active.get_public_url()}")
-                page.wait_for_selector("#mainProductPhoto")
+                expect(page.locator("#mainProductPhoto")).to_be_visible()
                 assert_visible_images_loaded(self, page, "#mainProductPhoto")
                 self._assert_no_horizontal_overflow(page, f"storefront_detail_{vp_name}", w, h)
 
                 # 4. How to Buy Guide
                 page.goto(f"{self.live_server_url}{reverse('storefront:how_to_buy')}")
-                page.wait_for_selector("h1")
+                expect(page.locator("h1").first).to_be_visible()
                 self._assert_no_horizontal_overflow(page, f"storefront_how_to_buy_{vp_name}", w, h)
 
                 # 5. Cookie Control dialog (collapsed first-visit & expanded preferences via footer trigger)
                 page.goto(f"{self.live_server_url}{reverse('storefront:home')}")
-                page.wait_for_selector("h1")
+                expect(page.locator("h1").first).to_be_visible()
                 footer_cookie_btn = page.locator("#footer-cookie-settings-btn")
                 footer_cookie_btn.scroll_into_view_if_needed()
                 footer_cookie_btn.click()
-                page.wait_for_selector("#cookie-banner-container:not(.hidden)")
-                page.wait_for_selector("#cookie-settings-panel:not(.hidden)")
+                expect(page.locator("#cookie-banner-container:not(.hidden)")).to_be_visible()
+                expect(page.locator("#cookie-settings-panel:not(.hidden)")).to_be_visible()
                 self._assert_no_horizontal_overflow(page, f"storefront_cookie_modal_{vp_name}", w, h)
-                page.click("#cookie-quick-close-btn")
-                page.wait_for_selector("#cookie-banner-container", state="hidden")
+                page.locator("#cookie-quick-close-btn").click()
+                expect(page.locator("#cookie-banner-container")).to_be_hidden()
 
                 # 6. Custom 404 page
                 page.goto(f"{self.live_server_url}/non-existent-route-xyz-404/")
-                page.wait_for_selector("body")
+                expect(page.locator("body")).to_be_visible()
                 self._assert_no_horizontal_overflow(page, f"error_404_{vp_name}", w, h)
 
     def test_oppo_a74_staff_workspace_responsive(self):
@@ -244,11 +245,11 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 ):
                     es_btn.click()
                 page.wait_for_load_state("domcontentloaded")
-                page.wait_for_selector('html[lang="es"]')
+                page.locator('html[lang="es"]').wait_for(state="attached")
 
             # 1. Login Page
             page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
-            page.wait_for_selector("#id_username")
+            expect(page.locator("#id_username")).to_be_visible()
             for vp_name, w, h in self.OPPO_VIEWPORTS:
                 self._assert_no_horizontal_overflow(page, f"login_{vp_name}", w, h)
 
@@ -259,7 +260,7 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 "password123",
                 navigate_to_login=False,
             )
-            page.wait_for_selector('nav[role="tablist"]')
+            expect(page.locator('nav[role="tablist"]').first).to_be_visible()
 
             # 2. Dashboard
             for vp_name, w, h in self.OPPO_VIEWPORTS:
@@ -272,16 +273,16 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                     f"Dashboard {vp_name}",
                 )
 
-            page.click('#perPageSelector a[href*="per_page=50"]')
+            page.locator('#perPageSelector a[href*="per_page=50"]').click()
             page.wait_for_url("**/dashboard/**per_page=50**")
-            page.wait_for_selector('#perPageSelector a[href*="per_page=50"][aria-current="true"]')
+            expect(page.locator('#perPageSelector a[href*="per_page=50"][aria-current="true"]')).to_be_visible()
             self._assert_no_horizontal_overflow(page, "dashboard_per_page_50_oppo_lowdpi", 320, 711)
 
             # 3. Intake Page (+ uploaded image preview)
             goto_authenticated(page, f"{self.live_server_url}{reverse('inventory:intake')}")
-            page.wait_for_selector("#dropZone")
+            expect(page.locator("#dropZone")).to_be_visible()
             page.set_input_files("#imageInput", str(self.sample_img_path))
-            page.wait_for_selector("#previewGrid img")
+            expect(page.locator("#previewGrid img").first).to_be_visible()
             for vp_name, w, h in self.OPPO_VIEWPORTS:
                 self._assert_no_horizontal_overflow(page, f"intake_{vp_name}", w, h)
                 self._assert_controls_visible_and_inside_viewport(
@@ -303,11 +304,11 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
 
             # 4. Pallets & Providers Hub + Provider Edit
             goto_authenticated(page, f"{self.live_server_url}{reverse('inventory:pallets')}")
-            page.wait_for_selector("#btnCreatePallet")
+            expect(page.locator("#btnCreatePallet")).to_be_visible()
             for vp_name, w, h in self.OPPO_VIEWPORTS:
                 self._assert_no_horizontal_overflow(page, f"pallets_{vp_name}", w, h)
 
-            page.click("#tabBtnProviders")
+            page.locator("#tabBtnProviders").click()
             self.assertTrue(page.locator("#panelProviders").is_visible())
             for vp_name, w, h in self.OPPO_VIEWPORTS:
                 self._assert_no_horizontal_overflow(page, f"providers_tab_{vp_name}", w, h)
@@ -318,7 +319,7 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                     page,
                     f"{self.live_server_url}{reverse('inventory:provider_edit', kwargs={'pk': seeded_provider.pk})}",
                 )
-                page.wait_for_selector("main")
+                expect(page.locator("main")).to_be_visible()
                 for vp_name, w, h in self.OPPO_VIEWPORTS:
                     self._assert_no_horizontal_overflow(page, f"provider_edit_{vp_name}", w, h)
 
@@ -327,7 +328,7 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 page,
                 f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.p_active.pk})}",
             )
-            page.wait_for_selector("#id_sale_price")
+            expect(page.locator("#id_sale_price")).to_be_visible()
             assert_visible_images_loaded(self, page)
 
             font_size = page.evaluate(
@@ -339,7 +340,7 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
             if disclosure.count() > 0:
                 disclosure.locator("summary").click()
             page.set_input_files("#detailImageInput", str(self.sample_img_path))
-            page.wait_for_selector("#detailPendingGrid img")
+            expect(page.locator("#detailPendingGrid img").first).to_be_visible()
 
             for vp_name, w, h in self.OPPO_VIEWPORTS:
                 self._assert_no_horizontal_overflow(page, f"product_detail_{vp_name}", w, h)

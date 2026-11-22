@@ -427,7 +427,7 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
 
             # 1. URL query ?tab=notes activates Notes tab immediately
             goto_authenticated(page, f"{detail_url}?tab=notes", wait_until="load")
-            page.wait_for_selector("#detailWorkspaceTablist")
+            expect(page.locator("#detailWorkspaceTablist")).to_be_visible()
             self.assertEqual(page.locator("#tabBtnWorkspaceNotes").get_attribute("aria-selected"), "true")
             self.assertTrue(page.locator("#workspacePanelNotes").is_visible())
 
@@ -449,33 +449,33 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
             self.assertTrue(page.locator("#workspacePanelNotes").is_visible())
 
             # 4. Ctrl+S inside Tab 3 (Notes) MUST NOT submit #productStagingForm or clear unsent note text
-            page.fill("#directNoteText", "Borrador de nota que no debe perderse")
+            page.locator("#directNoteText").fill("Borrador de nota que no debe perderse")
             page.locator("#directNoteText").press("Control+s")
             expect(page.locator("#directNoteText")).to_have_value("Borrador de nota que no debe perderse")
             expect(page.locator("#tabBtnWorkspaceNotes")).to_have_attribute("aria-selected", "true")
 
             # 5. Cross-tab HTML5 invalid input on Tab 1 must switch back to Listing when saving from Tab 2
-            page.click("#tabBtnWorkspaceListing")
-            page.fill("#id_sale_price", "-5")
-            page.click("#tabBtnWorkspaceChannels")
+            page.locator("#tabBtnWorkspaceListing").click()
+            page.locator("#id_sale_price").fill("-5")
+            page.locator("#tabBtnWorkspaceChannels").click()
             self.assertEqual(page.locator("#tabBtnWorkspaceChannels").get_attribute("aria-selected"), "true")
-            page.click("#btnSaveListingChanges")
+            page.locator("#btnSaveListingChanges").click()
             page.wait_for_function("() => document.activeElement && document.activeElement.id === 'id_sale_price'")
             self.assertEqual(page.locator("#tabBtnWorkspaceListing").get_attribute("aria-selected"), "true")
 
             # Fix sale_price and verify live counters + unsaved badge update
-            page.fill("#id_sale_price", "149.50")
+            page.locator("#id_sale_price").fill("149.50")
             title_text = "Sony WH-1000XM4 Edicion Prueba"
-            page.fill("#id_ai_title", title_text)
-            page.fill("#id_ai_description", "Linea 1\nLinea 2")
+            page.locator("#id_ai_title").fill(title_text)
+            page.locator("#id_ai_description").fill("Linea 1\nLinea 2")
             self.assertIn(f"{len(title_text)} / 255", page.locator("#titleCharCounter").inner_text())
             self.assertIn("2 lines", page.locator("#descCharCounter").inner_text())
             self.assertFalse(page.locator("#unsavedChangesBadge").evaluate("el => el.classList.contains('hidden')"))
 
             # 6. Copy Ad formats payload AND rapid double-click does not lock label as "Copied!"
             orig_copy_label = page.locator("#btnCopyFullListingPack").inner_text().strip()
-            page.click("#btnCopyFullListingPack")
-            page.click("#btnCopyFullListingPack")
+            page.locator("#btnCopyFullListingPack").click()
+            page.locator("#btnCopyFullListingPack").click()
             page.wait_for_function("() => window.__copiedPayloads.length >= 1")
             expect(page.locator("#btnCopyFullListingPack")).to_have_text(orig_copy_label, timeout=5000)
             copied = page.evaluate("window.__copiedPayloads")
@@ -486,7 +486,7 @@ class ProductDetailTabsBrowserTests(StaticLiveServerTestCase):
 
             # 7. Simulated non-HTTPS LAN context (navigator.clipboard = undefined) does not throw
             page.evaluate("Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });")
-            page.click("#btnCopyFullListingPack")
+            page.locator("#btnCopyFullListingPack").click()
 
             # 8. Ctrl+S from Tab 1 saves form to DB
             with page.expect_response(

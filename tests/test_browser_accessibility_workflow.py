@@ -88,7 +88,7 @@ class BrowserAccessibilityWorkflowTests(StaticLiveServerTestCase):
 
             # 1. Public Storefront Skip Link & WCAG AAA contrast
             page.goto(f"{self.live_server_url}{reverse('storefront:home')}")
-            page.wait_for_selector("header nav")
+            expect(page.locator("header nav").first).to_be_visible()
 
             page.keyboard.press("Tab")
             skip_link = page.locator('a[href="#main-content"]')
@@ -97,29 +97,28 @@ class BrowserAccessibilityWorkflowTests(StaticLiveServerTestCase):
 
             whatsapp_cta = page.locator('a[href*="/go/whatsapp/"]').first
             self.assertTrue(whatsapp_cta.is_visible())
-            color_info = page.evaluate(
+            color_info = whatsapp_cta.evaluate(
                 """(el) => {
                     const s = window.getComputedStyle(el);
                     return { color: s.color, bgColor: s.backgroundColor, fontWeight: s.fontWeight };
-                }""",
-                whatsapp_cta.element_handle(),
+                }"""
             )
             self.assertIn("rgb(2, 6, 23)", color_info["color"])
             self.assertIn("rgb(37, 211, 102)", color_info["bgColor"])
 
             # 2. Catalog (/tienda/) & How-to-Buy Modal
             page.goto(f"{self.live_server_url}{reverse('storefront:catalog')}")
-            page.wait_for_selector("#categoryRail")
+            expect(page.locator("#categoryRail")).to_be_visible()
 
-            h1_catalog = page.inner_text("h1")
+            h1_catalog = page.locator("h1").inner_text()
             self.assertTrue(len(h1_catalog) > 0, "Catalog must render an <h1>")
 
-            page.click('button:has-text("Cómo comprar"), button:has-text("How to buy")')
-            page.wait_for_selector("#how-to-buy-dialog[open]")
-            self.assertTrue(len(page.inner_text("#how-to-buy-title")) > 0)
+            page.locator('button:has-text("Cómo comprar"), button:has-text("How to buy")').first.click()
+            expect(page.locator("#how-to-buy-dialog[open]")).to_be_visible()
+            self.assertTrue(len(page.locator("#how-to-buy-title").inner_text()) > 0)
             page.screenshot(path=str(self.artifacts_dir / "02_how_to_buy_modal_h2.png"))
             page.keyboard.press("Escape")
-            page.wait_for_selector("#how-to-buy-dialog", state="hidden")
+            expect(page.locator("#how-to-buy-dialog")).to_be_hidden()
 
             self.assertEqual(len(native_dialogs), 0, f"Unexpected native JS dialogs triggered: {native_dialogs}")
 
@@ -137,9 +136,9 @@ class BrowserAccessibilityWorkflowTests(StaticLiveServerTestCase):
 
             # 3. Staff Login Screen semantics
             page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
-            page.wait_for_selector("#id_username")
+            expect(page.locator("#id_username")).to_be_visible()
 
-            login_h1 = page.inner_text("h1")
+            login_h1 = page.locator("h1").inner_text()
             self.assertTrue(
                 "INICIA" in login_h1.upper()
                 or "SESI" in login_h1.upper()
@@ -161,7 +160,7 @@ class BrowserAccessibilityWorkflowTests(StaticLiveServerTestCase):
 
             # 4. Staff Dashboard Skip Link
             goto_authenticated(page, f"{self.live_server_url}{reverse('inventory:dashboard')}")
-            page.wait_for_selector("#main-content")
+            expect(page.locator("#main-content")).to_be_visible()
 
             page.keyboard.press("Tab")
             staff_skip = page.locator('a[href="#main-content"]')
@@ -171,11 +170,11 @@ class BrowserAccessibilityWorkflowTests(StaticLiveServerTestCase):
             # 5. Staging Product Detail: Heading, ARIA tabs & Validation role="alert"
             detail_url = f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.product.pk})}"
             goto_authenticated(page, detail_url)
-            page.wait_for_selector("h1")
+            expect(page.locator("h1").first).to_be_visible()
 
-            self.assertIn("Chaqueta Vintage Harrington", page.inner_text("h1"))
+            self.assertIn("Chaqueta Vintage Harrington", page.locator("h1").first.inner_text())
 
-            page.click("#tabBtnWorkspaceNotes")
+            page.locator("#tabBtnWorkspaceNotes").click()
             tab_direct = page.locator("#tabBtnDirectNote")
             tab_doubt = page.locator("#tabBtnAskDoubt")
             self.assertEqual(tab_direct.get_attribute("aria-selected"), "true")
@@ -189,59 +188,59 @@ class BrowserAccessibilityWorkflowTests(StaticLiveServerTestCase):
             page.screenshot(path=str(self.artifacts_dir / "05_clarifications_tab_doubt.png"))
 
             # Test Form Validation Errors with role='alert'
-            page.click("#tabBtnWorkspaceListing")
-            page.check('input[name="is_sold"]')
+            page.locator("#tabBtnWorkspaceListing").click()
+            page.locator('input[name="is_sold"]').check()
             with page.expect_response(
                 lambda r: r.request.method == "POST" and f"/products/{self.product.pk}/" in r.url
             ):
-                page.click("#btnSaveListingChanges")
+                page.locator("#btnSaveListingChanges").click()
             page.wait_for_load_state("domcontentloaded")
-            page.wait_for_selector('[role="alert"]')
             alert_el = page.locator('[role="alert"]').first
+            expect(alert_el).to_be_visible()
             self.assertTrue(alert_el.is_visible(), "Inline validation error with role='alert' must be visible")
             page.screenshot(path=str(self.artifacts_dir / "06_form_validation_role_alert.png"))
 
             # Uncheck is_sold and save cleanly
-            page.uncheck('input[name="is_sold"]')
+            page.locator('input[name="is_sold"]').uncheck()
             with page.expect_response(
                 lambda r: r.request.method == "POST" and f"/products/{self.product.pk}/" in r.url
             ):
-                page.click("#btnSaveListingChanges")
+                page.locator("#btnSaveListingChanges").click()
             page.wait_for_load_state("domcontentloaded")
-            page.wait_for_selector("#tabBtnWorkspaceChannels")
+            expect(page.locator("#tabBtnWorkspaceChannels")).to_be_visible()
             expect(page.locator('input[name="is_sold"]')).not_to_be_checked()
 
             # 6. Accessible #actionConfirmModal without native dialogs
-            page.click("#tabBtnWorkspaceChannels")
+            page.locator("#tabBtnWorkspaceChannels").click()
             wallapop_row = page.locator('div[data-site-slug="wallapop"]')
             self.assertTrue(wallapop_row.is_visible())
 
             wallapop_row.locator('button[onclick*="openEditListingModal"]').click()
-            page.wait_for_selector("#editListingModal:not(.hidden)")
+            expect(page.locator("#editListingModal:not(.hidden)")).to_be_visible()
 
             delete_btn = page.locator('#deleteListingForm button[type="submit"]')
             delete_btn.click()
 
             confirm_modal = page.locator("#actionConfirmModal")
-            page.wait_for_selector("#actionConfirmModal:not(.hidden)")
+            expect(page.locator("#actionConfirmModal:not(.hidden)")).to_be_visible()
             self.assertTrue(confirm_modal.is_visible())
             self.assertEqual(confirm_modal.get_attribute("role"), "dialog")
             self.assertEqual(confirm_modal.get_attribute("aria-modal"), "true")
-            self.assertTrue(len(page.inner_text("#actionConfirmModalTitle")) > 0)
+            self.assertTrue(len(page.locator("#actionConfirmModalTitle").inner_text()) > 0)
             page.screenshot(path=str(self.artifacts_dir / "07_accessible_action_confirm_modal.png"))
 
-            page.click("#btnCancelActionConfirm")
-            page.wait_for_selector("#actionConfirmModal", state="hidden")
+            page.locator("#btnCancelActionConfirm").click()
+            expect(page.locator("#actionConfirmModal")).to_be_hidden()
             self.assertFalse(confirm_modal.is_visible(), "Modal should close on cancel")
 
             delete_btn.click()
-            page.wait_for_selector("#actionConfirmModal:not(.hidden)")
+            expect(page.locator("#actionConfirmModal:not(.hidden)")).to_be_visible()
             with page.expect_response(
                 lambda r: r.request.method == "POST" and f"/products/{self.product.pk}/links/" in r.url
             ):
-                page.click("#btnProceedActionConfirm")
+                page.locator("#btnProceedActionConfirm").click()
             page.wait_for_load_state("domcontentloaded")
-            page.wait_for_selector("#main-content")
+            expect(page.locator("#main-content")).to_be_visible()
             self.assertEqual(page.locator('div[data-site-slug="wallapop"]').count(), 0)
 
             self.assertEqual(len(native_dialogs), 0, f"Unexpected native JS dialogs triggered: {native_dialogs}")
@@ -262,7 +261,7 @@ class BrowserAccessibilityWorkflowTests(StaticLiveServerTestCase):
                 mobile_page,
                 detail_url,
             )
-            mobile_page.wait_for_selector("#id_sale_price")
+            expect(mobile_page.locator("#id_sale_price")).to_be_visible()
 
             input_font_size = mobile_page.evaluate(
                 """() => {
