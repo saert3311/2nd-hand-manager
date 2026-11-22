@@ -22,8 +22,8 @@ This file defines the mandatory operational rules, development workflow, archite
 6. **Low-DPI & Narrow Android Mobile Viewports (OPPO A74 Baseline)**
    - Every page and UI component must render cleanly without horizontal overflow, clipped controls, or squished text on low-DPI and narrow Android mobile viewports such as the **OPPO A74** (`360×800` standard CSS viewport and `320×711` with Android display zoom / low effective DPI), not just `390×844` iPhone viewports.
 7. **Mandatory Post-Implementation Audit & Live UI Verification (No Self-Review)**
-   - Before requesting merge approval, every non-trivial branch must pass the tiered audit in `.agents/skills/post-impl-audit/SKILL.md` (`Tier 0`–`Tier 3` based on `git diff --name-only master...HEAD`).
-   - **No self-review:** Delegate code and lean/bloat audits (fusing `/code-review-and-quality` + `/ponytail-review`) to a fresh `code-reviewer` subagent; run whole-repo `/ponytail-audit` on releases, major milestones, or explicit user request.
+   - Before requesting merge approval, every branch must pass the tiered audit in `.agents/skills/post-impl-audit/SKILL.md` (`Tier 0`–`Tier 3` based on `git diff --name-only master...HEAD`).
+   - **No self-review:** Delegate code and lean/bloat audits (fusing `code-review-and-quality` + `ponytail-review`) to a fresh `code-reviewer` subagent supplied with a parent-prepared diff bundle; run whole-repo `/ponytail-audit` on releases, major milestones, or explicit user request.
    - **UI craft & live browser check:** Read Gemini DemoLab (`gemini-frontend-design`) *before* creating or modifying UI (`storefront/`, `inventory/templates/`, `*.html`, `*.css`, `*.js`), apply surface precedence (Section 4), and verify rendered pages via the `browser` subagent across Desktop (above & below fold), `390×844`, `360×800`, and `320×711`.
 
 ---
@@ -65,25 +65,18 @@ Deliver code in atomic, logically scoped commits following Conventional Commits:
    - Build responsive, mobile-first interfaces across storefront and staging templates (`intake.html`, `dashboard.html`, `product_detail.html`, `base.html`, `storefront/`).
    - Commit as: `feat(ui): ...` and `feat(dashboard): ...`
 
-### Step 5: Bilingual Localization, Tests & Changelog
+### Step 5: Bilingual Localization, Tests, Changelog & Release Prep
 - **Translations**: Wrap all user-facing strings in Python (`gettext_lazy as _` / `gettext as _`) and templates (`{% trans %}` / `{% blocktrans %}`). Add Spanish translations to `locale/es/LC_MESSAGES/django.po` and compile to `django.mo` using `python manage.py compile_locales`.
 - **Automated Tests**: Create or extend `tests/test_<feature>.py` covering models, services, forms, view permissions (manager vs. assistant), dashboard filtering/scoping, admin integration, and ES/EN localization.
 - **Changelog & Task Tracking**: Document the changes in `CHANGELOG.md` and check off completed items (`[x]`) in `tasks/todo.md`.
 - Commit as: `feat(<scope>): add test suite, bilingual translations, and changelog for <feature>`
+- **Release Prep (when cutting a release):** Bump the default `APP_VERSION` in `config/settings.py` (and `Dockerfile` if applicable), seal the version section in `CHANGELOG.md` (`## [X.Y.Z] - YYYY-MM-DD`), and commit as `docs(release): bump version to X.Y.Z and seal changelog for <feature>` *before* running Step 5.5 so `master...HEAD` triggers Tier 3.
 
 ### Step 5.5: Post-Implementation Audit (`.agents/skills/post-impl-audit/SKILL.md`)
-- Run the tiered audit protocol from `.agents/skills/post-impl-audit/SKILL.md` based on `git diff --name-only master...HEAD`:
-  - **Tier 0 (Docs / comments / translations-only):** Standard CLI quality gates only.
-  - **Tier 1 (Code / logic / config / tests):** Fresh `code-reviewer` subagent running a fused `/code-review-and-quality` + `/ponytail-review` pass; fix all `Critical`, `Required`, and `Must fix` findings.
-  - **Tier 2 (UI changes: `*.html`, `*.css`, `*.js`, `storefront/`, `inventory/templates/`):** Tier 1 plus live `browser` subagent visual critique (Desktop above & below fold, `390×844`, `360×800`, `320×711`) against DemoLab Section 5 and OPPO A74 rules, using disposable local dev accounts for authenticated routes.
-  - **Tier 3 (Release version bump / milestone / explicit request):** Tier 1/2 plus whole-repo `/ponytail-audit`.
-- Commit any audit-driven fixes as: `fix(<scope>): address post-implementation audit findings`
+- Follow `.agents/skills/post-impl-audit/SKILL.md` to route `git diff --name-only master...HEAD` through Tiers 0–3 (fresh `code-reviewer` subagent, live `browser` critique for UI changes, whole-repo `/ponytail-audit` for releases/milestones).
+- Fix all `Critical`, `Required`, and `Must fix` findings and commit as: `fix(<scope>): address post-implementation audit findings`
 
-### Step 6: Release Bump & User Merge Approval Gate
-- When preparing a release:
-  1. Bump the default `APP_VERSION` in `config/settings.py` (and `Dockerfile` if applicable).
-  2. Seal the version section in `CHANGELOG.md` (`## [X.Y.Z] - YYYY-MM-DD`).
-  3. Commit as: `docs(release): bump version to X.Y.Z and seal changelog for <feature>`
+### Step 6: Merge Readiness Packet & User Merge Approval Gate
 - Present a **Merge Readiness Packet** (template in `.agents/skills/post-impl-audit/SKILL.md`) summarizing automated quality gates, audit tier applied, fresh `code-reviewer` verdict + resolved findings, Tier 2 live browser viewport critique (if UI changed), and Tier 3 `/ponytail-audit` verdict (if releasing).
 - **STOP AND ASK THE USER** before merging into `master`, creating git tags (`vX.Y.Z`), or pushing `master` to `origin`.
 
@@ -136,7 +129,7 @@ Deliver code in atomic, logically scoped commits following Conventional Commits:
 ### Frontend, Mobile UX & Accessibility Conventions
 - **UI Surface Precedence (Gemini DemoLab Calibration)**:
   - Read `gemini-frontend-design` (DemoLab) before UI design/edits and audit against its Section 5 visual-critique checklist afterward, respecting surface precedence:
-    - **`storefront/` (Public Customer Site)**: Brand tokens in `docs/stitch_references/DESIGN_SYSTEM.md` (`Rápido Pack` palette + `Outfit`/`Hanken Grotesk`) take precedence over DemoLab greenfield palette suggestions; DemoLab governs layout rhythm, hierarchy, copy/transition hygiene, and zero decorative clutter.
+    - **`storefront/` (Public Customer Site)**: Live brand tokens in `storefront/templates/storefront/base_public.html` (`rapidopackvalencia.es` palette `#059652` / `#111820` / `#ffffff`, `Outfit` + `Plus Jakarta Sans`) take precedence over DemoLab greenfield palette suggestions; DemoLab governs layout rhythm, hierarchy, copy/transition hygiene, and zero decorative clutter.
     - **`inventory/templates/` (Internal Staff Staging Hub)**: Tailwind utility conventions, semantic workflow status badges/pills, and OPPO A74 low-DPI ergonomics take precedence over DemoLab's marketing/anti-badge rules; DemoLab governs hierarchy, spacing, transition hygiene, and full-page visual critique.
 - **Low-DPI & Narrow Mobile Viewport Rule (OPPO A74 `360×800` & `320×711` Support)**:
   - Do not assume a `390px` (iPhone) minimum mobile width. Devices like the **OPPO A74** operate at a `360×800` CSS viewport by default and drop to `320×711` (or `320×640`) when Android Display Size / Font Scaling or low-DPI modes are active.
