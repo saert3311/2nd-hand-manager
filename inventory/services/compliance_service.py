@@ -135,6 +135,7 @@ __all__ = [
     "get_gemini_http_options",
     "invalidate_clause_matcher_cache",
     "is_compatible_gemini_model",
+    "is_recoverable_model_error",
     "merge_stage2_compliance_result",
     "normalize_text",
     "parse_gemini_response_dict",
@@ -289,7 +290,7 @@ def resolve_task_model_and_thinking(
     return resolved_model, resolved_thinking
 
 
-def _is_recoverable_model_error(exc: Exception) -> bool:
+def is_recoverable_model_error(exc: Exception) -> bool:
     """
     Returns True strictly when `exc` indicates a missing/deprecated model (404 NOT_FOUND)
     or an unsupported model/parameter error (400 INVALID_ARGUMENT), never for quota (429),
@@ -324,12 +325,15 @@ def _is_recoverable_model_error(exc: Exception) -> bool:
     )
 
 
+_is_recoverable_model_error = is_recoverable_model_error
+
+
 def _is_config_or_tool_error(exc: Exception) -> bool:
     """
     Returns True strictly when `exc` indicates a 400 / invalid_argument / unsupported feature error
-    (e.g., rejecting `tools` combined with JSON MIME mode), never for `404` or fatal quota/auth errors.
+    (e.g., rejecting `tools` combined with JSON MIME mode, or unsupported `seed`), never for `404` or fatal quota/auth errors.
     """
-    if not _is_recoverable_model_error(exc):
+    if not is_recoverable_model_error(exc):
         return False
     msg = str(exc or "").lower()
     return any(tok in msg for tok in ("400", "invalid_argument", "is not supported"))
@@ -356,16 +360,20 @@ def generate_content_with_fallback(
     fallback_models: tuple[str, ...] = FALLBACK_MODEL_CHAIN,
     use_web_search: bool = False,
     fallback_state: Optional[dict[str, Any]] = None,
+    system_instruction: Optional[str] = None,
+    seed: Optional[int] = None,
+    allow_ungrounded_fallback: bool = True,
 ) -> Any:
     """
     Executes `client.models.generate_content(...)` with model-clamped `ThinkingConfig`
     and self-heals on `404 NOT_FOUND` or `400 INVALID_ARGUMENT` by retrying down
     `fallback_models` (`gemini-4-hydrogen` -> `gemini-3.8-flash` -> `gemini-flash-latest`).
 
-    When `use_web_search=True`, attaches Gemini's built-in Google Search Grounding tool,
-    retries with prompt-enforced JSON on `400 INVALID_ARGUMENT` tool/MIME conflicts,
-    and falls back to un-grounded vision if all grounded candidates fail with recoverable
-    errors (recording `fallback_state["fell_back_to_ungrounded"] = True`).
+    Supports native `system_instruction` and deterministic `seed` (stripping `seed` on the
+    same model if rejected with `400 INVALID_ARGUMENT`). When `use_web_search=True`, attaches
+    Gemini's built-in Google Search Grounding tool, retries with prompt-enforced JSON on
+    `400 INVALID_ARGUMENT` tool/MIME conflicts, and optionally falls back to un-grounded vision
+    (or raises when `allow_ungrounded_fallback=False`) while recording `fallback_state`.
     """
     primary = (model or DEFAULT_GEMINI_MODEL).strip()
     candidates: list[str] = [primary]
@@ -375,6 +383,7 @@ def generate_content_with_fallback(
             candidates.append(fb_clean)
 
     search_tools = [types.Tool(google_search=types.GoogleSearch())] if use_web_search else None
+    clean_sys_inst = (system_instruction or "").strip() or None
 
     last_exc: Optional[Exception] = None
     for idx, candidate_model in enumerate(candidates):
@@ -385,6 +394,10 @@ def generate_content_with_fallback(
             "temperature": temperature,
             "thinking_config": thinking_cfg,
         }
+        if clean_sys_inst:
+            config_kwargs["system_instruction"] = clean_sys_inst
+        if seed is not None:
+            config_kwargs["seed"] = int(seed)
         if use_web_search:
             config_kwargs["tools"] = search_tools
         config = types.GenerateContentConfig(**config_kwargs)
@@ -397,7 +410,7 @@ def generate_content_with_fallback(
             )
         except Exception as exc:
             last_exc = exc
-            if not _is_recoverable_model_error(exc):
+            if not is_recoverable_model_error(exc):
                 raise
 
             if use_web_search and _is_config_or_tool_error(exc):
@@ -407,20 +420,39 @@ def generate_content_with_fallback(
                     exc,
                 )
                 prompt_fallback_contents = list(contents) + [_build_json_schema_prompt_appendix(response_schema)]
-                prompt_fallback_config = types.GenerateContentConfig(
-                    temperature=temperature,
-                    thinking_config=thinking_cfg,
-                    tools=search_tools,
-                )
+                prompt_fallback_kwargs: dict[str, Any] = {
+                    "temperature": temperature,
+                    "thinking_config": thinking_cfg,
+                    "tools": search_tools,
+                }
+                if clean_sys_inst:
+                    prompt_fallback_kwargs["system_instruction"] = clean_sys_inst
                 try:
                     return client.models.generate_content(
                         model=candidate_model,
                         contents=prompt_fallback_contents,
-                        config=prompt_fallback_config,
+                        config=types.GenerateContentConfig(**prompt_fallback_kwargs),
                     )
                 except Exception as exc2:
                     last_exc = exc2
-                    if not _is_recoverable_model_error(exc2):
+                    if not is_recoverable_model_error(exc2):
+                        raise
+            elif not use_web_search and seed is not None and _is_config_or_tool_error(exc):
+                logger.warning(
+                    "Gemini model '%s' rejected seed or config parameter (%s); retrying without seed.",
+                    candidate_model,
+                    exc,
+                )
+                no_seed_kwargs = {k: v for k, v in config_kwargs.items() if k != "seed"}
+                try:
+                    return client.models.generate_content(
+                        model=candidate_model,
+                        contents=contents,
+                        config=types.GenerateContentConfig(**no_seed_kwargs),
+                    )
+                except Exception as exc2:
+                    last_exc = exc2
+                    if not is_recoverable_model_error(exc2):
                         raise
 
             if idx < len(candidates) - 1:
@@ -432,24 +464,28 @@ def generate_content_with_fallback(
                 )
                 continue
 
-    if use_web_search and last_exc is not None and _is_recoverable_model_error(last_exc):
-        logger.warning(
-            "All grounded Gemini candidates failed with recoverable tool errors (%s); "
-            "falling back to standard un-grounded vision.",
-            last_exc,
-        )
+    if use_web_search and last_exc is not None and is_recoverable_model_error(last_exc):
         if fallback_state is not None:
             fallback_state["fell_back_to_ungrounded"] = True
-        return generate_content_with_fallback(
-            client,
-            model=model,
-            contents=contents,
-            response_schema=response_schema,
-            temperature=temperature,
-            thinking_level=thinking_level,
-            fallback_models=fallback_models,
-            use_web_search=False,
-        )
+        if allow_ungrounded_fallback:
+            logger.warning(
+                "All grounded Gemini candidates failed with recoverable tool errors (%s); "
+                "falling back to standard un-grounded vision.",
+                last_exc,
+            )
+            return generate_content_with_fallback(
+                client,
+                model=model,
+                contents=contents,
+                response_schema=response_schema,
+                temperature=temperature,
+                thinking_level=thinking_level,
+                fallback_models=fallback_models,
+                use_web_search=False,
+                system_instruction=system_instruction,
+                seed=seed,
+            )
+        raise last_exc
 
     if last_exc is not None:
         raise last_exc

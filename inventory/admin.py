@@ -653,6 +653,10 @@ class AIPromptConfigurationAdminForm(forms.ModelForm):
                 self.fields[override_field].widget = forms.Select(
                     choices=_choices_with_current(override_field, include_inherit=True)
                 )
+        if "temperature" in self.fields:
+            self.fields["temperature"].help_text = _(
+                "Sampling temperature between 0.0 and 1.0 (use 0.0–0.1 for strict template consistency across runs)."
+            )
 
 
 @admin.register(AIPromptConfiguration, site=admin_site)
