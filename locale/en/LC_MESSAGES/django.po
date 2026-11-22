@@ -4259,3 +4259,6 @@ msgstr "Searching AliExpress, Amazon & web catalogs..."
 msgid "Drafting grounded specs, pricing & listing copy..."
 msgstr "Drafting grounded specs, pricing & listing copy..."
 
+msgid "Web search was temporarily unavailable; AI listing was generated using standard photo analysis."
+msgstr "Web search was temporarily unavailable; AI listing was generated using standard photo analysis."
+

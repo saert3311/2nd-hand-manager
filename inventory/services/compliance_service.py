@@ -4,11 +4,9 @@ import logging
 import math
 import re
 from typing import Any, Optional
-from urllib.parse import urlparse
 
 from django.conf import settings
 from django.core.cache import cache
-from django.core.exceptions import ValidationError
 from django.db import OperationalError, ProgrammingError
 from django.utils.translation import get_language
 from google import genai
@@ -16,7 +14,6 @@ from google.genai import types
 from pydantic import BaseModel, Field
 
 from inventory.models import (
-    HTTP_URL_VALIDATOR,
     ComplianceStage,
     ComplianceVerdict,
     MarketplaceSite,
@@ -132,7 +129,6 @@ __all__ = [
     "ensure_default_policy_clauses",
     "evaluate_stage1_local",
     "evaluate_stage1_local_for_product",
-    "extract_grounding_metadata",
     "fetch_available_gemini_models",
     "format_top_clauses_prompt_block",
     "generate_content_with_fallback",
@@ -328,110 +324,15 @@ def _is_recoverable_model_error(exc: Exception) -> bool:
     )
 
 
-def _validate_http_url(raw_url: Any) -> str:
-    """Validates an external URL against HTTP/HTTPS schemes and returns the stripped URL or ''."""
-    if not isinstance(raw_url, str):
-        return ""
-    cleaned = raw_url.strip()
-    if not cleaned or len(cleaned) > 1000:
-        return ""
-    try:
-        HTTP_URL_VALIDATOR(cleaned)
-        return cleaned
-    except ValidationError:
-        return ""
-
-
-def extract_grounding_metadata(
-    response: Any,
-    extra_urls: Optional[list[str]] = None,
-    max_sources: int = 6,
-) -> dict[str, Any]:
+def _is_config_or_tool_error(exc: Exception) -> bool:
     """
-    Extracts executed Google Search queries and validated HTTP/HTTPS web reference
-    sources from a Gemini `GenerateContentResponse`'s `grounding_metadata` plus any
-    fallback schema `extra_urls`, deduplicated and capped at `max_sources`.
+    Returns True strictly when `exc` indicates a 400 / invalid_argument / unsupported feature error
+    (e.g., rejecting `tools` combined with JSON MIME mode), never for `404` or fatal quota/auth errors.
     """
-    queries: list[str] = []
-    seen_queries: set[str] = set()
-    sources: list[dict[str, str]] = []
-    seen_urls: set[str] = set()
-
-    candidates = getattr(response, "candidates", None)
-    grounding_meta = None
-    if isinstance(candidates, (list, tuple)) and candidates:
-        first_candidate = candidates[0]
-        grounding_meta = (
-            first_candidate.get("grounding_metadata")
-            if isinstance(first_candidate, dict)
-            else getattr(first_candidate, "grounding_metadata", None)
-        )
-
-    if grounding_meta is not None:
-        raw_queries = (
-            grounding_meta.get("web_search_queries")
-            if isinstance(grounding_meta, dict)
-            else getattr(grounding_meta, "web_search_queries", None)
-        )
-        if isinstance(raw_queries, (list, tuple)):
-            for q in raw_queries:
-                if isinstance(q, str):
-                    q_clean = q.strip()[:200]
-                    if q_clean and q_clean not in seen_queries:
-                        seen_queries.add(q_clean)
-                        queries.append(q_clean)
-                        if len(queries) >= 10:
-                            break
-
-        raw_chunks = (
-            grounding_meta.get("grounding_chunks")
-            if isinstance(grounding_meta, dict)
-            else getattr(grounding_meta, "grounding_chunks", None)
-        )
-        if isinstance(raw_chunks, (list, tuple)):
-            for chunk in raw_chunks:
-                if len(sources) >= max_sources:
-                    break
-                web_obj = chunk.get("web") if isinstance(chunk, dict) else getattr(chunk, "web", None)
-                if web_obj is None:
-                    continue
-                raw_uri = web_obj.get("uri") if isinstance(web_obj, dict) else getattr(web_obj, "uri", None)
-                raw_title = web_obj.get("title") if isinstance(web_obj, dict) else getattr(web_obj, "title", None)
-                valid_url = _validate_http_url(raw_uri)
-                if not valid_url or valid_url in seen_urls:
-                    continue
-                seen_urls.add(valid_url)
-                domain = (urlparse(valid_url).netloc or "").lower().removeprefix("www.")
-                title = (
-                    raw_title.strip()[:160]
-                    if isinstance(raw_title, str) and raw_title.strip()
-                    else (domain or valid_url)
-                )
-                sources.append({
-                    "title": title,
-                    "url": valid_url,
-                    "domain": domain,
-                })
-
-    if isinstance(extra_urls, (list, tuple)):
-        for raw_extra in extra_urls:
-            if len(sources) >= max_sources:
-                break
-            valid_url = _validate_http_url(raw_extra)
-            if not valid_url or valid_url in seen_urls:
-                continue
-            seen_urls.add(valid_url)
-            domain = (urlparse(valid_url).netloc or "").lower().removeprefix("www.")
-            sources.append({
-                "title": domain or valid_url,
-                "url": valid_url,
-                "domain": domain,
-            })
-
-    return {
-        "search_queries": queries,
-        "web_sources": sources,
-    }
+    if not _is_recoverable_model_error(exc):
+        return False
+    msg = str(exc or "").lower()
+    return any(tok in msg for tok in ("400", "invalid_argument", "is not supported"))
 
 
 def _build_json_schema_prompt_appendix(response_schema: type[BaseModel]) -> str:
@@ -454,15 +355,17 @@ def generate_content_with_fallback(
     thinking_level: Optional[str] = DEFAULT_THINKING_LEVEL,
     fallback_models: tuple[str, ...] = FALLBACK_MODEL_CHAIN,
     use_web_search: bool = False,
+    fallback_state: Optional[dict[str, Any]] = None,
 ) -> Any:
     """
     Executes `client.models.generate_content(...)` with model-clamped `ThinkingConfig`
     and self-heals on `404 NOT_FOUND` or `400 INVALID_ARGUMENT` by retrying down
     `fallback_models` (`gemini-4-hydrogen` -> `gemini-3.8-flash` -> `gemini-flash-latest`).
 
-    When `use_web_search=True`, attaches Gemini's built-in Google Search Grounding tool
-    and automatically retries with prompt-enforced JSON if a model rejects combining
-    `tools` with `response_mime_type="application/json"`.
+    When `use_web_search=True`, attaches Gemini's built-in Google Search Grounding tool,
+    retries with prompt-enforced JSON on `400 INVALID_ARGUMENT` tool/MIME conflicts,
+    and falls back to un-grounded vision if all grounded candidates fail with recoverable
+    errors (recording `fallback_state["fell_back_to_ungrounded"] = True`).
     """
     primary = (model or DEFAULT_GEMINI_MODEL).strip()
     candidates: list[str] = [primary]
@@ -476,21 +379,16 @@ def generate_content_with_fallback(
     last_exc: Optional[Exception] = None
     for idx, candidate_model in enumerate(candidates):
         thinking_cfg = resolve_thinking_config(candidate_model, thinking_level)
+        config_kwargs: dict[str, Any] = {
+            "response_mime_type": "application/json",
+            "response_schema": response_schema,
+            "temperature": temperature,
+            "thinking_config": thinking_cfg,
+        }
         if use_web_search:
-            config = types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=response_schema,
-                temperature=temperature,
-                thinking_config=thinking_cfg,
-                tools=search_tools,
-            )
-        else:
-            config = types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=response_schema,
-                temperature=temperature,
-                thinking_config=thinking_cfg,
-            )
+            config_kwargs["tools"] = search_tools
+        config = types.GenerateContentConfig(**config_kwargs)
+
         try:
             return client.models.generate_content(
                 model=candidate_model,
@@ -502,7 +400,7 @@ def generate_content_with_fallback(
             if not _is_recoverable_model_error(exc):
                 raise
 
-            if use_web_search:
+            if use_web_search and _is_config_or_tool_error(exc):
                 logger.warning(
                     "Gemini grounded structured JSON failed on '%s' (%s); retrying with prompt-enforced JSON + Search.",
                     candidate_model,
@@ -540,6 +438,8 @@ def generate_content_with_fallback(
             "falling back to standard un-grounded vision.",
             last_exc,
         )
+        if fallback_state is not None:
+            fallback_state["fell_back_to_ungrounded"] = True
         return generate_content_with_fallback(
             client,
             model=model,

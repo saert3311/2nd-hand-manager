@@ -1,13 +1,16 @@
 import logging
-from typing import Dict, Literal, Optional, Tuple
+from typing import Any, Dict, Literal, Optional, Tuple
+from urllib.parse import urlparse
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
 from inventory.models import (
+    HTTP_URL_VALIDATOR,
     OFFICIAL_CATEGORIES,
     ClarificationStatus,
     ComplianceStage,
@@ -19,7 +22,6 @@ from inventory.services.compliance_service import (
     DEFAULT_THINKING_LEVEL,
     evaluate_stage1_local,
     evaluate_stage1_local_for_product,
-    extract_grounding_metadata,
     format_top_clauses_prompt_block,
     generate_content_with_fallback,
     get_gemini_http_options,
@@ -96,6 +98,21 @@ class ProductListingSchema(BaseModel):
         default=None,
         description="Official physical condition state: new_with_tags, very_good, good, or vintage",
     )
+    compliance_passed: bool = Field(
+        default=True,
+        description="True if compliant with all top-3 policy clauses, False if any clause is violated",
+    )
+    violated_clause_codes: list[str] = Field(
+        default_factory=list,
+        description="Exact violated clause codes (e.g. ['VT-202', 'GLB-104']), or [] if compliant",
+    )
+    sanitized_note: Optional[str] = Field(
+        default="",
+        description="Short note only if banned therapeutic/brand claims were avoided in copy; empty otherwise",
+    )
+
+
+class ResearchedProductListingSchema(ProductListingSchema):
     identified_brand: Optional[str] = Field(
         default=None,
         description="Exact identified manufacturer or brand name if determined",
@@ -120,18 +137,158 @@ class ProductListingSchema(BaseModel):
         default_factory=list,
         description="Up to 5 direct reference product URLs (http/https) consulted during web research, if any",
     )
-    compliance_passed: bool = Field(
-        default=True,
-        description="True if compliant with all top-3 policy clauses, False if any clause is violated",
+
+
+def _validate_http_url(raw_url: Any) -> str:
+    """Validates an external URL against HTTP/HTTPS schemes and returns the stripped URL or ''."""
+    if not isinstance(raw_url, str):
+        return ""
+    cleaned = raw_url.strip()
+    if not cleaned or len(cleaned) > 2048:
+        return ""
+    try:
+        HTTP_URL_VALIDATOR(cleaned)
+        return cleaned
+    except ValidationError:
+        return ""
+
+
+def extract_grounding_metadata(
+    response: Any,
+    extra_urls: Optional[list[str]] = None,
+    max_sources: int = 6,
+) -> dict[str, Any]:
+    """
+    Extracts executed Google Search queries and validated HTTP/HTTPS web reference
+    sources from a Gemini `GenerateContentResponse`'s `grounding_metadata` plus any
+    fallback schema `extra_urls`, deduplicated and capped at `max_sources`.
+    """
+    queries: list[str] = []
+    seen_queries: set[str] = set()
+    sources: list[dict[str, str]] = []
+    seen_urls: set[str] = set()
+
+    def _add_source(raw_uri: Any, raw_title: Any = None) -> None:
+        if len(sources) >= max_sources:
+            return
+        valid_url = _validate_http_url(raw_uri)
+        if not valid_url or valid_url in seen_urls:
+            return
+        seen_urls.add(valid_url)
+        host = (urlparse(valid_url).netloc or "").lower().removeprefix("www.")
+        clean_title = raw_title.strip()[:160] if isinstance(raw_title, str) and raw_title.strip() else ""
+        is_google_redirect = host == "vertexaisearch.cloud.google.com" or host.endswith(
+            ".vertexaisearch.cloud.google.com"
+        )
+        domain = (clean_title[:40] if clean_title else "Google Search") if is_google_redirect else host
+        sources.append({
+            "title": clean_title or domain or valid_url,
+            "url": valid_url,
+            "domain": domain,
+        })
+
+    candidates = getattr(response, "candidates", None)
+    grounding_meta = None
+    if isinstance(candidates, (list, tuple)) and candidates:
+        first_candidate = candidates[0]
+        grounding_meta = (
+            first_candidate.get("grounding_metadata")
+            if isinstance(first_candidate, dict)
+            else getattr(first_candidate, "grounding_metadata", None)
+        )
+
+    if grounding_meta is not None:
+        raw_queries = (
+            grounding_meta.get("web_search_queries")
+            if isinstance(grounding_meta, dict)
+            else getattr(grounding_meta, "web_search_queries", None)
+        )
+        if isinstance(raw_queries, (list, tuple)):
+            for q in raw_queries:
+                if isinstance(q, str):
+                    q_clean = q.strip()[:200]
+                    if q_clean and q_clean not in seen_queries:
+                        seen_queries.add(q_clean)
+                        queries.append(q_clean)
+                        if len(queries) >= 10:
+                            break
+
+        raw_chunks = (
+            grounding_meta.get("grounding_chunks")
+            if isinstance(grounding_meta, dict)
+            else getattr(grounding_meta, "grounding_chunks", None)
+        )
+        if isinstance(raw_chunks, (list, tuple)):
+            for chunk in raw_chunks:
+                if len(sources) >= max_sources:
+                    break
+                web_obj = chunk.get("web") if isinstance(chunk, dict) else getattr(chunk, "web", None)
+                if web_obj is None:
+                    continue
+                raw_uri = web_obj.get("uri") if isinstance(web_obj, dict) else getattr(web_obj, "uri", None)
+                raw_title = web_obj.get("title") if isinstance(web_obj, dict) else getattr(web_obj, "title", None)
+                _add_source(raw_uri, raw_title)
+
+    if isinstance(extra_urls, (list, tuple)):
+        for raw_extra in extra_urls:
+            _add_source(raw_extra)
+
+    return {
+        "search_queries": queries,
+        "web_sources": sources,
+    }
+
+
+def sanitize_ai_research_data(raw: Any) -> tuple[dict[str, Any], bool]:
+    """
+    Normalizes and validates persisted `Product.ai_research_data` JSON before rendering.
+    Returns `(cleaned_dict, has_insights)` where `has_insights` is True only when concrete
+    identification, specification, query, or HTTP/HTTPS source data is present.
+    """
+    if not isinstance(raw, dict):
+        raw = {}
+
+    safe_sources: list[dict[str, str]] = []
+    for src in raw.get("web_sources") or []:
+        if not isinstance(src, dict):
+            continue
+        valid_url = _validate_http_url(src.get("url"))
+        if not valid_url:
+            continue
+        domain = str(src.get("domain") or "").strip()[:80]
+        title = str(src.get("title") or domain or valid_url).strip()[:160]
+        safe_sources.append({
+            "title": title,
+            "url": valid_url,
+            "domain": domain,
+        })
+
+    cleaned = {
+        "used_web_search": bool(raw.get("used_web_search")),
+        "search_hint": str(raw.get("search_hint") or "").strip()[:200],
+        "identified_brand": str(raw.get("identified_brand") or "").strip()[:120],
+        "identified_model": str(raw.get("identified_model") or "").strip()[:160],
+        "technical_specs": [
+            str(s).strip()[:200]
+            for s in (raw.get("technical_specs") or [])
+            if isinstance(s, str) and str(s).strip()
+        ][:8],
+        "search_queries": [
+            str(q).strip()[:200]
+            for q in (raw.get("search_queries") or [])
+            if isinstance(q, str) and str(q).strip()
+        ][:10],
+        "web_sources": safe_sources[:6],
+        "researched_at": str(raw.get("researched_at") or "").strip(),
+    }
+    has_insights = bool(
+        cleaned["identified_brand"]
+        or cleaned["identified_model"]
+        or cleaned["technical_specs"]
+        or cleaned["web_sources"]
+        or cleaned["search_queries"]
     )
-    violated_clause_codes: list[str] = Field(
-        default_factory=list,
-        description="Exact violated clause codes (e.g. ['VT-202', 'GLB-104']), or [] if compliant",
-    )
-    sanitized_note: Optional[str] = Field(
-        default="",
-        description="Short note only if banned therapeutic/brand claims were avoided in copy; empty otherwise",
-    )
+    return cleaned, has_insights
 
 
 class IntakePreflightSchema(BaseModel):
@@ -437,62 +594,72 @@ def generate_product_listing(
 
     # 3. Call Gemini
     try:
+        schema_cls = ResearchedProductListingSchema if use_web_search else ProductListingSchema
+        fallback_state: dict[str, Any] = {}
         client = genai.Client(api_key=api_key.strip(), http_options=get_gemini_http_options())
         response = generate_content_with_fallback(
             client,
             model=active_model,
             contents=contents,
-            response_schema=ProductListingSchema,
+            response_schema=schema_cls,
             temperature=resolved_temp,
             thinking_level=resolved_thinking,
             use_web_search=use_web_search,
+            fallback_state=fallback_state,
         )
         tokens_used = _extract_token_count(response, prompt_text)
 
-        data = parse_gemini_response_dict(response, ProductListingSchema)
+        data = parse_gemini_response_dict(response, schema_cls)
         raw_cat = str(data.get("category_slug") or "").strip()
         raw_cond = str(data.get("condition") or "").strip()
 
-        identified_brand = str(data.get("identified_brand") or "").strip()[:120]
-        identified_model = str(data.get("identified_model") or "").strip()[:160]
-        raw_specs = data.get("technical_specs") or []
-        technical_specs = [
-            str(item).strip()[:200]
-            for item in (raw_specs if isinstance(raw_specs, (list, tuple)) else [])
-            if isinstance(item, str) and item.strip()
-        ][:8]
-        raw_ref_urls = data.get("reference_urls") or []
-        extra_urls = [
-            str(u).strip()
-            for u in (raw_ref_urls if isinstance(raw_ref_urls, (list, tuple)) else [])
-            if isinstance(u, str) and u.strip()
-        ]
-        grounding = extract_grounding_metadata(response, extra_urls=extra_urls)
-        est_retail = _clean_price(data.get("estimated_retail_price"))
-        est_resale = _clean_price(data.get("estimated_resale_price"))
+        web_search_fallback = bool(use_web_search and fallback_state.get("fell_back_to_ungrounded"))
+        grounded_active = bool(use_web_search and not web_search_fallback)
 
-        has_research = bool(
-            use_web_search
-            or identified_brand
-            or identified_model
-            or technical_specs
-            or grounding["web_sources"]
-            or grounding["search_queries"]
-        )
-        research_data = (
-            {
-                "used_web_search": bool(use_web_search),
-                "search_hint": hint_clean,
-                "identified_brand": identified_brand,
-                "identified_model": identified_model,
-                "technical_specs": technical_specs,
-                "search_queries": grounding["search_queries"],
-                "web_sources": grounding["web_sources"],
-                "researched_at": timezone.now().isoformat(),
-            }
-            if has_research
-            else {}
-        )
+        if grounded_active:
+            identified_brand = str(data.get("identified_brand") or "").strip()[:120]
+            identified_model = str(data.get("identified_model") or "").strip()[:160]
+            raw_specs = data.get("technical_specs") or []
+            technical_specs = [
+                str(item).strip()[:200]
+                for item in (raw_specs if isinstance(raw_specs, (list, tuple)) else [])
+                if isinstance(item, str) and item.strip()
+            ][:8]
+            raw_ref_urls = data.get("reference_urls") or []
+            extra_urls = [
+                str(u).strip()
+                for u in (raw_ref_urls if isinstance(raw_ref_urls, (list, tuple)) else [])
+                if isinstance(u, str) and u.strip()
+            ]
+            grounding = extract_grounding_metadata(response, extra_urls=extra_urls)
+            est_retail = _clean_price(data.get("estimated_retail_price"))
+            est_resale = _clean_price(data.get("estimated_resale_price"))
+
+            has_concrete_insights = bool(
+                identified_brand
+                or identified_model
+                or technical_specs
+                or grounding["web_sources"]
+                or grounding["search_queries"]
+            )
+            research_data = (
+                {
+                    "used_web_search": True,
+                    "search_hint": hint_clean,
+                    "identified_brand": identified_brand,
+                    "identified_model": identified_model,
+                    "technical_specs": technical_specs,
+                    "search_queries": grounding["search_queries"],
+                    "web_sources": grounding["web_sources"],
+                    "researched_at": timezone.now().isoformat(),
+                }
+                if has_concrete_insights
+                else {}
+            )
+        else:
+            est_retail = None
+            est_resale = None
+            research_data = {}
 
         compliance_data = merge_stage2_compliance_result(
             stage1_result=stage1_result,
@@ -511,6 +678,7 @@ def generate_product_listing(
             "estimated_retail_price": est_retail,
             "estimated_resale_price": est_resale,
             "research_data": research_data,
+            "web_search_fallback": web_search_fallback,
             "compliance": compliance_data,
         }
 

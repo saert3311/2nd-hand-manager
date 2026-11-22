@@ -4719,3 +4719,6 @@ msgstr "Buscando en AliExpress, Amazon y catálogos web..."
 msgid "Drafting grounded specs, pricing & listing copy..."
 msgstr "Redactando ficha técnica, tasación y texto del anuncio..."
 
+msgid "Web search was temporarily unavailable; AI listing was generated using standard photo analysis."
+msgstr "La búsqueda web no estaba disponible temporalmente; el anuncio con IA se generó usando el análisis estándar de fotos."
+

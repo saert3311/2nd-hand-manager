@@ -52,7 +52,7 @@ from .models import (
     SaleChannelType,
 )
 from .permissions import is_assistant, is_manager, manager_required
-from .services.ai_service import identify_intake_product
+from .services.ai_service import identify_intake_product, sanitize_ai_research_data
 from .services.compliance_service import (
     evaluate_stage1_local_for_product,
     verify_product_compliance_ai,
@@ -668,42 +668,7 @@ def product_detail_view(request, pk):
         else {}
     )
 
-    raw_research = product.ai_research_data if isinstance(product.ai_research_data, dict) else {}
-    safe_web_sources = []
-    for src in raw_research.get("web_sources") or []:
-        if not isinstance(src, dict):
-            continue
-        url = str(src.get("url") or "").strip()
-        if url.startswith(("https://", "http://")):
-            safe_web_sources.append(
-                {
-                    "title": str(src.get("title") or src.get("domain") or url).strip(),
-                    "url": url,
-                    "domain": str(src.get("domain") or "").strip(),
-                }
-            )
-    ai_research_data = {
-        "used_web_search": bool(raw_research.get("used_web_search")),
-        "search_hint": str(raw_research.get("search_hint") or "").strip(),
-        "identified_brand": str(raw_research.get("identified_brand") or "").strip(),
-        "identified_model": str(raw_research.get("identified_model") or "").strip(),
-        "technical_specs": [
-            str(s).strip() for s in (raw_research.get("technical_specs") or []) if str(s).strip()
-        ],
-        "search_queries": [
-            str(q).strip() for q in (raw_research.get("search_queries") or []) if str(q).strip()
-        ],
-        "web_sources": safe_web_sources,
-        "researched_at": str(raw_research.get("researched_at") or "").strip(),
-    }
-    has_ai_research_insights = bool(
-        ai_research_data["used_web_search"]
-        or ai_research_data["identified_brand"]
-        or ai_research_data["identified_model"]
-        or ai_research_data["technical_specs"]
-        or ai_research_data["web_sources"]
-        or ai_research_data["search_queries"]
-    )
+    ai_research_data, has_ai_research_insights = sanitize_ai_research_data(product.ai_research_data)
 
     context = {
         "product": product,
@@ -1125,7 +1090,7 @@ def generate_ai_view(request, pk):
             update_fields.append("estimated_resale_price")
 
         research_data = listing_data.get("research_data")
-        if isinstance(research_data, dict) and (research_data or use_web_search):
+        if isinstance(research_data, dict) and research_data:
             product.ai_research_data = research_data
             update_fields.append("ai_research_data")
 
@@ -1136,7 +1101,12 @@ def generate_ai_view(request, pk):
         else:
             product.save(update_fields=update_fields)
 
-        if use_web_search:
+        if listing_data.get("web_search_fallback"):
+            messages.warning(
+                request,
+                _("Web search was temporarily unavailable; AI listing was generated using standard photo analysis."),
+            )
+        elif use_web_search:
             messages.success(request, _("AI listing successfully generated with live web research!"))
         else:
             messages.success(request, _("AI listing successfully generated from photos and notes!"))

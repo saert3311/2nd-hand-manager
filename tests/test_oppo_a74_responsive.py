@@ -92,6 +92,21 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
             is_public=True,
             is_featured=True,
             is_sold=False,
+            ai_research_data={
+                "used_web_search": True,
+                "search_hint": "Cazadora Nobuk 1990",
+                "identified_brand": "Schott NYC",
+                "identified_model": "184SM Vintage Nobuk",
+                "technical_specs": ["Cuero nobuk 100%", "Forro térmico acolchado"],
+                "search_queries": ["Schott NYC 184SM vintage jacket"],
+                "web_sources": [
+                    {
+                        "title": "Schott NYC 184SM Leather Jacket",
+                        "url": "https://www.aliexpress.com/item/1005006.html",
+                        "domain": "aliexpress.com",
+                    }
+                ],
+            },
             created_by=self.manager,
         )
         ProductImage.objects.create(
@@ -323,18 +338,27 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                 for vp_name, w, h in self.OPPO_VIEWPORTS:
                     self._assert_no_horizontal_overflow(page, f"provider_edit_{vp_name}", w, h)
 
-            # 5. Product Detail Workspace (+ gallery edit controls, tabs, pending preview)
+            # 5. Product Detail Workspace (+ gallery edit controls, tabs, pending preview, AI web research)
             goto_authenticated(
                 page,
                 f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.p_active.pk})}",
             )
             expect(page.locator("#id_sale_price")).to_be_visible()
+            expect(page.locator("#aiWebResearchCard")).to_be_visible()
             assert_visible_images_loaded(self, page)
 
             font_size = page.evaluate(
                 "() => parseFloat(window.getComputedStyle(document.querySelector('#id_sale_price')).fontSize)"
             )
             self.assertGreaterEqual(font_size, 16.0, "OPPO/Android mobile inputs must render >= 16px font-size")
+
+            # Toggle Web Research checkbox to verify progressive-disclosure clue input & font size
+            page.locator("#id_use_web_search").check()
+            expect(page.locator("#id_search_hint")).to_be_visible()
+            hint_font_size = page.evaluate(
+                "() => parseFloat(window.getComputedStyle(document.querySelector('#id_search_hint')).fontSize)"
+            )
+            self.assertGreaterEqual(hint_font_size, 16.0, "Mobile search hint input must render >= 16px font-size")
 
             disclosure = page.locator("#detailAddPhotosDisclosure")
             if disclosure.count() > 0:
@@ -348,6 +372,9 @@ class OppoA74ResponsiveUITests(StaticLiveServerTestCase):
                     page,
                     [
                         "#detailWorkspaceTablist",
+                        "#id_use_web_search",
+                        "#id_search_hint",
+                        "#aiWebResearchCard",
                         "#btnSaveListingChanges",
                         "#galleryThumbnailsGrid .photo-edit-btn",
                     ],
