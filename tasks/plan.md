@@ -1014,3 +1014,43 @@ Task 213 (Manifest Dashboard Target, Explicit ID & Push Fallback URLs)
 
 ### Open Questions
 - None — all design decisions confirmed by the user.
+
+
+---
+
+## Phase 59: On-Demand AI Web Research & Grounded Product Identification (`feat/ai-web-research-identification`)
+
+### Overview
+Add an opt-in **Web Research Mode** (`🌐 Web Research (AliExpress / Web)`) in the Manager's Staging Workspace (`/products/<pk>/`) backed by Gemini Built-in Google Search Grounding (`types.Tool(google_search=types.GoogleSearch())`), persistent `Product.ai_research_data` (`JSONField`), grounded MSRP/resale benchmark updates, and clickable reference links per [`docs/prds/PRD-ai-web-research-identification.md`](file:///C:/Users/Jose/antigravity/epic-tesla/docs/prds/PRD-ai-web-research-identification.md).
+
+### Architecture Decisions
+1. **Domain Model & Admin (`inventory/models.py`, `inventory/migrations/0031_product_ai_research_data.py`, `inventory/admin.py`):**
+   - Add `Product.ai_research_data = models.JSONField(default=dict, blank=True)` to persist brand, model, technical specs, executed search queries, validated reference URLs, search hint, and timestamp.
+   - Expose `ai_research_data` read-only in `ProductAdmin`.
+2. **Resilient Google Search Grounding (`inventory/services/compliance_service.py`, `inventory/services/ai_service.py`):**
+   - Extend `generate_content_with_fallback(..., use_web_search: bool = False)` to attach `types.Tool(google_search=types.GoogleSearch())` only when enabled, preserving identical config for existing fast-mode callers.
+   - Self-heal `400 INVALID_ARGUMENT` errors combining `tools` + `response_mime_type="application/json"` by retrying with prompt-enforced JSON schema + Google Search Grounding, and harden `parse_gemini_response_dict()` to strip Markdown code fences and surrounding prose.
+   - Add `extract_grounding_metadata()` validating all chunk/reference URLs against `HTTP_URL_VALIDATOR` (`http`/`https`) and deduplicating by URL.
+   - Expand `ProductListingSchema` with optional `identified_brand`, `identified_model`, `technical_specs`, `estimated_retail_price`, `estimated_resale_price`, and `reference_urls`.
+3. **Staging Workspace UX & Security (`inventory/views.py`, `inventory/templates/inventory/product_detail.html`):**
+   - Update `generate_ai_view` to read `use_web_search` and `search_hint`, refresh `estimated_retail_price` / `estimated_resale_price` (never overwriting `sale_price`), persist `ai_research_data`, and emit a localized confirmation toast.
+   - Add `#id_use_web_search` toggle, progressive-disclosure `#id_search_hint` (`text-base sm:text-sm`), dynamic staged progress skeleton stages, and `#aiWebResearchCard` in Tab 1 (`Listing`) keeping zero horizontal overflow on OPPO A74 (`360×800`, `320×711`).
+
+### Dependency Graph
+```text
+Task 216 (Domain Model Product.ai_research_data, Migration 0031 & Admin Exposure)
+    └── Task 217 (Gemini Google Search Grounding, Self-Healing JSON Fallback & AI Service Extraction)
+            └── Task 218 (Manager Staging Toolbar Toggle, Search Hint, View Persistence & Insights Card)
+                    └── Task 219 (Bilingual ES/EN Translations, Unit/View Tests & Changelog)
+                            └── Checkpoint 59 (Zero-Failure Quality Gate & Merge Approval Request)
+```
+
+### Risks and Mitigations
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Gemini model rejects `tools=[GoogleSearch]` with `response_mime_type="application/json"` | High | Automatic self-healing retry in `generate_content_with_fallback()` using prompt-enforced JSON + Search Grounding + fence stripping, plus ungrounded fallback if needed. |
+| Untrusted URLs or prompt injection via `search_hint` | High | Validate every URL with `HTTP_URL_VALIDATOR` (`http`/`https`) and wrap `search_hint` (`[:200]`) in `<untrusted_search_hint>` guard tags. |
+| Mobile horizontal overflow or iOS zoom on `#id_search_hint` / `#aiWebResearchCard` | Med | Apply `text-base sm:text-sm`, `min-w-0`, `flex-wrap`, `break-words`, and `>= 12px` typography across toolbar and research card. |
+
+### Open Questions
+- None — design and scope confirmed by the user.
