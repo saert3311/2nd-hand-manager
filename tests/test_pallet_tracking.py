@@ -194,9 +194,10 @@ class PalletTrackingTests(TestCase):
         self.assertIsNotNone(created_prod1)
         self.assertEqual(created_prod1.pallet, self.pallet1)
 
-        # Verify session has sticky pallet
+        # Verify session has sticky origin and omits removed legacy key
         session = self.client.session
-        self.assertEqual(session.get("last_intake_pallet_id"), self.pallet1.pk)
+        self.assertEqual(session.get("last_intake_origin"), f"pallet:{self.pallet1.pk}")
+        self.assertNotIn("last_intake_pallet_id", session)
 
         # 3. Next GET on /intake/: initial form has pallet1 preselected
         response2 = self.client.get(reverse("inventory:intake"))
@@ -222,7 +223,8 @@ class PalletTrackingTests(TestCase):
 
         # Verify session remembered "none"
         session2 = self.client.session
-        self.assertEqual(session2.get("last_intake_pallet_id"), "none")
+        self.assertEqual(session2.get("last_intake_origin"), "none")
+        self.assertNotIn("last_intake_pallet_id", session2)
 
         # 5. Subsequent GET to /intake/ preserves "no pallet"
         response3 = self.client.get(reverse("inventory:intake"))

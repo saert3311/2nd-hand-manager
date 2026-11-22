@@ -310,13 +310,13 @@ class OriginIntakeAndPermissionsViewsTests(TestCase):
         self.assertEqual(p1.pallet, self.pallet)
         self.assertEqual(p1.provider, self.wholesaler)
         self.assertEqual(self.client.session.get("last_intake_origin"), f"pallet:{self.pallet.pk}")
-        self.assertEqual(self.client.session.get("last_intake_pallet_id"), self.pallet.pk)
+        self.assertNotIn("last_intake_pallet_id", self.client.session)
 
         # Next GET pre-selects pallet:<id>
         form = ProductIntakeForm(initial={"origin": self.client.session.get("last_intake_origin")})
         self.assertEqual(form.initial["origin"], f"pallet:{self.pallet.pk}")
 
-        # Step 2: Switch to direct walk-in provider -> clears pallet, stores walk-in, clears sticky pallet id
+        # Step 2: Switch to direct walk-in provider -> clears pallet, updates sticky origin
         resp_post2 = self.client.post(
             reverse("inventory:intake"),
             {
@@ -330,7 +330,7 @@ class OriginIntakeAndPermissionsViewsTests(TestCase):
         self.assertIsNone(p2.pallet)
         self.assertEqual(p2.provider, self.walkin)
         self.assertEqual(self.client.session.get("last_intake_origin"), f"provider:{self.walkin.pk}")
-        self.assertEqual(self.client.session.get("last_intake_pallet_id"), "none")
+        self.assertNotIn("last_intake_pallet_id", self.client.session)
 
     def test_acquisition_cost_strictly_manager_only(self):
         product = Product.objects.create(

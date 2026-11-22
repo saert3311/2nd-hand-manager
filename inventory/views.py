@@ -181,16 +181,13 @@ def product_intake_view(request):
                             order=idx,
                         )
 
-                # Persist sticky origin & legacy pallet ID in session
+                # Persist sticky origin in session
                 if product.pallet_id:
                     request.session["last_intake_origin"] = f"pallet:{product.pallet_id}"
-                    request.session["last_intake_pallet_id"] = product.pallet_id
                 elif product.provider_id:
                     request.session["last_intake_origin"] = f"provider:{product.provider_id}"
-                    request.session["last_intake_pallet_id"] = "none"
                 else:
                     request.session["last_intake_origin"] = "none"
-                    request.session["last_intake_pallet_id"] = "none"
 
                 messages.success(
                     request,
@@ -206,7 +203,6 @@ def product_intake_view(request):
                 form.add_error(None, _("Error saving product: %(error)s") % {"error": exc})
     else:
         last_origin = request.session.get("last_intake_origin")
-        initial_pallet_id = request.session.get("last_intake_pallet_id")
         initial_pallet = None
         initial_origin = ""
 
@@ -219,12 +215,8 @@ def product_intake_view(request):
                     initial_origin = f"provider:{initial_provider.pk}"
             except ValidationError:
                 initial_pallet = None
-        elif last_origin is None and initial_pallet_id not in (None, "none"):
-            initial_pallet = Pallet.objects.filter(pk=initial_pallet_id).first()
-            if initial_pallet:
-                initial_origin = f"pallet:{initial_pallet.pk}"
 
-        if not initial_origin and last_origin != "none" and initial_pallet_id != "none":
+        if not initial_origin and last_origin != "none":
             initial_pallet = Pallet.objects.order_by("-number").first()
             if initial_pallet:
                 initial_origin = f"pallet:{initial_pallet.pk}"
