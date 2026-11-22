@@ -450,6 +450,7 @@ class ProductAdmin(admin.ModelAdmin):
         "last_platform_synced_at",
         "platform_sync_reasons",
         "compliance_checked_at",
+        "ai_research_data",
         "batch_session",
         "deleted_at",
         "deleted_by",

@@ -812,6 +812,14 @@ class Product(models.Model):
         verbose_name=_("Compliance Checked At"),
         help_text=_("Timestamp of the most recent compliance check"),
     )
+    ai_research_data = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name=_("AI Web Research Data"),
+        help_text=_(
+            "Structured brand/model identification, technical specifications, and web reference sources from Gemini Google Search Grounding"
+        ),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
