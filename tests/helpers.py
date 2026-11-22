@@ -6,6 +6,7 @@ import re
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
+from unittest.mock import MagicMock
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -56,9 +57,11 @@ def create_user_with_group(username, password="password123", group_name=None, is
     return user
 
 
-def create_role_users(prefix="test", password="password123"):
+def create_role_users(prefix="test", password="password123", manager_is_staff=False):
     """Create a standard (manager, assistant) user pair with their Django groups."""
-    manager = create_user_with_group(f"{prefix}_manager", password=password, group_name="managers")
+    manager = create_user_with_group(
+        f"{prefix}_manager", password=password, group_name="managers", is_staff=manager_is_staff
+    )
     assistant = create_user_with_group(f"{prefix}_assistant", password=password, group_name="assistants")
     return manager, assistant
 
@@ -80,7 +83,24 @@ def get_test_artifact_dir(test_cls, repo_subdir=None):
     return Path(temp_dir.name)
 
 
-def launch_test_browser(playwright_instance, headless=True):
+def configure_gemini_mock(mock_client_cls, *, parsed=None, text=None, total_tokens=None, side_effect=None):
+    """Wire a patched genai.Client class to return a deterministic mock response or side_effect."""
+    mock_client = MagicMock()
+    mock_client_cls.return_value = mock_client
+    mock_response = MagicMock()
+    mock_response.parsed = parsed
+    if text is not None:
+        mock_response.text = text
+    if total_tokens is not None:
+        mock_response.usage_metadata = MagicMock(total_token_count=total_tokens)
+    if side_effect is not None:
+        mock_client.models.generate_content.side_effect = side_effect
+    else:
+        mock_client.models.generate_content.return_value = mock_response
+    return mock_client, mock_response
+
+
+def _launch_test_browser(playwright_instance, headless=True):
     """Launch bundled Playwright Chromium on CI or system Chrome when available locally."""
     os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
     if os.getenv("CI") or os.getenv("PLAYWRIGHT_USE_BUNDLED_CHROMIUM") == "1":
@@ -98,7 +118,7 @@ def start_shared_browser(test_cls, headless=True):
     os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
     pw = sync_playwright().start()
     test_cls.addClassCleanup(pw.stop)
-    browser = launch_test_browser(pw, headless=headless)
+    browser = _launch_test_browser(pw, headless=headless)
     test_cls.addClassCleanup(browser.close)
     return browser
 
@@ -122,7 +142,7 @@ def _handle_tailwind_cdn(route):
         route.continue_()
 
 
-def abort_nonessential_fonts(page):
+def _configure_page_routes(page):
     """Abort external webfont/analytics requests and cache Tailwind Play CDN without intercepting localhost."""
     page.route(_BLOCKED_EXTERNAL_HOSTS_RE, lambda route: route.abort())
     page.route(_TAILWIND_CDN_RE, _handle_tailwind_cdn)
@@ -142,7 +162,7 @@ def open_browser_page(
     context_kwargs.setdefault("service_workers", "block" if block_service_workers else "allow")
     context = browser.new_context(**context_kwargs)
     page = context.new_page()
-    abort_nonessential_fonts(page)
+    _configure_page_routes(page)
     page_errors = []
     page.on("pageerror", lambda err: page_errors.append(str(err)))
     try:

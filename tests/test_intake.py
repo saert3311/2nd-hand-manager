@@ -209,7 +209,7 @@ class ProductIntakeViewTests(TestCase):
 
     def test_intake_get_renders_spanish_translations(self):
         self.client.force_login(self.user)
-        resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="es")
+        resp = self.client.get(self.url, headers={"Accept-Language": "es"})
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Guardando producto...")
         self.assertContains(resp, "Espera a que finalice el análisis con IA...")

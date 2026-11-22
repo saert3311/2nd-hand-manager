@@ -2,7 +2,7 @@ from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase, override_settings
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from inventory.admin import ProductAdmin, ProductClarificationAdmin, ProductClarificationInline, manager_admin_site
@@ -147,7 +147,6 @@ class ProductLifecycleAndClarificationModelTests(TestCase):
 
 class NotificationContextProcessorAndAlertTests(TestCase):
     def setUp(self):
-        self.client = Client()
         self.manager = User.objects.create_user(username="manager", password="password123", is_staff=True)
         self.assistant = User.objects.create_user(username="assistant", password="password123")
         self.product = Product.objects.create(raw_note="Vintage wool coat")
@@ -242,7 +241,6 @@ class NotificationContextProcessorAndAlertTests(TestCase):
 
 class ProductDetailClarificationViewTests(TestCase):
     def setUp(self):
-        self.client = Client()
         self.manager = User.objects.create_user(username="manager", password="password123", is_staff=True)
         self.assistant = User.objects.create_user(username="assistant", password="password123")
         self.product = Product.objects.create(
@@ -340,7 +338,6 @@ class ProductDetailClarificationViewTests(TestCase):
 
 class DashboardClarificationAndLifecycleTests(TestCase):
     def setUp(self):
-        self.client = Client()
         self.manager = User.objects.create_user(username="manager", password="password123", is_staff=True)
         self.assistant = User.objects.create_user(username="assistant", password="password123")
         self.client.login(username="manager", password="password123")
@@ -434,7 +431,6 @@ class AIServiceClarificationEnrichmentTests(TestCase):
 
 class ClarificationLifecycleSynchronizationAndOrphanPreventionTests(TestCase):
     def setUp(self):
-        self.client = Client()
         self.manager = User.objects.create_user(username="mgr_sync", password="password123", is_staff=True)
         self.assistant = User.objects.create_user(username="asst_sync", password="password123")
         self.product = Product.objects.create(

@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client, TestCase
+from django.test import TestCase
 from django.urls import reverse
 from PIL import Image
 
@@ -23,7 +23,6 @@ User = get_user_model()
 
 class ProductDetailMobileUXTests(TestCase):
     def setUp(self):
-        self.client = Client()
         self.mgr_group, _ = Group.objects.get_or_create(name="managers")
         self.asst_group, _ = Group.objects.get_or_create(name="assistants")
 

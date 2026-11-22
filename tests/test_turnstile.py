@@ -191,7 +191,7 @@ class PublicLoginTurnstileTests(TestCase):
             response = self.client.post("/login/", {
                 "username": "turnstile_user",
                 "password": "secretpassword",
-            }, HTTP_ACCEPT_LANGUAGE="es")
+            }, headers={"Accept-Language": "es"})
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, "Por favor, completa la verificación de seguridad.")
 

@@ -10,6 +10,7 @@ from inventory.services.ai_service import (
     generate_product_listing,
     identify_intake_product,
 )
+from tests.helpers import configure_gemini_mock
 
 
 class AIServiceTests(TestCase):
@@ -34,15 +35,13 @@ class AIServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="valid-api-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_successful_ai_listing_generation_with_parsed_response(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-
-        mock_response = MagicMock()
-        mock_response.parsed = ProductListingSchema(
-            title="Vintage 1994 Pink Floyd Band T-Shirt XL",
-            description="• Authentic 1994 tour tee\n• Black vintage wash with slight distress\n• Size XL"
+        configure_gemini_mock(
+            mock_client_cls,
+            parsed=ProductListingSchema(
+                title="Vintage 1994 Pink Floyd Band T-Shirt XL",
+                description="• Authentic 1994 tour tee\n• Black vintage wash with slight distress\n• Size XL",
+            ),
         )
-        mock_client.models.generate_content.return_value = mock_response
 
         result = generate_product_listing(self.product)
         self.assertEqual(result["title"], "Vintage 1994 Pink Floyd Band T-Shirt XL")
@@ -51,13 +50,11 @@ class AIServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="valid-api-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_successful_ai_listing_generation_with_json_fallback(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-
-        mock_response = MagicMock()
-        mock_response.parsed = None
-        mock_response.text = '{"title": "Sony Walkman Retro Cassette", "description": "Works perfectly."}'
-        mock_client.models.generate_content.return_value = mock_response
+        configure_gemini_mock(
+            mock_client_cls,
+            parsed=None,
+            text='{"title": "Sony Walkman Retro Cassette", "description": "Works perfectly."}',
+        )
 
         result = generate_product_listing(self.product)
         self.assertEqual(result["title"], "Sony Walkman Retro Cassette")
@@ -66,9 +63,10 @@ class AIServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="valid-api-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_api_network_failure_raises_ai_service_error(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-        mock_client.models.generate_content.side_effect = RuntimeError("Connection timeout to Gemini")
+        configure_gemini_mock(
+            mock_client_cls,
+            side_effect=RuntimeError("Connection timeout to Gemini"),
+        )
 
         with self.assertRaises(AIServiceError) as ctx:
             generate_product_listing(self.product)
@@ -77,15 +75,13 @@ class AIServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="valid-api-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_prompt_in_spanish_when_language_is_es(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-
-        mock_response = MagicMock()
-        mock_response.parsed = ProductListingSchema(
-            title="Camiseta Vintage Pink Floyd 1994 XL",
-            description="• Camiseta de gira oficial\n• Talla XL\n• Buen estado vintage"
+        mock_client, _ = configure_gemini_mock(
+            mock_client_cls,
+            parsed=ProductListingSchema(
+                title="Camiseta Vintage Pink Floyd 1994 XL",
+                description="• Camiseta de gira oficial\n• Talla XL\n• Buen estado vintage",
+            ),
         )
-        mock_client.models.generate_content.return_value = mock_response
 
         result = generate_product_listing(self.product, language="es")
         self.assertEqual(result["title"], "Camiseta Vintage Pink Floyd 1994 XL")
@@ -99,15 +95,13 @@ class AIServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="valid-api-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_prompt_in_english_by_default(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-
-        mock_response = MagicMock()
-        mock_response.parsed = ProductListingSchema(
-            title="Vintage Pink Floyd Shirt",
-            description="Tour shirt"
+        mock_client, _ = configure_gemini_mock(
+            mock_client_cls,
+            parsed=ProductListingSchema(
+                title="Vintage Pink Floyd Shirt",
+                description="Tour shirt",
+            ),
         )
-        mock_client.models.generate_content.return_value = mock_response
 
         generate_product_listing(self.product, language="en")
         call_args = mock_client.models.generate_content.call_args
@@ -119,14 +113,13 @@ class AIServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="valid-api-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_dynamic_configuration_from_database(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-        mock_response = MagicMock()
-        mock_response.parsed = ProductListingSchema(
-            title="Sudadera Exclusiva",
-            description="Detalles de lujo"
+        mock_client, _ = configure_gemini_mock(
+            mock_client_cls,
+            parsed=ProductListingSchema(
+                title="Sudadera Exclusiva",
+                description="Detalles de lujo",
+            ),
         )
-        mock_client.models.generate_content.return_value = mock_response
 
         # Create custom active configuration for Spanish
         AIPromptConfiguration.objects.create(
@@ -155,11 +148,10 @@ class AIServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="valid-api-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_explicit_model_name_override(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-        mock_response = MagicMock()
-        mock_response.parsed = ProductListingSchema(title="Custom Title", description="Custom Desc")
-        mock_client.models.generate_content.return_value = mock_response
+        mock_client, _ = configure_gemini_mock(
+            mock_client_cls,
+            parsed=ProductListingSchema(title="Custom Title", description="Custom Desc"),
+        )
 
         # Active configuration has model 'gemini-2.5-flash'
         # Call with explicit override
@@ -170,11 +162,10 @@ class AIServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="valid-api-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_fallback_when_no_active_database_configuration(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-        mock_response = MagicMock()
-        mock_response.parsed = ProductListingSchema(title="Fallback Title", description="Fallback Desc")
-        mock_client.models.generate_content.return_value = mock_response
+        mock_client, _ = configure_gemini_mock(
+            mock_client_cls,
+            parsed=ProductListingSchema(title="Fallback Title", description="Fallback Desc"),
+        )
 
         # Deactivate all configurations
         AIPromptConfiguration.objects.all().update(is_active=False)
@@ -192,11 +183,10 @@ class AIServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="valid-api-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_resilient_fallback_on_database_query_error(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-        mock_response = MagicMock()
-        mock_response.parsed = ProductListingSchema(title="Resilient Title", description="Resilient Desc")
-        mock_client.models.generate_content.return_value = mock_response
+        mock_client, _ = configure_gemini_mock(
+            mock_client_cls,
+            parsed=ProductListingSchema(title="Resilient Title", description="Resilient Desc"),
+        )
 
         with patch("inventory.models.AIPromptConfiguration.objects.filter", side_effect=RuntimeError("DB Lock")):
             result = generate_product_listing(self.product, language="en")
@@ -231,18 +221,16 @@ class IntakePreflightServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="test-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_successful_identification_with_parsed_response(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-
-        mock_response = MagicMock()
-        mock_response.parsed = IntakePreflightSchema(
-            identified_title="Nike Air Max 90 Infrared",
-            category="Calzado / Zapatillas",
-            detected_attributes=["Colorway blanco/gris/infrarrojo", "Cámara Air visible"],
-            missing_or_recommended_info=["Etiqueta de talla no visible", "Comprobar desgaste en suela"],
-            suggested_note="Nike Air Max 90 Infrared. Buen estado. Revisar etiqueta de lengüeta.",
+        configure_gemini_mock(
+            mock_client_cls,
+            parsed=IntakePreflightSchema(
+                identified_title="Nike Air Max 90 Infrared",
+                category="Calzado / Zapatillas",
+                detected_attributes=["Colorway blanco/gris/infrarrojo", "Cámara Air visible"],
+                missing_or_recommended_info=["Etiqueta de talla no visible", "Comprobar desgaste en suela"],
+                suggested_note="Nike Air Max 90 Infrared. Buen estado. Revisar etiqueta de lengüeta.",
+            ),
         )
-        mock_client.models.generate_content.return_value = mock_response
 
         sample_img = b"\xff\xd8\xfffakejpg"
         result = identify_intake_product([sample_img], raw_note="Zapatillas vintage", language="es")
@@ -257,18 +245,16 @@ class IntakePreflightServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="test-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_successful_identification_with_json_fallback(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-
-        mock_response = MagicMock()
-        mock_response.parsed = None
-        mock_response.text = (
-            '{"identified_title": "Levi\'s 501 Made in USA", "category": "Pantalones",'
-            ' "detected_attributes": ["Denim rígido", "Botones plateados"],'
-            ' "missing_or_recommended_info": ["Revisar etiqueta interior W/L"],'
-            ' "suggested_note": "Levi\'s 501 Made in USA vintage."}'
+        configure_gemini_mock(
+            mock_client_cls,
+            parsed=None,
+            text=(
+                '{"identified_title": "Levi\'s 501 Made in USA", "category": "Pantalones",'
+                ' "detected_attributes": ["Denim rígido", "Botones plateados"],'
+                ' "missing_or_recommended_info": ["Revisar etiqueta interior W/L"],'
+                ' "suggested_note": "Levi\'s 501 Made in USA vintage."}'
+            ),
         )
-        mock_client.models.generate_content.return_value = mock_response
 
         result = identify_intake_product([b"\x89PNG\r\n\x1a\nfakepng"])
         self.assertTrue(result["success"])
@@ -279,17 +265,16 @@ class IntakePreflightServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="test-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_image_truncation_to_three_images(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-        mock_response = MagicMock()
-        mock_response.parsed = IntakePreflightSchema(
-            identified_title="Item",
-            category="Cat",
-            detected_attributes=[],
-            missing_or_recommended_info=[],
-            suggested_note="Note",
+        mock_client, _ = configure_gemini_mock(
+            mock_client_cls,
+            parsed=IntakePreflightSchema(
+                identified_title="Item",
+                category="Cat",
+                detected_attributes=[],
+                missing_or_recommended_info=[],
+                suggested_note="Note",
+            ),
         )
-        mock_client.models.generate_content.return_value = mock_response
 
         five_images = [
             b"\xff\xd8\xff-1",
@@ -308,9 +293,10 @@ class IntakePreflightServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="test-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_api_network_failure_returns_failure_dict_without_exception(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-        mock_client.models.generate_content.side_effect = RuntimeError("Connection timeout to Gemini")
+        configure_gemini_mock(
+            mock_client_cls,
+            side_effect=RuntimeError("Connection timeout to Gemini"),
+        )
 
         result = identify_intake_product([b"\xff\xd8\xfffake"])
         self.assertFalse(result["success"])
@@ -319,17 +305,16 @@ class IntakePreflightServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="test-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_language_prompts(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-        mock_response = MagicMock()
-        mock_response.parsed = IntakePreflightSchema(
-            identified_title="Item",
-            category="Cat",
-            detected_attributes=[],
-            missing_or_recommended_info=[],
-            suggested_note="Note",
+        mock_client, _ = configure_gemini_mock(
+            mock_client_cls,
+            parsed=IntakePreflightSchema(
+                identified_title="Item",
+                category="Cat",
+                detected_attributes=[],
+                missing_or_recommended_info=[],
+                suggested_note="Note",
+            ),
         )
-        mock_client.models.generate_content.return_value = mock_response
 
         # Spanish
         identify_intake_product([b"fake"], language="es")
@@ -348,17 +333,16 @@ class IntakePreflightServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="test-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_intake_identification_uses_gemini_flash_latest_model(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-        mock_response = MagicMock()
-        mock_response.parsed = IntakePreflightSchema(
-            identified_title="Vintage Denim Jacket",
-            category="Ropa",
-            detected_attributes=[],
-            missing_or_recommended_info=[],
-            suggested_note="",
+        mock_client, _ = configure_gemini_mock(
+            mock_client_cls,
+            parsed=IntakePreflightSchema(
+                identified_title="Vintage Denim Jacket",
+                category="Ropa",
+                detected_attributes=[],
+                missing_or_recommended_info=[],
+                suggested_note="",
+            ),
         )
-        mock_client.models.generate_content.return_value = mock_response
 
         identify_intake_product([b"\xff\xd8\xffsample"])
         client_kwargs = mock_client_cls.call_args.kwargs
@@ -370,14 +354,13 @@ class IntakePreflightServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="test-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_generate_listing_pins_v1beta_api_version(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-        mock_response = MagicMock()
-        mock_response.parsed = ProductListingSchema(
-            title="Pink Floyd 1994 Tee",
-            description="Vintage tee",
+        configure_gemini_mock(
+            mock_client_cls,
+            parsed=ProductListingSchema(
+                title="Pink Floyd 1994 Tee",
+                description="Vintage tee",
+            ),
         )
-        mock_client.models.generate_content.return_value = mock_response
 
         product = Product.objects.create(raw_note="Vintage tee")
         generate_product_listing(product)
@@ -387,8 +370,6 @@ class IntakePreflightServiceTests(TestCase):
     @override_settings(GEMINI_API_KEY="test-key")
     @patch("inventory.services.ai_service.genai.Client")
     def test_self_healing_fallback_on_404_not_found(self, mock_client_cls):
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
         mock_ok = MagicMock()
         mock_ok.parsed = IntakePreflightSchema(
             identified_title="Recovered Levi's Jacket",
@@ -398,10 +379,13 @@ class IntakePreflightServiceTests(TestCase):
             suggested_note="",
         )
         # First model fails with 404 NOT_FOUND; second model in chain (gemini-3.8-flash) succeeds
-        mock_client.models.generate_content.side_effect = [
-            RuntimeError("404 NOT_FOUND. {'error': {'code': 404, 'message': 'Model is not found', 'status': 'NOT_FOUND'}}"),
-            mock_ok,
-        ]
+        mock_client, _ = configure_gemini_mock(
+            mock_client_cls,
+            side_effect=[
+                RuntimeError("404 NOT_FOUND. {'error': {'code': 404, 'message': 'Model is not found', 'status': 'NOT_FOUND'}}"),
+                mock_ok,
+            ],
+        )
 
         res = identify_intake_product([b"\xff\xd8\xffsample"])
         self.assertTrue(res["success"])

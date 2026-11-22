@@ -1,34 +1,19 @@
 import json
 
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
-from django.test import Client, TestCase
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import translation
 
 from inventory.models import Product, ProductImage
-from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
-from tests.helpers import make_test_image_file
-
-User = get_user_model()
+from tests.helpers import create_role_users, create_user_with_group, make_test_image_file
 
 
 class PhotoReorderingBackendTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.manager, cls.assistant = create_role_users(prefix="reord_api")
+
     def setUp(self):
-        self.client = Client()
-
-        # Groups (created by migrations)
-        self.manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
-        self.assistant_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
-
-        # Users
-        self.manager = User.objects.create_user(username="manager1", password="password123")
-        self.manager.groups.add(self.manager_group)
-
-        self.assistant = User.objects.create_user(username="assistant1", password="password123")
-        self.assistant.groups.add(self.assistant_group)
-
-        # Products
         self.product = Product.objects.create(
             raw_note="Product with multiple photos",
             created_by=self.assistant,
@@ -53,7 +38,7 @@ class PhotoReorderingBackendTests(TestCase):
         self.assertIn(reverse("inventory:login"), resp.url)
 
     def test_assistant_reorder_forbidden(self):
-        self.client.login(username="assistant1", password="password123")
+        self.client.force_login(self.assistant)
         resp = self.client.post(
             self.reorder_url,
             json.dumps({"image_ids": [self.img2.id, self.img1.id, self.img3.id]}),
@@ -62,12 +47,12 @@ class PhotoReorderingBackendTests(TestCase):
         self.assertEqual(resp.status_code, 403)
 
     def test_get_method_not_allowed(self):
-        self.client.login(username="manager1", password="password123")
+        self.client.force_login(self.manager)
         resp = self.client.get(self.reorder_url)
         self.assertEqual(resp.status_code, 405)
 
     def test_manager_reorder_success_json(self):
-        self.client.login(username="manager1", password="password123")
+        self.client.force_login(self.manager)
         new_order = [self.img3.id, self.img1.id, self.img2.id]
         resp = self.client.post(
             self.reorder_url,
@@ -93,7 +78,7 @@ class PhotoReorderingBackendTests(TestCase):
         self.assertEqual(self.product.primary_image.id, self.img3.id)
 
     def test_manager_reorder_success_form_data(self):
-        self.client.login(username="manager1", password="password123")
+        self.client.force_login(self.manager)
         new_order = [str(self.img2.id), str(self.img3.id), str(self.img1.id)]
         resp = self.client.post(
             self.reorder_url,
@@ -113,7 +98,7 @@ class PhotoReorderingBackendTests(TestCase):
         self.assertEqual(self.product.primary_image.id, self.img2.id)
 
     def test_malformed_json_returns_bad_request(self):
-        self.client.login(username="manager1", password="password123")
+        self.client.force_login(self.manager)
         resp = self.client.post(
             self.reorder_url,
             "NOT_JSON",
@@ -123,7 +108,7 @@ class PhotoReorderingBackendTests(TestCase):
         self.assertFalse(resp.json()["success"])
 
     def test_empty_image_ids_returns_bad_request(self):
-        self.client.login(username="manager1", password="password123")
+        self.client.force_login(self.manager)
         resp = self.client.post(
             self.reorder_url,
             json.dumps({"image_ids": []}),
@@ -132,7 +117,7 @@ class PhotoReorderingBackendTests(TestCase):
         self.assertEqual(resp.status_code, 400)
 
     def test_non_integer_image_ids_returns_bad_request(self):
-        self.client.login(username="manager1", password="password123")
+        self.client.force_login(self.manager)
         resp = self.client.post(
             self.reorder_url,
             json.dumps({"image_ids": ["abc", "def", "ghi"]}),
@@ -145,7 +130,7 @@ class PhotoReorderingBackendTests(TestCase):
         product2 = Product.objects.create(raw_note="Second product", created_by=self.assistant)
         foreign_img = self._create_product_image(product2, "foreign.webp", order=0)
 
-        self.client.login(username="manager1", password="password123")
+        self.client.force_login(self.manager)
         # Attempt to insert foreign_img into self.product
         invalid_ids = [self.img1.id, self.img2.id, foreign_img.id]
         resp = self.client.post(
@@ -159,7 +144,7 @@ class PhotoReorderingBackendTests(TestCase):
         self.assertIn("do not match", data["error"])
 
     def test_incomplete_image_ids_rejected(self):
-        self.client.login(username="manager1", password="password123")
+        self.client.force_login(self.manager)
         # Only 2 out of 3 IDs sent
         resp = self.client.post(
             self.reorder_url,
@@ -170,15 +155,15 @@ class PhotoReorderingBackendTests(TestCase):
 
 
 class PhotoReorderingIntakeUITests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = create_user_with_group("assistant_ui", group_name="assistants")
+        cls.url = reverse("inventory:intake")
+
     def setUp(self):
-        self.client = Client()
-        self.assistant_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
-        self.user = User.objects.create_user(username="assistant_ui", password="password123")
-        self.user.groups.add(self.assistant_group)
-        self.url = reverse("inventory:intake")
+        self.client.force_login(self.user)
 
     def test_intake_template_renders_reordering_guidance_and_controls(self):
-        self.client.login(username="assistant_ui", password="password123")
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
@@ -190,9 +175,8 @@ class PhotoReorderingIntakeUITests(TestCase):
         self.assertIn("draggable", html)
 
     def test_intake_reorder_spanish_localization(self):
-        self.client.login(username="assistant_ui", password="password123")
         with translation.override("es"):
-            resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="es")
+            resp = self.client.get(self.url, headers={"Accept-Language": "es"})
             self.assertEqual(resp.status_code, 200)
             html = resp.content.decode("utf-8")
 
@@ -203,7 +187,6 @@ class PhotoReorderingIntakeUITests(TestCase):
             self.assertIn("Establecer como foto de portada", html)
 
     def test_intake_submission_preserves_image_order(self):
-        self.client.login(username="assistant_ui", password="password123")
         imgA = make_test_image_file("A_cover.jpg", size=(60, 60), color="green")
         imgB = make_test_image_file("B_second.jpg", size=(60, 60), color="green")
         imgC = make_test_image_file("C_third.jpg", size=(60, 60), color="green")
@@ -228,17 +211,11 @@ class PhotoReorderingIntakeUITests(TestCase):
 
 
 class PhotoReorderingDetailUITests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.manager, cls.assistant = create_role_users(prefix="reord_det")
+
     def setUp(self):
-        self.client = Client()
-        self.manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
-        self.assistant_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
-
-        self.manager = User.objects.create_user(username="manager_ui", password="password123")
-        self.manager.groups.add(self.manager_group)
-
-        self.assistant = User.objects.create_user(username="assistant_ui2", password="password123")
-        self.assistant.groups.add(self.assistant_group)
-
         self.product = Product.objects.create(
             raw_note="Product for detail UI test",
             created_by=self.assistant,
@@ -254,7 +231,7 @@ class PhotoReorderingDetailUITests(TestCase):
         self.detail_url = reverse("inventory:product_detail", kwargs={"pk": self.product.pk})
 
     def test_manager_detail_view_renders_reorder_controls(self):
-        self.client.login(username="manager_ui", password="password123")
+        self.client.force_login(self.manager)
         resp = self.client.get(self.detail_url)
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
@@ -269,7 +246,7 @@ class PhotoReorderingDetailUITests(TestCase):
         self.assertIn("persistImageOrder", html)
 
     def test_assistant_detail_view_hides_reorder_controls(self):
-        self.client.login(username="assistant_ui2", password="password123")
+        self.client.force_login(self.assistant)
         resp = self.client.get(self.detail_url)
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
@@ -288,7 +265,7 @@ class PhotoReorderingDetailUITests(TestCase):
         )
         ProductImage.objects.create(product=single_prod, image=file, order=0)
 
-        self.client.login(username="manager_ui", password="password123")
+        self.client.force_login(self.manager)
         resp = self.client.get(reverse("inventory:product_detail", kwargs={"pk": single_prod.pk}))
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
@@ -296,9 +273,9 @@ class PhotoReorderingDetailUITests(TestCase):
         self.assertNotIn('id="toggleReorderModeBtn"', html)
 
     def test_detail_reorder_spanish_localization(self):
-        self.client.login(username="manager_ui", password="password123")
+        self.client.force_login(self.manager)
         with translation.override("es"):
-            resp = self.client.get(self.detail_url, HTTP_ACCEPT_LANGUAGE="es")
+            resp = self.client.get(self.detail_url, headers={"Accept-Language": "es"})
             self.assertEqual(resp.status_code, 200)
             html = resp.content.decode("utf-8")
 

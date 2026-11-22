@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.test import Client, TestCase
+from django.test import TestCase
 from django.urls import reverse
 
 from inventory.models import (
@@ -19,7 +19,6 @@ User = get_user_model()
 
 class MarketplaceLinksMobileTests(TestCase):
     def setUp(self):
-        self.client = Client()
         self.mgr_group, _ = Group.objects.get_or_create(name="managers")
         self.asst_group, _ = Group.objects.get_or_create(name="assistants")
 

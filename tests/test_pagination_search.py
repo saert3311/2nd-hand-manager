@@ -1,19 +1,15 @@
 import datetime
 from decimal import Decimal
 
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.db import connection
-from django.test import Client, TestCase
+from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
 from inventory.models import Product, ProductImage, ProductStatus
-from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
 from inventory.services.search_service import build_search_query
-
-User = get_user_model()
+from tests.helpers import create_role_users
 
 
 class SearchServiceTests(TestCase):
@@ -56,18 +52,13 @@ class SearchServiceTests(TestCase):
 
 
 class DashboardPaginationAndSearchTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.manager, cls.assistant = create_role_users(prefix="pag", manager_is_staff=True)
+        cls.dashboard_url = reverse("inventory:dashboard")
+
     def setUp(self):
-        self.client = Client()
-        self.manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
-        self.asst_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
-
-        self.manager = User.objects.create_user(
-            username="manager_user", password="password123", is_staff=True
-        )
-        self.manager.groups.add(self.manager_group)
-
-        self.dashboard_url = reverse("inventory:dashboard")
-        self.client.login(username="manager_user", password="password123")
+        self.client.force_login(self.manager)
 
     def test_pagination_caps_at_20_items_per_page(self):
         # Create 45 products
@@ -190,7 +181,7 @@ class DashboardPaginationAndSearchTests(TestCase):
             Product(raw_note=f"Item {i}") for i in range(1, 25)
         ])
 
-        resp = self.client.get(self.dashboard_url, HTTP_ACCEPT_LANGUAGE="es")
+        resp = self.client.get(self.dashboard_url, headers={"Accept-Language": "es"})
         self.assertEqual(resp.status_code, 200)
         content = resp.content.decode("utf-8")
 
@@ -202,13 +193,11 @@ class DashboardPaginationAndSearchTests(TestCase):
 
     def test_intake_recent_uploads_remain_unpaginated(self):
         # Sourcing assistant intake view
-        asst = User.objects.create_user(username="asst_user", password="password123")
-        asst.groups.add(self.asst_group)
-        self.client.login(username="asst_user", password="password123")
+        self.client.force_login(self.assistant)
 
         # Create 10 items by assistant
         for i in range(10):
-            Product.objects.create(raw_note=f"Upload {i}", created_by=asst)
+            Product.objects.create(raw_note=f"Upload {i}", created_by=self.assistant)
 
         resp = self.client.get(reverse("inventory:intake"))
         self.assertEqual(resp.status_code, 200)
@@ -341,10 +330,8 @@ class DashboardPaginationAndSearchTests(TestCase):
         self.assertNotContains(resp_single, 'aria-label="Pagination"')
 
     def test_assistant_can_use_page_size_selector(self):
-        asst = User.objects.create_user(username="asst_paginator", password="password123")
-        asst.groups.add(self.asst_group)
-        self.client.force_login(asst)
-        Product.objects.bulk_create([Product(raw_note=f"Asst Item {i}", created_by=asst) for i in range(1, 56)])
+        self.client.force_login(self.assistant)
+        Product.objects.bulk_create([Product(raw_note=f"Asst Item {i}", created_by=self.assistant) for i in range(1, 56)])
 
         resp = self.client.get(self.dashboard_url, {"per_page": "50"})
         self.assertEqual(resp.status_code, 200)
@@ -394,7 +381,7 @@ class DashboardPaginationAndSearchTests(TestCase):
 
     def test_page_size_selector_spanish_localization(self):
         Product.objects.create(raw_note="Artículo de prueba")
-        resp = self.client.get(self.dashboard_url, HTTP_ACCEPT_LANGUAGE="es")
+        resp = self.client.get(self.dashboard_url, headers={"Accept-Language": "es"})
         self.assertEqual(resp.status_code, 200)
         content = resp.content.decode("utf-8")
         self.assertIn("Mostrando", content)

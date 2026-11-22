@@ -41,7 +41,7 @@ class IntakeIdentificationGateTests(TestCase):
     def test_submit_button_spanish_localization(self):
         """Verify localized Spanish text for the mandatory identification helper text."""
         with translation.override("es"):
-            resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="es")
+            resp = self.client.get(self.url, headers={"Accept-Language": "es"})
             self.assertEqual(resp.status_code, 200)
             html = resp.content.decode("utf-8")
             self.assertIn("Identifica primero el producto con IA para habilitar el guardado", html)

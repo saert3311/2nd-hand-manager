@@ -5,7 +5,7 @@ from io import StringIO
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
-from django.test import Client, TestCase, override_settings
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import escape
@@ -29,7 +29,6 @@ User = get_user_model()
 
 class StorefrontMarketplaceTests(TestCase):
     def setUp(self):
-        self.client = Client()
         self.staff_user = User.objects.create_user(
             username="secret_staff_agent_6644",
             password="password123",
@@ -268,7 +267,7 @@ class StorefrontMarketplaceTests(TestCase):
 
         # Verify Spanish navbar renders "Tienda" to the right of "Outlet"
         with self.subTest("spanish navbar label Tienda"):
-            html_es = self.client.get(reverse("storefront:home"), HTTP_ACCEPT_LANGUAGE="es").content.decode("utf-8")
+            html_es = self.client.get(reverse("storefront:home"), headers={"Accept-Language": "es"}).content.decode("utf-8")
             nav_start = html_es.index('aria-label="Navegación principal"')
             nav_es = html_es[nav_start:html_es.index("</nav>", nav_start)]
             self.assertIn("Tienda", nav_es)

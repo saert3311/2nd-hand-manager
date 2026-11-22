@@ -310,7 +310,7 @@ class ClauseGuardStage1LocalFilterTests(_ClauseGuardBaseTestCase):
         self.client.force_login(self.manager)
         resp = self.client.get(
             reverse("inventory:product_detail", kwargs={"pk": clean_prod.pk}),
-            HTTP_ACCEPT_LANGUAGE="es",
+            headers={"Accept-Language": "es"},
         )
         self.assertEqual(resp.status_code, 200)
         self.assertNotContains(resp, "Stage 1 clean pass")
@@ -1064,7 +1064,7 @@ class ClauseGuardAdminAndDashboardTests(_ClauseGuardBaseTestCase):
         # Product detail card renders ClauseGuard matrix, token savings & verify button for manager
         resp_detail = self.client.get(
             reverse("inventory:product_detail", kwargs={"pk": flagged_prod.pk}),
-            HTTP_ACCEPT_LANGUAGE="es",
+            headers={"Accept-Language": "es"},
         )
         self.assertEqual(resp_detail.status_code, 200)
         self.assertContains(resp_detail, "clauseGuardCard")

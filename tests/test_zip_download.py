@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client, TestCase
+from django.test import TestCase
 from django.urls import reverse
 from PIL import Image
 
@@ -17,7 +17,6 @@ User = get_user_model()
 
 class ProductDetailAndZipDownloadTests(TestCase):
     def setUp(self):
-        self.client = Client()
         self.manager = User.objects.create_user(username="mgr", password="password123", is_staff=True)
         self.assistant = User.objects.create_user(username="asst", password="password123")
 

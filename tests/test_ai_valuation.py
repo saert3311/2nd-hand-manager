@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
-from django.test import Client, TestCase
+from django.test import TestCase
 from django.urls import reverse
 
 from inventory.forms import ProductIntakeForm
@@ -16,7 +16,7 @@ from inventory.services.ai_service import (
     _clean_price,
     identify_intake_product,
 )
-from tests.helpers import make_test_image_bytes, make_test_image_file
+from tests.helpers import configure_gemini_mock, make_test_image_bytes, make_test_image_file
 
 User = get_user_model()
 
@@ -80,9 +80,6 @@ class IdentifyIntakeProductValuationTests(TestCase):
 
     @patch("inventory.services.ai_service.genai.Client")
     def test_identify_parses_valuation_from_parsed_response(self, mock_client_class):
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-
         mock_parsed = MagicMock()
         mock_parsed.identified_title = "Sony WH-1000XM4"
         mock_parsed.category = "Electrónica"
@@ -91,10 +88,7 @@ class IdentifyIntakeProductValuationTests(TestCase):
         mock_parsed.suggested_note = "Auriculares con cancelación de ruido"
         mock_parsed.estimated_retail_price = 379.0
         mock_parsed.estimated_resale_price = 185.0
-
-        mock_response = MagicMock()
-        mock_response.parsed = mock_parsed
-        mock_client.models.generate_content.return_value = mock_response
+        configure_gemini_mock(mock_client_class, parsed=mock_parsed)
 
         with patch("inventory.services.ai_service.settings.GEMINI_API_KEY", "dummy_key"):
             result = identify_intake_product(self.sample_bytes, raw_note="Auriculares Sony")
@@ -106,21 +100,19 @@ class IdentifyIntakeProductValuationTests(TestCase):
 
     @patch("inventory.services.ai_service.genai.Client")
     def test_identify_parses_valuation_from_json_fallback(self, mock_client_class):
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-
-        mock_response = MagicMock()
-        mock_response.parsed = None
-        mock_response.text = json.dumps({
-            "identified_title": "Chaqueta Barbour Beaufort",
-            "category": "Ropa Vintage",
-            "detected_attributes": ["Verde oliva", "Cera"],
-            "missing_or_recommended_info": ["Revisar desgaste en puños"],
-            "suggested_note": "Chaqueta encerada clásica Barbour",
-            "estimated_retail_price": 425.0,
-            "estimated_resale_price": 160.0,
-        })
-        mock_client.models.generate_content.return_value = mock_response
+        configure_gemini_mock(
+            mock_client_class,
+            parsed=None,
+            text=json.dumps({
+                "identified_title": "Chaqueta Barbour Beaufort",
+                "category": "Ropa Vintage",
+                "detected_attributes": ["Verde oliva", "Cera"],
+                "missing_or_recommended_info": ["Revisar desgaste en puños"],
+                "suggested_note": "Chaqueta encerada clásica Barbour",
+                "estimated_retail_price": 425.0,
+                "estimated_resale_price": 160.0,
+            }),
+        )
 
         with patch("inventory.services.ai_service.settings.GEMINI_API_KEY", "dummy_key"):
             result = identify_intake_product(self.sample_bytes, raw_note="Barbour")
@@ -132,9 +124,6 @@ class IdentifyIntakeProductValuationTests(TestCase):
 
     @patch("inventory.services.ai_service.genai.Client")
     def test_identify_handles_null_valuations_gracefully(self, mock_client_class):
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-
         mock_parsed = MagicMock()
         mock_parsed.identified_title = "Cuadro anónimo"
         mock_parsed.category = "Arte"
@@ -143,10 +132,7 @@ class IdentifyIntakeProductValuationTests(TestCase):
         mock_parsed.suggested_note = "Pintura al óleo sobre lienzo"
         mock_parsed.estimated_retail_price = None
         mock_parsed.estimated_resale_price = None
-
-        mock_response = MagicMock()
-        mock_response.parsed = mock_parsed
-        mock_client.models.generate_content.return_value = mock_response
+        configure_gemini_mock(mock_client_class, parsed=mock_parsed)
 
         with patch("inventory.services.ai_service.settings.GEMINI_API_KEY", "dummy_key"):
             result = identify_intake_product(self.sample_bytes)
@@ -201,7 +187,6 @@ class IntakeAndDetailValuationViewTests(TestCase):
     """Integration tests for intake and detail template rendering and identify endpoint."""
 
     def setUp(self):
-        self.client = Client()
         self.assistant_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
         self.manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
 

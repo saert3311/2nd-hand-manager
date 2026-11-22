@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from django.contrib.auth.models import Group, User
 from django.core.files.base import ContentFile
-from django.test import Client, TestCase, override_settings
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from inventory.models import Product, ProductImage
@@ -69,7 +69,6 @@ class StorageDecouplingAndIntakeTests(TestCase):
         super().tearDownClass()
 
     def setUp(self):
-        self.client = Client()
         self.assistant = User.objects.create_user(username="asst_user", password="password123")
         self.manager = User.objects.create_user(username="mgr_user", password="password123", is_staff=True)
 

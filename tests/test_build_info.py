@@ -181,7 +181,7 @@ class FooterTemplateRenderingTestCase(TestCase):
             clear_build_info_cache()
             response = self.client.get(
                 reverse("inventory:dashboard"),
-                HTTP_ACCEPT_LANGUAGE="es",
+                headers={"Accept-Language": "es"},
             )
             self.assertEqual(response.status_code, 200)
             content = response.content.decode("utf-8")

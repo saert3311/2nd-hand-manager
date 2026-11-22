@@ -194,7 +194,7 @@ class DetailPhotoUploadComponentTests(TestCase):
     def test_spanish_localization(self):
         """Verify Spanish translations render on the product detail page."""
         url = reverse("inventory:product_detail", kwargs={"pk": self.product.pk})
-        resp = self.client_manager.get(url, HTTP_ACCEPT_LANGUAGE="es")
+        resp = self.client_manager.get(url, headers={"Accept-Language": "es"})
         self.assertEqual(resp.status_code, 200)
         content = resp.content.decode("utf-8")
 
@@ -206,7 +206,7 @@ class DetailPhotoUploadComponentTests(TestCase):
     def test_english_localization(self):
         """Verify English translations render when English is requested."""
         url = reverse("inventory:product_detail", kwargs={"pk": self.product.pk})
-        resp = self.client_manager.get(url, HTTP_ACCEPT_LANGUAGE="en")
+        resp = self.client_manager.get(url, headers={"Accept-Language": "en"})
         self.assertEqual(resp.status_code, 200)
         content = resp.content.decode("utf-8")
 

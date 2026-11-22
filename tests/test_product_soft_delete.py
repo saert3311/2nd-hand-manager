@@ -1,8 +1,6 @@
 from decimal import Decimal
 
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
-from django.test import Client, TestCase
+from django.test import TestCase
 from django.urls import reverse
 
 from inventory.admin import ProductAdmin, admin_site
@@ -11,31 +9,14 @@ from inventory.models import (
     ProductStatus,
     ProductStatusLog,
 )
-from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
-
-User = get_user_model()
+from tests.helpers import create_role_users
 
 
 class ProductSoftDeleteTestCase(TestCase):
-    def setUp(self):
-        self.assistant_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
-        self.manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
+    @classmethod
+    def setUpTestData(cls):
+        cls.manager, cls.assistant = create_role_users(prefix="softdel", manager_is_staff=True)
 
-        self.manager = User.objects.create_user(
-            username="testmanager",
-            password="managerpassword123",
-            is_staff=True,
-        )
-        self.manager.groups.add(self.manager_group)
-
-        self.assistant = User.objects.create_user(
-            username="testassistant",
-            password="assistantpassword123",
-            is_staff=False,
-        )
-        self.assistant.groups.add(self.assistant_group)
-
-        self.client = Client()
 
     # 1. Model Domain Tests
     def test_soft_delete_and_restore_model_methods(self):
@@ -103,7 +84,7 @@ class ProductSoftDeleteTestCase(TestCase):
         )
         p_erased.soft_delete(user=self.manager)
 
-        self.client.login(username="testmanager", password="managerpassword123")
+        self.client.force_login(self.manager)
         response = self.client.get(reverse("inventory:dashboard"))
         self.assertEqual(response.status_code, 200)
 
@@ -129,7 +110,7 @@ class ProductSoftDeleteTestCase(TestCase):
         )
         p_erased.soft_delete(user=self.manager)
 
-        self.client.login(username="testmanager", password="managerpassword123")
+        self.client.force_login(self.manager)
         response = self.client.get(reverse("inventory:dashboard") + "?status=erased")
         self.assertEqual(response.status_code, 200)
 
@@ -155,7 +136,7 @@ class ProductSoftDeleteTestCase(TestCase):
         )
         p_erased.soft_delete(user=self.manager)
 
-        self.client.login(username="testmanager", password="managerpassword123")
+        self.client.force_login(self.manager)
 
         # Global search: should only match active item
         resp_active = self.client.get(reverse("inventory:dashboard") + "?q=SpecialExclusiveItem")
@@ -177,7 +158,7 @@ class ProductSoftDeleteTestCase(TestCase):
             created_by=self.assistant,
         )
 
-        self.client.login(username="testmanager", password="managerpassword123")
+        self.client.force_login(self.manager)
 
         # Soft delete POST
         delete_url = reverse("inventory:product_soft_delete", kwargs={"pk": product.pk})
@@ -204,7 +185,7 @@ class ProductSoftDeleteTestCase(TestCase):
             created_by=self.assistant,
         )
 
-        self.client.login(username="testassistant", password="assistantpassword123")
+        self.client.force_login(self.assistant)
 
         # Assistant attempt to delete -> 403 Forbidden
         delete_url = reverse("inventory:product_soft_delete", kwargs={"pk": product.pk})
@@ -231,12 +212,12 @@ class ProductSoftDeleteTestCase(TestCase):
         product.soft_delete(user=self.manager)
 
         # Assistant gets redirected
-        self.client.login(username="testassistant", password="assistantpassword123")
+        self.client.force_login(self.assistant)
         resp = self.client.get(reverse("inventory:product_detail", kwargs={"pk": product.pk}))
         self.assertRedirects(resp, reverse("inventory:dashboard"))
 
         # Manager can view erased product detail with banner
-        self.client.login(username="testmanager", password="managerpassword123")
+        self.client.force_login(self.manager)
         resp_mgr = self.client.get(reverse("inventory:product_detail", kwargs={"pk": product.pk}))
         self.assertEqual(resp_mgr.status_code, 200)
         content = resp_mgr.content.decode("utf-8")
@@ -249,7 +230,7 @@ class ProductSoftDeleteTestCase(TestCase):
             status=ProductStatus.DRAFT,
             created_by=self.assistant,
         )
-        self.client.login(username="testmanager", password="managerpassword123")
+        self.client.force_login(self.manager)
 
         get_resp_delete = self.client.get(reverse("inventory:product_soft_delete", kwargs={"pk": product.pk}))
         self.assertEqual(get_resp_delete.status_code, 405)
@@ -298,11 +279,11 @@ class ProductSoftDeleteTestCase(TestCase):
         product = Product.objects.create(raw_note="i18n test item", created_by=self.assistant)
         product.soft_delete(user=self.manager)
 
-        self.client.login(username="testmanager", password="managerpassword123")
+        self.client.force_login(self.manager)
 
         response = self.client.get(
             reverse("inventory:product_detail", kwargs={"pk": product.pk}),
-            HTTP_ACCEPT_LANGUAGE="es",
+            headers={"Accept-Language": "es"},
         )
         self.assertEqual(response.status_code, 200)
         content = response.content.decode("utf-8")

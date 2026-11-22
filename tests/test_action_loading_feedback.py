@@ -55,7 +55,7 @@ class ActionLoadingFeedbackMarkupTests(TestCase):
 
     def test_intake_contains_app_feedback_and_identification_skeleton(self):
         self.client.force_login(self.assistant)
-        response = self.client.get(reverse("inventory:intake"), HTTP_ACCEPT_LANGUAGE="en")
+        response = self.client.get(reverse("inventory:intake"), headers={"Accept-Language": "en"})
         self.assertEqual(response.status_code, 200)
         html = response.content.decode("utf-8")
 
@@ -69,7 +69,7 @@ class ActionLoadingFeedbackMarkupTests(TestCase):
 
     def test_intake_spanish_localization_renders_progress_stages(self):
         self.client.force_login(self.assistant)
-        response = self.client.get(reverse("inventory:intake"), HTTP_ACCEPT_LANGUAGE="es")
+        response = self.client.get(reverse("inventory:intake"), headers={"Accept-Language": "es"})
         self.assertEqual(response.status_code, 200)
         html = response.content.decode("utf-8")
 
@@ -78,7 +78,7 @@ class ActionLoadingFeedbackMarkupTests(TestCase):
 
     def test_product_detail_active_and_erased_contain_loading_hooks(self):
         self.client.force_login(self.manager)
-        response = self.client.get(reverse("inventory:product_detail", args=[self.product.pk]), HTTP_ACCEPT_LANGUAGE="en")
+        response = self.client.get(reverse("inventory:product_detail", args=[self.product.pk]), headers={"Accept-Language": "en"})
         self.assertEqual(response.status_code, 200)
         html = response.content.decode("utf-8")
 
@@ -102,7 +102,7 @@ class ActionLoadingFeedbackMarkupTests(TestCase):
         self.product.soft_delete(self.manager)
         deleted_resp = self.client.get(
             reverse("inventory:product_detail", args=[self.product.pk]),
-            HTTP_ACCEPT_LANGUAGE="en",
+            headers={"Accept-Language": "en"},
         )
         self.assertEqual(deleted_resp.status_code, 200)
         deleted_html = deleted_resp.content.decode("utf-8")
@@ -110,13 +110,13 @@ class ActionLoadingFeedbackMarkupTests(TestCase):
 
     def test_pallets_and_dashboard_contain_uniform_loading_attributes(self):
         self.client.force_login(self.manager)
-        pallets_resp = self.client.get(reverse("inventory:pallets"), HTTP_ACCEPT_LANGUAGE="en")
+        pallets_resp = self.client.get(reverse("inventory:pallets"), headers={"Accept-Language": "en"})
         self.assertEqual(pallets_resp.status_code, 200)
         pallets_html = pallets_resp.content.decode("utf-8")
         self.assertIn('data-loading-text="Creating..."', pallets_html)
         self.assertIn('data-loading-text="Deleting..."', pallets_html)
 
-        dash_resp = self.client.get(reverse("inventory:dashboard") + "?status=erased", HTTP_ACCEPT_LANGUAGE="en")
+        dash_resp = self.client.get(reverse("inventory:dashboard") + "?status=erased", headers={"Accept-Language": "en"})
         self.assertEqual(dash_resp.status_code, 200)
         self.assertIn('data-loading-text="Processing..."', dash_resp.content.decode("utf-8"))
 

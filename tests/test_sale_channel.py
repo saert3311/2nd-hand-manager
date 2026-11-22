@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.test import Client, TestCase
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import translation
 
@@ -58,7 +58,6 @@ class SaleChannelTestCase(TestCase):
             },
         )
 
-        self.client = Client()
 
     # 1. Model Domain Tests
     def test_sale_channel_defaults(self):

@@ -2,8 +2,6 @@ from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import patch
 
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import TestCase, override_settings
@@ -29,28 +27,18 @@ from inventory.services.trash_service import (
     purge_expired_trash,
     purge_product_and_media,
 )
-
-User = get_user_model()
+from tests.helpers import create_role_users
 
 
 @override_settings(TURNSTILE_ENABLED=False)
 class TrashRetentionAndCleanupTests(TestCase):
-    def setUp(self):
-        # Create user roles
-        self.manager = User.objects.create_user(
-            username="test_manager",
-            password="password123",
-            is_staff=True,
+    @classmethod
+    def setUpTestData(cls):
+        cls.manager, cls.assistant = create_role_users(prefix="trash", manager_is_staff=True)
+        cls.category, _ = Category.objects.get_or_create(slug="consoles", defaults={"name": "Consoles"})
+        cls.site, _ = MarketplaceSite.objects.get_or_create(
+            slug="wallapop", defaults={"name": "Wallapop", "is_active": True}
         )
-        self.assistant = User.objects.create_user(
-            username="test_assistant",
-            password="password123",
-        )
-        asst_group, _ = Group.objects.get_or_create(name="assistants")
-        self.assistant.groups.add(asst_group)
-
-        self.category, _ = Category.objects.get_or_create(slug="consoles", defaults={"name": "Consoles"})
-        self.site, _ = MarketplaceSite.objects.get_or_create(slug="wallapop", defaults={"name": "Wallapop", "is_active": True})
 
     def _create_product(self, title="Test Console", is_deleted=False, deleted_days_ago=None):
         prod = Product.objects.create(
@@ -200,14 +188,14 @@ class TrashRetentionAndCleanupTests(TestCase):
         self.assertIn("/login/", resp.url)
 
         # Assistant cannot delete (403 Forbidden)
-        self.client.login(username="test_assistant", password="password123")
+        self.client.force_login(self.assistant)
         resp = self.client.post(url)
         self.assertEqual(resp.status_code, 403)
         self.assertTrue(Product.objects.filter(pk=prod.pk).exists())
         self.client.logout()
 
         # Manager GET is 405 Method Not Allowed
-        self.client.login(username="test_manager", password="password123")
+        self.client.force_login(self.manager)
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 405)
 
@@ -220,7 +208,7 @@ class TrashRetentionAndCleanupTests(TestCase):
         active_prod, _ = self._create_product("Active Reject", is_deleted=False)
         url = reverse("inventory:product_permanent_delete", kwargs={"pk": active_prod.pk})
 
-        self.client.login(username="test_manager", password="password123")
+        self.client.force_login(self.manager)
         resp = self.client.post(url)
         self.assertRedirects(resp, reverse("inventory:product_detail", kwargs={"pk": active_prod.pk}))
         self.assertTrue(Product.objects.filter(pk=active_prod.pk).exists())
@@ -232,12 +220,12 @@ class TrashRetentionAndCleanupTests(TestCase):
         url = reverse("inventory:dashboard_empty_trash")
 
         # Assistant 403
-        self.client.login(username="test_assistant", password="password123")
+        self.client.force_login(self.assistant)
         resp = self.client.post(url, {"mode": "expired"})
         self.assertEqual(resp.status_code, 403)
         self.client.logout()
 
-        self.client.login(username="test_manager", password="password123")
+        self.client.force_login(self.manager)
 
         # Manager GET 405
         resp = self.client.get(url)
@@ -257,7 +245,7 @@ class TrashRetentionAndCleanupTests(TestCase):
     def test_dashboard_trash_toolbar_and_detail_button_rendering(self):
         prod, _ = self._create_product("Soft Deleted Item", is_deleted=True, deleted_days_ago=35)
 
-        self.client.login(username="test_manager", password="password123")
+        self.client.force_login(self.manager)
 
         # Dashboard Trash view
         dash_url = f"{reverse('inventory:dashboard')}?status=erased"
@@ -296,7 +284,7 @@ class TrashRetentionAndCleanupTests(TestCase):
         activate("es")
         try:
             prod, _ = self._create_product("Producto Español", is_deleted=True, deleted_days_ago=35)
-            self.client.login(username="test_manager", password="password123")
+            self.client.force_login(self.manager)
 
             dash_url = f"{reverse('inventory:dashboard')}?status=erased"
             resp = self.client.get(dash_url, headers={"accept-language": "es"})

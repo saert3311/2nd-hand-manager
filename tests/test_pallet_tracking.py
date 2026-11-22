@@ -1,40 +1,22 @@
 import datetime
 from decimal import Decimal
 
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.db import IntegrityError
-from django.test import Client, TestCase
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import translation
 
 from inventory.forms import PalletForm, ProductIntakeForm
 from inventory.models import Pallet, Product, ProductStatus
-from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
-from tests.helpers import make_test_image_file
-
-User = get_user_model()
+from tests.helpers import create_role_users, make_test_image_file
 
 
 class PalletTrackingTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.manager, cls.assistant = create_role_users(prefix="pallet", manager_is_staff=True)
+
     def setUp(self):
-        self.client = Client()
-        self.assistant_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
-        self.manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
-
-        self.manager = User.objects.create_user(
-            username="manager_ana",
-            password="password123",
-            is_staff=True,
-        )
-        self.manager.groups.add(self.manager_group)
-
-        self.assistant = User.objects.create_user(
-            username="assistant_carlos",
-            password="password123",
-        )
-        self.assistant.groups.add(self.assistant_group)
-
         self.pallet1 = Pallet.objects.create(
             number=1,
             received_date=datetime.date(2026, 10, 15),
@@ -104,7 +86,7 @@ class PalletTrackingTests(TestCase):
         self.assertIn("purchase_price", form_invalid_price.errors)
 
     def test_manager_pallets_view_and_creation(self):
-        self.client.login(username="manager_ana", password="password123")
+        self.client.force_login(self.manager)
         response = self.client.get(reverse("inventory:pallets"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Pallet #1")
@@ -132,7 +114,7 @@ class PalletTrackingTests(TestCase):
         self.assertEqual(pallet2.created_by, self.manager)
 
     def test_manager_pallet_edit_view(self):
-        self.client.login(username="manager_ana", password="password123")
+        self.client.force_login(self.manager)
         edit_url = reverse("inventory:pallet_edit", args=[self.pallet1.pk])
         response = self.client.get(edit_url)
         self.assertEqual(response.status_code, 200)
@@ -154,7 +136,7 @@ class PalletTrackingTests(TestCase):
         self.assertEqual(self.pallet1.notes, "Updated notes")
 
     def test_manager_pallet_delete_view(self):
-        self.client.login(username="manager_ana", password="password123")
+        self.client.force_login(self.manager)
         product = Product.objects.create(
             raw_note="Headphones",
             ai_title="Wireless Headphones",
@@ -171,7 +153,7 @@ class PalletTrackingTests(TestCase):
         self.assertIsNone(product.pallet)
 
     def test_assistant_cannot_access_pallets_view(self):
-        self.client.login(username="assistant_carlos", password="password123")
+        self.client.force_login(self.assistant)
         response = self.client.get(reverse("inventory:pallets"))
         self.assertEqual(response.status_code, 403)
 
@@ -187,7 +169,7 @@ class PalletTrackingTests(TestCase):
         self.assertIn(reverse("inventory:login"), response.url)
 
     def test_sticky_intake_session_persistence(self):
-        self.client.login(username="assistant_carlos", password="password123")
+        self.client.force_login(self.assistant)
 
         # 1. Initial GET on /intake/ with no session: pre-selects pallet1 (highest number)
         response1 = self.client.get(reverse("inventory:intake"))
@@ -279,7 +261,7 @@ class PalletTrackingTests(TestCase):
             created_by=self.manager,
         )
 
-        self.client.login(username="manager_ana", password="password123")
+        self.client.force_login(self.manager)
         detail_url = reverse("inventory:product_detail", args=[product.pk])
         response = self.client.get(detail_url)
         self.assertEqual(response.status_code, 200)
@@ -315,7 +297,7 @@ class PalletTrackingTests(TestCase):
             self.assertEqual(_("— Standalone / No Pallet —"), "— Sueltos / Sin pallet —")
             self.assertEqual(_("Clear filters"), "Limpiar filtros")
 
-        self.client.login(username="manager_ana", password="password123")
+        self.client.force_login(self.manager)
         self.client.cookies["django_language"] = "es"
         response = self.client.get(reverse("inventory:pallets"))
         self.assertEqual(response.status_code, 200)
@@ -366,7 +348,7 @@ class PalletTrackingTests(TestCase):
         )
 
         dashboard_url = reverse("inventory:dashboard")
-        self.client.login(username="manager_ana", password="password123")
+        self.client.force_login(self.manager)
 
         # 1. Unfiltered Dashboard: shows all 3 items, displays badges, hides financial costs
         resp_all = self.client.get(dashboard_url)
@@ -420,7 +402,7 @@ class PalletTrackingTests(TestCase):
         )
 
         dashboard_url = reverse("inventory:dashboard")
-        self.client.login(username="manager_ana", password="password123")
+        self.client.force_login(self.manager)
 
         # Status tab + pallet filter
         resp = self.client.get(dashboard_url, {"status": "ready", "pallet": str(self.pallet1.id)})
@@ -444,7 +426,7 @@ class PalletTrackingTests(TestCase):
             created_by=self.assistant,
         )
 
-        self.client.login(username="assistant_carlos", password="password123")
+        self.client.force_login(self.assistant)
         resp = self.client.get(reverse("inventory:dashboard"))
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, f"Pallet #{self.pallet1.number}")

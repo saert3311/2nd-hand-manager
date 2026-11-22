@@ -226,7 +226,7 @@ class ProductDetailTabbedRedesignTests(TestCase):
         url = reverse("inventory:product_detail", kwargs={"pk": self.product.pk})
 
         with translation.override("es"):
-            resp_es = self.client.get(url, HTTP_ACCEPT_LANGUAGE="es")
+            resp_es = self.client.get(url, headers={"Accept-Language": "es"})
             html_es = resp_es.content.decode("utf-8")
             self.assertIn("Anuncio", html_es)
             self.assertIn("Canales", html_es)
@@ -238,7 +238,7 @@ class ProductDetailTabbedRedesignTests(TestCase):
             self.assertIn("Registro histórico de estados (clic para desplegar)", html_es)
 
         with translation.override("en"):
-            resp_en = self.client.get(url, HTTP_ACCEPT_LANGUAGE="en")
+            resp_en = self.client.get(url, headers={"Accept-Language": "en"})
             html_en = resp_en.content.decode("utf-8")
             self.assertIn("Listing", html_en)
             self.assertIn("Channels", html_en)

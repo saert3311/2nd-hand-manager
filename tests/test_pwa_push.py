@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.management import call_command
-from django.test import Client, RequestFactory, TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from PIL import Image
 from pywebpush import WebPushException
@@ -37,7 +37,6 @@ User = get_user_model()
 
 class PWAManifestAndServiceWorkerTests(TestCase):
     def setUp(self):
-        self.client = Client()
         self.assistant_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
         self.manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
 
@@ -345,7 +344,6 @@ class VAPIDCommandAndPushServiceTests(TestCase):
 
 class PushSubscriptionAPIEndpointsTests(TestCase):
     def setUp(self):
-        self.client = Client()
         self.user1 = User.objects.create_user(username="user1_api", password="password123")
         self.user2 = User.objects.create_user(username="user2_api", password="password123")
         self.pub_key, self.priv_key = generate_vapid_keypair()

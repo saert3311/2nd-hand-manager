@@ -65,7 +65,7 @@ class IntakeLowDPITests(TestCase):
         """Verify Spanish translations for photo inspection, navigation, and preview helper text."""
         self.client.login(username="scanner_assistant", password="password123")
         with translation.override("es"):
-            resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="es")
+            resp = self.client.get(self.url, headers={"Accept-Language": "es"})
             self.assertEqual(resp.status_code, 200)
             html = resp.content.decode("utf-8")
 
@@ -85,7 +85,7 @@ class IntakeLowDPITests(TestCase):
         """Verify English text for photo inspection, navigation, and preview helper text."""
         self.client.login(username="scanner_assistant", password="password123")
         with translation.override("en"):
-            resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="en")
+            resp = self.client.get(self.url, headers={"Accept-Language": "en"})
             self.assertEqual(resp.status_code, 200)
             html = resp.content.decode("utf-8")
 

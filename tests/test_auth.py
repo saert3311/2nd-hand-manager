@@ -5,7 +5,7 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
 from django.core.management import call_command
 from django.http import HttpResponse
-from django.test import Client, TestCase, override_settings
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from inventory.permissions import (
@@ -37,9 +37,6 @@ class AuthAndPermissionsTests(TestCase):
         cls.regular_user = User.objects.create_user(
             username="regular_bob", password="password123"
         )
-
-    def setUp(self):
-        self.client = Client()
 
     def test_permission_helpers(self):
         self.assertTrue(is_assistant(self.assistant_user))

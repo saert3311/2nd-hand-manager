@@ -32,8 +32,7 @@ class CurrentUserMiddleware:
     making it available across model saves, signals, and audit log handlers.
     """
 
-    STATELESS_PWA_PATHS = ("/sw.js", "/manifest.json")
-    STATELESS_EXACT_PATHS = (*STATELESS_PWA_PATHS, "/favicon.ico")
+    STATELESS_EXACT_PATHS = ("/sw.js", "/manifest.json", "/favicon.ico")
 
     def __init__(self, get_response):
         self.get_response = get_response

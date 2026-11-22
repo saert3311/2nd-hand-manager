@@ -1,14 +1,10 @@
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.db import IntegrityError
 from django.test import TestCase
 from django.urls import reverse
 
 from inventory.admin import MarketplaceSiteAdmin, ProductAdmin, ProductListingLinkInline, admin_site
 from inventory.models import MarketplaceSite, Product, ProductListingLink
-from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
-
-User = get_user_model()
+from tests.helpers import create_role_users, create_user_with_group
 
 
 class MarketplaceSiteModelTests(TestCase):
@@ -43,10 +39,13 @@ class MarketplaceSiteModelTests(TestCase):
 
 
 class ProductListingLinkModelTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = create_user_with_group("lister", password="pw")
+        cls.site = MarketplaceSite.objects.get(slug="wallapop")
+
     def setUp(self):
-        self.user = User.objects.create_user(username="lister", password="pw")
         self.product = Product.objects.create(raw_note="Vintage Jacket", created_by=self.user)
-        self.site = MarketplaceSite.objects.get(slug="wallapop")
 
     def test_create_link_and_str(self):
         """Verify link creation and string display."""
@@ -85,26 +84,21 @@ class ProductListingLinkModelTests(TestCase):
 
 
 class MarketplaceAdminIntegrationTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.manager, cls.assistant = create_role_users(prefix="mkt_admin", password="pw", manager_is_staff=True)
+        cls.site = MarketplaceSite.objects.get(slug="vinted")
+
     def setUp(self):
-        self.mgr_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
-        self.asst_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
-
-        self.manager = User.objects.create_user(username="admin_mgr", password="pw", is_staff=True)
-        self.manager.groups.add(self.mgr_group)
-
-        self.assistant = User.objects.create_user(username="field_asst", password="pw", is_staff=False)
-        self.assistant.groups.add(self.asst_group)
-
         self.product = Product.objects.create(raw_note="Bag")
-        self.site = MarketplaceSite.objects.get(slug="vinted")
 
     def test_manager_can_access_marketplace_site_admin(self):
-        self.client.login(username="admin_mgr", password="pw")
+        self.client.force_login(self.manager)
         response = self.client.get(reverse("admin:inventory_marketplacesite_changelist"))
         self.assertEqual(response.status_code, 200)
 
     def test_assistant_cannot_access_marketplace_site_admin(self):
-        self.client.login(username="field_asst", password="pw")
+        self.client.force_login(self.assistant)
         response = self.client.get(reverse("admin:inventory_marketplacesite_changelist"))
         self.assertEqual(response.status_code, 403)
 
@@ -126,22 +120,17 @@ class MarketplaceAdminIntegrationTests(TestCase):
 
 
 class ProductDetailLinksViewTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.manager, cls.assistant = create_role_users(prefix="mkt_detail", password="pw", manager_is_staff=True)
+        cls.wallapop = MarketplaceSite.objects.get(slug="wallapop")
+        cls.vinted = MarketplaceSite.objects.get(slug="vinted")
+
     def setUp(self):
-        self.mgr_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
-        self.asst_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
-
-        self.manager = User.objects.create_user(username="store_mgr", password="pw", is_staff=True)
-        self.manager.groups.add(self.mgr_group)
-
-        self.assistant = User.objects.create_user(username="scout_asst", password="pw", is_staff=False)
-        self.assistant.groups.add(self.asst_group)
-
         self.product = Product.objects.create(raw_note="Vintage Camera", created_by=self.assistant)
-        self.wallapop = MarketplaceSite.objects.get(slug="wallapop")
-        self.vinted = MarketplaceSite.objects.get(slug="vinted")
 
     def test_product_detail_renders_all_active_platforms(self):
-        self.client.login(username="store_mgr", password="pw")
+        self.client.force_login(self.manager)
         response = self.client.get(reverse("inventory:product_detail", kwargs={"pk": self.product.pk}))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Marketplace Listing Links")
@@ -160,7 +149,7 @@ class ProductDetailLinksViewTests(TestCase):
         self.assertContains(response_with_link, "Listed")
 
     def test_manager_saves_valid_marketplace_link(self):
-        self.client.login(username="store_mgr", password="pw")
+        self.client.force_login(self.manager)
         url = reverse("inventory:manage_link", kwargs={"pk": self.product.pk})
         response = self.client.post(
             url,
@@ -187,7 +176,7 @@ class ProductDetailLinksViewTests(TestCase):
             site=self.vinted,
             url="https://www.vinted.es/items/old-link",
         )
-        self.client.login(username="store_mgr", password="pw")
+        self.client.force_login(self.manager)
         url = reverse("inventory:manage_link", kwargs={"pk": self.product.pk})
         self.client.post(
             url,
@@ -207,7 +196,7 @@ class ProductDetailLinksViewTests(TestCase):
             site=self.wallapop,
             url="https://es.wallapop.com/item/123",
         )
-        self.client.login(username="store_mgr", password="pw")
+        self.client.force_login(self.manager)
         url = reverse("inventory:manage_link", kwargs={"pk": self.product.pk})
         response = self.client.post(
             url,
@@ -223,7 +212,7 @@ class ProductDetailLinksViewTests(TestCase):
         self.assertContains(response, "Marketplace link cleared.")
 
     def test_invalid_url_rejected(self):
-        self.client.login(username="store_mgr", password="pw")
+        self.client.force_login(self.manager)
         url = reverse("inventory:manage_link", kwargs={"pk": self.product.pk})
         response = self.client.post(
             url,
@@ -244,7 +233,7 @@ class ProductDetailLinksViewTests(TestCase):
             site=self.wallapop,
             url="https://es.wallapop.com/item/123",
         )
-        self.client.login(username="store_mgr", password="pw")
+        self.client.force_login(self.manager)
         url = reverse("inventory:manage_link", kwargs={"pk": self.product.pk})
         response = self.client.post(
             url,
@@ -259,7 +248,7 @@ class ProductDetailLinksViewTests(TestCase):
         self.assertContains(response, "Marketplace link removed successfully.")
 
     def test_assistant_cannot_manage_links(self):
-        self.client.login(username="scout_asst", password="pw")
+        self.client.force_login(self.assistant)
         url = reverse("inventory:manage_link", kwargs={"pk": self.product.pk})
         response = self.client.post(
             url,
@@ -276,16 +265,16 @@ class ProductDetailLinksViewTests(TestCase):
 
 
 class DashboardMarketplacePlatformFilterTests(TestCase):
-    def setUp(self):
-        self.manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
-        self.manager = User.objects.create_user(username="mgr_user", password="pw")
-        self.manager.groups.add(self.manager_group)
-        self.client.login(username="mgr_user", password="pw")
+    @classmethod
+    def setUpTestData(cls):
+        cls.manager = create_user_with_group("mgr_user", password="pw", group_name="managers")
+        cls.wallapop = MarketplaceSite.objects.get(slug="wallapop")
+        cls.vinted = MarketplaceSite.objects.get(slug="vinted")
+        cls.milanuncios = MarketplaceSite.objects.get(slug="milanuncios")
+        cls.ebay = MarketplaceSite.objects.get(slug="ebay")
 
-        self.wallapop = MarketplaceSite.objects.get(slug="wallapop")
-        self.vinted = MarketplaceSite.objects.get(slug="vinted")
-        self.milanuncios = MarketplaceSite.objects.get(slug="milanuncios")
-        self.ebay = MarketplaceSite.objects.get(slug="ebay")
+    def setUp(self):
+        self.client.force_login(self.manager)
 
         # Create products
         self.p1 = Product.objects.create(

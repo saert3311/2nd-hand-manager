@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from django.contrib.auth.models import Group, User
-from django.test import Client, TestCase
+from django.test import TestCase
 from django.urls import reverse
 
 from inventory.forms import ProductUpdateForm
@@ -33,7 +33,6 @@ class InternationalizationTests(TestCase):
             is_sold=False,
         )
 
-        self.client = Client()
 
     def test_login_page_renders_in_spanish_with_accept_language_header(self):
         response = self.client.get(reverse("inventory:login"), headers={"accept-language": "es"})

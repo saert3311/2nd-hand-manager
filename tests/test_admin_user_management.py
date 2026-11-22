@@ -2,55 +2,45 @@ from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.test import Client, TestCase
+from django.test import TestCase
 from django.urls import reverse
 
 from inventory.models import Product
 from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
+from tests.helpers import create_role_users
 
 User = get_user_model()
 
 
 class AdminAccessAndUserManagementTests(TestCase):
     def setUp(self):
-        self.client = Client()
-        self.mgr_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
-        self.asst_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
+        self.manager, self.assistant = create_role_users(prefix="admin_u")
+        self.manager.is_staff = True
+        self.manager.save(update_fields=["is_staff"])
+        self.mgr_group = Group.objects.get(name=ROLE_MANAGER)
+        self.asst_group = Group.objects.get(name=ROLE_ASSISTANT)
 
-        # Superuser
         self.superuser = User.objects.create_superuser(
             username="super_admin", password="password123", email="super@example.com"
         )
-
-        # Manager user
-        self.manager = User.objects.create_user(
-            username="shop_manager", password="password123", email="manager@example.com", is_staff=True
-        )
-        self.manager.groups.add(self.mgr_group)
-
-        # Assistant user
-        self.assistant = User.objects.create_user(
-            username="intake_asst", password="password123", email="asst@example.com", is_staff=False
-        )
-        self.assistant.groups.add(self.asst_group)
 
         self.admin_url = reverse("admin:index")
         self.user_changelist_url = reverse("admin:auth_user_changelist")
         self.group_changelist_url = reverse("admin:auth_group_changelist")
 
     def test_manager_can_access_admin_portal(self):
-        self.client.login(username="shop_manager", password="password123")
+        self.client.force_login(self.manager)
         resp = self.client.get(self.admin_url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "2ndHand Staging")
 
     def test_superuser_can_access_admin_portal(self):
-        self.client.login(username="super_admin", password="password123")
+        self.client.force_login(self.superuser)
         resp = self.client.get(self.admin_url)
         self.assertEqual(resp.status_code, 200)
 
     def test_assistant_strictly_forbidden_from_admin_portal(self):
-        self.client.login(username="intake_asst", password="password123")
+        self.client.force_login(self.assistant)
         # Direct hit to /admin/ index
         resp = self.client.get(self.admin_url)
         self.assertEqual(resp.status_code, 403)
@@ -73,7 +63,7 @@ class AdminAccessAndUserManagementTests(TestCase):
                 created_by=self.assistant
             )
 
-        self.client.login(username="shop_manager", password="password123")
+        self.client.force_login(self.manager)
         resp = self.client.get(self.user_changelist_url)
         self.assertEqual(resp.status_code, 200)
 
@@ -87,7 +77,7 @@ class AdminAccessAndUserManagementTests(TestCase):
         self.assertIn(f"created_by__id__exact={self.assistant.id}", content)
 
     def test_role_list_filter(self):
-        self.client.login(username="shop_manager", password="password123")
+        self.client.force_login(self.manager)
 
         # Filter Assistants
         resp_asst = self.client.get(self.user_changelist_url, {"role": "assistant"})
@@ -109,7 +99,7 @@ class AdminAccessAndUserManagementTests(TestCase):
         user = User.objects.create_user(username="temp_staff", password="password123", is_staff=True)
         user.groups.add(self.mgr_group)
 
-        self.client.login(username="super_admin", password="password123")
+        self.client.force_login(self.superuser)
         post_data = {
             "action": "make_assistant",
             "_selected_action": [user.pk],
@@ -123,7 +113,7 @@ class AdminAccessAndUserManagementTests(TestCase):
         self.assertFalse(user.groups.filter(name=ROLE_MANAGER).exists())
 
     def test_make_manager_action(self):
-        self.client.login(username="super_admin", password="password123")
+        self.client.force_login(self.superuser)
         post_data = {
             "action": "make_manager",
             "_selected_action": [self.assistant.pk],
@@ -139,7 +129,7 @@ class AdminAccessAndUserManagementTests(TestCase):
         # Assistant catalogs product
         prod = Product.objects.create(raw_note="Vintage Jacket", created_by=self.assistant)
 
-        self.client.login(username="shop_manager", password="password123")
+        self.client.force_login(self.manager)
         post_data = {
             "action": "deactivate_users",
             "_selected_action": [self.assistant.pk],
@@ -155,15 +145,15 @@ class AdminAccessAndUserManagementTests(TestCase):
         self.assertEqual(prod.created_by, self.assistant)
 
     def test_admin_spanish_localization(self):
-        self.client.login(username="shop_manager", password="password123")
-        resp = self.client.get(self.admin_url, HTTP_ACCEPT_LANGUAGE="es")
+        self.client.force_login(self.manager)
+        resp = self.client.get(self.admin_url, headers={"Accept-Language": "es"})
         self.assertEqual(resp.status_code, 200)
 
         content = resp.content.decode("utf-8")
         self.assertIn("Administración", content)
 
     def test_manager_can_access_and_view_groups(self):
-        self.client.login(username="shop_manager", password="password123")
+        self.client.force_login(self.manager)
         resp = self.client.get(self.group_changelist_url)
         self.assertEqual(resp.status_code, 200)
         content = resp.content.decode("utf-8")
@@ -171,14 +161,14 @@ class AdminAccessAndUserManagementTests(TestCase):
         self.assertIn(ROLE_MANAGER, content)
 
     def test_groups_visible_in_admin_index_for_manager(self):
-        self.client.login(username="shop_manager", password="password123")
+        self.client.force_login(self.manager)
         resp = self.client.get(self.admin_url)
         self.assertEqual(resp.status_code, 200)
         content = resp.content.decode("utf-8")
         self.assertIn(self.group_changelist_url, content)
 
     def test_assistant_strictly_forbidden_from_groups_admin(self):
-        self.client.login(username="intake_asst", password="password123")
+        self.client.force_login(self.assistant)
         resp = self.client.get(self.group_changelist_url)
         self.assertEqual(resp.status_code, 403)
 
@@ -187,7 +177,7 @@ class AdminAccessAndUserManagementTests(TestCase):
         self.assertTrue(Group.objects.filter(name=ROLE_MANAGER).exists())
 
     def test_custom_group_admin_displays_member_count(self):
-        self.client.login(username="shop_manager", password="password123")
+        self.client.force_login(self.manager)
         resp = self.client.get(self.group_changelist_url)
         self.assertEqual(resp.status_code, 200)
         # Check that the changelist shows count for groups

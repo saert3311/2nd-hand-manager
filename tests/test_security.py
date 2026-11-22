@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group, User
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client, RequestFactory, TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from PIL import Image
 
@@ -41,7 +41,6 @@ class SecurityAndXSSProtectionTests(TestCase):
     """
 
     def setUp(self):
-        self.client = Client()
         self.assistant = User.objects.create_user(username="asst", password="password123")
         self.manager = User.objects.create_user(username="mgr", password="password123", is_staff=True)
 
@@ -272,7 +271,6 @@ class AccessControlAndSecurityHeadersTests(TestCase):
     """
 
     def setUp(self):
-        self.client = Client()
         self.assistant = User.objects.create_user(username="asst_user", password="password123")
         self.manager = User.objects.create_user(username="mgr_user", password="password123", is_staff=True)
 
@@ -377,7 +375,6 @@ class AdminPrivilegeEscalationTests(TestCase):
     """Tests preventing non-superuser managers from escalating privileges or altering superusers (H-2)."""
 
     def setUp(self):
-        self.client = Client()
         self.factory = RequestFactory()
         mgr_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
         asst_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
@@ -443,7 +440,6 @@ class SoftDeleteAccessBoundaryTests(TestCase):
     """Tests ensuring assistants cannot access soft-deleted products via dashboard, ZIP, or clarifications (H-3)."""
 
     def setUp(self):
-        self.client = Client()
         mgr_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
         asst_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)
 
@@ -495,7 +491,6 @@ class RateLimitAndIPValidationTests(TestCase):
 
     def setUp(self):
         cache.clear()
-        self.client = Client()
         self.factory = RequestFactory()
         mgr_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
         asst_group, _ = Group.objects.get_or_create(name=ROLE_ASSISTANT)

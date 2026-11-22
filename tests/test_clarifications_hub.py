@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.test import Client, TestCase, override_settings
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -49,7 +49,6 @@ class ProductClarificationsHubTests(TestCase):
             status=ProductStatus.DRAFT,
         )
 
-        self.client = Client()
 
     def test_direct_clarification_model_creation(self):
         """Direct clarification note is saved in RESOLVED status with is_direct_note=True."""
@@ -283,7 +282,7 @@ class ProductClarificationsHubTests(TestCase):
         self.client.force_login(self.manager)
         response = self.client.get(
             reverse("inventory:product_detail", kwargs={"pk": self.product.pk}),
-            HTTP_ACCEPT_LANGUAGE="es",
+            headers={"Accept-Language": "es"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Aclaraciones y notas del producto")
