@@ -1,4 +1,4 @@
-Django>=5.1,<5.2
+Django>=5.2,<5.3
 pillow>=10.4.0,<13.0.0
 google-genai>=1.0.0,<3.0.0
 python-dotenv>=1.0.1,<2.0.0
