@@ -4662,9 +4662,60 @@ msgstr "Por página:"
 msgid "Show %(count)s products per page"
 msgstr "Mostrar %(count)s productos por página"
 
+msgid "AI Web Research Data"
+msgstr "Datos de Investigación Web con IA"
 
+msgid "Structured brand/model identification, technical specifications, and web reference sources from Gemini Google Search Grounding"
+msgstr "Identificación estructurada de marca/modelo, especificaciones técnicas y fuentes web de referencia mediante Gemini Google Search Grounding"
 
+msgid "AI listing successfully generated with live web research!"
+msgstr "¡Anuncio con IA generado con éxito mediante investigación web en vivo!"
 
+msgid "Web Research (AliExpress / Web)"
+msgstr "Investigar en Web (AliExpress / Web)"
 
+msgid "Research on Web & Generate"
+msgstr "Investigar en Web y Generar"
 
+msgid "Searching Web & Generating..."
+msgstr "Buscando en la web y generando..."
+
+msgid "Search clue or model code (optional)"
+msgstr "Pista de búsqueda o código de modelo (opcional)"
+
+msgid "e.g. HY300, Magcubic, EAN or AliExpress keyword..."
+msgstr "ej. HY300, Magcubic, EAN o palabra clave de AliExpress..."
+
+msgid "Optional hint to guide Google Search toward the exact model, AliExpress listing, or spec sheet."
+msgstr "Pista opcional para orientar la búsqueda en Google hacia el modelo exacto, anuncio en AliExpress o ficha técnica."
+
+msgid "Web Research Insights"
+msgstr "Hallazgos de Investigación Web"
+
+msgid "Google Search Grounded"
+msgstr "Verificado con Google Search"
+
+msgid "Brand:"
+msgstr "Marca:"
+
+msgid "Model:"
+msgstr "Modelo:"
+
+msgid "Verified Specifications"
+msgstr "Especificaciones Verificadas"
+
+msgid "Web Reference Sources"
+msgstr "Fuentes Web de Referencia"
+
+msgid "Search queries used"
+msgstr "Búsquedas realizadas"
+
+msgid "Inspecting labels & model codes in photos..."
+msgstr "Inspeccionando etiquetas y códigos de modelo en las fotos..."
+
+msgid "Searching AliExpress, Amazon & web catalogs..."
+msgstr "Buscando en AliExpress, Amazon y catálogos web..."
+
+msgid "Drafting grounded specs, pricing & listing copy..."
+msgstr "Redactando ficha técnica, tasación y texto del anuncio..."
 

@@ -4305,12 +4305,12 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ### Task 216: Domain Model `Product.ai_research_data`, Migration & Admin Exposure
 **Description:** Add `ai_research_data` (`JSONField`) to `Product`, generate and apply migration `0031_product_ai_research_data.py`, and expose `ai_research_data` as a read-only field in `ProductAdmin`.
 **Acceptance criteria:**
-- [ ] `Product.ai_research_data` added in `inventory/models.py` (`JSONField(default=dict, blank=True)`).
-- [ ] Migration `0031_product_ai_research_data.py` generated and applied cleanly.
-- [ ] `ProductAdmin.readonly_fields` includes `"ai_research_data"` in `inventory/admin.py`.
+- [x] `Product.ai_research_data` added in `inventory/models.py` (`JSONField(default=dict, blank=True)`).
+- [x] Migration `0031_product_ai_research_data.py` generated and applied cleanly.
+- [x] `ProductAdmin.readonly_fields` includes `"ai_research_data"` in `inventory/admin.py`.
 **Verification:**
-- [ ] `.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`
-- [ ] `.venv\Scripts\python.exe manage.py check`
+- [x] `.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`
+- [x] `.venv\Scripts\python.exe manage.py check`
 **Dependencies:** None
 **Files likely touched:**
 - `inventory/models.py`
@@ -4322,13 +4322,13 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ### Task 217: Gemini Google Search Grounding, Self-Healing JSON Fallback & AI Service Extraction
 **Description:** Extend `generate_content_with_fallback()`, `parse_gemini_response_dict()`, and `extract_grounding_metadata()` in `inventory/services/compliance_service.py`, and expand `ProductListingSchema` and `generate_product_listing()` in `inventory/services/ai_service.py` to support optional web research (`use_web_search`, `search_hint`).
 **Acceptance criteria:**
-- [ ] `extract_grounding_metadata()` extracts queries and `http`/`https`-validated deduplicated web sources with clean domain labels.
-- [ ] `parse_gemini_response_dict()` strips Markdown fences and recovers JSON objects from grounded text responses.
-- [ ] `generate_content_with_fallback(..., use_web_search=True)` attaches `types.Tool(google_search=types.GoogleSearch())`, self-heals `400 INVALID_ARGUMENT` JSON+tool combinations, falls back cleanly without breaking fast-mode (`use_web_search=False`), and never retries `429`/`401`/`403` errors.
-- [ ] `generate_product_listing()` injects localized web research instructions + sanitized `<untrusted_search_hint>`, returning `identified_brand`, `identified_model`, `technical_specs`, `estimated_retail_price`, `estimated_resale_price`, and `research_data`.
+- [x] `extract_grounding_metadata()` extracts queries and `http`/`https`-validated deduplicated web sources with clean domain labels.
+- [x] `parse_gemini_response_dict()` strips Markdown fences and recovers JSON objects from grounded text responses.
+- [x] `generate_content_with_fallback(..., use_web_search=True)` attaches `types.Tool(google_search=types.GoogleSearch())`, self-heals `400 INVALID_ARGUMENT` JSON+tool combinations, falls back cleanly without breaking fast-mode (`use_web_search=False`), and never retries `429`/`401`/`403` errors.
+- [x] `generate_product_listing()` injects localized web research instructions + sanitized `<untrusted_search_hint>`, returning `identified_brand`, `identified_model`, `technical_specs`, `estimated_retail_price`, `estimated_resale_price`, and `research_data`.
 **Verification:**
-- [ ] `.venv\Scripts\python.exe manage.py test tests.test_ai_service`
-- [ ] `.venv\Scripts\ruff.exe check inventory/services/compliance_service.py inventory/services/ai_service.py`
+- [x] `.venv\Scripts\python.exe manage.py test tests.test_ai_service`
+- [x] `.venv\Scripts\ruff.exe check inventory/services/compliance_service.py inventory/services/ai_service.py`
 **Dependencies:** Task 216
 **Files likely touched:**
 - `inventory/services/compliance_service.py`
@@ -4339,11 +4339,11 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ### Task 218: Manager Staging Workspace Toggle, Search Hint, View Persistence & Insights Card
 **Description:** Wire `use_web_search` and `search_hint` through `generate_ai_view` and `product_detail_view` in `inventory/views.py`, persisting `ai_research_data` and updating valuation benchmarks without touching `sale_price`. Render the toggle, hint input, staged progress messages, and `#aiWebResearchCard` in `inventory/templates/inventory/product_detail.html`.
 **Acceptance criteria:**
-- [ ] `generate_ai_view` handles `use_web_search` and `search_hint`, updates `estimated_retail_price`/`estimated_resale_price` (never overwriting `sale_price`), persists `ai_research_data`, and shows distinct EN/ES flash feedback.
-- [ ] `product_detail.html` renders `#id_use_web_search`, progressive-disclosure `#id_search_hint` (`text-base sm:text-sm`), dynamic `#aiBtn` + skeleton stages, and `#aiWebResearchCard` in Tab 1 (`Listing`) with clickable `rel="noopener noreferrer"` links and zero overflow on `360×800` / `320×711`.
+- [x] `generate_ai_view` handles `use_web_search` and `search_hint`, updates `estimated_retail_price`/`estimated_resale_price` (never overwriting `sale_price`), persists `ai_research_data`, and shows distinct EN/ES flash feedback.
+- [x] `product_detail.html` renders `#id_use_web_search`, progressive-disclosure `#id_search_hint` (`text-base sm:text-sm`), dynamic `#aiBtn` + skeleton stages, and `#aiWebResearchCard` in Tab 1 (`Listing`) with clickable `rel="noopener noreferrer"` links and zero overflow on `360×800` / `320×711`.
 **Verification:**
-- [ ] `.venv\Scripts\python.exe manage.py check`
-- [ ] `.venv\Scripts\ruff.exe check inventory/views.py`
+- [x] `.venv\Scripts\python.exe manage.py check`
+- [x] `.venv\Scripts\ruff.exe check inventory/views.py`
 **Dependencies:** Task 217
 **Files likely touched:**
 - `inventory/views.py`
@@ -4354,12 +4354,12 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ### Task 219: Bilingual Translations, Automated Test Suite & Changelog
 **Description:** Add Spanish translations in `locale/es/LC_MESSAGES/django.po`, compile locales, create `tests/test_ai_web_research.py` covering grounding, fallback, URL validation, view permissions, persistence, and ES/EN rendering, and document Phase 59 in `CHANGELOG.md`.
 **Acceptance criteria:**
-- [ ] All new strings translated in `locale/es/LC_MESSAGES/django.po` and compiled cleanly via `manage.py compile_locales`.
-- [ ] `tests/test_ai_web_research.py` covers all grounding, self-healing, sanitization, view persistence, permission, and localized UI rendering cases.
-- [ ] `CHANGELOG.md` updated under `## [Unreleased] -> ### Added`.
+- [x] All new strings translated in `locale/es/LC_MESSAGES/django.po` and compiled cleanly via `manage.py compile_locales`.
+- [x] `tests/test_ai_web_research.py` covers all grounding, self-healing, sanitization, view persistence, permission, and localized UI rendering cases.
+- [x] `CHANGELOG.md` updated under `## [Unreleased] -> ### Added`.
 **Verification:**
-- [ ] `.venv\Scripts\python.exe manage.py test tests.test_ai_web_research tests.test_ai_service`
-- [ ] `.venv\Scripts\python.exe manage.py compile_locales`
+- [x] `.venv\Scripts\python.exe manage.py test tests.test_ai_web_research tests.test_ai_service`
+- [x] `.venv\Scripts\python.exe manage.py compile_locales`
 **Dependencies:** Task 218
 **Files likely touched:**
 - `locale/es/LC_MESSAGES/django.po`
@@ -4370,8 +4370,8 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ---
 
 ### Checkpoint 59: Phase 59 Complete & Quality Gate
-- [ ] `.venv\Scripts\ruff.exe check .` passes with 0 errors/warnings.
-- [ ] `.venv\Scripts\python.exe manage.py check` passes with 0 issues.
-- [ ] `.venv\Scripts\python.exe manage.py compile_locales` succeeds cleanly.
-- [ ] `.venv\Scripts\python.exe manage.py test` passes 100%.
+- [x] `.venv\Scripts\ruff.exe check .` passes with 0 errors/warnings.
+- [x] `.venv\Scripts\python.exe manage.py check` passes with 0 issues.
+- [x] `.venv\Scripts\python.exe manage.py compile_locales` succeeds cleanly.
+- [x] `.venv\Scripts\python.exe manage.py test` passes 100%.
 - [ ] User approval requested before merging `feat/ai-web-research-identification` into `master`.

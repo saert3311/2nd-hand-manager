@@ -4202,9 +4202,60 @@ msgstr "Per page:"
 msgid "Show %(count)s products per page"
 msgstr "Show %(count)s products per page"
 
+msgid "AI Web Research Data"
+msgstr "AI Web Research Data"
 
+msgid "Structured brand/model identification, technical specifications, and web reference sources from Gemini Google Search Grounding"
+msgstr "Structured brand/model identification, technical specifications, and web reference sources from Gemini Google Search Grounding"
 
+msgid "AI listing successfully generated with live web research!"
+msgstr "AI listing successfully generated with live web research!"
 
+msgid "Web Research (AliExpress / Web)"
+msgstr "Web Research (AliExpress / Web)"
 
+msgid "Research on Web & Generate"
+msgstr "Research on Web & Generate"
 
+msgid "Searching Web & Generating..."
+msgstr "Searching Web & Generating..."
+
+msgid "Search clue or model code (optional)"
+msgstr "Search clue or model code (optional)"
+
+msgid "e.g. HY300, Magcubic, EAN or AliExpress keyword..."
+msgstr "e.g. HY300, Magcubic, EAN or AliExpress keyword..."
+
+msgid "Optional hint to guide Google Search toward the exact model, AliExpress listing, or spec sheet."
+msgstr "Optional hint to guide Google Search toward the exact model, AliExpress listing, or spec sheet."
+
+msgid "Web Research Insights"
+msgstr "Web Research Insights"
+
+msgid "Google Search Grounded"
+msgstr "Google Search Grounded"
+
+msgid "Brand:"
+msgstr "Brand:"
+
+msgid "Model:"
+msgstr "Model:"
+
+msgid "Verified Specifications"
+msgstr "Verified Specifications"
+
+msgid "Web Reference Sources"
+msgstr "Web Reference Sources"
+
+msgid "Search queries used"
+msgstr "Search queries used"
+
+msgid "Inspecting labels & model codes in photos..."
+msgstr "Inspecting labels & model codes in photos..."
+
+msgid "Searching AliExpress, Amazon & web catalogs..."
+msgstr "Searching AliExpress, Amazon & web catalogs..."
+
+msgid "Drafting grounded specs, pricing & listing copy..."
+msgstr "Drafting grounded specs, pricing & listing copy..."
 
