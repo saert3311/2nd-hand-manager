@@ -43,7 +43,7 @@ jobs:
 
       - name: Gate 2 - Django System & Security Check
         run: |
-          python manage.py check
+          python -W error::DeprecationWarning manage.py check
 
       - name: Gate 2b - Pending Migrations Check
         run: |
@@ -99,7 +99,7 @@ jobs:
           PLAYWRIGHT_USE_BUNDLED_CHROMIUM: '1'
           PLAYWRIGHT_FAILURE_DIR: playwright-failure-artifacts
         run: |
-          python manage.py test
+          python -W error::DeprecationWarning manage.py test
 
       - name: Upload Playwright Failure Artifacts
         if: failure()

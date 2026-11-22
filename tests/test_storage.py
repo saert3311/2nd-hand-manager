@@ -5,6 +5,7 @@ from django.contrib.auth.models import Group, User
 from django.core.files.base import ContentFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from storages.backends.s3 import S3Storage
 
 from inventory.models import Product, ProductImage
 from inventory.permissions import ROLE_ASSISTANT, ROLE_MANAGER
@@ -35,6 +36,9 @@ class OCIObjectStorageBackendTests(TestCase):
         self.assertFalse(storage.client_config.s3["payload_signing_enabled"])
         self.assertEqual(storage.client_config.request_checksum_calculation, "when_required")
         self.assertEqual(storage.client_config.response_checksum_validation, "when_required")
+
+    def test_oci_storage_inherits_from_modern_s3_storage(self):
+        self.assertTrue(issubclass(OCIObjectStorage, S3Storage))
 
     def test_oci_storage_url_generation(self):
         storage = OCIObjectStorage(

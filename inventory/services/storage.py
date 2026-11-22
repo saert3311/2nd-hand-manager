@@ -1,8 +1,8 @@
 from botocore.config import Config
-from storages.backends.s3boto3 import S3Boto3Storage
+from storages.backends.s3 import S3Storage
 
 
-class OCIObjectStorage(S3Boto3Storage):
+class OCIObjectStorage(S3Storage):
     """
     Storage backend for Oracle Cloud Infrastructure (OCI) Object Storage
     using the Amazon S3-compatible API.

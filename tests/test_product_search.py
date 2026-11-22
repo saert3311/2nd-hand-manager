@@ -1,6 +1,8 @@
 from decimal import Decimal
+from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
+from django.db.models import F
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -18,6 +20,7 @@ from inventory.models import (
     SaleChannelType,
 )
 from inventory.services.search_service import (
+    UnaccentIContains,
     build_search_query,
     fold_search_text,
     sqlite_unaccent_like,
@@ -64,6 +67,19 @@ class SearchServiceUnitTests(TestCase):
         # Quoted phrases and year-month tokens must stay intact
         self.assertEqual(tokenize_search_query('"Ref: 42" Ref: 7'), ["Ref: 42", "ref:7"])
         self.assertEqual(tokenize_search_query("2026-10"), ["2026-10"])
+
+    def test_unaccent_icontains_as_sqlite_handles_tuple_params(self):
+        lookup = UnaccentIContains(F("ai_title"), "camara")
+        lhs_params = ("lhs_arg",)
+        rhs_params = ("%camara%",)
+        with (
+            patch.object(lookup, "process_lhs", return_value=('"inventory_product"."ai_title"', lhs_params)),
+            patch.object(lookup, "process_rhs", return_value=("%s", rhs_params)),
+        ):
+            sql, params = lookup.as_sqlite(MagicMock(), MagicMock())
+        self.assertEqual(sql, 'unaccent_like(%s, "inventory_product"."ai_title", \'\\\')')
+        self.assertIsInstance(params, tuple)
+        self.assertEqual(params, ("lhs_arg", "%camara%"))
 
 
 class ProductSearchIntegrationTests(TestCase):

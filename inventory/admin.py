@@ -8,7 +8,7 @@ from django.contrib.auth.admin import GroupAdmin
 from django.contrib.auth.admin import UserAdmin as DefaultUserAdmin
 from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count, Q
+from django.db.models import Count, Q, URLField
 from django.shortcuts import redirect, render
 from django.urls import path, reverse
 from django.utils.html import format_html
@@ -43,6 +43,12 @@ from .services.backup_service import backup_database
 from .services.compliance_service import fetch_available_gemini_models
 
 User = get_user_model()
+
+# Adopt Django 6.0's HTTPS default for forms.URLField explicitly to avoid
+# RemovedInDjango60Warning without using the deprecated transitional setting.
+URLFIELD_HTTPS_OVERRIDES = {
+    URLField: {"assume_scheme": "https"},
+}
 
 
 class ManagerAdminSite(admin.AdminSite):
@@ -329,6 +335,7 @@ class ProductImageInline(admin.TabularInline):
 class ProductListingLinkInline(admin.TabularInline):
     model = ProductListingLink
     extra = 1
+    formfield_overrides = URLFIELD_HTTPS_OVERRIDES
     fields = ("site", "url", "is_active", "clicks_count", "created_at", "updated_at")
     readonly_fields = ("clicks_count", "created_at", "updated_at")
 
@@ -781,6 +788,7 @@ class AIPromptConfigurationAdmin(admin.ModelAdmin):
 
 @admin.register(MarketplaceSite, site=admin_site)
 class MarketplaceSiteAdmin(admin.ModelAdmin):
+    formfield_overrides = URLFIELD_HTTPS_OVERRIDES
     list_display = (
         "name",
         "slug",
@@ -954,6 +962,7 @@ class PolicyClauseAdmin(admin.ModelAdmin):
 
 @admin.register(ProductListingLink, site=admin_site)
 class ProductListingLinkAdmin(admin.ModelAdmin):
+    formfield_overrides = URLFIELD_HTTPS_OVERRIDES
     list_display = ("id", "product", "site", "url", "is_active", "clicks_count", "created_at")
     list_filter = ("site", "is_active", "created_at")
     search_fields = ("product__ai_title", "product__raw_note", "url")
@@ -1115,6 +1124,7 @@ class PalletAdmin(admin.ModelAdmin):
 
 @admin.register(StorefrontConfiguration, site=admin_site)
 class StorefrontConfigurationAdmin(admin.ModelAdmin):
+    formfield_overrides = URLFIELD_HTTPS_OVERRIDES
     list_display = (
         "store_name",
         "store_domain",
@@ -1282,6 +1292,7 @@ class DatabaseBackupLogAdmin(admin.ModelAdmin):
 
 @admin.register(PushSubscription, site=admin_site)
 class PushSubscriptionAdmin(admin.ModelAdmin):
+    formfield_overrides = URLFIELD_HTTPS_OVERRIDES
     list_display = (
         "id",
         "user",

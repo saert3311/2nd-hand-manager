@@ -93,10 +93,9 @@ class UnaccentIContains(IContains):
     lookup_name = "unaccent_icontains"
 
     def as_sqlite(self, compiler, connection):
-        lhs_sql, params = self.process_lhs(compiler, connection)
+        lhs_sql, lhs_params = self.process_lhs(compiler, connection)
         rhs_sql, rhs_params = self.process_rhs(compiler, connection)
-        params.extend(rhs_params)
-        return f"unaccent_like({rhs_sql}, {lhs_sql}, '\\')", params
+        return f"unaccent_like({rhs_sql}, {lhs_sql}, '\\')", (*lhs_params, *rhs_params)
 
 
 CharField.register_lookup(UnaccentIContains)
