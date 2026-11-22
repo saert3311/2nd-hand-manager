@@ -4372,8 +4372,8 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 ### Task 220: Research-Then-Write Two-Stage Pipeline & Native Prompt Consistency (Direction B)
 **Description:** Separate Pass 1 fact research (`WebResearchFactsSchema`) from Pass 2 strict copywriting (`ProductListingSchema`), enforce native `config.system_instruction` and deterministic `seed`, eliminate Run-1/Run-2 ClauseGuard prompt drift, reuse persisted `ai_research_data` in Fast Mode, and guide `0.0–0.1` temperature in Admin.
 **Acceptance criteria:**
-- [x] `generate_content_with_fallback()` accepts native `system_instruction`, `seed` (with `400` strip retry), and `allow_ungrounded_fallback`.
-- [x] `generate_product_listing()` isolates Pass 1 (`_research_product_facts`) from Pass 2, passes `AIPromptConfiguration.system_instruction` natively, sets deterministic `seed`, uses immutable `raw_note` + clarifications for Stage 1 compliance, and injects locked `<verified_product_facts>`.
+- [x] `generate_content_with_fallback()` accepts native `system_instruction` and `seed` (with `400` strip retry), raising cleanly when grounded candidates exhaust so Pass 1 falls back to Pass 2.
+- [x] `generate_product_listing()` isolates Pass 1 (`_research_product_facts`) from Pass 2, passes `AIPromptConfiguration.system_instruction` natively, sets deterministic `seed`, uses immutable `raw_note` + clarifications for Stage 1 prompt clauses (then re-evaluates Stage 1 on generated copy/category), and injects locked `<verified_product_facts>`.
 - [x] `AIPromptConfigurationAdminForm` documents `0.0–0.1` temperature recommendation with localized ES/EN catalog and zero migrations.
 - [x] `tests/test_ai_service.py` and `tests/test_ai_web_research.py` verify native `system_instruction`, `seed` self-healing, Run-1/Run-2 prompt invariance, and Fast Mode fact reuse.
 **Verification:**
@@ -4387,5 +4387,5 @@ Full audit specification: [`docs/prds/PRD-ui-ux-accessibility-audit.md`](../docs
 - [x] `.venv\Scripts\python.exe manage.py check` passes with 0 issues.
 - [x] `.venv\Scripts\python.exe manage.py compile_locales` succeeds cleanly.
 - [x] `.venv\Scripts\python.exe manage.py test` passes 100%.
-- [ ] Mandatory Post-Implementation Audit (`.agents/skills/post-impl-audit/SKILL.md` Tier 1 + Tier 2) completed.
+- [x] Mandatory Post-Implementation Audit (`.agents/skills/post-impl-audit/SKILL.md` Tier 1 + Tier 2) completed.
 - [ ] User approval requested before merging `feat/ai-web-research-identification` into `master`.

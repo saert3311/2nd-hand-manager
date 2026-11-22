@@ -1,5 +1,8 @@
 import hashlib
+import json
 import logging
+import math
+import re
 from typing import Any, Dict, Literal, Optional, Tuple
 from urllib.parse import urlparse
 
@@ -251,8 +254,9 @@ def sanitize_ai_research_data(raw: Any) -> tuple[dict[str, Any], bool]:
     if not isinstance(raw, dict):
         raw = {}
 
+    raw_sources = raw.get("web_sources")
     safe_sources: list[dict[str, str]] = []
-    for src in raw.get("web_sources") or []:
+    for src in raw_sources if isinstance(raw_sources, (list, tuple)) else []:
         if not isinstance(src, dict):
             continue
         valid_url = _validate_http_url(src.get("url"))
@@ -266,6 +270,8 @@ def sanitize_ai_research_data(raw: Any) -> tuple[dict[str, Any], bool]:
             "domain": domain,
         })
 
+    raw_specs = raw.get("technical_specs")
+    raw_queries = raw.get("search_queries")
     cleaned = {
         "used_web_search": bool(raw.get("used_web_search")),
         "search_hint": str(raw.get("search_hint") or "").strip()[:200],
@@ -273,12 +279,12 @@ def sanitize_ai_research_data(raw: Any) -> tuple[dict[str, Any], bool]:
         "identified_model": str(raw.get("identified_model") or "").strip()[:160],
         "technical_specs": [
             str(s).strip()[:200]
-            for s in (raw.get("technical_specs") or [])
+            for s in (raw_specs if isinstance(raw_specs, (list, tuple)) else [])
             if isinstance(s, str) and str(s).strip()
         ][:8],
         "search_queries": [
             str(q).strip()[:200]
-            for q in (raw.get("search_queries") or [])
+            for q in (raw_queries if isinstance(raw_queries, (list, tuple)) else [])
             if isinstance(q, str) and str(q).strip()
         ][:10],
         "web_sources": safe_sources[:6],
@@ -458,6 +464,13 @@ def _compute_copywriting_seed(product: Product, language: str) -> int:
     return int.from_bytes(digest[:4], "big") & 0x7FFFFFFF
 
 
+def _strip_xml_tag(text: str, tag: str) -> str:
+    """Strips opening/closing delimiter tags case-insensitively to prevent prompt breakout."""
+    if not text:
+        return ""
+    return re.sub(rf"</?{re.escape(tag)}\b[^>]*>", "", text, flags=re.IGNORECASE)
+
+
 def _format_verified_facts_block(research_data: dict[str, Any], is_es: bool) -> str:
     """
     Formats confirmed product identification facts into a style-neutral data block for Pass 2
@@ -465,9 +478,14 @@ def _format_verified_facts_block(research_data: dict[str, Any], is_es: bool) -> 
     """
     if not isinstance(research_data, dict):
         return ""
-    brand = str(research_data.get("identified_brand") or "").strip()
-    model = str(research_data.get("identified_model") or "").strip()
-    specs = [str(s).strip() for s in (research_data.get("technical_specs") or []) if str(s).strip()]
+    brand = _strip_xml_tag(str(research_data.get("identified_brand") or "").strip(), "verified_product_facts").strip()
+    model = _strip_xml_tag(str(research_data.get("identified_model") or "").strip(), "verified_product_facts").strip()
+    raw_specs = research_data.get("technical_specs")
+    specs = []
+    for raw_spec in raw_specs if isinstance(raw_specs, (list, tuple)) else []:
+        cleaned_spec = _strip_xml_tag(str(raw_spec).strip(), "verified_product_facts").strip()
+        if cleaned_spec:
+            specs.append(cleaned_spec)
     if not (brand or model or specs):
         return ""
 
@@ -560,7 +578,6 @@ def _research_product_facts(
     )
     research_contents: list[Any] = [research_prompt, *image_parts]
 
-    fallback_state: dict[str, Any] = {}
     try:
         response = generate_content_with_fallback(
             client,
@@ -570,9 +587,7 @@ def _research_product_facts(
             temperature=0.1,
             thinking_level=resolved_thinking,
             use_web_search=True,
-            fallback_state=fallback_state,
             system_instruction=research_system_instruction,
-            allow_ungrounded_fallback=False,
         )
     except Exception as exc:
         if is_recoverable_model_error(exc):
@@ -581,16 +596,14 @@ def _research_product_facts(
         raise
 
     tokens_used = _extract_token_count(response, research_prompt)
-    data = parse_gemini_response_dict(response, WebResearchFactsSchema)
+    parse_failed = False
+    try:
+        data = parse_gemini_response_dict(response, WebResearchFactsSchema)
+    except (json.JSONDecodeError, ValueError, TypeError) as exc:
+        logger.warning("Pass 1 web research returned unparseable output (%s); checking grounding metadata.", exc)
+        data = {}
+        parse_failed = True
 
-    identified_brand = str(data.get("identified_brand") or "").strip()[:120]
-    identified_model = str(data.get("identified_model") or "").strip()[:160]
-    raw_specs = data.get("technical_specs") or []
-    technical_specs = [
-        str(item).strip()[:200]
-        for item in (raw_specs if isinstance(raw_specs, (list, tuple)) else [])
-        if isinstance(item, str) and item.strip()
-    ][:8]
     raw_ref_urls = data.get("reference_urls") or []
     extra_urls = [
         str(u).strip()
@@ -601,28 +614,21 @@ def _research_product_facts(
     est_retail = _clean_price(data.get("estimated_retail_price"))
     est_resale = _clean_price(data.get("estimated_resale_price"))
 
-    has_concrete_insights = bool(
-        identified_brand
-        or identified_model
-        or technical_specs
-        or grounding["web_sources"]
-        or grounding["search_queries"]
-    )
-    research_data = (
+    research_data, has_concrete_insights = sanitize_ai_research_data(
         {
             "used_web_search": True,
             "search_hint": hint_clean,
-            "identified_brand": identified_brand,
-            "identified_model": identified_model,
-            "technical_specs": technical_specs,
+            "identified_brand": data.get("identified_brand"),
+            "identified_model": data.get("identified_model"),
+            "technical_specs": data.get("technical_specs"),
             "search_queries": grounding["search_queries"],
             "web_sources": grounding["web_sources"],
             "researched_at": timezone.now().isoformat(),
         }
-        if has_concrete_insights
-        else {}
     )
-    return research_data, est_retail, est_resale, False, tokens_used
+    if parse_failed and not has_concrete_insights:
+        return {}, None, None, True, tokens_used
+    return (research_data if has_concrete_insights else {}), est_retail, est_resale, False, tokens_used
 
 
 def generate_product_listing(
@@ -645,7 +651,7 @@ def generate_product_listing(
     if not api_key.strip():
         raise AIServiceError("GEMINI_API_KEY is not configured in environment or settings.")
 
-    images = list(product.images.all()[:5])
+    images = list(product.images.all())[:5]
     if not images and not (product.raw_note and product.raw_note.strip()):
         raise AIServiceError("Cannot generate listing: Product has no photos and no field notes.")
 
@@ -658,8 +664,8 @@ def generate_product_listing(
     notes_fallback = "No se proporcionaron notas." if is_es else "None provided."
     has_raw_note = bool(product.raw_note and product.raw_note.strip())
     raw_trimmed = product.raw_note.strip()[:5000] if has_raw_note else notes_fallback
-    notes_text = raw_trimmed.replace("</untrusted_field_notes>", "")
-    hint_clean = (search_hint or "").strip()[:200].replace("</untrusted_search_hint>", "")
+    notes_text = _strip_xml_tag(raw_trimmed, "untrusted_field_notes")
+    hint_clean = _strip_xml_tag((search_hint or "").strip()[:200], "untrusted_search_hint")
 
     # Format resolved clarifications if any
     resolved_clarifications = product.clarifications.filter(status=ClarificationStatus.RESOLVED).order_by("created_at")
@@ -744,13 +750,13 @@ def generate_product_listing(
 
         facts_block = _format_verified_facts_block(active_facts, is_es=is_es)
 
-        # Compute Stage 1 compliance strictly from immutable inputs (raw_note + clarifications)
+        # Compute Stage 1 prompt clauses strictly from immutable inputs (raw_note + clarifications)
         # so Run 1 generated copy never mutates the Run 2 prompt.
         stage1_parts = [product.raw_note.strip()[:5000]] if has_raw_note else []
         stage1_parts.extend(clarif_answers)
         stage1_source_text = "\n".join(stage1_parts).strip()
-        stage1_result = evaluate_stage1_local(raw_note=stage1_source_text, language=language, top_k=3)
-        top_clauses = stage1_result.get("top_clauses") or []
+        prompt_stage1 = evaluate_stage1_local(raw_note=stage1_source_text, language=language, top_k=3)
+        top_clauses = prompt_stage1.get("top_clauses") or []
         clauses_block = format_top_clauses_prompt_block(top_clauses, language=language)
         compliance_instruction = ""
         if clauses_block:
@@ -796,11 +802,38 @@ def generate_product_listing(
         total_tokens = pass1_tokens + pass2_tokens
 
         data = parse_gemini_response_dict(response, ProductListingSchema)
+        generated_title = str(data.get("title") or "").strip()
+        generated_description = str(data.get("description") or "").strip()
         raw_cat = str(data.get("category_slug") or "").strip()
         raw_cond = str(data.get("condition") or "").strip()
+        resolved_cat_slug = raw_cat if raw_cat in VALID_CATEGORY_SLUGS else ""
+        fallback_cat, _ = infer_taxonomy_heuristically(
+            f"{generated_title} {generated_description} {product.raw_note or ''}"
+        )
+        effective_cat_slug = (
+            resolved_cat_slug
+            or fallback_cat
+            or (
+                product.category.slug
+                if getattr(product, "category_id", None) and getattr(product, "category", None)
+                else ""
+            )
+        )
+
+        # Re-run Stage 1 local compliance on newly generated copy & resolved category
+        # before Stage 2 merge (while retaining prompt_stage1 top_clauses telemetry).
+        output_stage1 = evaluate_stage1_local(
+            title=generated_title,
+            description=generated_description,
+            raw_note=stage1_source_text,
+            category_slug=effective_cat_slug,
+            language=language,
+            top_k=3,
+        )
+        output_stage1["top_clauses"] = top_clauses
 
         compliance_data = merge_stage2_compliance_result(
-            stage1_result=stage1_result,
+            stage1_result=output_stage1,
             ai_passed=bool(data.get("compliance_passed", True)),
             violated_clause_codes=list(data.get("violated_clause_codes") or []),
             sanitized_note=str(data.get("sanitized_note") or ""),
@@ -809,9 +842,9 @@ def generate_product_listing(
             language=language,
         )
         return {
-            "title": str(data.get("title") or "").strip(),
-            "description": str(data.get("description") or "").strip(),
-            "category_slug": raw_cat if raw_cat in VALID_CATEGORY_SLUGS else "",
+            "title": generated_title,
+            "description": generated_description,
+            "category_slug": resolved_cat_slug,
             "condition": raw_cond if raw_cond in VALID_CONDITION_CODES else "",
             "estimated_retail_price": est_retail,
             "estimated_resale_price": est_resale,
@@ -842,7 +875,7 @@ def _clean_price(val: object) -> Optional[float]:
         return None
     try:
         f = float(val)
-        if f < 0 or f > 9999999.99:
+        if not math.isfinite(f) or f < 0 or f > 9999999.99:
             return None
         return round(f, 2)
     except (ValueError, TypeError):

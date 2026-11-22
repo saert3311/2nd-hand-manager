@@ -359,10 +359,8 @@ def generate_content_with_fallback(
     thinking_level: Optional[str] = DEFAULT_THINKING_LEVEL,
     fallback_models: tuple[str, ...] = FALLBACK_MODEL_CHAIN,
     use_web_search: bool = False,
-    fallback_state: Optional[dict[str, Any]] = None,
     system_instruction: Optional[str] = None,
     seed: Optional[int] = None,
-    allow_ungrounded_fallback: bool = True,
 ) -> Any:
     """
     Executes `client.models.generate_content(...)` with model-clamped `ThinkingConfig`
@@ -371,9 +369,9 @@ def generate_content_with_fallback(
 
     Supports native `system_instruction` and deterministic `seed` (stripping `seed` on the
     same model if rejected with `400 INVALID_ARGUMENT`). When `use_web_search=True`, attaches
-    Gemini's built-in Google Search Grounding tool, retries with prompt-enforced JSON on
-    `400 INVALID_ARGUMENT` tool/MIME conflicts, and optionally falls back to un-grounded vision
-    (or raises when `allow_ungrounded_fallback=False`) while recording `fallback_state`.
+    Gemini's built-in Google Search Grounding tool and retries with prompt-enforced JSON on
+    `400 INVALID_ARGUMENT` tool/MIME conflicts, raising the last error when all grounded
+    candidates exhaust so the caller can decide how to degrade.
     """
     primary = (model or DEFAULT_GEMINI_MODEL).strip()
     candidates: list[str] = [primary]
@@ -464,29 +462,6 @@ def generate_content_with_fallback(
                 )
                 continue
 
-    if use_web_search and last_exc is not None and is_recoverable_model_error(last_exc):
-        if fallback_state is not None:
-            fallback_state["fell_back_to_ungrounded"] = True
-        if allow_ungrounded_fallback:
-            logger.warning(
-                "All grounded Gemini candidates failed with recoverable tool errors (%s); "
-                "falling back to standard un-grounded vision.",
-                last_exc,
-            )
-            return generate_content_with_fallback(
-                client,
-                model=model,
-                contents=contents,
-                response_schema=response_schema,
-                temperature=temperature,
-                thinking_level=thinking_level,
-                fallback_models=fallback_models,
-                use_web_search=False,
-                system_instruction=system_instruction,
-                seed=seed,
-            )
-        raise last_exc
-
     if last_exc is not None:
         raise last_exc
     raise RuntimeError("No candidate Gemini models configured.")
@@ -521,6 +496,13 @@ def parse_gemini_response_dict(response: Any, schema_cls: Optional[type[BaseMode
     raw_text = (getattr(response, "text", None) or "").strip()
     if not raw_text:
         return {}
+    for block in re.findall(r"```(?:json)?\s*([\s\S]*?)```", raw_text, flags=re.IGNORECASE):
+        try:
+            data = json.loads(block.strip())
+            if isinstance(data, dict):
+                return data
+        except json.JSONDecodeError:
+            continue
     cleaned = re.sub(r"^```(?:json)?\s*", "", raw_text, flags=re.IGNORECASE)
     cleaned = re.sub(r"\s*```$", "", cleaned).strip()
     try:
