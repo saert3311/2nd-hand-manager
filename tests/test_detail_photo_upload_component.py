@@ -10,7 +10,7 @@ User = get_user_model()
 
 class DetailPhotoUploadComponentTests(TestCase):
     """
-    Automated test suite for Phase 34: Detail View Photo Upload Component System.
+    Automated test suite for Detail View Photo Upload Component System.
     Verifies component visibility, role gating, DOM attributes, dynamic slot counting,
     form submission, published sync integration, and bilingual localization.
     """

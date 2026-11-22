@@ -1,19 +1,18 @@
 from decimal import Decimal
+from unittest.mock import patch
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import translation
 
 from inventory.models import Product
-from tests.helpers import make_test_image_file
-
-User = get_user_model()
+from tests.helpers import create_user_with_group, make_test_image_file
 
 
 class ProductIntakeViewTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = User.objects.create_user(username="assistant1", password="password123")
+        cls.user = create_user_with_group("assistant1")
         cls.url = reverse("inventory:intake")
 
     def test_intake_requires_login(self):
@@ -261,5 +260,244 @@ class ProductIntakeViewTests(TestCase):
         product = Product.objects.first()
         self.assertEqual(product.ai_title, "")
         self.assertEqual(product.display_title, "Leather boots brown size 42")
+
+
+class IntakeLowDPITests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = create_user_with_group("scanner_assistant")
+        cls.url = reverse("inventory:intake")
+
+    def setUp(self):
+        self.client.force_login(self.user)
+
+    def test_preview_grid_and_advisory_banner_structure(self):
+        """Verify semantic preview grid, streamlined header, advisory banner, and photo action controls."""
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode("utf-8")
+
+        self.assertIn('id="previewGrid"', html)
+        self.assertIn("grid-cols-2", html)
+        self.assertNotIn("Snap photos &amp; jot notes on the go", html)
+        self.assertNotIn("View Catalog", html)
+        self.assertNotIn('id="identifyHelpText"', html)
+
+        self.assertIn('id="aiAdvisoryBanner"', html)
+        self.assertIn('id="applySuggestionBtn"', html)
+        self.assertIn("photo-delete-btn", html)
+        self.assertIn("photo-reorder-btn", html)
+        self.assertIn("⭐ #1", html)
+
+    def test_image_inspection_lightbox_modal_presence(self):
+        """Verify full-size image inspection lightbox modal exists with proper accessibility roles and controls."""
+        resp = self.client.get(self.url)
+        html = resp.content.decode("utf-8")
+
+        self.assertIn('id="imagePreviewModal"', html)
+        self.assertIn('role="dialog"', html)
+        self.assertIn('aria-modal="true"', html)
+        self.assertIn('aria-labelledby="modalPhotoTitle"', html)
+        self.assertIn('id="modalPreviewImg"', html)
+        self.assertIn('id="modalPhotoTitle"', html)
+        self.assertIn('id="modalPhotoCounter"', html)
+        self.assertIn('id="closeImageModalBtn"', html)
+        self.assertIn('id="modalPrevBtn"', html)
+        self.assertIn('id="modalNextBtn"', html)
+        self.assertIn('id="rotateLeftBtn"', html)
+        self.assertIn('id="rotateRightBtn"', html)
+        self.assertIn('id="applyCropBtn"', html)
+        self.assertIn("inventory/vendor/cropper.min.css", html)
+        self.assertIn("inventory/vendor/cropper.min.js", html)
+        self.assertIn("photo-edit-btn", html)
+
+    def test_lightbox_modal_spanish_localization(self):
+        """Verify Spanish translations for photo inspection, navigation, and preview helper text."""
+        with translation.override("es"):
+            resp = self.client.get(self.url, headers={"Accept-Language": "es"})
+            self.assertEqual(resp.status_code, 200)
+            html = resp.content.decode("utf-8")
+
+            self.assertIn("Inspección de foto", html)
+            self.assertIn("Cerrar vista previa", html)
+            self.assertIn("Arrastra o toca las flechas para reordenar", html)
+            self.assertIn("Toca para ampliar foto", html)
+            self.assertIn("Foto anterior", html)
+            self.assertIn("Foto siguiente", html)
+            self.assertIn("Cerrar", html)
+            self.assertIn("Girar 90° a la izquierda", html)
+            self.assertIn("Girar 90° a la derecha", html)
+            self.assertIn("Aplicar recorte y giro", html)
+            self.assertIn("Recortar o girar foto", html)
+
+    def test_lightbox_modal_english_localization(self):
+        """Verify English text for photo inspection, navigation, and preview helper text."""
+        with translation.override("en"):
+            resp = self.client.get(self.url, headers={"Accept-Language": "en"})
+            self.assertEqual(resp.status_code, 200)
+            html = resp.content.decode("utf-8")
+
+            self.assertIn("Photo Inspection", html)
+            self.assertIn("Close preview", html)
+            self.assertIn("Drag or tap arrows to reorder", html)
+            self.assertIn("Tap to enlarge photo", html)
+            self.assertIn("Previous photo", html)
+            self.assertIn("Next photo", html)
+            self.assertIn("Close", html)
+            self.assertIn("Rotate left 90°", html)
+            self.assertIn("Rotate right 90°", html)
+            self.assertIn("Apply crop & rotate", html)
+            self.assertIn("Crop or rotate photo", html)
+
+    def test_intake_submission_preserves_post_workflow(self):
+        """Ensure form POST and image persistence continue working without regressions with the new miniature markup."""
+        img = make_test_image_file(name="compact_test.jpg", size=(80, 80), color="green")
+        data = {
+            "images": [img],
+            "raw_note": "Scanner intake test note for compact UI",
+            "sale_price": "29.99",
+            "ai_title": "Identified Item Title",
+        }
+        resp = self.client.post(self.url, data, follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+        product = Product.objects.filter(raw_note__contains="Scanner intake test").first()
+        self.assertIsNotNone(product)
+        self.assertEqual(product.images.count(), 1)
+        self.assertEqual(product.sale_price, Decimal("29.99"))
+
+    def test_notes_field_positioned_directly_below_uploaded_photos(self):
+        """Field Notes / Short Description sits right below uploaded photo previews and above AI Identify & Origin."""
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode("utf-8")
+
+        self.assertIn('aria-describedby="rawNoteHelp"', html)
+        self.assertIn('id="rawNoteHelp"', html)
+
+        pos_preview = html.index('id="previewContainer"')
+        pos_notes = html.index('id="id_raw_note"')
+        pos_identify = html.index('id="identifyBtn"')
+        pos_origin = html.index('id="id_origin"')
+        self.assertLess(pos_preview, pos_notes)
+        self.assertLess(pos_notes, pos_identify)
+        self.assertLess(pos_identify, pos_origin)
+
+
+class IntakeIdentificationGateTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = create_user_with_group("assistant_gate")
+        cls.url = reverse("inventory:intake")
+        cls.identify_url = reverse("inventory:intake_identify")
+
+    def setUp(self):
+        self.client.force_login(self.user)
+
+    def test_submit_button_initially_disabled_in_html(self):
+        """Verify the Save button renders with disabled attribute and accessibility attributes on initial page load."""
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+
+        # Check button attributes
+        html = resp.content.decode("utf-8")
+        self.assertIn('id="submitBtn"', html)
+        self.assertIn("disabled", html)
+        self.assertIn('aria-disabled="true"', html)
+        self.assertIn('aria-describedby="submitHelpText"', html)
+
+        # Check helper text element
+        self.assertIn('id="submitHelpText"', html)
+        self.assertIn("Identify product with AI first to enable saving", html)
+
+    def test_submit_button_spanish_localization(self):
+        """Verify localized Spanish text for the mandatory identification helper text."""
+        with translation.override("es"):
+            resp = self.client.get(self.url, headers={"Accept-Language": "es"})
+            self.assertEqual(resp.status_code, 200)
+            html = resp.content.decode("utf-8")
+            self.assertIn("Identifica primero el producto con IA para habilitar el guardado", html)
+            self.assertIn("Producto identificado — listo para guardar", html)
+            self.assertIn("Por favor, identifica el producto con IA antes de guardar.", html)
+
+    def test_template_contains_identification_gate_controls(self):
+        """Verify presence of intake form, AI identify trigger, guarded submit button, and live help text."""
+        resp = self.client.get(self.url)
+        html = resp.content.decode("utf-8")
+
+        self.assertIn('id="intakeForm"', html)
+        self.assertIn('id="identifyBtn"', html)
+        self.assertIn('id="submitBtn"', html)
+        self.assertIn('id="submitHelpText"', html)
+        self.assertIn('aria-disabled="true"', html)
+
+    @patch("inventory.views.identify_intake_product")
+    def test_identify_preflight_endpoint_success_enables_gate(self, mock_identify):
+        """Verify identify endpoint returns JSON success for assistant."""
+        mock_identify.return_value = {
+            "success": True,
+            "identified_title": "Sony Walkman WM-D6C",
+            "category": "Electronics",
+            "detected_attributes": ["Vintage", "Cassette Player"],
+            "suggested_note": "Includes original carry case and manual.",
+            "missing_or_recommended_info": ["Check battery compartment for corrosion."],
+            "estimated_retail_price": 350.00,
+            "estimated_resale_price": 180.00,
+        }
+
+        img = make_test_image_file(name="walkman.jpg", size=(60, 60), color="blue")
+        resp = self.client.post(self.identify_url, {"images": [img], "raw_note": "Vintage walkman"})
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertTrue(data["success"])
+        self.assertEqual(data["identified_title"], "Sony Walkman WM-D6C")
+        self.assertEqual(data["estimated_retail_price"], 350.00)
+        self.assertEqual(data["estimated_resale_price"], 180.00)
+
+    @patch("inventory.views.identify_intake_product")
+    def test_identify_preflight_endpoint_failure_fallback_response(self, mock_identify):
+        """Verify identify endpoint handles error safely (returning JSON error) without breaking the flow."""
+        mock_identify.return_value = {
+            "success": False,
+            "error": "Could not identify product from photos.",
+            "identified_title": None,
+            "category": None,
+            "detected_attributes": [],
+            "suggested_note": None,
+            "missing_or_recommended_info": [],
+            "estimated_retail_price": None,
+            "estimated_resale_price": None,
+        }
+
+        img = make_test_image_file(name="unclear.jpg", size=(60, 60), color="blue")
+        resp = self.client.post(self.identify_url, {"images": [img]})
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertFalse(data["success"])
+        self.assertIn("Could not identify product", data["error"])
+
+    def test_backend_submission_persists_valid_product(self):
+        """Verify that the backend intake view persists valid submissions successfully."""
+        img = make_test_image_file(name="item.jpg", size=(60, 60), color="blue")
+
+        resp = self.client.post(
+            self.url,
+            {
+                "raw_note": "Handmade wooden chair",
+                "images": [img],
+                "ai_title": "Vintage Oak Dining Chair",
+                "estimated_retail_price": "120.00",
+                "estimated_resale_price": "60.00",
+                "sale_price": "55.00",
+            },
+        )
+        self.assertRedirects(resp, self.url)
+        self.assertEqual(Product.objects.count(), 1)
+        prod = Product.objects.first()
+        self.assertEqual(prod.raw_note, "Handmade wooden chair")
+        self.assertEqual(prod.ai_title, "Vintage Oak Dining Chair")
+        self.assertEqual(prod.estimated_retail_price, Decimal("120.00"))
+        self.assertEqual(prod.estimated_resale_price, Decimal("60.00"))
+        self.assertEqual(prod.sale_price, Decimal("55.00"))
 
 

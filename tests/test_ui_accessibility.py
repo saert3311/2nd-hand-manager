@@ -11,7 +11,7 @@ from inventory.models import Product, ProductClarification, ProductStatus
 
 class UIAccessibilityAndDesignSystemTest(TestCase):
     """
-    Phase 39: Automated UI/UX Design System, Usability & WCAG 2.1 AA Accessibility Test Suite.
+    Automated UI/UX Design System, Usability & WCAG 2.1 AA Accessibility Test Suite.
     Verifies skip links, landmark semantics, heading hierarchy, form error rendering,
     elimination of sub-12px micro-fonts & native JS blocking dialogs, and relative rem typography.
     """

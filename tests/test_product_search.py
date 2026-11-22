@@ -336,3 +336,42 @@ class ProductSearchIntegrationTests(TestCase):
         # Scoped search lookup and build_search_query remain accent-insensitive
         self.assertTrue(Category.objects.filter(name__unaccent_icontains="tecnologia").exists())
         self.assertIn(self.p_camera, Product.objects.filter(build_search_query("tecnologia")))
+
+
+class SearchServiceTests(TestCase):
+    def test_empty_query_returns_empty_q(self):
+        q = build_search_query("")
+        self.assertEqual(len(q.children), 0)
+
+        q_whitespace = build_search_query("   ")
+        self.assertEqual(len(q_whitespace.children), 0)
+
+    def test_text_query_structure(self):
+        q = build_search_query("vintage denim")
+        # Should contain ai_title, raw_note, ai_description unaccent_icontains lookups
+        self.assertTrue(any("ai_title__unaccent_icontains" in str(child) for child in q.children))
+        self.assertTrue(any("raw_note__unaccent_icontains" in str(child) for child in q.children))
+        self.assertTrue(any("ai_description__unaccent_icontains" in str(child) for child in q.children))
+
+    def test_iso_date_query_structure(self):
+        q = build_search_query("2026-10-10")
+        q_str = str(q)
+        self.assertIn("created_at__date", q_str)
+        self.assertIn("sold_at__date", q_str)
+
+    def test_slashed_date_query_structure(self):
+        q = build_search_query("10/10/2026")
+        q_str = str(q)
+        self.assertIn("created_at__date", q_str)
+        self.assertIn("sold_at__date", q_str)
+
+    def test_year_month_query_structure(self):
+        q = build_search_query("2026-10")
+        q_str = str(q)
+        self.assertIn("created_at__year", q_str)
+        self.assertIn("created_at__month", q_str)
+
+    def test_four_digit_year_query_structure(self):
+        q = build_search_query("2026")
+        q_str = str(q)
+        self.assertIn("created_at__year", q_str)

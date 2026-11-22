@@ -2,7 +2,7 @@
 Browser tests verifying tablet & desktop dashboard status tab-rail single-line horizontal
 alignment (anti-apilación) without overflowing controls.
 Narrow mobile viewports (320x711, 360x800, 390x844) are covered by test_oppo_a74_responsive.py
-and test_browser_phase39_workflow.py.
+and test_browser_accessibility_workflow.py.
 """
 
 from decimal import Decimal

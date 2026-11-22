@@ -171,7 +171,7 @@ class ProductDetailMobileUXTests(TestCase):
         self.assertIn('id="detailPendingGrid"', html)
         self.assertIn("photo-edit-btn", html)
 
-        # 3. Tabbed workspace and deprioritized audit disclosure (Phase 50)
+        # 3. Tabbed workspace and deprioritized audit disclosure
         self.assertIn('id="detailWorkspaceTablist"', html)
         self.assertIn('id="intakeNotesCard"', html)
         self.assertIn('id="status-history-disclosure"', html)

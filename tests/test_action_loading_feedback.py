@@ -1,5 +1,5 @@
 """
-Verification suite for Phase 54: Action Progress & Non-Blocking Loading Feedback System.
+Verification suite for Action Progress & Non-Blocking Loading Feedback System.
 
 Tests:
 1. Rendered template markup for window.AppFeedback, GPU shimmer CSS, declarative

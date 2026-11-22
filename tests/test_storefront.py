@@ -3,7 +3,6 @@ from datetime import timedelta
 from decimal import Decimal
 from io import StringIO
 
-from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -23,18 +22,18 @@ from inventory.models import (
     StorefrontConfiguration,
 )
 from inventory.services.ai_service import infer_taxonomy_heuristically
+from tests.helpers import create_user_with_group
 
-User = get_user_model()
 
-
-class StorefrontMarketplaceTests(TestCase):
-    def setUp(self):
-        self.staff_user = User.objects.create_user(
-            username="secret_staff_agent_6644",
+class _StorefrontBaseTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.staff_user = create_user_with_group(
+            "secret_staff_agent_6644",
             password="password123",
             is_staff=True,
         )
-        self.wallapop_site, _ = MarketplaceSite.objects.get_or_create(
+        cls.wallapop_site, _ = MarketplaceSite.objects.get_or_create(
             slug="wallapop",
             defaults={
                 "name": "Wallapop",
@@ -43,7 +42,7 @@ class StorefrontMarketplaceTests(TestCase):
                 "order": 1,
             },
         )
-        self.vinted_site, _ = MarketplaceSite.objects.get_or_create(
+        cls.vinted_site, _ = MarketplaceSite.objects.get_or_create(
             slug="vinted",
             defaults={
                 "name": "Vinted",
@@ -52,9 +51,9 @@ class StorefrontMarketplaceTests(TestCase):
                 "order": 2,
             },
         )
-        self.bicycles_cat = Category.objects.get(slug="bicicletas")
-        self.tech_cat = Category.objects.get(slug="tecnologia-y-electronica")
-        self.collectibles_cat = Category.objects.get(slug="coleccionismo")
+        cls.bicycles_cat = Category.objects.get(slug="bicicletas")
+        cls.tech_cat = Category.objects.get(slug="tecnologia-y-electronica")
+        cls.collectibles_cat = Category.objects.get(slug="coleccionismo")
 
     def _create_published_product(
         self,
@@ -90,6 +89,8 @@ class StorefrontMarketplaceTests(TestCase):
         product.save()
         return product
 
+
+class StorefrontCatalogAndFiltersTests(_StorefrontBaseTestCase):
     def test_official_12_categories_and_storefront_config_seeded(self):
         categories = Category.objects.filter(is_active=True).order_by("order")
         self.assertEqual(categories.count(), 12)
@@ -158,69 +159,6 @@ class StorefrontMarketplaceTests(TestCase):
         # Expired sold item returns 404 on public detail view
         resp_expired = self.client.get(expired_sold.get_public_url())
         self.assertEqual(resp_expired.status_code, 404)
-
-    def test_public_storefront_never_leaks_internal_notes_or_clarifications(self):
-        product = self._create_published_product(
-            title="Cámara Retro Canon AE-1 Program",
-            description="Revisada en nuestro taller de Alfafar con objetivo 50mm.",
-            raw_note="SECRET_RAW_NOTE_DO_NOT_LEAK_9911 coste 30EUR proveedor privado",
-        )
-        # Attach a resolved clarification so product stays PUBLISHED
-        ProductClarification.objects.create(
-            product=product,
-            question="SECRET_CLARIFICATION_QUESTION_8822",
-            answer="SECRET_CLARIFICATION_ANSWER_7733",
-            status=ClarificationStatus.RESOLVED,
-            asked_by=self.staff_user,
-            answered_by=self.staff_user,
-        )
-
-        forbidden_secrets = [
-            "SECRET_RAW_NOTE_DO_NOT_LEAK_9911",
-            "SECRET_CLARIFICATION_QUESTION_8822",
-            "SECRET_CLARIFICATION_ANSWER_7733",
-            "secret_staff_agent_6644",
-        ]
-
-        # 0. Check Corporate Landing Page (/)
-        home_resp = self.client.get(reverse("storefront:home"))
-        self.assertEqual(home_resp.status_code, 200)
-        home_html = home_resp.content.decode("utf-8")
-        self.assertIn("Cámara Retro Canon AE-1 Program", home_html)
-        for secret in forbidden_secrets:
-            self.assertNotIn(secret, home_html)
-
-        # 1. Check Store Catalog (/tienda/)
-        catalog_resp = self.client.get(reverse("storefront:catalog"))
-        self.assertEqual(catalog_resp.status_code, 200)
-        catalog_html = catalog_resp.content.decode("utf-8")
-        self.assertIn("Cámara Retro Canon AE-1 Program", catalog_html)
-        for secret in forbidden_secrets:
-            self.assertNotIn(secret, catalog_html)
-
-        # 2. Check Search Query against raw_note (must return 0 matches and never leak)
-        search_resp = self.client.get(
-            reverse("storefront:catalog"),
-            {"q": "SECRET_RAW_NOTE_DO_NOT_LEAK_9911"},
-        )
-        self.assertEqual(search_resp.status_code, 200)
-        self.assertEqual(search_resp.context["total_count"], 0)
-
-        # 3. Check Public Product Detail Page (/tienda/producto/<slug>-<pk>/) including OG & JSON-LD
-        detail_resp = self.client.get(product.get_public_url())
-        self.assertEqual(detail_resp.status_code, 200)
-        detail_html = detail_resp.content.decode("utf-8")
-        self.assertIn("Cámara Retro Canon AE-1 Program", detail_html)
-        self.assertIn("Revisada en nuestro taller de Alfafar", detail_html)
-        for secret in forbidden_secrets:
-            self.assertNotIn(secret, detail_html)
-
-        # 4. Check Sitemap (/sitemap.xml)
-        sitemap_resp = self.client.get(reverse("storefront:sitemap"))
-        self.assertEqual(sitemap_resp.status_code, 200)
-        sitemap_xml = sitemap_resp.content.decode("utf-8")
-        for secret in forbidden_secrets:
-            self.assertNotIn(secret, sitemap_xml)
 
     def test_root_serves_store_shelf_with_astro_nav_and_button_free_cards(self):
         # Create available products (with MSRP for -XX% PVP pill), 1 reserved, and 1 sold
@@ -382,6 +320,194 @@ class StorefrontMarketplaceTests(TestCase):
             [p_bike.pk, p_headphones.pk, p_camera.pk],
         )
 
+    def test_heuristic_taxonomy_and_classify_products_command(self):
+        slug, cond = infer_taxonomy_heuristically(
+            "Bicicleta de montaña Orbea 29 pulgadas",
+            "En muy buen estado, lista para rodar",
+            "",
+        )
+        self.assertEqual(slug, "bicicletas")
+        self.assertEqual(cond, "very_good")
+
+        unclassified = Product.objects.create(
+            raw_note="Pluma estilográfica Pelikan antigua años 80",
+            ai_title="Pluma Estilográfica Pelikan Vintage Años 80",
+            ai_description="Pieza de colección histórica en funcionamiento.",
+            category=None,
+            condition=ProductCondition.GOOD,
+        )
+        out = StringIO()
+        call_command("classify_products", "--all", stdout=out)
+        unclassified.refresh_from_db()
+        self.assertIsNotNone(unclassified.category)
+        self.assertEqual(unclassified.category.slug, "coleccionismo")
+        self.assertEqual(unclassified.condition, ProductCondition.VINTAGE)
+
+    def test_catalog_default_orders_featured_first_then_newest_descending(self):
+        now = timezone.now()
+        older_featured = self._create_published_product(
+            title="Destacado Antiguo",
+            price=Decimal("40.00"),
+            is_featured=True,
+        )
+        newer_featured = self._create_published_product(
+            title="Destacado Reciente",
+            price=Decimal("45.00"),
+            is_featured=True,
+        )
+        older_regular = self._create_published_product(
+            title="Normal Antiguo",
+            price=Decimal("30.00"),
+            is_featured=False,
+        )
+        newest_regular = self._create_published_product(
+            title="Normal Muy Reciente",
+            price=Decimal("50.00"),
+            is_featured=False,
+        )
+        sold_featured = self._create_published_product(
+            title="Destacado Vendido",
+            price=Decimal("60.00"),
+            is_featured=True,
+        )
+        sold_featured.mark_as_sold(price=Decimal("60.00"))
+
+        Product.objects.filter(pk=older_featured.pk).update(created_at=now - timedelta(days=5))
+        Product.objects.filter(pk=newer_featured.pk).update(created_at=now - timedelta(days=2))
+        Product.objects.filter(pk=newest_regular.pk).update(created_at=now - timedelta(hours=1))
+        Product.objects.filter(pk=older_regular.pk).update(created_at=now - timedelta(days=3))
+        Product.objects.filter(pk=sold_featured.pk).update(created_at=now - timedelta(minutes=30))
+
+        expected_order = [
+            newer_featured.pk,
+            older_featured.pk,
+            newest_regular.pk,
+            older_regular.pk,
+            sold_featured.pk,
+        ]
+        for route_name in ("storefront:home", "storefront:catalog"):
+            resp = self.client.get(reverse(route_name))
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual([p.pk for p in resp.context["products"]], expected_order)
+
+    def test_category_rail_shows_only_active_stock_by_default_with_show_all_toggle(self):
+        # 1 available product in bicycles; 1 sold-only product in collectibles
+        self._create_published_product(
+            title="Bicicleta Disponible",
+            price=Decimal("250.00"),
+            category=self.bicycles_cat,
+        )
+        sold_collectible = self._create_published_product(
+            title="Reloj Vendido",
+            price=Decimal("80.00"),
+            category=self.collectibles_cat,
+        )
+        sold_collectible.mark_as_sold(price=Decimal("80.00"))
+
+        resp = self.client.get(reverse("storefront:home"))
+        self.assertEqual(resp.status_code, 200)
+        # Only 1 of 12 categories (bicicletas) has unsold available stock; 11 are hidden by default
+        self.assertEqual(resp.context["hidden_categories_count"], 11)
+        self.assertEqual(resp.context["categories"][0].slug, "bicicletas")
+
+        html = resp.content.decode("utf-8")
+        self.assertIn("rail.classList.toggle('flex-wrap', nextExpanded)", html)
+        rail_html = re.search(r'<div[^>]*id="categoryRail"[^>]*>(.*?)</div>', html, re.S).group(1)
+
+        self.assertIn('id="toggleAllCategoriesBtn"', rail_html)
+        self.assertIn("+ Show all categories (11)", rail_html)
+        self.assertIn("Show active only", rail_html)
+
+        # Populated category chip stays visible (not marked data-empty-category)
+        bike_chip = re.search(r'<a[^>]*href="/categoria/bicicletas/[^"]*"[^>]*>.*?</a>', rail_html, re.S).group(0)
+        self.assertNotIn('data-empty-category="true"', bike_chip)
+        self.assertIn("(1)", bike_chip)
+
+        # Sold-only and empty categories stay hidden with data-empty-category="true" until toggled
+        collectibles_chip = re.search(
+            r'<a[^>]*href="/categoria/coleccionismo/[^"]*"[^>]*>.*?</a>', rail_html, re.S
+        ).group(0)
+        self.assertIn('data-empty-category="true"', collectibles_chip)
+        self.assertIn("hidden ", collectibles_chip)
+
+        # Direct visit to an empty category keeps that active category visible in the rail
+        empty_cat_resp = self.client.get(reverse("storefront:category", kwargs={"category_slug": "coleccionismo"}))
+        self.assertEqual(empty_cat_resp.status_code, 200)
+        self.assertEqual(empty_cat_resp.context["hidden_categories_count"], 10)
+        empty_rail = re.search(
+            r'<div[^>]*id="categoryRail"[^>]*>(.*?)</div>', empty_cat_resp.content.decode("utf-8"), re.S
+        ).group(1)
+        active_collectibles = re.search(
+            r'<a[^>]*href="/categoria/coleccionismo/[^"]*"[^>]*>.*?</a>', empty_rail, re.S
+        ).group(0)
+        self.assertNotIn('data-empty-category="true"', active_collectibles)
+        self.assertNotIn("hidden ", active_collectibles)
+
+
+class StorefrontProductDetailAndRedirectTests(_StorefrontBaseTestCase):
+    def test_public_storefront_never_leaks_internal_notes_or_clarifications(self):
+        product = self._create_published_product(
+            title="Cámara Retro Canon AE-1 Program",
+            description="Revisada en nuestro taller de Alfafar con objetivo 50mm.",
+            raw_note="SECRET_RAW_NOTE_DO_NOT_LEAK_9911 coste 30EUR proveedor privado",
+        )
+        # Attach a resolved clarification so product stays PUBLISHED
+        ProductClarification.objects.create(
+            product=product,
+            question="SECRET_CLARIFICATION_QUESTION_8822",
+            answer="SECRET_CLARIFICATION_ANSWER_7733",
+            status=ClarificationStatus.RESOLVED,
+            asked_by=self.staff_user,
+            answered_by=self.staff_user,
+        )
+
+        forbidden_secrets = [
+            "SECRET_RAW_NOTE_DO_NOT_LEAK_9911",
+            "SECRET_CLARIFICATION_QUESTION_8822",
+            "SECRET_CLARIFICATION_ANSWER_7733",
+            "secret_staff_agent_6644",
+        ]
+
+        # 0. Check Corporate Landing Page (/)
+        home_resp = self.client.get(reverse("storefront:home"))
+        self.assertEqual(home_resp.status_code, 200)
+        home_html = home_resp.content.decode("utf-8")
+        self.assertIn("Cámara Retro Canon AE-1 Program", home_html)
+        for secret in forbidden_secrets:
+            self.assertNotIn(secret, home_html)
+
+        # 1. Check Store Catalog (/tienda/)
+        catalog_resp = self.client.get(reverse("storefront:catalog"))
+        self.assertEqual(catalog_resp.status_code, 200)
+        catalog_html = catalog_resp.content.decode("utf-8")
+        self.assertIn("Cámara Retro Canon AE-1 Program", catalog_html)
+        for secret in forbidden_secrets:
+            self.assertNotIn(secret, catalog_html)
+
+        # 2. Check Search Query against raw_note (must return 0 matches and never leak)
+        search_resp = self.client.get(
+            reverse("storefront:catalog"),
+            {"q": "SECRET_RAW_NOTE_DO_NOT_LEAK_9911"},
+        )
+        self.assertEqual(search_resp.status_code, 200)
+        self.assertEqual(search_resp.context["total_count"], 0)
+
+        # 3. Check Public Product Detail Page (/tienda/producto/<slug>-<pk>/) including OG & JSON-LD
+        detail_resp = self.client.get(product.get_public_url())
+        self.assertEqual(detail_resp.status_code, 200)
+        detail_html = detail_resp.content.decode("utf-8")
+        self.assertIn("Cámara Retro Canon AE-1 Program", detail_html)
+        self.assertIn("Revisada en nuestro taller de Alfafar", detail_html)
+        for secret in forbidden_secrets:
+            self.assertNotIn(secret, detail_html)
+
+        # 4. Check Sitemap (/sitemap.xml)
+        sitemap_resp = self.client.get(reverse("storefront:sitemap"))
+        self.assertEqual(sitemap_resp.status_code, 200)
+        sitemap_xml = sitemap_resp.content.decode("utf-8")
+        for secret in forbidden_secrets:
+            self.assertNotIn(secret, sitemap_xml)
+
     def test_product_detail_canonical_redirect_and_click_tracking(self):
         product = self._create_published_product(
             title="Amplificador Pioneer SX-780",
@@ -440,6 +566,79 @@ class StorefrontMarketplaceTests(TestCase):
         product.refresh_from_db()
         self.assertEqual(product.total_marketplace_clicks, 1)
 
+    def test_product_detail_breadcrumb_links_category_and_shows_product_name(self):
+        product = self._create_published_product(
+            title="Auriculares Sony WH-1000XM4 Negro",
+            price=Decimal("145.00"),
+            category=self.tech_cat,
+        )
+        detail_resp = self.client.get(product.get_public_url())
+        self.assertEqual(detail_resp.status_code, 200)
+        html = detail_resp.content.decode("utf-8")
+
+        nav_match = re.search(r'<nav aria-label="Breadcrumb"[^>]*>(.*?)</nav>', html, re.S)
+        self.assertIsNotNone(nav_match)
+        breadcrumb_html = nav_match.group(1)
+
+        cat_url = reverse("storefront:category", kwargs={"category_slug": self.tech_cat.slug})
+        self.assertIn(reverse("storefront:home"), breadcrumb_html)
+        self.assertIn(cat_url, breadcrumb_html)
+        self.assertIn(escape(self.tech_cat.get_localized_name()), breadcrumb_html)
+        self.assertIn(product.ai_title, breadcrumb_html)
+        self.assertIn('aria-current="page"', breadcrumb_html)
+        self.assertNotIn(product.public_reference, breadcrumb_html)
+
+        # Inactive category falls back cleanly to filtered catalog URL (never links to 404)
+        self.tech_cat.is_active = False
+        self.tech_cat.save(update_fields=["is_active"])
+        try:
+            fallback_resp = self.client.get(product.get_public_url())
+            self.assertEqual(fallback_resp.status_code, 200)
+            fallback_nav = re.search(
+                r'<nav aria-label="Breadcrumb"[^>]*>(.*?)</nav>',
+                fallback_resp.content.decode("utf-8"),
+                re.S,
+            ).group(1)
+            self.assertIn(f"{reverse('storefront:home')}?category={self.tech_cat.slug}", fallback_nav)
+            self.assertNotIn(cat_url, fallback_nav)
+        finally:
+            self.tech_cat.is_active = True
+            self.tech_cat.save(update_fields=["is_active"])
+
+    def test_product_detail_hides_other_stores_section_when_no_marketplace_links(self):
+        store_only = Product.objects.create(
+            raw_note="Exclusive item",
+            ai_title="Mesa Exclusiva Alfafar",
+            ai_description="Disponible exclusivamente en tienda.",
+            sale_price=Decimal("120.00"),
+            category=self.tech_cat,
+            is_public=True,
+            status=ProductStatus.PUBLISHED,
+            created_by=self.staff_user,
+        )
+        resp = self.client.get(store_only.get_public_url())
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode("utf-8")
+        self.assertNotIn("Other stores &amp; protected shipping:", html)
+        self.assertNotIn("Other stores & protected shipping:", html)
+        self.assertNotIn("Also available with protected shipping on:", html)
+        self.assertNotIn(self.wallapop_site.base_url, html)
+
+        # Adding an active link reveals the product-specific external links block
+        link = ProductListingLink.objects.create(
+            product=store_only,
+            site=self.wallapop_site,
+            url="https://es.wallapop.com/item/mesa-exclusiva-123",
+            is_active=True,
+        )
+        linked_resp = self.client.get(store_only.get_public_url())
+        self.assertEqual(linked_resp.status_code, 200)
+        linked_html = linked_resp.content.decode("utf-8")
+        self.assertIn("Also available with protected shipping on:", linked_html)
+        self.assertIn(reverse("storefront:go_listing", kwargs={"link_pk": link.pk}), linked_html)
+
+
+class StorefrontSeoAndLegalTests(_StorefrontBaseTestCase):
     def test_seo_metadata_sitemap_robots_how_to_buy_and_legal_pages(self):
         product = self._create_published_product(
             title="Cafetera DeLonghi Dedica EC685",
@@ -550,200 +749,8 @@ class StorefrontMarketplaceTests(TestCase):
         self.assertEqual(fav_resp.status_code, 301)
         self.assertIn("storefront/img/favicon.ico", fav_resp["Location"])
 
-    def test_heuristic_taxonomy_and_classify_products_command(self):
-        slug, cond = infer_taxonomy_heuristically(
-            "Bicicleta de montaña Orbea 29 pulgadas",
-            "En muy buen estado, lista para rodar",
-            "",
-        )
-        self.assertEqual(slug, "bicicletas")
-        self.assertEqual(cond, "very_good")
 
-        unclassified = Product.objects.create(
-            raw_note="Pluma estilográfica Pelikan antigua años 80",
-            ai_title="Pluma Estilográfica Pelikan Vintage Años 80",
-            ai_description="Pieza de colección histórica en funcionamiento.",
-            category=None,
-            condition=ProductCondition.GOOD,
-        )
-        out = StringIO()
-        call_command("classify_products", "--all", stdout=out)
-        unclassified.refresh_from_db()
-        self.assertIsNotNone(unclassified.category)
-        self.assertEqual(unclassified.category.slug, "coleccionismo")
-        self.assertEqual(unclassified.condition, ProductCondition.VINTAGE)
-
-    def test_product_detail_breadcrumb_links_category_and_shows_product_name(self):
-        product = self._create_published_product(
-            title="Auriculares Sony WH-1000XM4 Negro",
-            price=Decimal("145.00"),
-            category=self.tech_cat,
-        )
-        detail_resp = self.client.get(product.get_public_url())
-        self.assertEqual(detail_resp.status_code, 200)
-        html = detail_resp.content.decode("utf-8")
-
-        nav_match = re.search(r'<nav aria-label="Breadcrumb"[^>]*>(.*?)</nav>', html, re.S)
-        self.assertIsNotNone(nav_match)
-        breadcrumb_html = nav_match.group(1)
-
-        cat_url = reverse("storefront:category", kwargs={"category_slug": self.tech_cat.slug})
-        self.assertIn(reverse("storefront:home"), breadcrumb_html)
-        self.assertIn(cat_url, breadcrumb_html)
-        self.assertIn(escape(self.tech_cat.get_localized_name()), breadcrumb_html)
-        self.assertIn(product.ai_title, breadcrumb_html)
-        self.assertIn('aria-current="page"', breadcrumb_html)
-        self.assertNotIn(product.public_reference, breadcrumb_html)
-
-        # Inactive category falls back cleanly to filtered catalog URL (never links to 404)
-        self.tech_cat.is_active = False
-        self.tech_cat.save(update_fields=["is_active"])
-        try:
-            fallback_resp = self.client.get(product.get_public_url())
-            self.assertEqual(fallback_resp.status_code, 200)
-            fallback_nav = re.search(
-                r'<nav aria-label="Breadcrumb"[^>]*>(.*?)</nav>',
-                fallback_resp.content.decode("utf-8"),
-                re.S,
-            ).group(1)
-            self.assertIn(f"{reverse('storefront:home')}?category={self.tech_cat.slug}", fallback_nav)
-            self.assertNotIn(cat_url, fallback_nav)
-        finally:
-            self.tech_cat.is_active = True
-            self.tech_cat.save(update_fields=["is_active"])
-
-    def test_catalog_default_orders_featured_first_then_newest_descending(self):
-        now = timezone.now()
-        older_featured = self._create_published_product(
-            title="Destacado Antiguo",
-            price=Decimal("40.00"),
-            is_featured=True,
-        )
-        newer_featured = self._create_published_product(
-            title="Destacado Reciente",
-            price=Decimal("45.00"),
-            is_featured=True,
-        )
-        older_regular = self._create_published_product(
-            title="Normal Antiguo",
-            price=Decimal("30.00"),
-            is_featured=False,
-        )
-        newest_regular = self._create_published_product(
-            title="Normal Muy Reciente",
-            price=Decimal("50.00"),
-            is_featured=False,
-        )
-        sold_featured = self._create_published_product(
-            title="Destacado Vendido",
-            price=Decimal("60.00"),
-            is_featured=True,
-        )
-        sold_featured.mark_as_sold(price=Decimal("60.00"))
-
-        Product.objects.filter(pk=older_featured.pk).update(created_at=now - timedelta(days=5))
-        Product.objects.filter(pk=newer_featured.pk).update(created_at=now - timedelta(days=2))
-        Product.objects.filter(pk=newest_regular.pk).update(created_at=now - timedelta(hours=1))
-        Product.objects.filter(pk=older_regular.pk).update(created_at=now - timedelta(days=3))
-        Product.objects.filter(pk=sold_featured.pk).update(created_at=now - timedelta(minutes=30))
-
-        expected_order = [
-            newer_featured.pk,
-            older_featured.pk,
-            newest_regular.pk,
-            older_regular.pk,
-            sold_featured.pk,
-        ]
-        for route_name in ("storefront:home", "storefront:catalog"):
-            resp = self.client.get(reverse(route_name))
-            self.assertEqual(resp.status_code, 200)
-            self.assertEqual([p.pk for p in resp.context["products"]], expected_order)
-
-    def test_category_rail_shows_only_active_stock_by_default_with_show_all_toggle(self):
-        # 1 available product in bicycles; 1 sold-only product in collectibles
-        self._create_published_product(
-            title="Bicicleta Disponible",
-            price=Decimal("250.00"),
-            category=self.bicycles_cat,
-        )
-        sold_collectible = self._create_published_product(
-            title="Reloj Vendido",
-            price=Decimal("80.00"),
-            category=self.collectibles_cat,
-        )
-        sold_collectible.mark_as_sold(price=Decimal("80.00"))
-
-        resp = self.client.get(reverse("storefront:home"))
-        self.assertEqual(resp.status_code, 200)
-        # Only 1 of 12 categories (bicicletas) has unsold available stock; 11 are hidden by default
-        self.assertEqual(resp.context["hidden_categories_count"], 11)
-        self.assertEqual(resp.context["categories"][0].slug, "bicicletas")
-
-        html = resp.content.decode("utf-8")
-        self.assertIn("rail.classList.toggle('flex-wrap', nextExpanded)", html)
-        rail_html = re.search(r'<div[^>]*id="categoryRail"[^>]*>(.*?)</div>', html, re.S).group(1)
-
-        self.assertIn('id="toggleAllCategoriesBtn"', rail_html)
-        self.assertIn("+ Show all categories (11)", rail_html)
-        self.assertIn("Show active only", rail_html)
-
-        # Populated category chip stays visible (not marked data-empty-category)
-        bike_chip = re.search(r'<a[^>]*href="/categoria/bicicletas/[^"]*"[^>]*>.*?</a>', rail_html, re.S).group(0)
-        self.assertNotIn('data-empty-category="true"', bike_chip)
-        self.assertIn("(1)", bike_chip)
-
-        # Sold-only and empty categories stay hidden with data-empty-category="true" until toggled
-        collectibles_chip = re.search(
-            r'<a[^>]*href="/categoria/coleccionismo/[^"]*"[^>]*>.*?</a>', rail_html, re.S
-        ).group(0)
-        self.assertIn('data-empty-category="true"', collectibles_chip)
-        self.assertIn("hidden ", collectibles_chip)
-
-        # Direct visit to an empty category keeps that active category visible in the rail
-        empty_cat_resp = self.client.get(reverse("storefront:category", kwargs={"category_slug": "coleccionismo"}))
-        self.assertEqual(empty_cat_resp.status_code, 200)
-        self.assertEqual(empty_cat_resp.context["hidden_categories_count"], 10)
-        empty_rail = re.search(
-            r'<div[^>]*id="categoryRail"[^>]*>(.*?)</div>', empty_cat_resp.content.decode("utf-8"), re.S
-        ).group(1)
-        active_collectibles = re.search(
-            r'<a[^>]*href="/categoria/coleccionismo/[^"]*"[^>]*>.*?</a>', empty_rail, re.S
-        ).group(0)
-        self.assertNotIn('data-empty-category="true"', active_collectibles)
-        self.assertNotIn("hidden ", active_collectibles)
-
-    def test_product_detail_hides_other_stores_section_when_no_marketplace_links(self):
-        store_only = Product.objects.create(
-            raw_note="Exclusive item",
-            ai_title="Mesa Exclusiva Alfafar",
-            ai_description="Disponible exclusivamente en tienda.",
-            sale_price=Decimal("120.00"),
-            category=self.tech_cat,
-            is_public=True,
-            status=ProductStatus.PUBLISHED,
-            created_by=self.staff_user,
-        )
-        resp = self.client.get(store_only.get_public_url())
-        self.assertEqual(resp.status_code, 200)
-        html = resp.content.decode("utf-8")
-        self.assertNotIn("Other stores &amp; protected shipping:", html)
-        self.assertNotIn("Other stores & protected shipping:", html)
-        self.assertNotIn("Also available with protected shipping on:", html)
-        self.assertNotIn(self.wallapop_site.base_url, html)
-
-        # Adding an active link reveals the product-specific external links block
-        link = ProductListingLink.objects.create(
-            product=store_only,
-            site=self.wallapop_site,
-            url="https://es.wallapop.com/item/mesa-exclusiva-123",
-            is_active=True,
-        )
-        linked_resp = self.client.get(store_only.get_public_url())
-        self.assertEqual(linked_resp.status_code, 200)
-        linked_html = linked_resp.content.decode("utf-8")
-        self.assertIn("Also available with protected shipping on:", linked_html)
-        self.assertIn(reverse("storefront:go_listing", kwargs={"link_pk": link.pk}), linked_html)
-
+class StorefrontCookieConsentTests(_StorefrontBaseTestCase):
     def test_cookie_consent_banner_and_cross_subdomain_sync_state(self):
         from urllib.parse import quote
 

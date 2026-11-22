@@ -13,7 +13,6 @@ Verifies the live UI across:
 
 from decimal import Decimal
 
-from django.contrib.auth import get_user_model
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import override_settings
 from django.urls import reverse
@@ -36,21 +35,19 @@ from tests.helpers import (
     start_shared_browser,
 )
 
-User = get_user_model()
-
 
 @override_settings(TURNSTILE_ENABLED=False)
-class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
+class BrowserAccessibilityWorkflowTests(StaticLiveServerTestCase):
     """Comprehensive browser verification of WCAG 2.1 AA accessibility & mobile UX."""
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.artifacts_dir = get_test_artifact_dir(cls, repo_subdir="screenshots/phase39")
+        cls.artifacts_dir = get_test_artifact_dir(cls, repo_subdir="screenshots/accessibility")
         cls._browser = start_shared_browser(cls)
 
     def setUp(self):
-        self.manager = create_user_with_group("manager_phase39", group_name="managers", is_staff=True)
+        self.manager = create_user_with_group("manager_a11y", group_name="managers", is_staff=True)
         self.category, _ = Category.objects.get_or_create(
             slug="ropa-retro",
             defaults={"name": "Ropa Retro", "icon": "apparel"},
@@ -77,14 +74,15 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
             is_active=True,
         )
 
-    def test_accessibility_and_mobile_workflow_in_real_chrome(self):
+    def test_public_storefront_skip_link_contrast_and_how_to_buy_dialog(self):
+        """Verify skip link focus, WhatsApp WCAG AAA contrast, and How-to-Buy <dialog>."""
         native_dialogs = []
 
         with open_browser_page(
             self._browser,
             self,
             viewport={"width": 1280, "height": 900},
-            failure_name="phase39_desktop",
+            failure_name="a11y_public_storefront",
         ) as (_context, page):
             page.on("dialog", lambda d: (native_dialogs.append(d.message), d.dismiss()))
 
@@ -123,6 +121,20 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
             page.keyboard.press("Escape")
             page.wait_for_selector("#how-to-buy-dialog", state="hidden")
 
+            self.assertEqual(len(native_dialogs), 0, f"Unexpected native JS dialogs triggered: {native_dialogs}")
+
+    def test_staff_login_dashboard_and_detail_aria_tabs_validation_and_modal(self):
+        """Verify login semantics, staff skip link, ARIA tabs, role='alert' validation, and #actionConfirmModal."""
+        native_dialogs = []
+
+        with open_browser_page(
+            self._browser,
+            self,
+            viewport={"width": 1280, "height": 900},
+            failure_name="a11y_staff_workflow",
+        ) as (_context, page):
+            page.on("dialog", lambda d: (native_dialogs.append(d.message), d.dismiss()))
+
             # 3. Staff Login Screen semantics
             page.goto(f"{self.live_server_url}{reverse('inventory:login')}")
             page.wait_for_selector("#id_username")
@@ -142,7 +154,7 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
             login_in_browser(
                 page,
                 self.live_server_url,
-                "manager_phase39",
+                "manager_a11y",
                 "password123",
                 navigate_to_login=False,
             )
@@ -234,30 +246,33 @@ class BrowserPhase39AccessibilityWorkflowTests(StaticLiveServerTestCase):
 
             self.assertEqual(len(native_dialogs), 0, f"Unexpected native JS dialogs triggered: {native_dialogs}")
 
-            # 7. Mobile Viewport 390x844: iOS auto-zoom prevention (>= 16px) & zero overflow
-            with open_browser_page(
-                self._browser,
-                self,
-                viewport={"width": 390, "height": 844},
-                failure_name="phase39_mobile_390x844",
-            ) as (_mobile_context, mobile_page):
-                login_in_browser(mobile_page, self.live_server_url, "manager_phase39", "password123")
+    def test_mobile_390x844_detail_input_font_size_and_overflow(self):
+        """Verify 390x844 detail input font size (>= 16px) prevents iOS auto-zoom without horizontal overflow."""
+        detail_url = f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': self.product.pk})}"
 
-                goto_authenticated(
-                    mobile_page,
-                    detail_url,
-                )
-                mobile_page.wait_for_selector("#id_sale_price")
+        with open_browser_page(
+            self._browser,
+            self,
+            viewport={"width": 390, "height": 844},
+            failure_name="a11y_mobile_390x844",
+        ) as (_mobile_context, mobile_page):
+            login_in_browser(mobile_page, self.live_server_url, "manager_a11y", "password123")
 
-                input_font_size = mobile_page.evaluate(
-                    """() => {
-                        const el = document.querySelector('#id_sale_price');
-                        return parseFloat(window.getComputedStyle(el).fontSize);
-                    }"""
-                )
-                self.assertGreaterEqual(input_font_size, 16.0, "Mobile inputs must be >= 16px to prevent iOS Safari zoom")
+            goto_authenticated(
+                mobile_page,
+                detail_url,
+            )
+            mobile_page.wait_for_selector("#id_sale_price")
 
-                mobile_page.screenshot(path=str(self.artifacts_dir / "08_mobile_product_detail_390x844.png"))
+            input_font_size = mobile_page.evaluate(
+                """() => {
+                    const el = document.querySelector('#id_sale_price');
+                    return parseFloat(window.getComputedStyle(el).fontSize);
+                }"""
+            )
+            self.assertGreaterEqual(input_font_size, 16.0, "Mobile inputs must be >= 16px to prevent iOS Safari zoom")
 
-                has_overflow = mobile_page.evaluate("() => document.documentElement.scrollWidth > window.innerWidth")
-                self.assertFalse(has_overflow, "Mobile detail view must not have horizontal overflow at 390px width")
+            mobile_page.screenshot(path=str(self.artifacts_dir / "08_mobile_product_detail_390x844.png"))
+
+            has_overflow = mobile_page.evaluate("() => document.documentElement.scrollWidth > window.innerWidth")
+            self.assertFalse(has_overflow, "Mobile detail view must not have horizontal overflow at 390px width")

@@ -12,6 +12,7 @@ Uses shared Playwright Chromium launch helper, temp artifact dirs (unless SAVE_T
 deterministic Playwright navigation/selector waits, and verifies loaded visible <img> assets.
 """
 
+import datetime
 import json
 from decimal import Decimal
 
@@ -23,6 +24,7 @@ from django.urls import reverse
 from inventory.models import (
     Category,
     MarketplaceSite,
+    Pallet,
     Product,
     ProductCondition,
     ProductImage,
@@ -210,8 +212,37 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
                 self.assertEqual(resp.status, 302)
                 self.assertEqual(resp.headers.get("location"), expected_target)
 
-    def test_staff_pallet_intake_valuation_publish_and_sold_lifecycle(self):
-        """Verify Pallet creation, AI Intake valuation benchmarks, staging detail, publish, hold, and sold audit."""
+    def _route_mock_intake_identify(self, page):
+        """Intercept the Gemini AI intake identify endpoint for fast deterministic valuation."""
+        def handle_identify(route):
+            route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps(
+                    {
+                        "success": True,
+                        "identified_title": "Chaqueta Barbour Beaufort Encerada",
+                        "category": "Moda y accesorios",
+                        "detected_attributes": [
+                            "Algodón encerado verde oliva",
+                            "Cuello de pana marrón",
+                            "Cremallera de latón doble carro",
+                        ],
+                        "missing_or_recommended_info": [
+                            "Revisar desgaste en puños y bajo",
+                            "Comprobar etiqueta blanca interior de talla",
+                        ],
+                        "suggested_note": "Chaqueta encerada clásica verde oliva fabricada en Inglaterra.",
+                        "estimated_retail_price": 435.00,
+                        "estimated_resale_price": 165.00,
+                    }
+                ),
+            )
+
+        page.route("**/intake/identify/", handle_identify)
+
+    def test_staff_pallet_creation_and_ai_intake_valuation_workflow(self):
+        """Verify Pallet creation, AI Intake valuation benchmarks, and dashboard pallet filtering."""
         img_path = str(self.sample_image_path)
         with open_browser_page(
             self._browser,
@@ -219,34 +250,7 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             viewport={"width": 1280, "height": 900},
         ) as (_context, page):
             page.on("dialog", lambda d: d.accept())
-
-            # Intercept the Gemini AI endpoint to provide deterministic, fast valuation
-            def handle_identify(route):
-                route.fulfill(
-                    status=200,
-                    content_type="application/json",
-                    body=json.dumps(
-                        {
-                            "success": True,
-                            "identified_title": "Chaqueta Barbour Beaufort Encerada",
-                            "category": "Moda y accesorios",
-                            "detected_attributes": [
-                                "Algodón encerado verde oliva",
-                                "Cuello de pana marrón",
-                                "Cremallera de latón doble carro",
-                            ],
-                            "missing_or_recommended_info": [
-                                "Revisar desgaste en puños y bajo",
-                                "Comprobar etiqueta blanca interior de talla",
-                            ],
-                            "suggested_note": "Chaqueta encerada clásica verde oliva fabricada en Inglaterra.",
-                            "estimated_retail_price": 435.00,
-                            "estimated_resale_price": 165.00,
-                        }
-                    ),
-                )
-
-            page.route("**/intake/identify/", handle_identify)
+            self._route_mock_intake_identify(page)
 
             login_in_browser(page, self.live_server_url, "manager_daily", "password123")
 
@@ -333,6 +337,39 @@ class BrowserDailyWorkflowValuationTests(StaticLiveServerTestCase):
             page.wait_for_url(f"**pallet={product.pallet.id}**")
             page.wait_for_selector('text="Chaqueta Barbour Beaufort Encerada"')
             self.assertTrue(page.locator('text="Chaqueta Barbour Beaufort Encerada"').first.is_visible())
+
+    def test_manager_detail_storefront_publish_reserve_and_sold_lifecycle(self):
+        """Verify Product Detail valuation benchmarks, Storefront publishing, 24h hold, Sold state, and Audit trail."""
+        pallet1 = Pallet.objects.create(
+            number=1,
+            received_date=datetime.date(2026, 10, 15),
+            purchase_price=Decimal("350.00"),
+            estimated_value=Decimal("900.00"),
+            notes="Lote Liquidacion Chaquetas & Moda Alfafar",
+            created_by=self.manager,
+        )
+        product = Product.objects.create(
+            raw_note="Barbour Beaufort vintage verde oliva, cremallera perfecta, ligera pátina.",
+            ai_title="Chaqueta Barbour Beaufort Encerada",
+            sale_price=Decimal("165.00"),
+            estimated_retail_price=Decimal("435.00"),
+            estimated_resale_price=Decimal("165.00"),
+            pallet=pallet1,
+            created_by=self.manager,
+        )
+        ProductImage.objects.create(
+            product=product,
+            image=ContentFile(make_test_image_bytes(size=(600, 600), color="teal"), name="barbour_detail.jpg"),
+            order=0,
+        )
+
+        with open_browser_page(
+            self._browser,
+            self,
+            viewport={"width": 1280, "height": 900},
+        ) as (_context, page):
+            page.on("dialog", lambda d: d.accept())
+            login_in_browser(page, self.live_server_url, "manager_daily", "password123")
 
             # Product Detail View
             detail_url = f"{self.live_server_url}{reverse('inventory:product_detail', kwargs={'pk': product.pk})}"

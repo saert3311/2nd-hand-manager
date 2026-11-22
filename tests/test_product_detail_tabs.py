@@ -33,7 +33,7 @@ from tests.helpers import (
 
 
 class ProductDetailTabbedRedesignTests(TestCase):
-    """Tests for Phase 50: Product Detail Tabbed Workspace Redesign & Audit Log Deprioritization."""
+    """Tests for Product Detail Tabbed Workspace Redesign & Audit Log Deprioritization."""
 
     def setUp(self):
         self.managers_group, _ = Group.objects.get_or_create(name="managers")
