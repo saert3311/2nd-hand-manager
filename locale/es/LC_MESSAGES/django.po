@@ -4722,3 +4722,6 @@ msgstr "Redactando ficha técnica, tasación y texto del anuncio..."
 msgid "Web search was temporarily unavailable; AI listing was generated using standard photo analysis."
 msgstr "La búsqueda web no estaba disponible temporalmente; el anuncio con IA se generó usando el análisis estándar de fotos."
 
+msgid "Sampling temperature between 0.0 and 1.0 (use 0.0–0.1 for strict template consistency across runs)."
+msgstr "Temperatura de muestreo entre 0.0 y 1.0 (usa 0.0–0.1 para mantener consistencia estricta de plantilla entre ejecuciones)."
+

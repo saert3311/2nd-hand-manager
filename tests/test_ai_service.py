@@ -87,9 +87,10 @@ class AIServiceTests(TestCase):
         self.assertEqual(result["title"], "Camiseta Vintage Pink Floyd 1994 XL")
 
         call_args = mock_client.models.generate_content.call_args
+        config_arg = call_args.kwargs.get("config")
         contents = call_args.kwargs.get("contents") or call_args[1].get("contents")
         prompt_text = contents[0]
-        self.assertIn("COMPLETAMENTE EN ESPAÑOL", prompt_text)
+        self.assertIn("COMPLETAMENTE EN ESPAÑOL", config_arg.system_instruction)
         self.assertIn("NOTAS DE CAMPO DE LA ENTRADA", prompt_text)
 
     @override_settings(GEMINI_API_KEY="valid-api-key")
@@ -105,9 +106,10 @@ class AIServiceTests(TestCase):
 
         generate_product_listing(self.product, language="en")
         call_args = mock_client.models.generate_content.call_args
+        config_arg = call_args.kwargs.get("config")
         contents = call_args.kwargs.get("contents") or call_args[1].get("contents")
         prompt_text = contents[0]
-        self.assertIn("COMPLETELY IN ENGLISH", prompt_text)
+        self.assertIn("COMPLETELY IN ENGLISH", config_arg.system_instruction)
         self.assertIn("FIELD NOTES FROM INTAKE", prompt_text)
 
     @override_settings(GEMINI_API_KEY="valid-api-key")
@@ -136,13 +138,13 @@ class AIServiceTests(TestCase):
         call_args = mock_client.models.generate_content.call_args
         # Verify custom model was passed
         self.assertEqual(call_args.kwargs.get("model"), "gemini-2.5-pro")
-        # Verify custom temperature was passed to config
+        # Verify custom temperature & native system_instruction were passed to config
         config_arg = call_args.kwargs.get("config")
         self.assertEqual(config_arg.temperature, 0.7)
-        # Verify custom system instruction was used
+        self.assertIn("Instrucciones exclusivas para Wallapop y coleccionistas.", config_arg.system_instruction)
+        self.assertIsInstance(config_arg.seed, int)
         contents = call_args.kwargs.get("contents")
         prompt_text = contents[0]
-        self.assertIn("Instrucciones exclusivas para Wallapop y coleccionistas.", prompt_text)
         self.assertIn("NOTAS DE CAMPO DE LA ENTRADA", prompt_text)
 
     @override_settings(GEMINI_API_KEY="valid-api-key")
@@ -174,11 +176,9 @@ class AIServiceTests(TestCase):
         call_args = mock_client.models.generate_content.call_args
         self.assertEqual(call_args.kwargs.get("model"), "gemini-4-hydrogen")
         config_arg = call_args.kwargs.get("config")
-        self.assertEqual(config_arg.temperature, 0.3)
+        self.assertEqual(config_arg.temperature, 0.1)
         self.assertEqual(config_arg.thinking_config.thinking_level, "LOW")
-        contents = call_args.kwargs.get("contents")
-        prompt_text = contents[0]
-        self.assertIn("Eres un experto en reventa", prompt_text)
+        self.assertIn("Eres un experto en reventa", config_arg.system_instruction)
 
     @override_settings(GEMINI_API_KEY="valid-api-key")
     @patch("inventory.services.ai_service.genai.Client")
@@ -195,7 +195,7 @@ class AIServiceTests(TestCase):
         call_args = mock_client.models.generate_content.call_args
         self.assertEqual(call_args.kwargs.get("model"), "gemini-4-hydrogen")
         config_arg = call_args.kwargs.get("config")
-        self.assertEqual(config_arg.temperature, 0.3)
+        self.assertEqual(config_arg.temperature, 0.1)
         self.assertEqual(config_arg.thinking_config.thinking_level, "LOW")
 
 

@@ -4262,3 +4262,6 @@ msgstr "Drafting grounded specs, pricing & listing copy..."
 msgid "Web search was temporarily unavailable; AI listing was generated using standard photo analysis."
 msgstr "Web search was temporarily unavailable; AI listing was generated using standard photo analysis."
 
+msgid "Sampling temperature between 0.0 and 1.0 (use 0.0–0.1 for strict template consistency across runs)."
+msgstr "Sampling temperature between 0.0 and 1.0 (use 0.0–0.1 for strict template consistency across runs)."
+
