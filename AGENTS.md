@@ -22,9 +22,8 @@ This file defines the mandatory operational rules, development workflow, archite
 6. **Low-DPI & Narrow Android Mobile Viewports (OPPO A74 Baseline)**
    - Every page and UI component must render cleanly without horizontal overflow, clipped controls, or squished text on low-DPI and narrow Android mobile viewports such as the **OPPO A74** (`360×800` standard CSS viewport and `320×711` with Android display zoom / low effective DPI), not just `390×844` iPhone viewports.
 7. **Mandatory Post-Implementation Audit & Live UI Verification (No Self-Review)**
-   - Before requesting merge approval, every branch must pass the tiered audit in `.agents/skills/post-impl-audit/SKILL.md` (`Tier 0`–`Tier 3` based on `git diff --name-only master...HEAD`).
-   - **No self-review:** Delegate code and lean/bloat audits (fusing `code-review-and-quality` + `ponytail-review`) to a fresh `code-reviewer` subagent supplied with a parent-prepared diff bundle; run whole-repo `/ponytail-audit` on releases, major milestones, or explicit user request.
-   - **UI craft & live browser check:** Read Gemini DemoLab (`gemini-frontend-design`) *before* creating or modifying UI (`storefront/`, `inventory/templates/`, `*.html`, `*.css`, `*.js`), apply surface precedence (Section 4), and verify rendered pages via the `browser` subagent across Desktop (above & below fold), `390×844`, `360×800`, and `320×711`.
+   - Every branch must pass `.agents/skills/post-impl-audit/SKILL.md` before requesting merge approval (`No self-review`: delegate diff/code audits to a fresh `code-reviewer` subagent with a parent-prepared bundle, and whole-repo `/ponytail-audit` on releases/milestones).
+   - Read Gemini DemoLab (`gemini-frontend-design`) *before* modifying UI (`storefront/templates/`, `storefront/static/`, `inventory/templates/`, `inventory/static/`, `*.html`, `*.css`, `*.js`), follow Section 4 Surface Precedence, and verify rendered pages via the `browser` subagent across Desktop (above & below fold), `390×844`, `360×800`, and `320×711`.
 
 ---
 
@@ -61,8 +60,7 @@ Deliver code in atomic, logically scoped commits following Conventional Commits:
    - Enforce POST-only execution on all state-mutating endpoints.
    - Commit as: `feat(views): ...`
 4. **Templates & UI (`storefront/templates/`, `inventory/templates/`)**:
-   - Read `gemini-frontend-design` (DemoLab) before designing or redesigning UI and respect Surface Precedence (Section 4).
-   - Build responsive, mobile-first interfaces across storefront and staging templates (`intake.html`, `dashboard.html`, `product_detail.html`, `base.html`, `storefront/`).
+   - Build responsive, mobile-first interfaces across storefront and staging templates (`intake.html`, `dashboard.html`, `product_detail.html`, `base.html`, `storefront/`), following Rule #7 and Section 4 Surface Precedence.
    - Commit as: `feat(ui): ...` and `feat(dashboard): ...`
 
 ### Step 5: Bilingual Localization, Tests, Changelog & Release Prep

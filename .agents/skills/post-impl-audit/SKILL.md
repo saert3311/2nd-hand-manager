@@ -22,7 +22,7 @@ Inspect `git diff --name-only master...HEAD` and apply the **highest matching ti
 | Tier | Trigger (`git diff --name-only master...HEAD`) | Required Audits |
 | :--- | :--- | :--- |
 | **Tier 0** | **Only** files under `docs/`, `tasks/`, `locale/` (`.po`/`.mo`), or root `README.md`, `CHANGELOG.md`, `SPEC.md` | Standard CLI quality gates only (`ruff`, `check`, `compile_locales`, `test`) |
-| **Tier 1** | Any `.py`, `AGENTS.md`, `.agents/`, `Dockerfile`, `.dockerignore`, `docker/`, `.github/`, `.env.example`, `pyproject.toml`, `requirements*.txt`, `*.sh`, `*.yml`, `*.yaml`, `*.toml`, or `*.json` file | CLI gates + **Parent-prepared diff bundle** + **Fresh `code-reviewer` subagent** (fused `code-review-and-quality` + `ponytail-review`) |
+| **Tier 1** | Any `.py`, `AGENTS.md`, `.agents/`, build/CI/config file (`Dockerfile`, `.dockerignore`, `.gitignore`, `docker/`, `.github/`, `.env.example`, `pyproject.toml`, `requirements*.txt`, `*.sh`, `*.yml`, `*.yaml`, `*.toml`, `*.json`), or any other file outside Tier 0 | CLI gates + **Parent-prepared diff bundle** + **Fresh `code-reviewer` subagent** (fused `code-review-and-quality` + `ponytail-review`) |
 | **Tier 2** | Any `*.html`, `*.css`, `*.js`, `storefront/templates/`, `storefront/static/`, `inventory/templates/`, or `inventory/static/` file | Pre-edit DemoLab read + **Tier 1** + **Live `browser` subagent** across 4 viewports *(can run in parallel with Tier 1)* |
 | **Tier 3** | Release bump (`APP_VERSION` in `config/settings.py`, committed at end of Step 5), major multi-phase milestone, or explicit user request | **Tier 1 / Tier 2** + **Whole-repo `ponytail-audit`** via fresh subagent |
 
@@ -63,8 +63,15 @@ Perform an independent, unified pre-merge audit of branch `<branch-name>` agains
 ### Pre-Edit Design Check & Surface Precedence
 Before editing UI files, read the `gemini-frontend-design` skill and follow the canonical **UI Surface Precedence** rules in `AGENTS.md` Section 4 (`storefront/templates/storefront/base_public.html` brand tokens for `storefront/`; Tailwind + semantic status badges + OPPO A74 low-DPI ergonomics for `inventory/templates/`).
 
-### Local Dev Server Launch (Windows PowerShell)
-Start Django as a background daemon (`run_command` with `IsDaemon=true`, `WaitMsBeforeAsync=3000`):
+### Local Dev Server & Database Safety Guard (Windows PowerShell)
+Before launching `runserver` or creating `_audit_tmp_*` users, verify via Django settings (which evaluates *after* `load_dotenv(BASE_DIR / '.env')` in `config/settings.py`) that `DATABASE_URL` is unset and Django points strictly to local SQLite, with current migrations:
+
+```powershell
+.venv\Scripts\python.exe manage.py shell -c "from django.conf import settings; eng = settings.DATABASES['default']['ENGINE']; assert not settings.DATABASE_URL and eng == 'django.db.backends.sqlite3', f'Refusing local audit against {eng} (DATABASE_URL set)'"
+.venv\Scripts\python.exe manage.py migrate --check
+```
+
+Then start Django as a background daemon (`run_command` with `IsDaemon=true`, `WaitMsBeforeAsync=3000`):
 
 ```powershell
 $env:TURNSTILE_ENABLED='False'; $env:DEBUG='True'; .venv\Scripts\python.exe manage.py runserver 127.0.0.1:8000 --noreload
@@ -73,12 +80,7 @@ $env:TURNSTILE_ENABLED='False'; $env:DEBUG='True'; .venv\Scripts\python.exe mana
 - `TURNSTILE_ENABLED=False` keeps local `/login/` testable without Cloudflare Turnstile tokens; `--noreload` avoids orphaned child reloader processes on daemon kill.
 
 ### Disposable Local Dev Accounts (Authenticated Routes Only)
-Before creating ephemeral `_audit_tmp_` users, verify `DATABASE_URL` is unset (so writes hit local `db.sqlite3` only, never a remote DB) and local migrations are current (`manage.py migrate --check`, running `manage.py migrate` if needed):
-
-```powershell
-if ($env:DATABASE_URL) { throw "Refusing to create _audit_tmp_* users while DATABASE_URL is set" }
-.venv\Scripts\python.exe manage.py migrate --check
-```
+If inspecting staff views (`/dashboard/`, `/intake/`, `/pallets/`, `/products/<pk>/`), create ephemeral `_audit_tmp_` accounts in local `db.sqlite3` with a runtime-generated random password. **Never** commit credentials or alter real user accounts.
 
 Create `_audit_tmp_manager` (`ROLE_MANAGER = "managers"` in `inventory/permissions.py`):
 
@@ -120,7 +122,7 @@ Verify and report:
 
 Triggered on release bumps (`APP_VERSION` in `config/settings.py`), multi-phase milestones, or explicit user request:
 1. Parent writes `git ls-files` and `git status --short` to `<appDataDir>\brain\<conversation-id>\scratch\repo_manifest.txt`.
-2. Delegate a fresh `code-reviewer` subagent (passing `repo_manifest.txt` and entry points `README.md`, `Dockerfile`, `.github/workflows/ci.yml`, `config/settings.py`, `config/urls.py`, `inventory/`, `storefront/`) or a `research` subagent to read and execute the `ponytail-audit` skill for single-shop SQLite + Gunicorn Docker load.
+2. Delegate a fresh `research` subagent (which has read-only codebase search/grep and `read_file` tools required for whole-tree unused-code checks), passing `scratch\repo_manifest.txt` and key entry files (`README.md`, `Dockerfile`, `.github/workflows/ci.yml`, `config/settings.py`, `config/urls.py`), to read and execute the `ponytail-audit` skill for single-shop SQLite + Gunicorn Docker load.
 3. Resolve all `Must fix` findings before tagging or requesting merge; note deferred `Should fix` / `Nice to have` items in the Merge Readiness Packet.
 
 ---
