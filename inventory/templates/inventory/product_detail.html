@@ -554,39 +554,82 @@
         {% endif %}
 
         <!-- Calm High-Contrast AI Vision Toolbar -->
-        <div id="aiCommandToolbar" class="bg-emerald-50/50 px-3.5 py-3 sm:px-6 sm:py-3.5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div class="min-w-0">
-            <h2 class="font-bold text-sm sm:text-base flex items-center gap-1.5 text-slate-900">
-              <span aria-hidden="true">✨</span>
-              <span>{% trans "Gemini Multimodal Vision" %}</span>
-            </h2>
-            <p class="text-xs sm:text-sm text-slate-700 mt-0.5 leading-snug">
-              {% if product.ai_title or product.ai_description %}
-                {% trans "Synced with attached photos and notes." %}
-              {% else %}
-                {% trans "Draft SEO title & description from photos and notes." %}
-              {% endif %}
-            </p>
+        <div id="aiCommandToolbar" class="bg-emerald-50/50 px-3.5 py-3 sm:px-6 sm:py-3.5 border-b border-slate-200 space-y-2.5 min-w-0">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 min-w-0">
+            <div class="min-w-0">
+              <h2 class="font-bold text-sm sm:text-base flex items-center gap-1.5 text-slate-900">
+                <span aria-hidden="true">✨</span>
+                <span class="min-w-0 break-words">{% trans "Gemini Multimodal Vision" %}</span>
+              </h2>
+              <p class="text-xs sm:text-sm text-slate-700 mt-0.5 leading-snug break-words">
+                {% if product.ai_title or product.ai_description %}
+                  {% trans "Synced with attached photos and notes." %}
+                {% else %}
+                  {% trans "Draft SEO title & description from photos and notes." %}
+                {% endif %}
+              </p>
+            </div>
+            {% if not can_manage %}
+            <span class="text-xs bg-slate-200 text-slate-800 px-2.5 py-1 rounded-lg font-semibold shrink-0 self-start sm:self-center">{% trans "Manager Only" %}</span>
+            {% endif %}
           </div>
 
           {% if can_manage %}
-          <form method="post" action="{% url 'inventory:generate_ai' product.pk %}" id="aiForm" data-no-loading="true" class="shrink-0">
+          <form method="post" action="{% url 'inventory:generate_ai' product.pk %}" id="aiForm" data-no-loading="true" class="space-y-2 min-w-0">
             {% csrf_token %}
-            <button type="submit" id="aiBtn"
-                    data-loading-text="{% trans 'Analyzing Photos with AI...' %}"
-                    class="w-full sm:w-auto whitespace-nowrap px-4 py-2 bg-emerald-700 hover:bg-emerald-800 active:scale-[0.98] text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px] max-w-full">
-              <span id="aiIcon" aria-hidden="true">⚡</span>
-              <span id="aiText" class="min-w-0 break-words">
-                {% if product.ai_title or product.ai_description %}
-                  {% trans "Regenerate with AI" %}
-                {% else %}
-                  {% trans "Generate with AI" %}
-                {% endif %}
-              </span>
-            </button>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 min-w-0">
+              <label for="id_use_web_search"
+                     class="inline-flex items-center gap-2.5 px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 cursor-pointer select-none min-h-[40px] min-w-0 max-w-full shadow-2xs transition-colors">
+                <input type="checkbox"
+                       id="id_use_web_search"
+                       name="use_web_search"
+                       value="1"
+                       aria-controls="aiSearchHintWrapper"
+                       aria-expanded="false"
+                       class="w-4 h-4 rounded border-slate-400 accent-emerald-700 shrink-0 cursor-pointer">
+                <span class="text-xs sm:text-sm font-semibold text-slate-900 min-w-0 break-words leading-snug">
+                  <span aria-hidden="true">🌐</span> {% trans "Web Research (AliExpress / Web)" %}
+                </span>
+              </label>
+
+              <button type="submit" id="aiBtn"
+                      data-default-text="{% if product.ai_title or product.ai_description %}{% trans 'Regenerate with AI' %}{% else %}{% trans 'Generate with AI' %}{% endif %}"
+                      data-research-text="{% trans 'Research on Web & Generate' %}"
+                      data-default-loading-text="{% trans 'Analyzing Photos with AI...' %}"
+                      data-research-loading-text="{% trans 'Searching Web & Generating...' %}"
+                      data-loading-text="{% trans 'Analyzing Photos with AI...' %}"
+                      class="w-full sm:w-auto px-4 py-2 bg-emerald-700 hover:bg-emerald-800 active:scale-[0.98] text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-[background-color,transform] duration-150 inline-flex items-center justify-center gap-1.5 cursor-pointer min-h-[40px] max-w-full shrink-0">
+                <span id="aiIcon" aria-hidden="true">⚡</span>
+                <span id="aiText" class="min-w-0 break-words">
+                  {% if product.ai_title or product.ai_description %}
+                    {% trans "Regenerate with AI" %}
+                  {% else %}
+                    {% trans "Generate with AI" %}
+                  {% endif %}
+                </span>
+              </button>
+            </div>
+
+            <div id="aiSearchHintWrapper" class="hidden min-w-0">
+              <label for="id_search_hint" class="block text-xs font-semibold text-slate-800 mb-1">
+                {% trans "Search clue or model code (optional)" %}
+              </label>
+              <input type="text"
+                     id="id_search_hint"
+                     name="search_hint"
+                     maxlength="200"
+                     value="{{ ai_research_data.search_hint|default:'' }}"
+                     autocomplete="off"
+                     autocapitalize="none"
+                     spellcheck="false"
+                     aria-describedby="aiSearchHintHelp"
+                     placeholder="{% trans 'e.g. HY300, Magcubic, EAN or AliExpress keyword...' %}"
+                     class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-base sm:text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 min-w-0">
+              <p id="aiSearchHintHelp" class="text-xs text-slate-700 mt-1 leading-snug break-words">
+                {% trans "Optional hint to guide Google Search toward the exact model, AliExpress listing, or spec sheet." %}
+              </p>
+            </div>
           </form>
-          {% else %}
-          <span class="text-xs bg-slate-200 text-slate-800 px-2.5 py-1 rounded-lg font-semibold shrink-0">{% trans "Manager Only" %}</span>
           {% endif %}
         </div>
       </div>
@@ -650,6 +693,88 @@
                 <div class="h-3 w-2/3 rounded bg-slate-200 app-shimmer-bar"></div>
               </div>
             </div>
+
+            {% if has_ai_research_insights %}
+            <!-- Persistent Grounded Web Research Insights Card -->
+            <section id="aiWebResearchCard" aria-labelledby="aiWebResearchHeading"
+                     class="rounded-xl border border-sky-200 bg-sky-50/70 p-3.5 sm:p-4 space-y-3 min-w-0">
+              <div class="flex flex-wrap items-center justify-between gap-2 min-w-0">
+                <h3 id="aiWebResearchHeading" class="text-xs sm:text-sm font-bold text-sky-950 uppercase tracking-wider flex items-center gap-1.5 min-w-0 break-words">
+                  <span aria-hidden="true">🌐</span>
+                  <span>{% trans "Web Research Insights" %}</span>
+                </h3>
+                {% if ai_research_data.used_web_search %}
+                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-950 border border-sky-300 shrink-0">
+                  {% trans "Google Search Grounded" %}
+                </span>
+                {% endif %}
+              </div>
+
+              {% if ai_research_data.identified_brand or ai_research_data.identified_model %}
+              <div class="flex flex-wrap items-center gap-2 min-w-0">
+                {% if ai_research_data.identified_brand %}
+                <span id="researchIdentifiedBrand" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-sky-200 text-xs sm:text-sm font-bold text-slate-900 min-w-0 break-words max-w-full">
+                  <span class="text-slate-600 font-semibold shrink-0">{% trans "Brand:" %}</span>
+                  <span class="min-w-0 break-words">{{ ai_research_data.identified_brand }}</span>
+                </span>
+                {% endif %}
+                {% if ai_research_data.identified_model %}
+                <span id="researchIdentifiedModel" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-sky-200 text-xs sm:text-sm font-bold text-slate-900 min-w-0 break-words max-w-full">
+                  <span class="text-slate-600 font-semibold shrink-0">{% trans "Model:" %}</span>
+                  <span class="min-w-0 break-words">{{ ai_research_data.identified_model }}</span>
+                </span>
+                {% endif %}
+              </div>
+              {% endif %}
+
+              {% if ai_research_data.technical_specs %}
+              <div class="space-y-1.5 min-w-0">
+                <p class="text-xs font-bold text-slate-800 uppercase tracking-wider">{% trans "Verified Specifications" %}</p>
+                <ul id="researchTechnicalSpecsList" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs sm:text-sm text-slate-800">
+                  {% for spec in ai_research_data.technical_specs %}
+                  <li class="flex items-start gap-1.5 bg-white/85 border border-sky-100 rounded-lg px-2.5 py-1.5 min-w-0 break-words">
+                    <span class="text-sky-800 font-bold shrink-0" aria-hidden="true">•</span>
+                    <span class="min-w-0 break-words">{{ spec }}</span>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% endif %}
+
+              {% if ai_research_data.web_sources %}
+              <div class="space-y-1.5 min-w-0">
+                <p class="text-xs font-bold text-slate-800 uppercase tracking-wider">{% trans "Web Reference Sources" %}</p>
+                <ul id="researchWebSourcesList" class="space-y-1.5 min-w-0">
+                  {% for src in ai_research_data.web_sources %}
+                  <li class="min-w-0">
+                    <a href="{{ src.url }}" target="_blank" rel="noopener noreferrer"
+                       class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg bg-white hover:bg-sky-100/70 border border-sky-200 text-xs sm:text-sm text-sky-950 font-semibold transition-colors min-w-0 max-w-full">
+                      <span class="min-w-0 flex-1 break-words">{{ src.title }}</span>
+                      <span class="inline-flex items-center gap-1 text-xs font-mono text-sky-900 bg-sky-100 px-2 py-0.5 rounded-md shrink-0 max-w-full truncate">
+                        <span>{{ src.domain|default:"web" }}</span>
+                        <span aria-hidden="true">↗</span>
+                      </span>
+                    </a>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% endif %}
+
+              {% if ai_research_data.search_queries %}
+              <details class="text-xs text-slate-800 pt-1 border-t border-sky-200/70 min-w-0">
+                <summary class="cursor-pointer font-semibold text-sky-950 hover:underline select-none">
+                  {% trans "Search queries used" %} ({{ ai_research_data.search_queries|length }})
+                </summary>
+                <div class="flex flex-wrap gap-1.5 mt-2 min-w-0">
+                  {% for query in ai_research_data.search_queries %}
+                  <span class="inline-block px-2 py-0.5 rounded-md bg-white border border-sky-200 text-xs text-slate-800 break-words max-w-full">{{ query }}</span>
+                  {% endfor %}
+                </div>
+              </details>
+              {% endif %}
+            </section>
+            {% endif %}
 
             {% if form.non_field_errors %}
             <div role="alert" class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-semibold space-y-1">
@@ -2321,10 +2446,12 @@
   }
 
   const aiForm = document.getElementById('aiForm');
+  const aiUseWebSearchCheckbox = document.getElementById('id_use_web_search');
+  const aiSearchHintWrapper = document.getElementById('aiSearchHintWrapper');
   const aiGeneratingSkeleton = document.getElementById('aiGeneratingSkeleton');
   const aiGenerateStageText = document.getElementById('aiGenerateStageText');
   const aiGenerateElapsed = document.getElementById('aiGenerateElapsed');
-  const aiGenerateController = (window.AppFeedback && aiGeneratingSkeleton)
+  const aiFastController = (window.AppFeedback && aiGeneratingSkeleton)
     ? window.AppFeedback.createStagedProgressController({
         containerEl: aiGeneratingSkeleton,
         labelEl: aiGenerateStageText,
@@ -2336,6 +2463,54 @@
         ]
       })
     : null;
+  const aiResearchController = (window.AppFeedback && aiGeneratingSkeleton)
+    ? window.AppFeedback.createStagedProgressController({
+        containerEl: aiGeneratingSkeleton,
+        labelEl: aiGenerateStageText,
+        timerEl: aiGenerateElapsed,
+        stages: [
+          { delayMs: 0, text: "{% trans 'Inspecting labels & model codes in photos...' %}" },
+          { delayMs: 2200, text: "{% trans 'Searching AliExpress, Amazon & web catalogs...' %}" },
+          { delayMs: 5500, text: "{% trans 'Drafting grounded specs, pricing & listing copy...' %}" }
+        ]
+      })
+    : null;
+
+  function syncAiWebResearchUi() {
+    const isResearch = Boolean(aiUseWebSearchCheckbox && aiUseWebSearchCheckbox.checked);
+    const btn = document.getElementById('aiBtn');
+    const iconEl = document.getElementById('aiIcon');
+    const textEl = document.getElementById('aiText');
+    if (aiUseWebSearchCheckbox) {
+      aiUseWebSearchCheckbox.setAttribute('aria-expanded', isResearch ? 'true' : 'false');
+    }
+    if (aiSearchHintWrapper) {
+      aiSearchHintWrapper.classList.toggle('hidden', !isResearch);
+    }
+    if (iconEl) {
+      iconEl.textContent = isResearch ? '🌐' : '⚡';
+    }
+    if (btn) {
+      const nextText = isResearch
+        ? (btn.getAttribute('data-research-text') || '')
+        : (btn.getAttribute('data-default-text') || '');
+      const nextLoadingText = isResearch
+        ? (btn.getAttribute('data-research-loading-text') || '')
+        : (btn.getAttribute('data-default-loading-text') || '');
+      if (textEl && nextText) textEl.textContent = nextText;
+      if (nextLoadingText) btn.setAttribute('data-loading-text', nextLoadingText);
+      btn.classList.toggle('bg-sky-700', isResearch);
+      btn.classList.toggle('hover:bg-sky-800', isResearch);
+      btn.classList.toggle('bg-emerald-700', !isResearch);
+      btn.classList.toggle('hover:bg-emerald-800', !isResearch);
+    }
+  }
+
+  if (aiUseWebSearchCheckbox) {
+    aiUseWebSearchCheckbox.addEventListener('change', syncAiWebResearchUi);
+    syncAiWebResearchUi();
+  }
+
   if (aiForm) {
     aiForm.addEventListener('submit', function(e) {
       if (aiForm.dataset.appSubmitting === 'true') {
@@ -2346,22 +2521,31 @@
       if (typeof switchWorkspaceTab === 'function') {
         switchWorkspaceTab('listing', false);
       }
+      const isResearch = Boolean(aiUseWebSearchCheckbox && aiUseWebSearchCheckbox.checked);
       const btn = document.getElementById('aiBtn');
+      const loadingMsg = btn
+        ? (btn.getAttribute(isResearch ? 'data-research-loading-text' : 'data-default-loading-text')
+           || btn.getAttribute('data-loading-text')
+           || "{% trans 'Analyzing Photos with AI...' %}")
+        : "{% trans 'Analyzing Photos with AI...' %}";
       if (btn && window.AppFeedback) {
-        window.AppFeedback.setButtonLoading(btn, btn.getAttribute('data-loading-text') || "{% trans 'Analyzing Photos with AI...' %}");
+        window.AppFeedback.setButtonLoading(btn, loadingMsg);
       } else if (btn) {
         btn.disabled = true;
       }
-      if (aiGenerateController) {
-        aiGenerateController.start();
+      const activeController = isResearch ? aiResearchController : aiFastController;
+      if (activeController) {
+        activeController.start();
       }
     });
   }
   window.addEventListener('pageshow', function() {
-    if (aiGenerateController) aiGenerateController.stop();
+    if (aiFastController) aiFastController.stop();
+    if (aiResearchController) aiResearchController.stop();
     const btn = document.getElementById('aiBtn');
     if (btn && window.AppFeedback) window.AppFeedback.resetButtonLoading(btn);
     if (aiForm) delete aiForm.dataset.appSubmitting;
+    syncAiWebResearchUi();
   });
 
   const toggleLogsBtn = document.getElementById('toggleStatusLogsBtn');

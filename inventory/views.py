@@ -1,6 +1,7 @@
 import io
 import json
 import zipfile
+from decimal import Decimal
 
 from django.conf import settings
 from django.contrib import messages
@@ -667,10 +668,49 @@ def product_detail_view(request, pk):
         else {}
     )
 
+    raw_research = product.ai_research_data if isinstance(product.ai_research_data, dict) else {}
+    safe_web_sources = []
+    for src in raw_research.get("web_sources") or []:
+        if not isinstance(src, dict):
+            continue
+        url = str(src.get("url") or "").strip()
+        if url.startswith(("https://", "http://")):
+            safe_web_sources.append(
+                {
+                    "title": str(src.get("title") or src.get("domain") or url).strip(),
+                    "url": url,
+                    "domain": str(src.get("domain") or "").strip(),
+                }
+            )
+    ai_research_data = {
+        "used_web_search": bool(raw_research.get("used_web_search")),
+        "search_hint": str(raw_research.get("search_hint") or "").strip(),
+        "identified_brand": str(raw_research.get("identified_brand") or "").strip(),
+        "identified_model": str(raw_research.get("identified_model") or "").strip(),
+        "technical_specs": [
+            str(s).strip() for s in (raw_research.get("technical_specs") or []) if str(s).strip()
+        ],
+        "search_queries": [
+            str(q).strip() for q in (raw_research.get("search_queries") or []) if str(q).strip()
+        ],
+        "web_sources": safe_web_sources,
+        "researched_at": str(raw_research.get("researched_at") or "").strip(),
+    }
+    has_ai_research_insights = bool(
+        ai_research_data["used_web_search"]
+        or ai_research_data["identified_brand"]
+        or ai_research_data["identified_model"]
+        or ai_research_data["technical_specs"]
+        or ai_research_data["web_sources"]
+        or ai_research_data["search_queries"]
+    )
+
     context = {
         "product": product,
         "form": form,
         "can_manage": can_manage,
+        "ai_research_data": ai_research_data,
+        "has_ai_research_insights": has_ai_research_insights,
         "pallet_provider_map_json": json.dumps(pallet_provider_map),
         "available_slots": available_slots,
         "site_links_data": site_links_data,
@@ -1043,7 +1083,14 @@ def generate_ai_view(request, pk):
         )
 
         active_language = get_language() or "en"
-        listing_data = generate_product_listing(product, language=active_language)
+        use_web_search = request.POST.get("use_web_search", "").strip().lower() in ("1", "true", "on", "yes")
+        search_hint = request.POST.get("search_hint", "").strip()[:200] if use_web_search else ""
+        listing_data = generate_product_listing(
+            product,
+            language=active_language,
+            use_web_search=use_web_search,
+            search_hint=search_hint,
+        )
 
         product.ai_title = (listing_data.get("title") or "").strip()[:255]
         product.ai_description = (listing_data.get("description") or "").strip()
@@ -1067,6 +1114,21 @@ def generate_ai_view(request, pk):
             product.condition = cond_code
             update_fields.append("condition")
 
+        est_retail = listing_data.get("estimated_retail_price")
+        if est_retail is not None:
+            product.estimated_retail_price = Decimal(f"{float(est_retail):.2f}")
+            update_fields.append("estimated_retail_price")
+
+        est_resale = listing_data.get("estimated_resale_price")
+        if est_resale is not None:
+            product.estimated_resale_price = Decimal(f"{float(est_resale):.2f}")
+            update_fields.append("estimated_resale_price")
+
+        research_data = listing_data.get("research_data")
+        if isinstance(research_data, dict) and (research_data or use_web_search):
+            product.ai_research_data = research_data
+            update_fields.append("ai_research_data")
+
         compliance_data = listing_data.get("compliance")
         if isinstance(compliance_data, dict):
             update_fields = product.apply_compliance_result(compliance_data, commit=False, update_fields=update_fields)
@@ -1074,7 +1136,10 @@ def generate_ai_view(request, pk):
         else:
             product.save(update_fields=update_fields)
 
-        messages.success(request, _("AI listing successfully generated from photos and notes!"))
+        if use_web_search:
+            messages.success(request, _("AI listing successfully generated with live web research!"))
+        else:
+            messages.success(request, _("AI listing successfully generated from photos and notes!"))
     except AIServiceError as e:
         messages.error(request, str(e))
     except Exception as exc:
