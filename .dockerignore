@@ -25,6 +25,7 @@ backups/
 /verify_*.py
 /seed_products.py
 /AGENTS.md
+/.agents/
 /SPEC.md
 /CHANGELOG.md
 /README.md
